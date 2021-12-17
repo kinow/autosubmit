@@ -21,11 +21,12 @@ from log.log import Log, AutosubmitCritical, AutosubmitError
 from autosubmit.job.job_common import Status, Type
 from bscearth.utils.date import sum_str_hours
 from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, JobPackageHorizontal, \
-    JobPackageSimpleWrapped, JobPackageHorizontalVertical, JobPackageVerticalHorizontal
+    JobPackageSimpleWrapped, JobPackageHorizontalVertical, JobPackageVerticalHorizontal, JobPackageBase
 from operator import attrgetter
 from math import ceil
 import operator
 from collections import defaultdict
+from typing import List
 
 
 class JobPackager(object):
@@ -151,6 +152,7 @@ class JobPackager(object):
                 job.distance_weight = job.distance_weight - 1
 
     def build_packages(self):
+        # type: () -> List[JobPackageBase]
         """
         Returns the list of the built packages to be submitted
 

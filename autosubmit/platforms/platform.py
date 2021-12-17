@@ -3,6 +3,7 @@ import os
 from log.log import Log
 import traceback
 from autosubmit.job.job_common import Status
+from typing import List, Union
 
 
 class Platform(object):
@@ -12,13 +13,12 @@ class Platform(object):
 
     def __init__(self, expid, name, config):
         """
-
         :param config:
         :param expid:
         :param name:
         """
-        self.expid = expid
-        self.name = name
+        self.expid = expid # type: str
+        self.name = name # type: str
         self.config = config
         self.tmp_path = os.path.join(
             self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
@@ -209,8 +209,8 @@ class Platform(object):
         :type remote_logs: (str, str)
         """
         (job_out_filename, job_err_filename) = remote_logs
-        self.get_files([job_out_filename, job_err_filename],
-                       False, 'LOG_{0}'.format(exp_id))
+        self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
+
     def get_stat_file(self, exp_id, job_name):
         """
         Get the given stat files for all retrials
@@ -219,8 +219,8 @@ class Platform(object):
         :param remote_logs: names of the log files
         :type remote_logs: (str, str)
         """
-
         self.get_files(job_name,False, 'LOG_{0}'.format(exp_id))
+
     def get_completed_files(self, job_name, retries=0, recovery=False, wrapper_failed=False):
         """
         Get the COMPLETED file of the given job
@@ -260,6 +260,7 @@ class Platform(object):
             Log.debug('{0}_STAT have been removed', job_name)
             return True
         return False
+
     def remove_stat_file_by_retrials(self, job_name):
         """
         Removes *STAT* files from remote
@@ -273,6 +274,7 @@ class Platform(object):
         if self.delete_file(filename):
             return True
         return False
+
     def remove_completed_file(self, job_name):
         """
         Removes *COMPLETED* files from remote
@@ -330,6 +332,7 @@ class Platform(object):
             return True
         else:
             return False
+
     def get_stat_file_by_retrials(self, job_name, retries=0):
         """
         Copies *STAT* files from remote to local
@@ -458,3 +461,15 @@ class Platform(object):
             Log.warning(
                 "Autosubmit has not written extra information into the .out log.")
             pass
+
+    def open_submit_script(self):
+        # type: () -> None
+        """ Opens Submit script file """
+        raise NotImplementedError
+    
+    def submit_Script(self, hold=False):
+        # type: (bool) -> Union[List[str], str]
+        """
+        Sends a Submit file Script, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
+        """
+        raise NotImplementedError

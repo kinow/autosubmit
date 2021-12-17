@@ -41,6 +41,8 @@ from log.log import AutosubmitCritical, AutosubmitError, Log
 from threading import Thread, Lock
 import multiprocessing
 from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.config.config_common import AutosubmitConfig
+from typing import List, Dict
 import log.fd_show
 # Log.get_logger("Log.Autosubmit")
 
@@ -1311,6 +1313,7 @@ class JobList(object):
         return jobs_by_section
 
     def get_in_queue_grouped_id(self, platform):
+        # type: (object) -> Dict[int, List[Job]]
         jobs = self.get_in_queue(platform)
         jobs_by_id = dict()
         for job in jobs:
@@ -1427,7 +1430,7 @@ class JobList(object):
             try:
                 self._persistence.save(self._persistence_path,
                                        self._persistence_file, self._job_list if self.run_members is None or job_list is None else job_list)
-                Log.info("_persistence end: {0}".format(log.fd_show.fd_table_status_str()))
+                # Log.info("_persistence end: {0}".format(log.fd_show.fd_table_status_str()))
                 pass
             except BaseException as e:
                 raise AutosubmitError(e.message,6040,"Failure while saving the job_list")
@@ -1521,6 +1524,7 @@ class JobList(object):
         self._parameters = value
 
     def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time=False):
+        # type: (AutosubmitConfig, bool, bool, object, bool) -> bool
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
@@ -1683,7 +1687,7 @@ class JobList(object):
                         job.hold = hold_wrapper
                         if not job.hold:
                             for inner_job in job.job_list:
-                                inner_job.hold = False
+                                inner_job.hold = False                                                               
                             Log.debug(
                                 "Setting job: {0} status to: Queuing (all parents completed)...".format(
                                     job.name))
@@ -1691,7 +1695,7 @@ class JobList(object):
                         tmp = [
                             parent for parent in job.parents if parent.status == Status.COMPLETED]
                         if len(tmp) == len(job.parents):
-                            job.hold = False
+                            job.hold = False                                                    
                             Log.debug(
                                 "Setting job: {0} status to: Queuing (all parents completed)...".format(
                                     job.name))

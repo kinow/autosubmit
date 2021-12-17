@@ -140,16 +140,13 @@ class ParamikoPlatform(Platform):
         except Exception as e:
             raise AutosubmitCritical(
                 'Cant connect to this platform due an unknown error', 7050, e.message)
+    
     def threaded(fn):
         def wrapper(*args, **kwargs):
             thread = Thread(target=fn, args=args, kwargs=kwargs)
             thread.start()
             return thread
         return wrapper
-
-
-
-
 
     def connect(self, reconnect=False):
         """
@@ -378,7 +375,7 @@ class ParamikoPlatform(Platform):
                     os.path.join(self.get_files_path(), src)), 5001)
                 return False
 
-    def submit_job(self, job, script_name, hold=False,export="none"):
+    def submit_job(self, job, script_name, hold=False, export="none"):
         """
         Submit a job from a given job object.
 
@@ -580,8 +577,8 @@ class ParamikoPlatform(Platform):
                         job.new_status = Status.HELD
                         if not job.hold:
                             # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                            self.send_command(
-                                "scontrol release {0}".format(job.id))
+                            self.send_command("scontrol release {0}".format(job.id))
+                            job.new_status = Status.QUEUING # If it was HELD and was released, it should be QUEUING next.                                                        
                         else:
                             pass
                     # This shouldn't happen anymore TODO delete
@@ -1036,6 +1033,7 @@ class ParamikoPlatform(Platform):
                 return False
         except Exception as e:
             return False
+    
     def check_remote_permissions(self):
         try:
             path = os.path.join(self.scratch, self.project, self.user, "permission_checker_azxbyc")
@@ -1048,6 +1046,7 @@ class ParamikoPlatform(Platform):
             return True
         except:
             return False
+    
     def check_remote_log_dir(self):
         """
         Creates log dir on remote host
