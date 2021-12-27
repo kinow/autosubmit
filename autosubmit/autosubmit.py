@@ -3952,7 +3952,11 @@ class Autosubmit:
                     output_type = as_conf.get_output_type()
 
                     if not Autosubmit._copy_code(as_conf, expid, project_type, False):
-                        return False
+                        return False                    
+                    if not os.path.exists(os.path.join(exp_path, "pkl")):
+                        raise AutosubmitCritical("The pkl folder doesn't exists. Make sure that the 'pkl' folder exists in the following path: {}".format(exp_path), code=6013)
+                    if not os.path.exists(os.path.join(exp_path, "plot")):
+                        raise AutosubmitCritical("The plot folder doesn't exists. Make sure that the 'plot' folder exists in the following path: {}".format(exp_path), code=6013)
 
                     update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
                                                                  "job_list_" + expid + ".pkl"))
@@ -3965,8 +3969,7 @@ class Autosubmit:
 
                     date_list = as_conf.get_date_list()
                     if len(date_list) != len(set(date_list)):
-                        raise AutosubmitCritical(
-                            'There are repeated start dates!', 7014)
+                        raise AutosubmitCritical('There are repeated start dates!', 7014)
                     num_chunks = as_conf.get_num_chunks()
                     chunk_ini = as_conf.get_chunk_ini()
                     member_list = as_conf.get_member_list()
