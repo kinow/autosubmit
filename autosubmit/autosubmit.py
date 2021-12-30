@@ -36,6 +36,7 @@ from bscearth.utils.date import date2str
 from monitor.monitor import Monitor
 from database.db_common import get_autosubmit_version, check_experiment_exists
 from database.db_common import delete_experiment, update_experiment_descrip_version
+from database.db_structure import get_structure
 from experiment.experiment_common import copy_experiment
 from experiment.experiment_common import new_experiment
 from database.db_common import create_db
@@ -45,6 +46,7 @@ from job.job_list_persistence import JobListPersistenceDb
 from job.job_package_persistence import JobPackagePersistence
 from job.job_packages import JobPackageThread, JobPackageBase
 from job.job_list import JobList
+from job.job_utils import SubJob, SubJobManager
 from job.job import Job
 from git.autosubmit_git import AutosubmitGit
 from job.job_common import Status
@@ -86,6 +88,7 @@ from history.experiment_history import ExperimentHistory
 from typing import List
 import history.utils as HUtils
 import helpers.autosubmit_helper as AutosubmitHelper
+import statistics.utils as StatisticsUtils
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
@@ -2360,51 +2363,48 @@ class Autosubmit:
         :param hide: hides plot window
         :type hide: bool
         """
-        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         Log.info("Loading jobs...")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.check_conf_files(False)
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-        job_list = Autosubmit.load_job_list(
-            expid, as_conf, notransitive=notransitive)
-        Log.debug("Job list restored from {0} files", pkl_dir)
-        # Filter by job section
-        if filter_type:
-            ft = filter_type
-            Log.debug(ft)
-            if ft == 'Any':
-                job_list = job_list.get_job_list()
-            else:
-                job_list = [job for job in job_list.get_job_list()
-                            if job.section == ft]
-        else:
-            ft = 'Any'
-            job_list = job_list.get_job_list()
-        # Filter by time (hours before)
-        period_fi = datetime.datetime.now().replace(second=0, microsecond=0)
-        if filter_period:
-            period_ini = period_fi - datetime.timedelta(hours=filter_period)
-            Log.debug(str(period_ini))
-            job_list = [job for job in job_list if
-                        job.check_started_after(period_ini) or job.check_running_after(period_ini)]
-        else:
-            period_ini = None
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+        Log.debug("Job list restored from {0} files", pkl_dir)     
+        jobs = StatisticsUtils.filter_by_section(job_list.get_job_list(), filter_type)              
+        jobs, period_ini, period_fi = StatisticsUtils.filter_by_time_period(jobs, filter_period)          
+        # print("After time {} {} {}".format(len(jobs), period_ini, period_fi))           
+        # Package information
+        job_to_package, package_to_jobs, _, _ = JobList.retrieve_packages(BasicConfig, expid, [job.name for job in job_list.get_job_list()])        
+        queue_time_fixes = {}
+        if (job_to_package):
+            current_table_structure = get_structure(expid, BasicConfig.STRUCTURES_DIR)
+            subjobs = []
+            for job in job_list.get_job_list():
+                job_info = JobList.retrieve_times(job.status, job.name, job._tmp_path, make_exception=False, job_times=None, seconds=True, job_data_collection=None)
+                time_total = (job_info.queue_time + job_info.run_time) if job_info else 0
+                subjobs.append(
+                    SubJob(job.name,
+                        job_to_package.get(job.name, None),
+                        job_info.queue_time if job_info else 0,
+                        job_info.run_time if job_info else 0,
+                        time_total,
+                        job_info.status if job_info else Status.UNKNOWN)
+                )        
+            queue_time_fixes = SubJobManager(subjobs, job_to_package, package_to_jobs, current_table_structure).get_collection_of_fixes_applied()
 
-        if len(job_list) > 0:
+        if len(jobs) > 0:
             try:
                 Log.info("Plotting stats...")
                 monitor_exp = Monitor()
                 # noinspection PyTypeChecker
-                monitor_exp.generate_output_stats(
-                    expid, job_list, file_format, period_ini, period_fi, not hide)
+                monitor_exp.generate_output_stats(expid, jobs, file_format, period_ini, period_fi, not hide, queue_time_fixes)
                 Log.result("Stats plot ready")
             except Exception as e:
                 raise AutosubmitCritical(
                     "Stats couldn't be shown", 7061, str(e))
         else:
             Log.info("There are no {0} jobs in the period from {1} to {2}...".format(
-                ft, period_ini, period_fi))
+                filter_type, period_ini, period_fi))
         return True
 
     @staticmethod

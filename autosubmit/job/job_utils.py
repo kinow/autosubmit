@@ -25,6 +25,8 @@ from networkx import DiGraph
 from networkx import dfs_edges
 from networkx import NetworkXError
 from autosubmit.job.job_package_persistence import JobPackagePersistence
+from autosubmit.config.basicConfig import BasicConfig
+from typing import Dict
 
 
 def transitive_reduction(graph):
@@ -43,7 +45,8 @@ def transitive_reduction(graph):
             reduced_graph.add_edges_from((u, v) for v in u_edges)
         return reduced_graph
 
-def get_job_package_code(job_name):
+def get_job_package_code(expid, job_name):
+    # type: (str, str) -> int
     """
     Finds the package code and retrieves it. None if no package.
 
@@ -57,8 +60,10 @@ def get_job_package_code(job_name):
     :rtype: int or None
     """
     try:
-        packages_wrapper = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),"job_packages_" + self.expid).load(wrapper=True)
-        packages_wrapper_plus = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),"job_packages_" + self.expid).load(wrapper=False)
+        basic_conf = BasicConfig()
+        basic_conf.read()
+        packages_wrapper = JobPackagePersistence(os.path.join(basic_conf.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid).load(wrapper=True)
+        packages_wrapper_plus = JobPackagePersistence(os.path.join(basic_conf.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid).load(wrapper=False)
         if (packages_wrapper or packages_wrapper_plus):
             packages = packages_wrapper if len(packages_wrapper) > len(packages_wrapper_plus) else packages_wrapper_plus
             for exp, package_name, _job_name in packages:
@@ -68,6 +73,7 @@ def get_job_package_code(job_name):
     except:
         pass
     return 0
+
 
 class Dependency(object):
     """
@@ -98,3 +104,179 @@ class Dependency(object):
                 self.select_members_orig.append(member_relation[1])
             else:
                 self.select_members_orig.append([])
+
+
+class SimpleJob(object):
+    """
+    A simple replacement for jobs
+    """
+
+    def __init__(self, name, tmppath, statuscode):
+        self.name = name
+        self._tmp_path = tmppath
+        self.status = statuscode
+
+
+class SubJob(object):
+    """
+    Class to manage package times
+    """
+
+    def __init__(self, name, package=None, queue=0, run=0, total=0, status="UNKNOWN"):
+        self.name = name
+        self.package = package
+        self.queue = queue
+        self.run = run
+        self.total = total
+        self.status = status
+        self.transit = 0
+        self.parents = list()
+        self.children = list()
+
+
+class SubJobManager(object):
+    """
+    Class to manage list of SubJobs
+    """
+
+    def __init__(self, subjoblist, job_to_package=None, package_to_jobs=None, current_structure=None):
+        self.subjobList = subjoblist
+        # print("Number of jobs in SubManager : {}".format(len(self.subjobList)))
+        self.job_to_package = job_to_package
+        self.package_to_jobs = package_to_jobs
+        self.current_structure = current_structure
+        self.subjobindex = dict()
+        self.subjobfixes = dict()
+        self.process_index()
+        self.process_times()
+
+    def process_index(self):
+        """
+        Builds a dictionary of jobname -> SubJob object. 
+        """
+        for subjob in self.subjobList:
+            self.subjobindex[subjob.name] = subjob
+
+    def process_times(self):
+        """
+        """
+        if (self.job_to_package) and (self.package_to_jobs):
+            if(self.current_structure) and len(self.current_structure.keys()) > 0:
+                # Structure exists
+                new_queues = dict()
+                fixes_applied = dict()
+                for package in self.package_to_jobs:
+                    # SubJobs in Package
+                    local_structure = dict()
+                    # SubJob Name -> SubJob Object
+                    local_index = dict()
+                    subjobs_in_package = filter(lambda x: x.package ==
+                                                package, self.subjobList)
+                    local_jobs_in_package = [job for job in subjobs_in_package]
+                    # Build index
+                    for sub in local_jobs_in_package:
+                        local_index[sub.name] = sub
+                    # Build structure
+                    for sub_job in local_jobs_in_package:
+                        # If job in current_structure, store children names in dictionary
+                        # local_structure: Job Name -> Children (if present in the Job package)
+                        local_structure[sub_job.name] = [v for v in self.current_structure[sub_job.name]
+                                                         if v in self.package_to_jobs[package]] if sub_job.name in self.current_structure else list()
+                        # Assign children to SubJob in local_jobs_in_package
+                        sub_job.children = local_structure[sub_job.name]
+                        # Assign sub_job Name as a parent of each of its children
+                        for child in local_structure[sub_job.name]:
+                            local_index[child].parents.append(sub_job.name)
+
+                    # Identify root as the job with no parents in the package
+                    roots = [sub for sub in local_jobs_in_package if len(
+                        sub.parents) == 0]
+
+                    # While roots exists (consider pop)
+                    while(len(roots) > 0):
+                        sub = roots.pop(0)
+                        if len(sub.children) > 0:
+                            for sub_children_name in sub.children:
+                                if sub_children_name not in new_queues:
+                                    # Add children to root to continue the sequence of fixes
+                                    roots.append(
+                                        local_index[sub_children_name])
+                                    fix_size = max(self.subjobindex[sub.name].queue +
+                                                   self.subjobindex[sub.name].run, 0)
+                                    # fixes_applied.setdefault(sub_children_name, []).append(fix_size) # If we care about repetition
+                                    # Retain the greater fix size
+                                    if fix_size > fixes_applied.get(sub_children_name, 0):
+                                        fixes_applied[sub_children_name] = fix_size
+                                    fixed_queue_time = max(
+                                        self.subjobindex[sub_children_name].queue - fix_size, 0)
+                                    new_queues[sub_children_name] = fixed_queue_time
+                                    # print(new_queues[sub_name])
+
+                for key, value in new_queues.items():
+                    self.subjobindex[key].queue = value
+                    # print("{} : {}".format(key, value))
+                for name in fixes_applied:
+                    self.subjobfixes[name] = fixes_applied[name]
+
+            else:
+                # There is no structure
+                for package in self.package_to_jobs:
+                    # Filter only jobs in the current package
+                    filtered = filter(lambda x: x.package ==
+                                      package, self.subjobList)
+                    # Order jobs by total time (queue + run)
+                    filtered = sorted(
+                        filtered, key=lambda x: x.total, reverse=False)
+                    # Sizes of fixes
+                    fixes_applied = dict()
+                    if len(filtered) > 1:
+                        temp_index = 0
+                        filtered[0].transit = 0
+                        # Reverse for
+                        for i in range(len(filtered) - 1, 0, -1):
+                            # Assume that the total time of the next job is always smaller than
+                            # the queue time of the current job
+                            # because the queue time of the current also considers the
+                            # total time of the previous (next because of reversed for) job by default
+                            # Confusing? It is.
+                            # Assign to transit the adjusted queue time
+                            filtered[i].transit = max(filtered[i].queue -
+                                                      filtered[i - 1].total, 0)
+
+                        # Positive or zero transit time
+                        positive = len(
+                            [job for job in filtered if job.transit >= 0])
+
+                        if (positive > 1):
+                            for i in range(0, len(filtered)):
+                                if filtered[i].transit >= 0:
+                                    temp_index = i
+                                    if i > 0:
+                                        # Only consider after the first job
+                                        filtered[i].queue = max(filtered[i].queue -
+                                                                filtered[i - 1].total, 0)
+                                        fixes_applied[filtered[i].name] = filtered[i - 1].total
+                                else:
+                                    filtered[i].queue = max(filtered[i].queue -
+                                                            filtered[temp_index].total, 0)
+                                    fixes_applied[filtered[i].name] = filtered[temp_index].total
+                                # it is starting of level
+
+                    for sub in filtered:
+                        self.subjobindex[sub.name].queue = sub.queue
+                        # print("{} : {}".format(sub.name, sub.queue))
+                    for name in fixes_applied:
+                        self.subjobfixes[name] = fixes_applied[name]
+
+    def get_subjoblist(self):
+        """
+        Returns the list of SubJob objects with their corrected queue times
+        in the case of jobs that belong to a wrapper.
+        """
+        return self.subjobList
+
+    def get_collection_of_fixes_applied(self):
+        # type: () -> Dict[str, int]
+        """
+        """
+        return self.subjobfixes

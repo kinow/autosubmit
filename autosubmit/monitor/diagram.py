@@ -17,21 +17,32 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+import traceback
 import numpy as np
+import matplotlib as mtp
+from numpy.core.fromnumeric import trace
+from pkg_resources import normalize_path
+mtp.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
-from autosubmit.experiment.statistics import ExperimentStats
+# from autosubmit.experiment.statistics import ExperimentStats
+from autosubmit.statistics.statistics import Statistics
+from autosubmit.job.job import Job
 from log.log import Log, AutosubmitCritical, AutosubmitError
+from datetime import datetime
+from typing import Dict, List
 Log.get_logger("Autosubmit")
 
 # Autosubmit stats constants
 RATIO = 4
 MAX_JOBS_PER_PLOT = 12.0
-MAX_NUM_PLOTS = 20
+MAX_NUM_PLOTS = 40
 
 
-def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, period_ini=None, period_fi=None):
+
+def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, period_ini=None, period_fi=None, queue_time_fixes=None):
+    # type: (str, List[Job], List[str], str, datetime, datetime, Dict[str, int]) -> None
     """
     Creates a bar diagram of the statistics.
 
@@ -50,59 +61,115 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     """
     # Error prevention
     plt.close('all')
+    try:
+        exp_stats = Statistics(jobs_list, period_ini, period_fi, queue_time_fixes)
+        exp_stats.calculate_statistics()
+        exp_stats.calculate_summary()
+        exp_stats.make_old_format()    
+        failed_jobs_dict = exp_stats.build_failed_jobs_only_list()        
+    except Exception as exp:
+        print(exp)
+        print(traceback.format_exc())
+
     # Stats variables definition
-    num_plots = int(np.ceil(len(jobs_list) / MAX_JOBS_PER_PLOT))
-    ind = np.arange(int(MAX_JOBS_PER_PLOT))
+    normal_plots_count = int(np.ceil(len(exp_stats.jobs_stat) / MAX_JOBS_PER_PLOT))
+    failed_jobs_plots_count = int(np.ceil(len(failed_jobs_dict) / MAX_JOBS_PER_PLOT))
+    total_plots_count = normal_plots_count + failed_jobs_plots_count
+    # num_plots = norma 
+    # ind = np.arange(int(MAX_JOBS_PER_PLOT))
     width = 0.16
     # Creating stats figure + sanity check
-    if num_plots > MAX_NUM_PLOTS:
+    if total_plots_count > MAX_NUM_PLOTS:
         message = "The results are too large to be shown, try narrowing your query. \n Use a filter like -ft where you supply a list of job types, e.g. INI, SIM; \
-or -fp where you supply an integer that represents the number of hours into the past that should be queried: \
-suppose it is noon, if you supply -fp 5 the query will consider changes starting from 7:00 am. If you really wish to query the whole experiment, refer to Autosubmit GUI."
+        or -fp where you supply an integer that represents the number of hours into the past that should be queried: \
+        suppose it is noon, if you supply -fp 5 the query will consider changes starting from 7:00 am. If you really wish to query the whole experiment, refer to Autosubmit GUI."
         Log.info(message)
         raise AutosubmitCritical("Stats query out of bounds", 7061, message)
 
-    exp_stats = ExperimentStats(jobs_list, period_ini, period_fi)
-    fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
+
+
+    fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * total_plots_count))
 
     fig.suptitle('STATS - ' + experiment_id, fontsize=24, fontweight='bold')
     # Variables initialization
     ax, ax2 = [], []
-    rects = [None] * 6
+    rects = [None] * 5
+    # print("Normal plots: {}".format(normal_plots_count))
+    # print("Failed jobs plots: {}".format(failed_jobs_plots_count))
+    # print("Total plots: {}".format(total_plots_count))
+    grid_spec = gridspec.GridSpec(RATIO * total_plots_count + 2, 1)
+    i_plot = 0
+    for plot in xrange(1, normal_plots_count + 1):
+        try:
+            # Calculating jobs inside the given plot
+            l1 = int((plot - 1) * MAX_JOBS_PER_PLOT)
+            l2 = min(int(plot * MAX_JOBS_PER_PLOT), len(exp_stats.jobs_stat))
+            if l2 - l1 <= 0:
+                continue
+            ind = np.arange(l2 - l1)
+            # print("TOTAL {}".format(len(exp_stats.jobs_stat)))
+            # print("{} -> {}".format(l1,l2))            
+            # print(ind)
+            # Building plot axis
+            ax.append(fig.add_subplot(grid_spec[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
+            ax[plot - 1].set_ylabel('hours')
+            ax[plot - 1].set_xticks(ind + width)
+            ax[plot - 1].set_xticklabels(
+                [job.name for job in jobs_list[l1:l2]], rotation='vertical')
+            ax[plot - 1].set_title(experiment_id, fontsize=20)
+            upper_limit = round(1.10 * exp_stats.max_time, 4)
+            ax[plot - 1].set_yticks(np.arange(0, upper_limit, round(upper_limit/10, 4)))
+            ax[plot - 1].set_ylim(0, float(1.10 * exp_stats.max_time))
+            # Axis 2
+            # ax2.append(ax[plot - 1].twinx())
+            # ax2[plot - 1].set_ylabel('# failed jobs')
+            # ax2[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
+            # ax2[plot - 1].set_ylim(0, exp_stats.max_fail + 1)
+            # Building rects
+            rects[0] = ax[plot - 1].bar(ind, exp_stats.queued[l1:l2], width, color='lightpink')
+            rects[1] = ax[plot - 1].bar(ind + width, exp_stats.run[l1:l2], width, color='green')
+            # rects[2] = ax2[plot - 1].bar(ind + width * 2, exp_stats.failed_jobs[l1:l2], width, color='red')
+            rects[2] = ax[plot - 1].bar(ind + width * 3, exp_stats.fail_queued[l1:l2], width, color='lightsalmon')
+            rects[3] = ax[plot - 1].bar(ind + width * 4, exp_stats.fail_run[l1:l2], width, color='salmon')
+            rects[4] = ax[plot - 1].plot([0., width * 6 * MAX_JOBS_PER_PLOT], [exp_stats.threshold, exp_stats.threshold], "k--", label='wallclock sim')
+            i_plot = plot
+        except Exception as exp:
+            print(traceback.format_exc())
+            print(exp)
+    
+    job_names_in_failed = [name for name in exp_stats.failed_jobs_dict]
+    failed_jobs_rects = [None]
+    for j_plot in range(1, failed_jobs_plots_count + 1):
+        try:
+            l1 = int((j_plot - 1) * MAX_JOBS_PER_PLOT)
+            l2 = min(int(j_plot * MAX_JOBS_PER_PLOT), len(job_names_in_failed))
+            if l2 - l1 <= 0:
+                continue
+            ind = np.arange(l2 - l1)
+            # print("TOTAL {}".format(len(job_names_in_failed)))
+            # print("{} -> {}".format(l1,l2))            
+            # print(ind)
+            # print("i {}, j {}".format(i_plot, j_plot))
+            plot = i_plot + j_plot 
+            ax.append(fig.add_subplot(grid_spec[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
+            # print("len {}, plot {}".format(len(ax), plot))
+            ax[plot - 1].set_ylabel('# failed attempts')
+            ax[plot - 1].set_xticks(ind + width)
+            ax[plot - 1].set_xticklabels([name for name in job_names_in_failed[l1:l2]], rotation='vertical')
+            ax[plot - 1].set_title(experiment_id, fontsize=20)
+            ax[plot - 1].set_ylim(0, float(1.10 * exp_stats.max_fail))
+            ax[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
+            # Axis 2
+            # ax2.append(ax[plot - 1].twinx())
+            # ax2[plot - 1].set_ylabel('# failed attempts')
+            # ax2[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
+            # ax2[plot - 1].set_ylim(0, exp_stats.max_fail + 1)
+            failed_jobs_rects[0] = ax[plot - 1].bar(ind + width * 2, [exp_stats.failed_jobs_dict[name] for name in job_names_in_failed[l1:l2]], width, color='red')
+        except Exception as exp:
+            print(traceback.format_exc())
+            print(exp)
 
-    grid_spec = gridspec.GridSpec(RATIO * num_plots + 2, 1)
 
-    for plot in xrange(1, num_plots + 1):
-        # Calculating jobs inside the given plot
-        l1 = int((plot - 1) * MAX_JOBS_PER_PLOT)
-        l2 = int(plot * MAX_JOBS_PER_PLOT)
-        # Building plot axis
-        ax.append(fig.add_subplot(
-            grid_spec[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
-        ax[plot - 1].set_ylabel('hours')
-        ax[plot - 1].set_xticks(ind + width)
-        ax[plot - 1].set_xticklabels(
-            [job.name for job in jobs_list[l1:l2]], rotation='vertical')
-        ax[plot - 1].set_title(experiment_id, fontsize=20)
-        ax[plot - 1].set_ylim(0, float(1.10 * exp_stats.max_time))
-        # Axis 2
-        ax2.append(ax[plot - 1].twinx())
-        ax2[plot - 1].set_ylabel('# failed jobs')
-        ax2[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
-        ax2[plot - 1].set_ylim(0, exp_stats.max_fail + 1)
-        # Building rects
-        rects[0] = ax[plot -
-                      1].bar(ind, exp_stats.queued[l1:l2], width, color='orchid')
-        rects[1] = ax[plot - 1].bar(ind + width,
-                                    exp_stats.run[l1:l2], width, color='limegreen')
-        rects[2] = ax2[plot - 1].bar(ind + width * 2,
-                                     exp_stats.failed_jobs[l1:l2], width, color='red')
-        rects[3] = ax[plot - 1].bar(ind + width * 3,
-                                    exp_stats.fail_queued[l1:l2], width, color='purple')
-        rects[4] = ax[plot - 1].bar(ind + width * 4,
-                                    exp_stats.fail_run[l1:l2], width, color='tomato')
-        rects[5] = ax[plot - 1].plot([0., width * 6 * MAX_JOBS_PER_PLOT], [exp_stats.threshold, exp_stats.threshold],
-                                     "k--", label='wallclock sim')
 
     # Building legends subplot
     legends_plot = fig.add_subplot(grid_spec[0, 0])
@@ -110,14 +177,19 @@ suppose it is noon, if you supply -fp 5 the query will consider changes starting
     legends_plot.axes.get_xaxis().set_visible(False)
     legends_plot.axes.get_yaxis().set_visible(False)
 
-    # Building legends
-    build_legends(legends_plot, rects, exp_stats, general_stats)
+    try:
+        # Building legends
+        # print("Legends")
+        build_legends(legends_plot, rects, exp_stats, general_stats)
+        
+        # Saving output figure
+        grid_spec.tight_layout(fig, rect=[0, 0.03, 1, 0.97])
+        plt.savefig(output_file)
 
-    # Saving output figure
-    grid_spec.tight_layout(fig, rect=[0, 0.03, 1, 0.97])
-    plt.savefig(output_file)
-
-    create_csv_stats(exp_stats, jobs_list, output_file)
+        create_csv_stats(exp_stats, jobs_list, output_file)
+    except Exception as exp:
+        print(exp)
+        print(traceback.format_exc())
 
 
 def create_csv_stats(exp_stats, jobs_list, output_file):
@@ -137,11 +209,11 @@ def create_csv_stats(exp_stats, jobs_list, output_file):
 
 
 def build_legends(plot, rects, experiment_stats, general_stats):
+    # type: (plt.figure, List[plt.bar], Statistics, List[str]) -> None
     # Main legend with colourful rectangles
     legend_rects = [[rect[0] for rect in rects]]
     legend_titles = [
-        ['Queued (h)', 'Run (h)', 'Failed jobs (#)',
-         'Fail Queued (h)', 'Fail Run (h)', 'Max wallclock (h)']
+        ['Queued (h)', 'Run (h)', 'Fail Queued (h)', 'Fail Run (h)', 'Max wallclock (h)']
     ]
     legend_locs = ["upper right"]
     legend_handlelengths = [None]
@@ -149,20 +221,19 @@ def build_legends(plot, rects, experiment_stats, general_stats):
     # General stats legends, if exists
     if len(general_stats) > 0:
         legend_rects.append(get_whites_array(len(general_stats)))
-        legend_titles.append([str(key) + ': ' + str(value)
-                              for key, value in general_stats])
+        legend_titles.append([str(key) + ': ' + str(value) for key, value in general_stats])
         legend_locs.append("upper center")
         legend_handlelengths.append(0)
 
     # Total stats legend
-    legend_rects.append(get_whites_array(len(experiment_stats.totals)))
-    legend_titles.append(experiment_stats.totals)
+    stats_summary_as_list = experiment_stats.get_summary_as_list()
+    legend_rects.append(get_whites_array(len(stats_summary_as_list)))
+    legend_titles.append(stats_summary_as_list)
     legend_locs.append("upper left")
     legend_handlelengths.append(0)
 
     # Creating the legends
-    legends = create_legends(
-        plot, legend_rects, legend_titles, legend_locs, legend_handlelengths)
+    legends = create_legends(plot, legend_rects, legend_titles, legend_locs, legend_handlelengths)
     for legend in legends:
         plt.gca().add_artist(legend)
 
