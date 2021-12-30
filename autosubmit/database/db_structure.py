@@ -27,6 +27,7 @@ import traceback
 import sqlite3
 import copy
 from datetime import datetime
+from typing import Dict, List
 from log.log import Log, AutosubmitError, AutosubmitCritical
 # from networkx import DiGraph
 
@@ -34,14 +35,14 @@ from log.log import Log, AutosubmitError, AutosubmitCritical
 
 
 def get_structure(exp_id, structures_path):
+    # type: (str, str) -> Dict[str, List[str]]
     """
     Creates file of database and table of experiment structure if it does not exist. Returns current structure.
 
     :return: Map from experiment name source to name destination  
     :rtype: Dictionary Key: String, Value: List(of String)
     """
-    try:
-        #pkl_path = os.path.join(exp_path, exp_id, "pkl")
+    try:        
         if os.path.exists(structures_path):
             db_structure_path = os.path.join(
                 structures_path, "structure_" + exp_id + ".db")
@@ -57,29 +58,20 @@ def get_structure(exp_id, structures_path):
             UNIQUE(e_from,e_to)
             );''')
             create_table(conn, create_table_query)
-            current_table = _get_exp_structure(db_structure_path)
-            # print("Current table: ")
-            # print(current_table)
+            current_table = _get_exp_structure(db_structure_path)            
             current_table_structure = dict()
             for item in current_table:
                 _from, _to = item
-                if _from not in current_table_structure.keys():
-                    current_table_structure[_from] = list()
-                if _to not in current_table_structure.keys():
-                    current_table_structure[_to] = list()
-                current_table_structure[_from].append(_to)
-            if (len(current_table_structure.keys()) > 0):
-                # print("Return structure")
-                return current_table_structure
-            else:
-                return None
-        else:
-            # pkl folder not found
+                current_table_structure.setdefault(_from, []).append(_to)
+                current_table_structure.setdefault(_to, [])
+            return current_table_structure            
+        else:            
             raise Exception("Structures folder not found " +
                             str(structures_path))
     except Exception as exp:
         Log.printlog("Get structure error: {0}".format(str(exp)), 6014)
         Log.debug(traceback.format_exc())
+        
 
 
 def create_connection(db_file):

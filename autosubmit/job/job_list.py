@@ -26,9 +26,13 @@ import json
 import re
 import os
 import pickle
-from time import localtime, strftime
+import traceback
+import math
+
+from time import localtime, strftime, mktime
 from shutil import move
 from autosubmit.job.job import Job
+from autosubmit.job.job_package_persistence import JobPackagePersistence
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_utils import Dependency
 from autosubmit.job.job_common import Status, bcolors
@@ -42,6 +46,7 @@ from threading import Thread, Lock
 import multiprocessing
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
+from autosubmit.helpers.data_transfer import JobRow
 from typing import List, Dict
 import log.fd_show
 # Log.get_logger("Log.Autosubmit")
@@ -2084,3 +2089,279 @@ class JobList(object):
                            "] " if nocolor == True else "")
 
         return result
+    
+    @staticmethod
+    def retrieve_packages(BasicConfig, expid, current_jobs=None):
+        """
+        Retrieves dictionaries that map the collection of packages in the experiment
+
+        :param BasicConfig: Basic configuration 
+        :type BasicConfig: Configuration Object
+        :param expid: Experiment Id
+        :type expid: String
+        :param current_jobs: list of names of current jobs
+        :type current_jobs: list
+        :return: job to package, package to jobs, package to package_id, package to symbol  
+        :rtype: Dictionary(Job Object, Package), Dictionary(Package, List of Job Objects), Dictionary(String, String), Dictionary(String, String)
+        """
+        # monitor = Monitor()
+        packages = None
+        try:
+            packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                             "job_packages_" + expid).load(wrapper=False)
+        except Exception as ex:
+            print("Wrapper table not found, trying packages.")
+            packages = None
+            try:
+                packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                                 "job_packages_" + expid).load(wrapper=True)
+            except Exception as exp2:
+                packages = None
+                pass
+            pass
+
+        job_to_package = dict()
+        package_to_jobs = dict()
+        package_to_package_id = dict()
+        package_to_symbol = dict()
+        if (packages):
+            try:
+                for exp, package_name, job_name in packages:
+                    if len(str(package_name).strip()) > 0:
+                        if (current_jobs):
+                            if job_name in current_jobs:
+                                job_to_package[job_name] = package_name
+                        else:
+                            job_to_package[job_name] = package_name
+                    # list_packages.add(package_name)
+                for name in job_to_package:
+                    package_name = job_to_package[name]
+                    package_to_jobs.setdefault(package_name, []).append(name)
+                    # if package_name not in package_to_jobs.keys():
+                    #     package_to_jobs[package_name] = list()
+                    # package_to_jobs[package_name].append(name)
+                for key in package_to_jobs:
+                    package_to_package_id[key] = key.split("_")[2]
+                list_packages = job_to_package.values()
+                for i in range(len(list_packages)):
+                    if i % 2 == 0:
+                        package_to_symbol[list_packages[i]] = 'square'
+                    else:
+                        package_to_symbol[list_packages[i]] = 'hexagon'
+            except Exception as ex:
+                print(traceback.format_exc())
+
+        return (job_to_package, package_to_jobs, package_to_package_id, package_to_symbol)
+
+    @staticmethod
+    def retrieve_times(status_code, name, tmp_path, make_exception=False, job_times=None, seconds=False, job_data_collection=None):
+        """
+        Retrieve job timestamps from database.  
+        :param status_code: Code of the Status of the job  
+        :type status_code: Integer  
+        :param name: Name of the job  
+        :type name: String  
+        :param tmp_path: Path to the tmp folder of the experiment  
+        :type tmp_path: String  
+        :param make_exception: flag for testing purposes  
+        :type make_exception: Boolean
+        :param job_times: Detail from as_times.job_times for the experiment
+        :type job_times: Dictionary Key: job name, Value: 5-tuple (submit time, start time, finish time, status, detail id)
+        :return: minutes the job has been queuing, minutes the job has been running, and the text that represents it  
+        :rtype: int, int, str
+        """
+        status = "NA"
+        energy = 0
+        seconds_queued = 0
+        seconds_running = 0
+        queue_time = running_time = 0
+        submit_time = datetime.timedelta()
+        start_time = datetime.timedelta()
+        finish_time = datetime.timedelta()
+        running_for_min = datetime.timedelta()
+        queuing_for_min = datetime.timedelta()
+
+        try:
+            # Getting data from new job database
+            if job_data_collection is not None:
+                job_data = next(
+                    (job for job in job_data_collection if job.job_name == name), None)
+                if job_data:
+                    status = Status.VALUE_TO_KEY[status_code]
+                    if status == job_data.status:
+                        energy = job_data.energy
+                        t_submit = job_data.submit
+                        t_start = job_data.start
+                        t_finish = job_data.finish
+                        # Test if start time does not make sense
+                        if t_start >= t_finish:
+                            if job_times:
+                                _, c_start, c_finish, _, _ = job_times.get(
+                                    name, (0, t_start, t_finish, 0, 0))
+                                t_start = c_start if t_start > c_start else t_start
+                                job_data.start = t_start
+
+                        if seconds == False:
+                            queue_time = math.ceil(
+                                job_data.queuing_time() / 60)
+                            running_time = math.ceil(
+                                job_data.running_time() / 60)
+                        else:
+                            queue_time = job_data.queuing_time()
+                            running_time = job_data.running_time()
+
+                        if status_code in [Status.SUSPENDED]:
+                            t_submit = t_start = t_finish = 0
+
+                        return JobRow(job_data.job_name, int(queue_time), int(running_time), status, energy, JobList.ts_to_datetime(t_submit), JobList.ts_to_datetime(t_start), JobList.ts_to_datetime(t_finish), job_data.ncpus, job_data.run_id)
+
+            # Using standard procedure
+            if status_code in [Status.RUNNING, Status.SUBMITTED, Status.QUEUING, Status.FAILED] or make_exception == True:
+                # COMPLETED adds too much overhead so these values are now stored in a database and retrieved separatedly
+                submit_time, start_time, finish_time, status = JobList._job_running_check(
+                    status_code, name, tmp_path)
+                if status_code in [Status.RUNNING, Status.FAILED]:
+                    running_for_min = (finish_time - start_time)
+                    queuing_for_min = (start_time - submit_time)
+                    submit_time = mktime(submit_time.timetuple())
+                    start_time = mktime(start_time.timetuple())
+                    finish_time = mktime(finish_time.timetuple()) if status_code in [
+                        Status.FAILED] else 0
+                else:
+                    queuing_for_min = (
+                        datetime.datetime.now() - submit_time)
+                    running_for_min = datetime.datetime.now() - datetime.datetime.now()
+                    submit_time = mktime(submit_time.timetuple())
+                    start_time = 0
+                    finish_time = 0
+
+                submit_time = int(submit_time)
+                start_time = int(start_time)
+                finish_time = int(finish_time)
+                seconds_queued = queuing_for_min.total_seconds()
+                seconds_running = running_for_min.total_seconds()
+
+            else:
+                # For job times completed we no longer use timedeltas, but timestamps
+                status = Status.VALUE_TO_KEY[status_code]
+                if (job_times) and status_code not in [Status.READY, Status.WAITING, Status.SUSPENDED]:
+                    if name in job_times.keys():
+                        submit_time, start_time, finish_time, status, detail_id = job_times[
+                            name]
+                        seconds_running = finish_time - start_time
+                        seconds_queued = start_time - submit_time
+                        submit_time = int(submit_time)
+                        start_time = int(start_time)
+                        finish_time = int(finish_time)
+                else:
+                    submit_time = 0
+                    start_time = 0
+                    finish_time = 0
+
+        except Exception as exp:
+            print(traceback.format_exc())
+            return
+
+        seconds_queued = seconds_queued * \
+            (-1) if seconds_queued < 0 else seconds_queued
+        seconds_running = seconds_running * \
+            (-1) if seconds_running < 0 else seconds_running
+        if seconds == False:
+            queue_time = math.ceil(
+                seconds_queued / 60) if seconds_queued > 0 else 0
+            running_time = math.ceil(
+                seconds_running / 60) if seconds_running > 0 else 0
+        else:
+            queue_time = seconds_queued
+            running_time = seconds_running
+
+        return JobRow(name, 
+                    int(queue_time), 
+                    int(running_time), 
+                    status, 
+                    energy, 
+                    JobList.ts_to_datetime(submit_time), 
+                    JobList.ts_to_datetime(start_time), 
+                    JobList.ts_to_datetime(finish_time), 
+                    0,
+                    0)
+    
+    @staticmethod
+    def _job_running_check(status_code, name, tmp_path):
+        """
+        Receives job data and returns the data from its TOTAL_STATS file in an ordered way.  
+        :param status_code: Status of job  
+        :type status_code: Integer  
+        :param name: Name of job  
+        :type name: String  
+        :param tmp_path: Path to the tmp folder of the experiment  
+        :type tmp_path: String  
+        :return: submit time, start time, end time, status  
+        :rtype: 4-tuple in datetime format
+        """
+        # name = "a2d0_20161226_001_124_ARCHIVE"
+        values = list()
+        status_from_job = str(Status.VALUE_TO_KEY[status_code])
+        now = datetime.datetime.now()
+        submit_time = now
+        start_time = now
+        finish_time = now
+        current_status = status_from_job
+        path = os.path.join(tmp_path, name + '_TOTAL_STATS')
+        # print("Looking in " + path)
+        if os.path.exists(path):
+            request = 'tail -1 ' + path
+            last_line = os.popen(request).readline()
+            # print(last_line)
+
+            values = last_line.split()
+            # print(last_line)
+            try:
+                if status_code in [Status.RUNNING]:
+                    submit_time = parse_date(
+                        values[0]) if len(values) > 0 else now
+                    start_time = parse_date(values[1]) if len(
+                        values) > 1 else submit_time
+                    finish_time = now
+                elif status_code in [Status.QUEUING, Status.SUBMITTED, Status.HELD]:
+                    submit_time = parse_date(
+                        values[0]) if len(values) > 0 else now
+                    start_time = parse_date(
+                        values[1]) if len(values) > 1 and values[0] != values[1] else now
+                elif status_code in [Status.COMPLETED]:
+                    submit_time = parse_date(
+                        values[0]) if len(values) > 0 else now
+                    start_time = parse_date(
+                        values[1]) if len(values) > 1 else submit_time
+                    if len(values) > 3:
+                        finish_time = parse_date(values[len(values) - 2])
+                    else:
+                        finish_time = submit_time
+                else:
+                    submit_time = parse_date(
+                        values[0]) if len(values) > 0 else now
+                    start_time = parse_date(values[1]) if len(
+                        values) > 1 else submit_time
+                    finish_time = parse_date(values[2]) if len(
+                        values) > 2 else start_time
+            except Exception as exp:
+                start_time = now
+                finish_time = now
+                # NA if reading fails
+                current_status = "NA"
+
+        current_status = values[3] if (len(values) > 3 and len(
+            values[3]) != 14) else status_from_job
+        # TOTAL_STATS last line has more than 3 items, status is different from pkl, and status is not "NA"
+        if len(values) > 3 and current_status != status_from_job and current_status != "NA":
+            current_status = "SUSPICIOUS"
+        return (submit_time, start_time, finish_time, current_status)
+    
+    @staticmethod
+    def ts_to_datetime(timestamp):
+        if timestamp and timestamp > 0:
+            # print(datetime.datetime.utcfromtimestamp(
+            #     timestamp).strftime('%Y-%m-%d %H:%M:%S'))
+            return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            return None

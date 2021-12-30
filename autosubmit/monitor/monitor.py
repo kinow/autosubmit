@@ -31,12 +31,14 @@ import copy
 import subprocess
 
 from autosubmit.job.job_common import Status
+from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from bscearth.utils.config_parser import ConfigParserFactory
 
 from diagram import create_bar_diagram
+from typing import Dict, List
 
 
 class Monitor:
@@ -394,7 +396,8 @@ class Monitor:
                 self.write_output_txt_recursive(
                     child, output_file, "_" + level, path)
 
-    def generate_output_stats(self, expid, joblist, output_format="pdf", period_ini=None, period_fi=None, show=False):
+    def generate_output_stats(self, expid, joblist, output_format="pdf", period_ini=None, period_fi=None, show=False, queue_time_fixes=None):
+        # type: (str, List[Job], str, datetime.datetime, datetime.datetime, bool, Dict[str, int]) -> None
         """
         Plots stats for joblist and stores it in a file
 
@@ -422,8 +425,7 @@ class Monitor:
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats", expid + "_statistics_" + output_date +
                                    "." + output_format)
 
-        create_bar_diagram(expid, joblist, self.get_general_stats(
-            expid), output_file, period_ini, period_fi)
+        create_bar_diagram(expid, joblist, self.get_general_stats(expid), output_file, period_ini, period_fi, queue_time_fixes)
         Log.result('Stats created at {0}', output_file)
         if show:
             try:
@@ -475,6 +477,7 @@ class Monitor:
 
     @staticmethod
     def get_general_stats(expid):
+        # type: (str) -> List[str]
         """
         Returns all the options in the sections of the %expid%_GENERAL_STATS
 
@@ -486,9 +489,10 @@ class Monitor:
         general_stats = []
         general_stats_path = os.path.join(
             BasicConfig.LOCAL_ROOT_DIR, expid, "tmp", expid + "_GENERAL_STATS")
-        parser = AutosubmitConfig.get_parser(
-            ConfigParserFactory(), general_stats_path)
-        for section in parser.sections():
-            general_stats.append((section, ''))
-            general_stats += parser.items(section)        
+        if os.path.exists(general_stats_path):
+            parser = AutosubmitConfig.get_parser(
+                ConfigParserFactory(), general_stats_path)
+            for section in parser.sections():
+                general_stats.append((section, ''))
+                general_stats += parser.items(section)        
         return general_stats
