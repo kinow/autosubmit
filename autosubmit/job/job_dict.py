@@ -68,7 +68,7 @@ class DicJobs:
         :type priority: int
         """
         running = 'once'
-        splits = int(self.get_option(section, "SPLITS", 0))
+        splits = int(self.get_option(section, "SPLITS", -1))
 
         if self._parser.has_option(section, 'RUNNING'):
             running = self._parser.get(section, 'RUNNING').lower()
