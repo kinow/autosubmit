@@ -200,6 +200,14 @@ class AutosubmitGit:
                                                                                             git_project_origin, git_path,
                                                                                             git_project_commit,
                                                                                             project_destination)
+                if os.path.exists(os.path.join(git_path, ".githooks")):
+                    try:
+                        command = "cd {0}; git config core.hooksPath .githooks".format(git_path)
+                        output = subprocess.check_output(command, shell=True)
+                    except subprocess.CalledProcessError as e:
+                        Log.debug("Can not set the githook folder: {0}".format(os.path.join(git_path, ".githooks")))
+                    except BaseException as e:
+                        Log.debug("Can not set the githook folder: {0}".format(os.path.join(git_path, ".githooks")))
                 if git_project_submodules.__len__() <= 0:
                     command += " git submodule update --init --recursive"
                 else:
@@ -278,6 +286,7 @@ class AutosubmitGit:
             Log.info(
                 "Some Submodule failures have been detected. Backup {0} will not be removed.".format(project_backup_path))
             return False
+
         if os.path.exists(project_backup_path):
             Log.info("Removing backup...")
             shutil.rmtree(project_backup_path)
