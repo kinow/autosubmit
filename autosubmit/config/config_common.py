@@ -350,6 +350,7 @@ class AutosubmitConfig(object):
         :param section: platform name
         :type: str
         """
+
         with open(self._platforms_parser_file) as p_file:
             contentLine = p_file.readline()
             contentToMod = ""
