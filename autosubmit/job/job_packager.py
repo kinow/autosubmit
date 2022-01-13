@@ -236,10 +236,15 @@ class JobPackager(object):
             wrapper_defined = False
 
             for wrapper_section in self.jobs_in_wrapper:
-                if section in self.jobs_in_wrapper[wrapper_section]:
-                    wrapper_defined = True
-                    self.current_wrapper_section = wrapper_section
-                    break
+                if "&" in self.jobs_in_wrapper[wrapper_section]:
+                    char = "&"
+                else:
+                    char = " "
+                for section_inside_wrapper in self.jobs_in_wrapper[wrapper_section].split(char):
+                    if section == section_inside_wrapper:
+                        wrapper_defined = True
+                        self.current_wrapper_section = wrapper_section
+                        break
             if wrapper_defined and self._platform.allow_wrappers and self.wrapper_type[self.current_wrapper_section] in ['horizontal', 'vertical','vertical-horizontal', 'horizontal-vertical'] :
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
                 wrapper_limits = dict()
@@ -457,7 +462,7 @@ class JobPackager(object):
                                             if min_v > 1:
                                                 message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.conf.".format(wallclock_sum)
                                             else:
-                                                message += "\nCheck your configuration: Only jobs_in_wrappers are active, check your jobs_in_wrapper dependencies."
+                                                message += "\nCheck your configuration: Only jobs_in_wrappers are active, check their dependencies."
                                             if not balanced:
                                                 message += "\nPackages are not well balanced: Check your dependencies(This is not the main cause of the Critical error)"
                                             if len(self._jobs_list.get_in_queue()) == 0:
