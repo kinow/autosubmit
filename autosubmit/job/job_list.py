@@ -245,7 +245,7 @@ class JobList(object):
                 else:
                     self._ordered_jobs_by_date_member[wrapper_section] = {}
         except BaseException as e:
-            raise AutosubmitCritical("Some of {0} are not in the current job_list defined in jobs.conf".format(wrapper_jobs),7000)
+            raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.conf".format(wrapper_section),7000,e.message)
         pass
 
 
@@ -594,12 +594,7 @@ class JobList(object):
             for member in self._member_list:
                 dict_jobs[date][member] = list()
         num_chunks = len(self._chunk_list)
-        # Select only relevant jobs, those belonging to the sections defined in the wrapper
-        filtered_jobs_list = filter(
-            lambda job: job.section in wrapper_jobs, self._job_list)
 
-        filtered_jobs_fake_date_member, fake_original_job_map = self._create_fake_dates_members(
-            filtered_jobs_list)
 
         sections_running_type_map = dict()
         if "&" in wrapper_jobs:
@@ -608,8 +603,15 @@ class JobList(object):
             char = " "
         for section in wrapper_jobs.split(char):
             # RUNNING = once, as default. This value comes from jobs_.conf
-            sections_running_type_map[section] = self._dic_jobs.get_option(
-                section, "RUNNING", 'once')
+            sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", 'once')
+
+        # Select only relevant jobs, those belonging to the sections defined in the wrapper
+        filtered_jobs_list = list()
+        for section in sections_running_type_map:
+            filtered_jobs_list += filter(lambda job: job.section == section, self._job_list)
+
+        filtered_jobs_fake_date_member, fake_original_job_map = self._create_fake_dates_members(
+            filtered_jobs_list)
 
         for date in self._date_list:
             str_date = self._get_date(date)
