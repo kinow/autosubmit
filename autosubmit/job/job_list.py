@@ -601,14 +601,18 @@ class JobList(object):
             char = "&"
         else:
             char = " "
-        for section in wrapper_jobs.split(char):
+        wrapper_jobs_reverse = wrapper_jobs.split(char)
+        for section in wrapper_jobs_reverse:
             # RUNNING = once, as default. This value comes from jobs_.conf
             sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", 'once')
 
         # Select only relevant jobs, those belonging to the sections defined in the wrapper
-        filtered_jobs_list = list()
+
+        sections_to_filter = ""
         for section in sections_running_type_map:
-            filtered_jobs_list += filter(lambda job: job.section == section, self._job_list)
+            sections_to_filter += section
+
+        filtered_jobs_list = filter(lambda job: job.section in sections_running_type_map, self._job_list)
 
         filtered_jobs_fake_date_member, fake_original_job_map = self._create_fake_dates_members(
             filtered_jobs_list)
