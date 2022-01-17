@@ -3,7 +3,9 @@
 How to restart the experiment
 =============================
 
-This procedure allows you to restart an experiment. Autosubmit looks for the COMPLETED file for jobs that are considered active (SUBMITTED, QUEUING, RUNNING), UNKNOWN or READY
+This procedure allows you to restart an experiment. Autosubmit looks for the COMPLETED file for jobs that are considered active (SUBMITTED, QUEUING, RUNNING), UNKNOWN or READY.
+
+.. warning:: You can only restart the experiment if there are not active jobs. You can use -f flag to cancel running jobs automatically.
 
 You must execute:
 ::
@@ -21,6 +23,7 @@ Options:
 
         -h, --help  show this help message and exit
         -np, --noplot  omit plot
+        -f             Allows to perform the recovery even if there are active jobs
         --all        Get all completed files to synchronize pkl
         -s, --save  Save changes to disk
         -group_by {date,member,chunk,split,automatic}
