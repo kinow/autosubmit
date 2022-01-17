@@ -508,8 +508,10 @@ class ParamikoPlatform(Platform):
             job_list_cmd=job_list_cmd[:-1]
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
         sleep_time = 5
-
-        while not (self.send_command(cmd) and retries >= 0) or (not self._check_jobid_in_queue(self.get_ssh_output(), job_list_cmd) and retries >= 0):
+        sleep(sleep_time)
+        self.send_command(cmd)
+        while not self._check_jobid_in_queue(self.get_ssh_output(), job_list_cmd) and retries >= 0:
+            self.send_command(cmd)
             retries -= 1
             Log.debug('Retrying check job command: {0}', cmd)
             Log.debug('retries left {0}', retries)
