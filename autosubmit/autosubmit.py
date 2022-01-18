@@ -1948,7 +1948,7 @@ class Autosubmit:
         except AutosubmitCritical as e:
             raise AutosubmitCritical(e.message, e.code, e.trace)
         except BaseException as e:
-            raise
+            raise AutosubmitCritical("This seems like a bug in the code, please contact AS developers", 7000,e.message)
 
     @staticmethod
     def restore_platforms(platform_to_test,mail_notify=False,as_conf=None,expid=expid):
