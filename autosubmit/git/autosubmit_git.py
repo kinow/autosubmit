@@ -202,12 +202,12 @@ class AutosubmitGit:
                                                                                             project_destination)
                 if os.path.exists(os.path.join(git_path, ".githooks")):
                     try:
-                        command = "cd {0}; git config core.hooksPath .githooks".format(git_path)
-                        output = subprocess.check_output(command, shell=True)
+
+                        command += "; cd {0} ; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
                     except subprocess.CalledProcessError as e:
-                        Log.debug("Can not set the githook folder: {0}".format(os.path.join(git_path, ".githooks")))
+                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
                     except BaseException as e:
-                        Log.debug("Can not set the githook folder: {0}".format(os.path.join(git_path, ".githooks")))
+                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
                 if git_project_submodules.__len__() <= 0:
                     command += " git submodule update --init --recursive"
                 else:
@@ -248,6 +248,12 @@ class AutosubmitGit:
                     else:
                         command += " git clone --single-branch  --recursive -b {0} {1} {2}".format(git_project_branch, git_project_origin,
                                                                                                    project_destination)
+                    try:
+                        command += "; cd {0} ; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
+                    except subprocess.CalledProcessError as e:
+                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
+                    except BaseException as e:
+                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
                 else:
                     if not git_single_branch:
                         command += " git clone -b {0} {1} {2};".format(git_project_branch, git_project_origin,
@@ -256,6 +262,13 @@ class AutosubmitGit:
                         command += " git clone --single-branch -b {0} {1} {2};".format(git_project_branch,
                                                                                        git_project_origin,
                                                                                        project_destination)
+                    try:
+
+                        command += "; cd {0} ; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
+                    except subprocess.CalledProcessError as e:
+                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
+                    except BaseException as e:
+                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
 
                     command += " cd {0}; git submodule init;".format(
                         project_destination)
@@ -290,4 +303,10 @@ class AutosubmitGit:
         if os.path.exists(project_backup_path):
             Log.info("Removing backup...")
             shutil.rmtree(project_backup_path)
+        if os.path.exists(os.path.join(git_path, ".githooks")):
+            for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
+                for f_dir in dirs:
+                    os.chmod(os.path.join(root_dir, f_dir), 0o750)
+                for f_file in files:
+                    os.chmod(os.path.join(root_dir, f_file), 0o750)
         return True

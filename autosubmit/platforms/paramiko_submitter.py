@@ -75,6 +75,7 @@ class ParamikoSubmitter(Submitter):
 
         platforms_used = list()
         hpcarch = asconf.get_platform()
+        platforms_used.append(hpcarch)
 
         # Traverse jobs defined in jobs_.conf and add platforms found if not already included
         job_parser = asconf.jobs_parser

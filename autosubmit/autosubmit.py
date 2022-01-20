@@ -4244,8 +4244,8 @@ class Autosubmit:
             submitter.load_platforms(as_conf)
             try:
                 hpcarch = submitter.platforms[as_conf.get_platform()]
-            except:
-                raise AutosubmitCritical("Can't set main platform", 7014)
+            except BaseException as e:
+                raise AutosubmitCritical("Can't set main platform", 7014, e.message)
 
             return AutosubmitGit.clone_repository(as_conf, force, hpcarch)
         elif project_type == "svn":
