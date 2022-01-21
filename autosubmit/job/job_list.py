@@ -297,7 +297,7 @@ class JobList(object):
             if '[' in section:
                 section_name = section[0:section.find("[")]
                 splits_section = int(
-                    dic_jobs.get_option(section_name, 'SPLITS', 0))
+                    dic_jobs.get_option(section_name, 'SPLITS', -1))
                 splits = JobList._calculate_splits_dependencies(
                     section, splits_section)
                 section = section_name

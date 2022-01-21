@@ -101,9 +101,10 @@ class DicJobs:
             job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, -1)
             self._dic[section] = job
             self._jobs_list.graph.add_node(job.name)
+        else:
+            self._dic[section] = []
         total_jobs = 1
         while total_jobs <= splits:
-            self._dic[section] = []
             job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, total_jobs)
             self._dic[section].append(job)
             self._jobs_list.graph.add_node(job.name)
@@ -163,6 +164,9 @@ class DicJobs:
             tmp_dic[section][date] = dict()
             self._dic[section][date] = dict()
             count = 0
+            if splits > 0:
+                for member in self._member_list:
+                    tmp_dic[section][date][member] = []
             for member in self._member_list:
                 count += 1
                 if count % frequency == 0 or count == len(self._member_list):
@@ -170,10 +174,10 @@ class DicJobs:
                         self._dic[section][date][member] = self.build_job(section, priority, date, member, None,default_job_type, jobs_data,splits)
                         self._jobs_list.graph.add_node(self._dic[section][date][member].name)
                     else:
-                        tmp_dic[section][date][member] = []
                         self._create_jobs_split(splits, section, date, member, None, priority,
                                                 default_job_type, jobs_data, tmp_dic[section][date][member])
-                        self._dic[section][date][member] = tmp_dic[section]
+                        self._dic[section][date][member] = tmp_dic[section][date][member]
+
 
 
     def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, delay=0, splits=0, jobs_data=dict()):

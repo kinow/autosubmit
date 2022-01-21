@@ -108,9 +108,8 @@ Examples:
     [rerun]
     # Is a rerun or not? [Default: Do set FALSE]. BOOLEAN = TRUE, FALSE
     RERUN = FALSE
-    # If RERUN = TRUE then supply the list of chunks to rerun
-    # LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"
-    CHUNKLIST =
+    # If RERUN = TRUE then supply the list of jobs to rerun
+    RERUN_JOBLIST =
 
     [project]
     # Select project type. STRING = git, svn, local, none
@@ -182,7 +181,6 @@ Examples:
     # WAIT = False
     ## Defines if job is only to be executed in reruns. If not specified, defaults to false.
     # RERUN_ONLY = False
-    ## Defines jobs needed to be rerun if this job is going to be rerun
     ## Wallclock to be submitted to the HPC queue in format HH:MM
     # WALLCLOCK = 00:05
 

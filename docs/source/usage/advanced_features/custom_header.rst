@@ -39,7 +39,6 @@ In the file:
     # WAIT = False
     ## Defines if job is only to be executed in reruns. If not specified, defaults to false.
     # RERUN_ONLY = False
-    ## Defines jobs needed to be rerun if this job is going to be rerun
     ## Wallclock to be submitted to the HPC queue in format HH:MM
     # WALLCLOCK = 00:05
     ## Processors number to be submitted to the HPC. If not specified, defaults to 1.
