@@ -907,6 +907,9 @@ class Job(object):
         parameters['FAIL_COUNT'] = str(self.fail_count)
         parameters['SDATE'] = date2str(self.date, self.date_format)
         parameters['MEMBER'] = self.member
+        parameters['SPLIT'] = self.split
+        parameters['DELAY'] = self.delay
+        parameters['FREQUENCY'] = self.frequency
         if hasattr(self, 'retrials'):
             parameters['RETRIALS'] = self.retrials
         if hasattr(self, 'delay_retrials'):
@@ -918,9 +921,8 @@ class Job(object):
                 chunk = self.chunk
 
             parameters['CHUNK'] = chunk
-            parameters['SPLIT'] = self.split
-            parameters['DELAY'] = self.delay
-            parameters['FREQUENCY'] = self.frequency
+
+
             parameters['SYNCHRONIZE'] = self.synchronize
             parameters['PACKED'] = self.packed
             total_chunk = int(parameters['NUMCHUNKS'])
