@@ -910,6 +910,8 @@ class Job(object):
         parameters['SPLIT'] = self.split
         parameters['DELAY'] = self.delay
         parameters['FREQUENCY'] = self.frequency
+        parameters['SYNCHRONIZE'] = self.synchronize
+        parameters['PACKED'] = self.packed
         if hasattr(self, 'retrials'):
             parameters['RETRIALS'] = self.retrials
         if hasattr(self, 'delay_retrials'):
@@ -923,8 +925,7 @@ class Job(object):
             parameters['CHUNK'] = chunk
 
 
-            parameters['SYNCHRONIZE'] = self.synchronize
-            parameters['PACKED'] = self.packed
+
             total_chunk = int(parameters['NUMCHUNKS'])
             chunk_length = int(parameters['CHUNKSIZE'])
             chunk_unit = parameters['CHUNKSIZEUNIT'].lower()
