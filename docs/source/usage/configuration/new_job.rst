@@ -50,6 +50,10 @@ This is the minimum job definition and usually is not enough. You usually will n
     SELECT_MEMBERS = SIM*[1] # Enables the dependency of member BB. While AA, CC and DD won't be linked
 
 
+* EXCLUDED_CHUNKS (optional): With this parameter, you can prevent the generation of jobs for a list of chunks.
+
+* EXCLUDED_MEMBERS (optional): With this parameter, you can prevent the generation of jobs for a list of members.
+
 For jobs running in HPC platforms, usually you have to provide information about processors, wallclock times and more.
 To do this use:
 
