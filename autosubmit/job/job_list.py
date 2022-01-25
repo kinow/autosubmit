@@ -185,15 +185,12 @@ class JobList(object):
         """
         self._parameters = parameters
         self._date_list = date_list
-        self._member_list = member_list
-
         chunk_list = range(chunk_ini, num_chunks + 1)
         self._chunk_list = chunk_list
 
         jobs_parser = self._get_jobs_parser()
 
-        dic_jobs = DicJobs(self, jobs_parser, date_list, member_list,
-                           chunk_list, date_format, default_retrials)
+        dic_jobs = DicJobs(self, jobs_parser, date_list, member_list,chunk_list, date_format, default_retrials)
         self._dic_jobs = dic_jobs
         priority = 0
         if show_log:
@@ -365,7 +362,7 @@ class JobList(object):
                                                 for member_number in xrange(0, int(location[1]) + 1):
                                                     auxiliar_member_list.append(member_number)
                                             elif ':' == location[1]:
-                                                for member_number in xrange(int(location[0]) + 1, len(dic_jobs._chunk_list) - 1):
+                                                for member_number in xrange(int(location[0]) + 1, len(dic_jobs._member_list) - 1):
                                                     auxiliar_member_list.append(member_number)
                                     elif ',' in location:
                                         for member in location.split(','):
