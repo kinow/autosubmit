@@ -185,6 +185,7 @@ class JobList(object):
         """
         self._parameters = parameters
         self._date_list = date_list
+        self._member_list = member_list
         chunk_list = range(chunk_ini, num_chunks + 1)
         self._chunk_list = chunk_list
 
