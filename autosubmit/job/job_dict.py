@@ -53,30 +53,38 @@ class DicJobs:
         self.default_retrials = default_retrials
         self._dic = dict()
 
-    def parse_excluded(self, section,member=True):
+    def parse_relation(self, section,member=True, unparsed_option=[],called_from=""):
+        """
+        function to parse a list of chunks or members to be compressible for autosubmit member_list or chunk_list.
 
-        excluded_list = []
-        if member:
-            offset = 1
-            excluded_opt = self.get_option(section, "EXCLUDED_MEMBERS", [])
-        else:
-            offset = 1
-            excluded_opt = self.get_option(section, "EXCLUDED_CHUNKS", [])
-        if len(excluded_opt) > 0:
-            if '-' in excluded_opt or ':' in excluded_opt:
+        :param section: Which section is being parsed.
+        :type section: str
+        :param member: Is a member or chunk list?
+        :type member: bool
+        :param unparsed_option: List obtained from configuration files.
+        :type unparsed_option: list
+        :param called_from: Parameter used to show a more complete error message if something is not working correctly..
+        :type unparsed_option: str
+        """
+        parsed_list = []
+        offset = 1
+        if len(unparsed_option) > 0:
+            if '-' in unparsed_option or ':' in unparsed_option:
                 start_end = [-1, -1]
                 count = 0
-                if '-' in excluded_opt:
-                    for location in excluded_opt.split('-'):
+                if '-' in unparsed_option:
+                    for location in unparsed_option.split('-'):
+                        location = location.strip('[').strip(']').strip(':')
                         if location == "":
                             location = "-1"
-                        start_end[count] = int(location.strip('[').strip(']').strip['-'])
+                        start_end[count] = int(location)
                         count = count + 1
-                elif ':' in excluded_opt:
-                    for location in excluded_opt.split(':'):
+                elif ':' in unparsed_option:
+                    for location in unparsed_option.split(':'):
+                        location = location.strip('[').strip(']').strip(':')
                         if location == "":
                             location = "-1"
-                        start_end[count] = int(location.strip('[').strip(']').strip(':'))
+                        start_end[count] = int(location)
                         count = count + 1
                 if start_end[0] == -1 and start_end[1] == -1:
                     raise AutosubmitCritical(
@@ -84,39 +92,43 @@ class DicJobs:
                             section), 7000)
                 elif start_end[0] > -1 and start_end[1] == -1:
                     if member:
-                        for member_number in xrange(int(start_end[0]), len(self._member_list) ):
-                            excluded_list.append(member_number)
+                        for member_number in xrange(int(start_end[0]), len(self._member_list)):
+                            parsed_list.append(member_number)
                     else:
-                        for chunk in xrange(int(start_end[0]+1), len(self._chunk_list) +1 ): # chunk starts in 1
-                            excluded_list.append(chunk)
+                        for chunk in xrange(int(start_end[0]), len(self._chunk_list) + 1):  # chunk starts in 1
+                            parsed_list.append(chunk)
                 elif start_end[0] > -1 and start_end[1] > -1:
                     for item in xrange(int(start_end[0]), int(start_end[1]) + offset):
-                        excluded_list.append(item)
+                        parsed_list.append(item)
 
                 elif start_end[0] == -1 and start_end[1] > -1:
-                    for item in xrange(0, int(start_end[1]) + offset):
-                        excluded_list.append(item)
+                    if member:
+                        for item in xrange(0, int(start_end[1]) + offset):  # include last element
+                            parsed_list.append(item)
+                    else:
+                        for item in xrange(1, int(start_end[1]) + offset):  # include last element
+                            parsed_list.append(item)
                 elif start_end[0] > start_end[1]:
                     raise AutosubmitCritical(
-                        "Wrong format for excluded_member parameter in section {0}\nStart index is greater than ending index".format(
-                            section), 7000)
+                        "Wrong format for {1} parameter in section {0}\nStart index is greater than ending index".format(
+                            section,called_from), 7000)
                 else:
                     raise AutosubmitCritical(
-                        "Wrong format for excluded_member parameter in section {0}\nindex weren't found".format(
+                        "Wrong format for {1} parameter in section {0}\nindex weren't found".format(
                             section), 7000)
-            elif ',' in excluded_opt:
-                for item in excluded_opt.split(','):
-                    excluded_list.append(int(item.strip(": -")))
+            elif ',' in unparsed_option:
+                for item in unparsed_option.split(','):
+                    parsed_list.append(int(item.strip(": -[]")))
             else:
                 try:
-                    for item in excluded_opt.split(" "):
-                        excluded_list.append(int(item.strip(": -")))
+                    for item in unparsed_option.split(" "):
+                        parsed_list.append(int(item.strip(": -[]")))
                 except BaseException as e:
                     raise AutosubmitCritical(
-                        "Wrong format for excluded_member parameter in section {0}".format(section), 7000,
+                        "Wrong format for {1} parameter in section {0}".format(section,called_from), 7000,
                         e.message)
             pass
-        return excluded_list
+        return parsed_list
     def read_section(self, section, priority, default_job_type, jobs_data=dict()):
         """
         Read a section from jobs conf and creates all jobs for it
@@ -140,11 +152,11 @@ class DicJobs:
         elif running == 'date':
             self._create_jobs_startdate(section, priority, frequency, default_job_type, jobs_data,splits)
         elif running == 'member':
-            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits,self.parse_excluded(section,True))
+            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits,self.parse_relation(section,True,self.get_option(section, "EXCLUDED_MEMBERS", []),"EXCLUDED_MEMBERS"))
         elif running == 'chunk':
             synchronize = self.get_option(section, "SYNCHRONIZE", None)
             delay = int(self.get_option(section, "DELAY", -1))
-            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data,excluded_chunks=self.parse_excluded(section,False),excluded_members=self.parse_excluded(section,True))
+            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data,excluded_chunks=self.parse_relation(section,False,self.get_option(section, "EXCLUDED_CHUNKS", []),"EXCLUDED_CHUNKS"),excluded_members=self.parse_relation(section,True,self.get_option(section, "EXCLUDED_MEMBERS", []),"EXCLUDED_MEMBERS"))
         pass
 
     def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict(),splits=0):

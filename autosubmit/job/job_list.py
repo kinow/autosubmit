@@ -267,6 +267,7 @@ class JobList(object):
                     JobList._manage_job_dependencies(dic_jobs, _job, date_list, member_list, chunk_list, dependencies_keys,
                                                      dependencies, graph)
 
+
     @staticmethod
     def _manage_dependencies(dependencies_keys, dic_jobs, job_section):
         dependencies = dict()
@@ -303,8 +304,7 @@ class JobList(object):
             dependency_running_type = dic_jobs.get_option(
                 section, 'RUNNING', 'once').lower()
             delay = int(dic_jobs.get_option(section, 'DELAY', -1))
-            select_chunks_opt = dic_jobs.get_option(
-                job_section, 'SELECT_CHUNKS', None)
+            select_chunks_opt = dic_jobs.get_option(job_section, 'SELECT_CHUNKS', None)
             selected_chunks = []
             if select_chunks_opt is not None:
                 if '*' in select_chunks_opt:
@@ -312,66 +312,28 @@ class JobList(object):
                     for section_chunk in sections_chunks:
                         info = section_chunk.split('*')
                         if info[0] in key:
+                            auxiliar_relation_list = []
                             for relation in xrange(1, len(info)):
-                                auxiliar_relation_list = []
-                                for location in info[relation].split('-'):
-                                    auxiliar_chunk_list = []
-                                    location = location.strip('[').strip(']')
-                                    if ':' in location:
-                                        if len(location) == 3:
-                                            for chunk_number in xrange(int(location[0]), int(location[2]) + 1):
-                                                auxiliar_chunk_list.append(
-                                                    chunk_number)
-                                        elif len(location) == 2:
-                                            if ':' == location[0]:
-                                                for chunk_number in xrange(0, int(location[1]) + 1):
-                                                    auxiliar_chunk_list.append(
-                                                        chunk_number)
-                                            elif ':' == location[1]:
-                                                for chunk_number in xrange(int(location[0]) + 1, len(dic_jobs._chunk_list) - 1):
-                                                    auxiliar_chunk_list.append(
-                                                        chunk_number)
-                                    elif ',' in location:
-                                        for chunk in location.split(','):
-                                            auxiliar_chunk_list.append(
-                                                int(chunk))
-                                    elif re.match('^[0-9]+$', location):
-                                        auxiliar_chunk_list.append(
-                                            int(location))
-                                    auxiliar_relation_list.append(
-                                        auxiliar_chunk_list)
-                                selected_chunks.append(auxiliar_relation_list)
+                                auxiliar_relation_list.append(dic_jobs.parse_relation(section,False,info[relation],"Select_chunks"))
+                            selected_chunks.append(auxiliar_relation_list)
+                else:
+                    raise AutosubmitCritical("Wrong syntax for select_chunks. The correct Syntax is:Dependency_KEY*[#chunk_number,#chunk_number...] Dependency_Key...",7000)
             select_member_opt = dic_jobs.get_option(job_section, 'SELECT_MEMBERS', None)
             selected_member = []
             if select_member_opt is not None:
                 if '*' in select_member_opt:
-                    sections_member = select_member_opt.split(' ')
-                    for section_member in sections_member:
+                    sections_members = select_member_opt.split(' ')
+                    for section_member in sections_members:
                         info = section_member.split('*')
                         if info[0] in key:
+                            auxiliar_relation_list = []
                             for relation in xrange(1, len(info)):
-                                auxiliar_relation_list = []
-                                for location in info[relation].split('-'):
-                                    auxiliar_member_list = []
-                                    location = location.strip('[').strip(']')
-                                    if ':' in location:
-                                        if len(location) == 3:
-                                            for member_number in xrange(int(location[0]), int(location[2]) + 1):
-                                                auxiliar_member_list.append(member_number)
-                                        elif len(location) == 2:
-                                            if ':' == location[0]:
-                                                for member_number in xrange(0, int(location[1]) + 1):
-                                                    auxiliar_member_list.append(member_number)
-                                            elif ':' == location[1]:
-                                                for member_number in xrange(int(location[0]) + 1, len(dic_jobs._member_list) - 1):
-                                                    auxiliar_member_list.append(member_number)
-                                    elif ',' in location:
-                                        for member in location.split(','):
-                                            auxiliar_member_list.append(int(member))
-                                    elif re.match('^[0-9]+$', location):
-                                        auxiliar_member_list.append(int(location))
-                                    auxiliar_relation_list.append(auxiliar_member_list)
-                                selected_member.append(auxiliar_relation_list)
+                                auxiliar_relation_list.append(dic_jobs.parse_relation(section, True, info[relation], "Select_Members"))
+                            selected_member.append(auxiliar_relation_list)
+                else:
+                    raise AutosubmitCritical(
+                        "Wrong syntax for select_members. The correct Syntax is:Dependency_KEY*[#member_index,#member_index...]*... Dependency_Key...",
+                        7000)
             if len(selected_chunks) >= 1 and len(selected_member) >= 1:
                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, selected_chunks, selected_member)
             elif len(selected_chunks) >= 1:
