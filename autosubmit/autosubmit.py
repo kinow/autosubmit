@@ -567,8 +567,8 @@ class Autosubmit:
         expid = "None"
         if hasattr(args, 'expid'):
             expid = args.expid
-        Autosubmit._init_logs(
-            args, args.logconsole, args.logfile, expid)
+        if args.command != "configure":
+            Autosubmit._init_logs(args, args.logconsole, args.logfile, expid)
 
         if args.command == 'run':
             return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time, args.start_after, args.run_members)
