@@ -567,7 +567,7 @@ class Autosubmit:
         expid = "None"
         if hasattr(args, 'expid'):
             expid = args.expid
-        if args.command != "configure":
+        if args.command != "configure" and args.command != "install":
             Autosubmit._init_logs(args, args.logconsole, args.logfile, expid)
 
         if args.command == 'run':

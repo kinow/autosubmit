@@ -294,48 +294,61 @@ class Monitor:
         :param job_list_object: Object that has the main txt generation method
         :type job_list_object: JobList object
         """
-        Log.info('Plotting...')
-        now = time.localtime()
-        output_date = time.strftime("%Y%m%d_%H%M", now)
-        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +
-                                   output_format)
+        try:
+            Log.info('Plotting...')
+            now = time.localtime()
+            output_date = time.strftime("%Y%m%d_%H%M", now)
+            output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +
+                                       output_format)
 
-        graph = self.create_tree_list(
-            expid, joblist, packages, groups, hide_groups)
+            graph = self.create_tree_list(
+                expid, joblist, packages, groups, hide_groups)
 
-        Log.debug("Saving workflow plot at '{0}'", output_file)
-        if output_format == "png":
-            # noinspection PyUnresolvedReferences
-            graph.write_png(output_file)
-        elif output_format == "pdf":
-            # noinspection PyUnresolvedReferences
-            graph.write_pdf(output_file)
-        elif output_format == "ps":
-            # noinspection PyUnresolvedReferences
-            graph.write_ps(output_file)
-        elif output_format == "svg":
-            # noinspection PyUnresolvedReferences
-            graph.write_svg(output_file)
-        elif output_format == "txt":
-            # JobList object is needed, also it acts as a flag.
-            if job_list_object is not None:
-                self.generate_output_txt(
-                    expid, joblist, path, job_list_object=job_list_object)
-        else:
-            raise AutosubmitCritical(
-                'Format {0} not supported'.format(output_format), 7069)
-        if output_format != "txt":
-            Log.result('Plot created at {0}', output_file)
-        # If txt, don't open
-        if show and output_format != "txt":
-            try:
-                subprocess.check_call(['xdg-open', output_file])
-            except subprocess.CalledProcessError:
+            Log.debug("Saving workflow plot at '{0}'", output_file)
+            if output_format == "png":
+                # noinspection PyUnresolvedReferences
+                graph.write_png(output_file)
+            elif output_format == "pdf":
+                # noinspection PyUnresolvedReferences
+                graph.write_pdf(output_file)
+            elif output_format == "ps":
+                # noinspection PyUnresolvedReferences
+                graph.write_ps(output_file)
+            elif output_format == "svg":
+                # noinspection PyUnresolvedReferences
+                graph.write_svg(output_file)
+            elif output_format == "txt":
+                # JobList object is needed, also it acts as a flag.
+                if job_list_object is not None:
+                    self.generate_output_txt(
+                        expid, joblist, path, job_list_object=job_list_object)
+            else:
                 raise AutosubmitCritical(
-                    'File {0} could not be opened'.format(output_file), 7068)
-        # If the txt has been generated, don't make it again.
-        if output_format != "txt":
-            self.generate_output_txt(expid, joblist, path, "default")
+                    'Format {0} not supported'.format(output_format), 7069)
+            if output_format != "txt":
+                Log.result('Plot created at {0}', output_file)
+            # If txt, don't open
+            if show and output_format != "txt":
+                try:
+                    subprocess.check_call(['xdg-open', output_file])
+                except subprocess.CalledProcessError:
+                    raise AutosubmitCritical(
+                        'File {0} could not be opened'.format(output_file), 7068)
+            # If the txt has been generated, don't make it again.
+            if output_format != "txt":
+                self.generate_output_txt(expid, joblist, path, "default")
+        except AutosubmitCritical:
+            raise
+        except BaseException as e:
+            try:
+                e.message += "\n"+e.value
+                if "GraphViz" in e.message:
+                    e.message= "Graphviz is not installed. Autosubmit need this system package in order to plot the workflow."
+            except:
+                pass
+            raise AutosubmitCritical("Specified output doesn't have an available display installed. Please install "
+                                     "one or select a different output" ,7014,e.message)
+
 
     def generate_output_txt(self, expid, joblist, path, classictxt=False, job_list_object=None):
         """
