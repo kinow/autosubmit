@@ -330,7 +330,8 @@ class Monitor:
             # If txt, don't open
             if show and output_format != "txt":
                 try:
-                    subprocess.check_call(['xdg-open', output_file])
+                    subprocess.check_output(['xdg-open', output_file])
+
                 except subprocess.CalledProcessError:
                     raise AutosubmitCritical(
                         'File {0} could not be opened'.format(output_file), 7068)
