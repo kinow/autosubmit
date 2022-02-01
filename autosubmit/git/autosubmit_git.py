@@ -176,7 +176,8 @@ class AutosubmitGit:
                 shutil.rmtree(project_path)
         os.mkdir(project_path)
         Log.debug("The project folder {0} has been created.", project_path)
-
+        command_0 = "cd {0}; ".format(project_path)
+        command_1 = "cd {0}; ".format(project_path)
         if git_remote_project_path != '':
             if git_remote_project_path[-1] == '/':
                 git_remote_path = os.path.join(
@@ -189,124 +190,73 @@ class AutosubmitGit:
         if git_project_commit:
             Log.info("Fetching {0} into {1}", git_project_commit +
                      " " + git_project_origin, project_path)
-            try:
-                if git_single_branch:
-                    command = "cd {0}; git clone  {1} {4}; cd {2}; git checkout {3};".format(project_path,
-                                                                                             git_project_origin, git_path,
-                                                                                             git_project_commit,
-                                                                                             project_destination)
-                else:
-                    command = "cd {0}; git clone {1} {4}; cd {2}; git checkout {3};".format(project_path,
-                                                                                            git_project_origin, git_path,
-                                                                                            git_project_commit,
-                                                                                            project_destination)
-                if os.path.exists(os.path.join(git_path, ".githooks")):
-                    try:
+            if git_single_branch:
+                command_0 = "cd {0}; git clone  {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
+            else:
+                command_0 = "cd {0}; git clone {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
+            if os.path.exists(os.path.join(git_path, ".githooks")):
+                command_0 += "cd {0}; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
+            command_0 += "cd {0} ; git checkout (1);  ".format(project_destination, git_project_commit)
 
-                        command += "; cd {0} ; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
-                    except subprocess.CalledProcessError as e:
-                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
-                    except BaseException as e:
-                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
-                if git_project_submodules.__len__() <= 0:
-                    command += " git submodule update --init --recursive"
-                else:
-                    command += " cd {0}; git submodule init;".format(
-                        project_destination)
-                    for submodule in git_project_submodules:
-                        try:
-                            command += " git submodule update {0};".format(
-                                submodule)
-                        except BaseException as e:
-                            submodule_failure = True
-                            Log.printlog("Trace: {0}".format(e.message), 6014)
-                            Log.printlog(
-                                "Submodule {0} has a wrong configuration".format(submodule), 6014)
-                if git_remote_project_path == '':
-                    output = subprocess.check_output(command, shell=True)
-                else:
-
-                    command = "cd {0} && {1}".format(git_remote_path, command)
-                    hpcarch.send_command(command)
-            except subprocess.CalledProcessError as e:
-                shutil.rmtree(project_path)
-                if os.path.exists(project_backup_path):
-                    Log.info("Restoring proj folder...")
-                    shutil.move(project_backup_path, project_path)
-                raise AutosubmitCritical(
-                    "Can not checkout commit {0}: {1}".format(git_project_commit, output))
+            if git_project_submodules.__len__() <= 0:
+                command_1 += " git submodule update --init --recursive;"
+            else:
+                command_1 += " cd {0}; git submodule init;".format(project_destination)
+                for submodule in git_project_submodules:
+                    command_1 += " git submodule update {0};".format(submodule)
         else:
-            Log.info("Cloning {0} into {1}", git_project_branch +
-                     " " + git_project_origin, project_path)
-            try:
-                command = "cd {0}; ".format(project_path)
+            Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
+            if not git_single_branch:
+                command_0 += " git clone -b {0} {1} {2};".format(git_project_branch, git_project_origin,
+                                                                 project_destination)
+            else:
+                command_0 += " git clone --single-branch -b {0} {1} {2};".format(git_project_branch,
+                                                                                 git_project_origin,
+                                                                                 project_destination)
+            if os.path.exists(os.path.join(git_path, ".githooks")):
+                command_0 += " cd {0} ; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
+            if git_project_submodules.__len__() > 0:
+                command_1 += " cd {0}; git submodule init;".format(
+                    project_destination)
+                for submodule in git_project_submodules:
+                    command_1 += " git submodule update  {0};".format(submodule)
+        try:
+            Log.debug('Clone + checkout + githook {0}', command_0)
+            Log.debug('Submodules {0}', command_1)
+            if git_remote_project_path == '':
+                output_0 = subprocess.check_output(command_0, shell=True)
+                if os.path.exists(os.path.join(git_path, ".githooks")):
+                    for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
+                        for f_dir in dirs:
+                            os.chmod(os.path.join(root_dir, f_dir), 0o750)
+                        for f_file in files:
+                            os.chmod(os.path.join(root_dir, f_file), 0o750)
+                try:
+                    output_1 = subprocess.check_output(command_1, shell=True)
+                except BaseException as e:
+                    submodule_failure = True
+                    Log.printlog("Trace: {0}".format(e.message), 6014)
+                    Log.printlog(
+                        "Submodule {0} has a wrong configuration".format(submodule), 6014)
+            else:
+                command_0 = "cd {0} ; {1}".format(git_remote_path, command_0)
+                command_1 = "cd {0} ; {1}".format(git_remote_path, command_1)
 
-                if git_project_submodules.__len__() <= 0:
-                    if not git_single_branch:
-                        command += " git clone --recursive -b {0} {1} {2}".format(git_project_branch, git_project_origin,
-                                                                                  project_destination)
-                    else:
-                        command += " git clone --single-branch  --recursive -b {0} {1} {2}".format(git_project_branch, git_project_origin,
-                                                                                                   project_destination)
-                    try:
-                        command += "; cd {0} ; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
-                    except subprocess.CalledProcessError as e:
-                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
-                    except BaseException as e:
-                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
-                else:
-                    if not git_single_branch:
-                        command += " git clone -b {0} {1} {2};".format(git_project_branch, git_project_origin,
-                                                                       project_destination)
-                    else:
-                        command += " git clone --single-branch -b {0} {1} {2};".format(git_project_branch,
-                                                                                       git_project_origin,
-                                                                                       project_destination)
-                    try:
-
-                        command += "; cd {0} ; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
-                    except subprocess.CalledProcessError as e:
-                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
-                    except BaseException as e:
-                        Log.printlog("Can not set the githook folder: {0}, you will have to perform it manually(git config core.hooksPath .githooks) ".format(os.path.join(git_path, ".githooks")),6000)
-
-                    command += " cd {0}; git submodule init;".format(
-                        project_destination)
-                    for submodule in git_project_submodules:
-                        try:
-                            command += " git submodule update  {0};".format(
-                                submodule)
-                        except BaseException as e:
-                            submodule_failure = True
-                            Log.printlog("Trace: {0}".format(e.message), 6014)
-                            Log.printlog(
-                                "Submodule {0} has a wrong configuration".format(submodule), 6014)
-                Log.debug('{0}', command)
-                if git_remote_project_path == '':
-                    output = subprocess.check_output(command, shell=True)
-                else:
-                    hpcarch.send_command(command)
-
-            except subprocess.CalledProcessError as e:
-                shutil.rmtree(project_path)
-                if os.path.exists(project_backup_path):
-                    Log.info("Restoring proj folder...")
-                    shutil.move(project_backup_path, project_path)
-                raise AutosubmitCritical("Can not clone {0} into {1}".format(
-                    git_project_branch + " " + git_project_origin, project_path), 7065)
-
+                hpcarch.send_command(command_0)
+                hpcarch.send_command(command_1)
+        except subprocess.CalledProcessError as e:
+            shutil.rmtree(project_path)
+            if os.path.exists(project_backup_path):
+                Log.info("Restoring proj folder...")
+                shutil.move(project_backup_path, project_path)
+            raise AutosubmitCritical("Can not clone {0} into {1}".format(
+                git_project_branch + " " + git_project_origin, project_path), 7065)
         if submodule_failure:
-            Log.info(
-                "Some Submodule failures have been detected. Backup {0} will not be removed.".format(project_backup_path))
+            Log.info("Some Submodule failures have been detected. Backup {0} will not be removed.".format(project_backup_path))
             return False
 
         if os.path.exists(project_backup_path):
             Log.info("Removing backup...")
             shutil.rmtree(project_backup_path)
-        if os.path.exists(os.path.join(git_path, ".githooks")):
-            for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
-                for f_dir in dirs:
-                    os.chmod(os.path.join(root_dir, f_dir), 0o750)
-                for f_file in files:
-                    os.chmod(os.path.join(root_dir, f_file), 0o750)
+
         return True
