@@ -156,7 +156,7 @@ class StatisticsSnippetPython:
         if not executable:
             executable = "/usr/bin/env python"+str(self.version)
         else:
-            executable = executable+str(self.version)
+            executable = executable
         return textwrap.dedent("""\
             #!{0}
 
