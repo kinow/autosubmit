@@ -111,11 +111,11 @@ class DicJobs:
                 elif start_end[0] > start_end[1]:
                     raise AutosubmitCritical(
                         "Wrong format for {1} parameter in section {0}\nStart index is greater than ending index".format(
-                            section,called_from), 7000)
+                            section,called_from), 7011)
                 else:
                     raise AutosubmitCritical(
                         "Wrong format for {1} parameter in section {0}\nindex weren't found".format(
-                            section), 7000)
+                            section), 7011)
             elif ',' in unparsed_option:
                 for item in unparsed_option.split(','):
                     parsed_list.append(int(item.strip(": -[]")))
@@ -125,7 +125,7 @@ class DicJobs:
                         parsed_list.append(int(item.strip(": -[]")))
                 except BaseException as e:
                     raise AutosubmitCritical(
-                        "Wrong format for {1} parameter in section {0}".format(section,called_from), 7000,
+                        "Wrong format for {1} parameter in section {0}".format(section,called_from), 7011,
                         e.message)
             pass
         return parsed_list

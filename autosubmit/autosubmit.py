@@ -689,7 +689,7 @@ class Autosubmit:
                 owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=True) #fastlook
             else:
                 owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=False) #fastlook
-                
+
             if not os.path.exists(tmp_path):
                 os.mkdir(tmp_path)
             if not os.path.exists(aslogs_path):
@@ -1761,7 +1761,7 @@ class Autosubmit:
                             #Log.info("history process start: {0}".format(log.fd_show.fd_table_status_str()))
                             exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
                             #Log.info("history process end: {0}".format(log.fd_show.fd_table_status_str()))
-                        job_changes_tracker = {}                        
+                        job_changes_tracker = {}
 
                         if Autosubmit.exit:
                             job_list.save()
@@ -1912,11 +1912,10 @@ class Autosubmit:
                         message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
                         raise AutosubmitCritical(message, 7000)
                     except BaseException as e:  # If this happens, there is a bug in the code or an exception not-well caught
-                        raise AutosubmitCritical(e.message, 7000)
-                #End main loop. Finishing run.
+                        raise AutosubmitCritical("There is a bug in the code, please contact via git",7070,e.message)
                 Log.result("No more jobs to run.")
                 # Updating job data header with current information when experiment ends
-                exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)                                          
+                exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                 exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
                 # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
@@ -1948,7 +1947,7 @@ class Autosubmit:
         except AutosubmitCritical as e:
             raise AutosubmitCritical(e.message, e.code, e.trace)
         except BaseException as e:
-            raise AutosubmitCritical("This seems like a bug in the code, please contact AS developers", 7000,e.message)
+            raise AutosubmitCritical("This seems like a bug in the code, please contact AS developers", 7070,e.message)
 
     @staticmethod
     def restore_platforms(platform_to_test,mail_notify=False,as_conf=None,expid=expid):
@@ -2109,7 +2108,7 @@ class Autosubmit:
                                 "IO issues ", 6016, e.message)
                         except BaseException as e:
                             if e.message.find("Scheduler") != -1:
-                                raise AutosubmitCritical("Are you sure that [{0}] scheduler is the correct type for platform [{1}]?.\n Please, double check that {0} is loaded for {1} before autosubmit launch any job.".format(platform.type.upper(),platform.name.upper()),7000)
+                                raise AutosubmitCritical("Are you sure that [{0}] scheduler is the correct type for platform [{1}]?.\n Please, double check that {0} is loaded for {1} before autosubmit launch any job.".format(platform.type.upper(),platform.name.upper()),7070)
                             raise AutosubmitError(
                                 "Submission failed, this can be due a failure on the platform", 6015, e.message)
                         if jobs_id is None or len(jobs_id) <= 0:
@@ -2192,7 +2191,7 @@ class Autosubmit:
                                 # Saving only when it is a real multi job package
                                 packages_persistence.save(
                                     package.name, package.jobs, package._expid, inspect)
-            except Exception as e:                
+            except Exception as e:
                 raise AutosubmitError("{0} submission failed".format(platform.name), 6015, str(e))
         return save
 
@@ -2255,7 +2254,7 @@ class Autosubmit:
         except AutosubmitCritical as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Error while checking the configuration files or loading the job_list",7000,e.message)
+            raise AutosubmitCritical("Error while checking the configuration files or loading the job_list",7040,e.message)
         try:
             jobs = []
             if not isinstance(job_list, type([])):
@@ -2316,7 +2315,7 @@ class Autosubmit:
                 else:
                     jobs = job_list.get_job_list()
         except BaseException as e:
-            raise AutosubmitCritical("Issues during the job_list generation. Maybe due I/O error",7000,e.message)
+            raise AutosubmitCritical("Issues during the job_list generation. Maybe due I/O error",7040,e.message)
 
 
         referenced_jobs_to_remove = set()
@@ -2369,7 +2368,7 @@ class Autosubmit:
                 packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                  "job_packages_" + expid).load()
         except BaseException as e:
-            raise AutosubmitCritical("Issues during the wrapper loading, may be related to IOissues",7000,e.message)
+            raise AutosubmitCritical("Issues during the wrapper loading, may be related to IOissues",7040,e.message)
         groups_dict = dict()
         try:
             if group_by:
@@ -2382,7 +2381,7 @@ class Autosubmit:
                     jobs), job_list, expand_list=expand, expanded_status=status)
                 groups_dict = job_grouping.group_jobs()
         except BaseException as e:
-            raise AutosubmitCritical("Jobs can't be grouped, perhaps you're using an invalid format. Take a look into readthedocs",7000,e.message)
+            raise AutosubmitCritical("Jobs can't be grouped, perhaps you're using an invalid format. Take a look into readthedocs",7011,e.message)
 
         monitor_exp = Monitor()
         try:
@@ -2408,7 +2407,7 @@ class Autosubmit:
                                             hide_groups=hide_groups,
                                             job_list_object=job_list)
         except BaseException as e:
-            raise AutosubmitCritical("An error has occurred while printing the workflow status. Check if you have X11 redirection and an img viewer correctly set",7000,e.message)
+            raise AutosubmitCritical("An error has occurred while printing the workflow status. Check if you have X11 redirection and an img viewer correctly set",7014,e.message)
 
         return True
 
@@ -2474,7 +2473,7 @@ class Autosubmit:
                 Log.info("There are no {0} jobs in the period from {1} to {2}...".format(
                     filter_type, period_ini, period_fi))
         except BaseException as e:
-            raise AutosubmitCritical("Stats couldn't be generated. Check trace for more details",7000,e.message)
+            raise AutosubmitCritical("Stats couldn't be generated. Check trace for more details",7061,e.message)
         return True
 
     @staticmethod
@@ -2521,7 +2520,7 @@ class Autosubmit:
                 monitor_autosubmit = Monitor()
                 monitor_autosubmit.clean_stats(expid)
         except BaseException as e:
-            raise AutosubmitCritical("Couldn't clean this experiment, check if you have the correct permisions",7000,e.messagee)
+            raise AutosubmitCritical("Couldn't clean this experiment, check if you have the correct permisions",7012,e.messagee)
         return True
 
     @staticmethod
@@ -2580,7 +2579,7 @@ class Autosubmit:
                             len(current_active_jobs)), 7000)
             Log.debug("Job list restored from {0} files", pkl_dir)
         except BaseException as e:
-            raise AutosubmitCritical("Couldn't restore the job_list or packages, check if the filesystem is having issues",7000,e.message)
+            raise AutosubmitCritical("Couldn't restore the job_list or packages, check if the filesystem is having issues",7040,e.message)
         Log.info('Recovering experiment {0}'.format(expid))
         try:
             for job in job_list.get_job_list():
@@ -2599,7 +2598,7 @@ class Autosubmit:
             else:
                 jobs_to_recover = job_list.get_active()
         except BaseException as e:
-            raise AutosubmitCritical("Couldn't restore the experiment platform, check if the filesystem is having issues",7000,e.message)
+            raise AutosubmitCritical("Couldn't restore the experiment platform, check if the filesystem is having issues",7040,e.message)
 
         Log.info("Looking for COMPLETED files")
         try:
@@ -2640,7 +2639,7 @@ class Autosubmit:
 
             Log.result("Recovery finalized")
         except BaseException as e:
-            raise AutosubmitCritical("Couldn't restore the experiment workflow",7000,e.message)
+            raise AutosubmitCritical("Couldn't restore the experiment workflow",7040,e.message)
 
         try:
             packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
@@ -3043,7 +3042,7 @@ class Autosubmit:
         except AutosubmitError:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Checking incomplete due an unknown error. Please check the trace",7000,e.message)
+            raise AutosubmitCritical("Checking incomplete due an unknown error. Please check the trace",7070,e.message)
 
         return job_list.check_scripts(as_conf)
 
@@ -3205,7 +3204,7 @@ class Autosubmit:
         except AutosubmitCritical as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Unknown error while reporting the parameters list, likely it is due IO issues",7000,e.message)
+            raise AutosubmitCritical("Unknown error while reporting the parameters list, likely it is due IO issues",7040,e.message)
 
     @staticmethod
     def describe(experiment_id):
@@ -3257,7 +3256,7 @@ class Autosubmit:
             Log.result("Branch: {0}", branch)
             Log.result("HPC: {0}", hpc)
         except BaseException as e:
-            raise AutosubmitCritical("Couldn't get the details of this experiment. Contact with Autosubmit Developers through GitHub",7000,e.message)
+            raise AutosubmitCritical("Couldn't get the details of this experiment. Contact with Autosubmit Developers through GitHub",7001,e.message)
         return user, created, model, branch, hpc
 
     @staticmethod
@@ -3403,7 +3402,7 @@ class Autosubmit:
         except (AutosubmitCritical, AutosubmitError) as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical(e.message,7000)
+            raise AutosubmitCritical(e.message,7014)
         return True
 
     @staticmethod
@@ -3663,7 +3662,7 @@ class Autosubmit:
         except (AutosubmitError,AutosubmitCritical):
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Error while reading the configuration files",7000,e.message)
+            raise AutosubmitCritical("Error while reading the configuration files",7064,e.message)
         try:
             if "Expdef" in as_conf.wrong_config:
                 as_conf.show_messages()
@@ -3675,7 +3674,7 @@ class Autosubmit:
         except (AutosubmitError,AutosubmitCritical):
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Download failed",7000,e.message)
+            raise AutosubmitCritical("Download failed",7064,e.message)
         return True
 
     @staticmethod
@@ -3695,7 +3694,7 @@ class Autosubmit:
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
         return True
-    
+
     @staticmethod
     def update_description(expid, new_description):
         Log.info("Checking if experiment exists...")
@@ -4068,7 +4067,7 @@ class Autosubmit:
                     output_type = as_conf.get_output_type()
 
                     if not Autosubmit._copy_code(as_conf, expid, project_type, False):
-                        return False                    
+                        return False
                     if not os.path.exists(os.path.join(exp_path, "pkl")):
                         raise AutosubmitCritical("The pkl folder doesn't exists. Make sure that the 'pkl' folder exists in the following path: {}".format(exp_path), code=6013)
                     if not os.path.exists(os.path.join(exp_path, "plot")):
@@ -4136,7 +4135,7 @@ class Autosubmit:
                     # Historical Database: Setup new run
                     exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                     exp_history.initialize_database()
-                    exp_history.create_new_experiment_run(as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), as_conf.get_full_config_as_json(), job_list.get_job_list())                    
+                    exp_history.create_new_experiment_run(as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), as_conf.get_full_config_as_json(), job_list.get_job_list())
 
                     if not noplot:
                         if group_by:
@@ -4882,10 +4881,10 @@ class Autosubmit:
                 job_list.update_list(as_conf, False, True)
 
                 if save and wrongExpid == 0:
-                    job_list.save()                    
+                    job_list.save()
                     exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                     exp_history.initialize_database()
-                    exp_history.process_status_changes(job_list.get_job_list(), chunk_unit=as_conf.get_chunk_size_unit(), chunk_size=as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())                    
+                    exp_history.process_status_changes(job_list.get_job_list(), chunk_unit=as_conf.get_chunk_size_unit(), chunk_size=as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())
                 else:
                     Log.printlog(
                         "Changes NOT saved to the JobList!!!!:  use -s option to save", 3000)
@@ -4953,7 +4952,7 @@ class Autosubmit:
         except (AutosubmitError,AutosubmitCritical):
             raise
         except BaseException as e:
-            raise AutosubmitCritical("An Error has occurred while setting some of the workflow jobs, no changes were made",7000,e.message)
+            raise AutosubmitCritical("An Error has occurred while setting some of the workflow jobs, no changes were made",7040,e.message)
 
     @staticmethod
     def _user_yes_no_query(question):

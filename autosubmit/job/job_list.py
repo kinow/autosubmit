@@ -243,7 +243,7 @@ class JobList(object):
                 else:
                     self._ordered_jobs_by_date_member[wrapper_section] = {}
         except BaseException as e:
-            raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.conf".format(wrapper_section),7000,e.message)
+            raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.conf".format(wrapper_section),7014,e.message)
         pass
 
 
@@ -317,7 +317,7 @@ class JobList(object):
                                 auxiliar_relation_list.append(dic_jobs.parse_relation(section,False,info[relation],"Select_chunks"))
                             selected_chunks.append(auxiliar_relation_list)
                 else:
-                    raise AutosubmitCritical("Wrong syntax for select_chunks. The correct Syntax is:Dependency_KEY*[#chunk_number,#chunk_number...] Dependency_Key...",7000)
+                    raise AutosubmitCritical("Wrong syntax for select_chunks. The correct Syntax is:Dependency_KEY*[#chunk_number,#chunk_number...] Dependency_Key...",7011)
             select_member_opt = dic_jobs.get_option(job_section, 'SELECT_MEMBERS', None)
             selected_member = []
             if select_member_opt is not None:
@@ -333,7 +333,7 @@ class JobList(object):
                 else:
                     raise AutosubmitCritical(
                         "Wrong syntax for select_members. The correct Syntax is:Dependency_KEY*[#member_index,#member_index...]*... Dependency_Key...",
-                        7000)
+                        7011)
             if len(selected_chunks) >= 1 and len(selected_member) >= 1:
                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, selected_chunks, selected_member)
             elif len(selected_chunks) >= 1:

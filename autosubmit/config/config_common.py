@@ -508,7 +508,7 @@ class AutosubmitConfig(object):
         except (AutosubmitCritical, AutosubmitError) as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Unknown issue while checking the configulation files (check_conf_files)",7000,e.message)
+            raise AutosubmitCritical("Unknown issue while checking the configulation files (check_conf_files)",7040,e.message)
         # Annotates all errors found in the configuration files in dictionaries self.warn_config and self.wrong_config.
         self.check_expdef_conf()
         self.check_platforms_conf()
