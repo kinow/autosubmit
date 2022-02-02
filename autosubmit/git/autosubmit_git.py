@@ -195,8 +195,8 @@ class AutosubmitGit:
             else:
                 command_0 = "cd {0}; git clone {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
             if os.path.exists(os.path.join(git_path, ".githooks")):
-                command_0 += "cd {0}; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
-            command_0 += "cd {0} ; git checkout (1);  ".format(project_destination, git_project_commit)
+                command_0 += "cd {0}; git config core.hooksPath ./.githooks; cd .. ; ".format(project_destination)
+            command_1 += "cd {0} ; git checkout (1);  ".format(project_destination, git_project_commit)
 
             if git_project_submodules.__len__() <= 0:
                 command_1 += " git submodule update --init --recursive;"
@@ -214,15 +214,15 @@ class AutosubmitGit:
                                                                                  git_project_origin,
                                                                                  project_destination)
             if os.path.exists(os.path.join(git_path, ".githooks")):
-                command_0 += " cd {0} ; git config core.hooksPath .githooks; cd .. ; ".format(project_destination)
+                command_0 += " cd {0} ; git config core.hooksPath ./.githooks; cd .. ; ".format(project_destination)
             if git_project_submodules.__len__() > 0:
                 command_1 += " cd {0}; git submodule init;".format(
                     project_destination)
                 for submodule in git_project_submodules:
-                    command_1 += " git submodule update  {0};".format(submodule)
+                    command_1 += " git submodule update {0};".format(submodule)
         try:
-            Log.debug('Clone + checkout + githook {0}', command_0)
-            Log.debug('Submodules {0}', command_1)
+            Log.debug('Clone and Githook: {0}', command_0)
+            Log.debug('Checkout and Submodules: {0}', command_1)
             if git_remote_project_path == '':
                 output_0 = subprocess.check_output(command_0, shell=True)
                 if os.path.exists(os.path.join(git_path, ".githooks")):
