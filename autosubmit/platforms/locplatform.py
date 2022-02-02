@@ -177,7 +177,6 @@ class LocalPlatform(ParamikoPlatform):
                 Log.printlog("File does not exist, logs {0} {1}".format(self.get_files_path(),src),6001)
                 file_exist = False  # won't exist
                 retries = 999  # no more retries
-
         return file_exist
 
     def delete_file(self, filename,del_cmd  = False):

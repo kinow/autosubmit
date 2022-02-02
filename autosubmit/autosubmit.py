@@ -1955,10 +1955,16 @@ class Autosubmit:
         Log.info("Checking the connection to all platforms in use")
         issues = ""
         platform_issues = ""
+        ssh_config_issues = ""
         for platform in platform_to_test:
             platform_issues = ""
             try:
-                platform.test_connection()
+                message = platform.test_connection()
+                if message is None:
+                    message = "OK"
+                if message != "OK":
+                    ssh_config_issues += message + " this is an PARAMIKO SSHEXCEPTION: indicates that there is something incompatible in the ssh_config for host:{0}\n maybe you need to contact your sysadmin".format(
+                        platform.host)
             except BaseException as e:
                 try:
                     if mail_notify:
@@ -1975,14 +1981,14 @@ class Autosubmit:
                 Log.result("[{1}] Correct user privileges for host {0}",
                            platform.host, platform.name)
             else:
-                platform_issues += "\n[{0}] has configuration issues.\n Check that the connection is passwd-less.(ssh user@{1})\n Check the parameters that build the root_path are correct:{{scratch_dir/project/user}} = {{{3}/{2}/{1}}}".format(
-                    platform.name, platform.user, platform.project, platform.scratch)
+                platform_issues += "\n[{0}] has configuration issues.\n Check that the connection is passwd-less.(ssh {1}@{4})\n Check the parameters that build the root_path are correct:{{scratch_dir/project/user}} = {{{3}/{2}/{1}}}".format(
+                    platform.name, platform.user, platform.project, platform.scratch,platform.host)
                 issues += platform_issues
             if platform_issues != "":
                 Log.result("[{1}] Connection successful to host {0}",platform.host, platform.name)
         if issues != "":
             raise AutosubmitCritical(
-                "Issues while checking the connectivity of platforms.", 7010, issues)
+                "Issues while checking the connectivity of platforms.", 7010, issues+"\n"+ssh_config_issues)
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False, only_wrappers=False, hold=False):
@@ -2102,6 +2108,8 @@ class Autosubmit:
                             raise AutosubmitError(
                                 "IO issues ", 6016, e.message)
                         except BaseException as e:
+                            if e.message.find("Scheduler") != -1:
+                                raise AutosubmitCritical("Are you sure that [{0}] scheduler is the correct type for platform [{1}]?.\n Please, double check that {0} is loaded for {1} before autosubmit launch any job.".format(platform.type.upper(),platform.name.upper()),7000)
                             raise AutosubmitError(
                                 "Submission failed, this can be due a failure on the platform", 6015, e.message)
                         if jobs_id is None or len(jobs_id) <= 0:

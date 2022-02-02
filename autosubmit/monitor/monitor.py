@@ -327,17 +327,17 @@ class Monitor:
                     'Format {0} not supported'.format(output_format), 7069)
             if output_format != "txt":
                 Log.result('Plot created at {0}', output_file)
-            # If txt, don't open
-            if show and output_format != "txt":
-                try:
-                    subprocess.check_output(['xdg-open', output_file])
 
-                except subprocess.CalledProcessError:
-                    raise AutosubmitCritical(
-                        'File {0} could not be opened'.format(output_file), 7068)
             # If the txt has been generated, don't make it again.
             if output_format != "txt":
                 self.generate_output_txt(expid, joblist, path, "default")
+
+            if show and output_format != "txt":
+                try:
+                    subprocess.check_output(['xdg-open', output_file])
+                except subprocess.CalledProcessError:
+                    raise AutosubmitCritical(
+                        'File {0} could not be opened'.format(output_file), 7068)
         except AutosubmitCritical:
             raise
         except BaseException as e:
@@ -347,8 +347,8 @@ class Monitor:
                     e.message= "Graphviz is not installed. Autosubmit need this system package in order to plot the workflow."
             except:
                 pass
-            raise AutosubmitCritical("Specified output doesn't have an available display installed. Please install "
-                                     "one or select a different output" ,7014,e.message)
+
+            Log.printlog("{0}\nSpecified output doesn't have an available viewer installed or graphviz is not installed. The output was only writted in txt".format(e.message),7014)
 
 
     def generate_output_txt(self, expid, joblist, path, classictxt=False, job_list_object=None):

@@ -11,7 +11,8 @@ from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
 from bscearth.utils.date import date2str
 from log.log import AutosubmitError, AutosubmitCritical, Log
-
+from paramiko.ssh_exception import (SSHException, BadAuthenticationType,
+                                    ChannelException, ProxyCommandFailure)
 import Xlib.support.connect as xlib_connect
 from threading import Thread
 
@@ -97,17 +98,21 @@ class ParamikoPlatform(Platform):
             self.reset()            
             try:
                 self.restore_connection()
-            except:
-                pass            
-            transport = self._ssh.get_transport()            
-            transport.send_ignore()
+                message = "OK"
+            except BaseException as e:
+                message = e.message
+            if message.find("t accept remote connections") == -1:
+                transport = self._ssh.get_transport()
+                transport.send_ignore()
+            return message
         except EOFError as e:
             raise AutosubmitError("[{0}] not alive. Host: {1}".format(
                 self.name, self.host), 6002, e.message)
         except (AutosubmitError,AutosubmitCritical,IOError):
             raise
         except BaseException as e:
-            raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
+            raise AutosubmitCritical(message,7000)
+            #raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
 
     def restore_connection(self):
         try:
@@ -116,13 +121,15 @@ class ParamikoPlatform(Platform):
             retry = 0
             try:
                 self.connect()
+            except SSHException as e:
+                raise
             except Exception as e:
                 if ',' in self.host:
                     Log.printlog("Connection Failed to {0}, will test another host".format(
                         self.host.split(',')[0]), 6002)
                 else:
                     raise AutosubmitCritical(
-                        "First connection to {0} is failed, check host configuration or try another login node ".format(self.host), 7050)
+                        "First connection to {0} is failed, check host configuration or try another login node ".format(self.host), 7050,e.message)
             while self.connected is False and retry < retries:
                 try:
                     self.connect(True)
@@ -136,6 +143,8 @@ class ParamikoPlatform(Platform):
                     'Experiment cant no continue without unexpected behaviour, Stopping Autosubmit', 7050, trace)
 
         except AutosubmitCritical:
+            raise
+        except SSHException as e:
             raise
         except Exception as e:
             raise AutosubmitCritical(
@@ -192,9 +201,13 @@ class ParamikoPlatform(Platform):
             #self.transport.connect(username=self.user)
             self._ftpChannel = self._ssh.open_sftp()
             self.connected = True
+        except SSHException as e:
+            raise
         except IOError as e:
-            raise AutosubmitError(
-                "File can't be located due an slow connection", 6016, e.message)
+            if "refused" in e.strerror:
+                raise SSHException(" {0} doesn't accept remote connections. Check if there is an typo in the hostname".format(self.host))
+            else:
+                raise AutosubmitError("File can't be located due an slow connection", 6016, e.message)
         except BaseException as e:
             self.connected = False
             if "Authentication failed." in e.message:
@@ -808,7 +821,9 @@ class ParamikoPlatform(Platform):
                 if "not active" in errorLine:
                     raise AutosubmitError(
                         'SSH Session not active, will restart the platforms', 6005)
-                if errorLine.find("refused") != -1 or errorLine.find("slurm_persist_conn_open_without_init") != -1 or errorLine.find("slurmdbd") != -1 or errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1 or errorLine.find("sbatch: error: ") != -1 or errorLine.find("not submitted") != -1:
+                if errorLine.find("command not found") != -1:
+                    raise AutosubmitCritical("Scheduler is not installed.",7000)
+                elif errorLine.find("refused") != -1 or errorLine.find("slurm_persist_conn_open_without_init") != -1 or errorLine.find("slurmdbd") != -1 or errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1 or errorLine.find("sbatch: error: ") != -1 or errorLine.find("not submitted") != -1:
                     if (self._submit_command_name == "sbatch" and errorLine.find("policy") != -1) or (self._submit_command_name == "sbatch" and errorLine.find("argument") != -1) or (self._submit_command_name == "bsub" and errorLine.find("job not submitted") != -1) or self._submit_command_name == "ecaccess-job-submit" or self._submit_command_name == "qsub ":
                         raise AutosubmitError(
                             "bad parameters", 7014, self._ssh_output_err)
