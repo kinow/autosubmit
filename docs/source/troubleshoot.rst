@@ -12,8 +12,8 @@ How to change the job status without stopping autosubmit
 
 Review :ref:`setstatusno`.
 
-My project parameters are not being substituted in the templates.
-========================================================
+My project parameters are not being substituted in the templates
+================================================================
 
 *Explanation*: If there is a duplicated section or option in any other side of autosubmit, including proj files It won't be able to recognize which option pertains to what section in which file.
 
@@ -24,6 +24,18 @@ Unable to recover remote logs files.
 
 *Explanation*: If there are limitations on the remote platform regarding multiple connections,
 *Solution*:  You can try DISABLE_RECOVERY_THREADS = TRUE under the [platform_name] section in the platform.conf.
+
+Error on create caused by a configuration parsing error
+=======================================================
+
+When running create you can come across an error similar to:
+::
+
+    [ERROR] Trace: '%' must be followed by '%' or '(', found: u'%HPCROOTDIR%/remoteconfig/%CURRENT_ARCH%_launcher.sh'
+
+The importan part of this error is the message ``'%' must be followed by '%'``. It indicated that the source of the error is the ``configparser`` library.
+This library is included in the python common libraries, so you shouldn't have any other version of it installed in your enviroment. Execute ``pip list``, if you see 
+``configparser`` in the list, then run ``pip uninstall configparser``. Then, try to create your experiment again.
 
 Other possible errors
 =====================
