@@ -111,7 +111,7 @@ class ParamikoPlatform(Platform):
         except (AutosubmitError,AutosubmitCritical,IOError):
             raise
         except BaseException as e:
-            raise AutosubmitCritical(message,7000)
+            raise AutosubmitCritical(message,7051)
             #raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
 
     def restore_connection(self):

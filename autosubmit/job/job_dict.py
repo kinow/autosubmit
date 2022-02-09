@@ -88,7 +88,7 @@ class DicJobs:
                         count = count + 1
                 if start_end[0] == -1 and start_end[1] == -1:
                     raise AutosubmitCritical(
-                        "Wrong format for excluded_member parameter in section {0}\nindex weren't found".format(
+                        "Wrong format for excluded_member parameter in section {0}\nindex was not found".format(
                             section), 7000)
                 elif start_end[0] > -1 and start_end[1] == -1:
                     if member:
