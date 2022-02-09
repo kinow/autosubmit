@@ -57,7 +57,6 @@ import locale
 from distutils.util import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from typing import Set
-import log.fd_show
 
 try:
     import dialog
@@ -697,17 +696,25 @@ class Autosubmit:
             if owner:
                 Log.set_file(os.path.join(aslogs_path, args.command + '.log'), "out", log_level)
                 Log.set_file(os.path.join(aslogs_path, args.command + '_err.log'), "err")
-                if os.path.exists(os.path.join(aslogs_path, 'jobs_active_status.log')):
-                    os.remove(os.path.join(aslogs_path, 'jobs_active_status.log'))
-                if os.path.exists(os.path.join(aslogs_path, 'jobs_failed_status.log')):
-                    os.remove(os.path.join(aslogs_path, 'jobs_failed_status.log'))
-                Log.set_file(os.path.join(aslogs_path, 'jobs_active_status.log'), "status")
-                Log.set_file(os.path.join(aslogs_path, 'jobs_failed_status.log'), "status_failed")
+                if args.command in ["run"]:
+                    if os.path.exists(os.path.join(aslogs_path, 'jobs_active_status.log')):
+                        os.remove(os.path.join(aslogs_path, 'jobs_active_status.log'))
+                    if os.path.exists(os.path.join(aslogs_path, 'jobs_failed_status.log')):
+                        os.remove(os.path.join(aslogs_path, 'jobs_failed_status.log'))
+                        Log.set_file(os.path.join(aslogs_path, 'jobs_active_status.log'), "status")
+                        Log.set_file(os.path.join(aslogs_path, 'jobs_failed_status.log'), "status_failed")
             else:
-                Log.set_file(os.path.join(tmp_path, args.command + '.log'), "out", log_level)
-                Log.set_file(os.path.join(tmp_path, args.command + '_err.log'), "err")
-                Log.set_file(os.path.join(tmp_path, 'jobs_active_status.log'), "status")
-                Log.set_file(os.path.join(tmp_path, 'jobs_failed_status.log'), "status_failed")
+                st = os.stat(tmp_path)
+                oct_perm = str(oct(st.st_mode))[-3:]
+                if int(oct_perm[1]) in [6,7] or int(oct_perm[2]) in [6,7]:
+                    Log.set_file(os.path.join(tmp_path, args.command + '.log'), "out", log_level)
+                    Log.set_file(os.path.join(tmp_path, args.command + '_err.log'), "err")
+                else:
+                    Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
+                                              args.command + expid + '.log'), "out", log_level)
+                    Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
+                                              args.command + expid + '_err.log'), "err")
+                    Log.printlog("Permissions of {0} are {1}. The log will is being written in the {2} path".format(tmp_path,oct_perm,BasicConfig.GLOBAL_LOG_DIR))
             Log.file_path = tmp_path
         else:
             if expid == 'None':
