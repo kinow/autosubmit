@@ -177,7 +177,7 @@ class AutosubmitGit:
         os.mkdir(project_path)
         Log.debug("The project folder {0} has been created.", project_path)
         command_0 = "cd {0}; ".format(project_path)
-        command_1 = "cd {0}; ".format(project_path)
+        command_1 = ""
         if git_remote_project_path != '':
             if git_remote_project_path[-1] == '/':
                 git_remote_path = os.path.join(
@@ -194,14 +194,12 @@ class AutosubmitGit:
                 command_0 = "cd {0}; git clone  {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
             else:
                 command_0 = "cd {0}; git clone {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
-            if os.path.exists(os.path.join(git_path, ".githooks")):
-                command_0 += "cd {0}; git config core.hooksPath ./.githooks; cd .. ; ".format(project_destination)
-            command_1 += "cd {0} ; git checkout (1);  ".format(project_destination, git_project_commit)
+            command_1 += " git checkout (0);  ".format(git_project_commit)
 
             if git_project_submodules.__len__() <= 0:
                 command_1 += " git submodule update --init --recursive;"
             else:
-                command_1 += " cd {0}; git submodule init;".format(project_destination)
+                command_1 += " git submodule init;".format(project_destination)
                 for submodule in git_project_submodules:
                     command_1 += " git submodule update {0};".format(submodule)
         else:
@@ -213,25 +211,30 @@ class AutosubmitGit:
                 command_0 += " git clone --single-branch -b {0} {1} {2};".format(git_project_branch,
                                                                                  git_project_origin,
                                                                                  project_destination)
-            if os.path.exists(os.path.join(git_path, ".githooks")):
-                command_0 += " cd {0} ; git config core.hooksPath ./.githooks; cd .. ; ".format(project_destination)
+
             if git_project_submodules.__len__() > 0:
-                command_1 += " cd {0}; git submodule init;".format(
+                command_1 += " git submodule init;".format(
                     project_destination)
                 for submodule in git_project_submodules:
                     command_1 += " git submodule update {0};".format(submodule)
         try:
-            Log.debug('Clone and Githook: {0}', command_0)
-            Log.debug('Checkout and Submodules: {0}', command_1)
+            Log.debug('Clone command: {0}', command_0)
             if git_remote_project_path == '':
                 output_0 = subprocess.check_output(command_0, shell=True)
                 if os.path.exists(os.path.join(git_path, ".githooks")):
+                    command_tmp = "cd {0}; ".format(git_path)
+                    command_tmp += " git config core.hooksPath ./.githooks ; ".format(
+                        git_path)
+                    if command_1.find("checkout") == -1:
+                        command_tmp += "git checkout; "
+                    command_1 = command_tmp + command_1
                     for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
                         for f_dir in dirs:
                             os.chmod(os.path.join(root_dir, f_dir), 0o750)
                         for f_file in files:
                             os.chmod(os.path.join(root_dir, f_file), 0o750)
                 try:
+                    Log.debug('Githook + Checkout and Submodules: {0}', command_1)
                     output_1 = subprocess.check_output(command_1, shell=True)
                 except BaseException as e:
                     submodule_failure = True
@@ -240,9 +243,14 @@ class AutosubmitGit:
                         "Submodule {0} has a wrong configuration".format(submodule), 6014)
             else:
                 command_0 = "cd {0} ; {1}".format(git_remote_path, command_0)
-                command_1 = "cd {0} ; {1}".format(git_remote_path, command_1)
-
                 hpcarch.send_command(command_0)
+                if os.path.exists(os.path.join(git_path, ".githooks")):
+                    command_tmp = "cd {0}; ".format(git_path)
+                    command_tmp += " git config core.hooksPath ./.githooks ; ".format(
+                        git_path)
+                    if command_1.find("checkout") == -1:
+                        command_tmp += "git checkout; "
+                    command_1 = command_tmp + command_1
                 hpcarch.send_command(command_1)
         except subprocess.CalledProcessError as e:
             shutil.rmtree(project_path)

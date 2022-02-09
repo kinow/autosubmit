@@ -685,7 +685,7 @@ class Autosubmit:
             if not os.path.exists(exp_path):
                 raise AutosubmitCritical("Experiment does not exist", 7012)
             # delete is treated differently
-            if args.command not in ["monitor", "describe", "delete", "report"]:
+            if args.command not in ["monitor", "describe", "delete", "report", "stats"]:
                 owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=True) #fastlook
             else:
                 owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=False) #fastlook
