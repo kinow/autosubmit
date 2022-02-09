@@ -714,7 +714,7 @@ class Autosubmit:
                                               args.command + expid + '.log'), "out", log_level)
                     Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
                                               args.command + expid + '_err.log'), "err")
-                    Log.printlog("Permissions of {0} are {1}. The log will is being written in the {2} path".format(tmp_path,oct_perm,BasicConfig.GLOBAL_LOG_DIR))
+                    Log.printlog("Permissions of {0} are {1}. The log is being written in the {2} path instead of {1}. Please tell to the owner to fix the permissions".format(tmp_path,oct_perm,BasicConfig.GLOBAL_LOG_DIR))
             Log.file_path = tmp_path
         else:
             if expid == 'None':
