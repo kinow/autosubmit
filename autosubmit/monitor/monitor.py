@@ -37,7 +37,7 @@ from autosubmit.config.config_common import AutosubmitConfig
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from bscearth.utils.config_parser import ConfigParserFactory
 
-from diagram import create_bar_diagram
+from .diagram import create_bar_diagram
 from typing import Dict, List
 
 
@@ -165,7 +165,7 @@ class Monitor:
 
         if groups:
             if not hide_groups:
-                for job, group in groups['jobs'].items():
+                for job, group in list(groups['jobs'].items()):
                     if len(group) > 1:
                         group_name = 'cluster_' + '_'.join(group)
                         if group_name not in graph.obj_dict['subgraphs']:
@@ -179,7 +179,7 @@ class Monitor:
                         if len(subgraph.get_node(group[0])) == 0:
                             subgraph.add_node(previous_node)
 
-                        for i in xrange(1, len(group)):
+                        for i in range(1, len(group)):
                             node = exp.get_node(group[i])[0]
                             if len(subgraph.get_node(group[i])) == 0:
                                 subgraph.add_node(node)
@@ -217,7 +217,7 @@ class Monitor:
                     packages_subgraphs_dict[package].obj_dict['attributes']['style'] = 'dashed'
                 packages_subgraphs_dict[package].add_node(node)
 
-        for package, cluster in packages_subgraphs_dict.items():
+        for package, cluster in list(packages_subgraphs_dict.items()):
             graph.add_subgraph(cluster)
 
         Log.debug('Graph definition finalized')
@@ -459,7 +459,7 @@ class Monitor:
         """
         search_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot")
         chdir(search_dir)
-        files = filter(path.isfile, listdir(search_dir))
+        files = list(filter(path.isfile, listdir(search_dir)))
         files = [path.join(search_dir, f)
                  for f in files if 'statistics' not in f]
         files.sort(key=lambda x: path.getmtime(x))
@@ -480,7 +480,7 @@ class Monitor:
         """
         search_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot")
         chdir(search_dir)
-        files = filter(path.isfile, listdir(search_dir))
+        files = list(filter(path.isfile, listdir(search_dir)))
         files = [path.join(search_dir, f) for f in files if 'statistics' in f]
         files.sort(key=lambda x: path.getmtime(x))
         remain = files[-1:]

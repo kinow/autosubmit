@@ -242,7 +242,7 @@ class ParamikoPlatform(Platform):
         multiple_delete_previous_run = os.path.join(
             log_dir, "multiple_delete_previous_run.sh")
         if os.path.exists(log_dir):
-            open(multiple_delete_previous_run, 'w+').write("rm -f" + filenames)
+            open(multiple_delete_previous_run, 'wb+').write("rm -f" + filenames)
             os.chmod(multiple_delete_previous_run, 0o770)
             self.send_file(multiple_delete_previous_run, False)
             command = os.path.join(self.get_files_path(),
@@ -641,13 +641,14 @@ class ParamikoPlatform(Platform):
         while session.recv_stderr_ready():
             sys.stderr.write(session.recv_stderr(4096))
 
-    def x11_handler(self, channel, (src_addr, src_port)):
+    def x11_handler(self, channel, xxx_todo_changeme):
         '''handler for incoming x11 connections
         for each x11 incoming connection,
         - get a connection to the local display
         - maintain bidirectional map of remote x11 channel to local x11 channel
         - add the descriptors to the poller
         - queue the channel (use transport.accept())'''
+        (src_addr, src_port) = xxx_todo_changeme
         x11_chanfd = channel.fileno()
         local_x11_socket = xlib_connect.get_socket(*self.local_x11_display[:4])
         local_x11_socket_fileno = local_x11_socket.fileno()
@@ -677,7 +678,7 @@ class ParamikoPlatform(Platform):
                     if fd == session_fileno:
                         self.flush_out(session)
                     # data either on local/remote x11 socket
-                    if fd in self.channels.keys():
+                    if fd in list(self.channels.keys()):
                         channel, counterpart = self.channels[fd]
                         try:
                             # forward data between local/remote x11 socket.
@@ -731,8 +732,8 @@ class ParamikoPlatform(Platform):
                 else:
                     chan.exec_command(command)
                 stdin = chan.makefile('wb', bufsize)
-                stdout = chan.makefile('r', bufsize)
-                stderr = chan.makefile_stderr('r', bufsize)
+                stdout = chan.makefile('rb', bufsize)
+                stderr = chan.makefile_stderr('rb', bufsize)
                 return stdin, stdout, stderr
             except paramiko.SSHException as e:
                 if str(e) in "SSH session not active":

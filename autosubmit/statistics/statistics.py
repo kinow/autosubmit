@@ -2,9 +2,9 @@
 
 from datetime import datetime, timedelta
 from autosubmit.job.job import Job
-from jobs_stat import JobStat
-from stats_summary import StatsSummary
-from utils import timedelta2hours
+from .jobs_stat import JobStat
+from .stats_summary import StatsSummary
+from .utils import timedelta2hours
 from typing import List, Union, Dict
 # from collections import namedtuple
 

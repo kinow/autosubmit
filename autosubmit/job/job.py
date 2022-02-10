@@ -46,6 +46,7 @@ from threading import Thread
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 from log.log import Log, AutosubmitCritical, AutosubmitError
 from typing import List, Union
+from functools import reduce
 Log.get_logger("Autosubmit")
 
 # A wrapper for encapsulate threads , TODO: Python 3+ to be replaced by the < from concurrent.futures >
@@ -361,7 +362,7 @@ class Job(object):
             num_parents = 1
             if isinstance(parent, list):
                 num_parents = len(parent)
-            for i in xrange(num_parents):
+            for i in range(num_parents):
                 new_parent = parent[i] if isinstance(parent, list) else parent
                 self._parents.add(new_parent)
                 new_parent.__add_child(self)
@@ -549,8 +550,7 @@ class Job(object):
                     if already_completed:
                         break
                     already_completed = True
-                retrial_dates = map(lambda y: parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y,
-                                    retrial_fields)
+                retrial_dates = [parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y for y in retrial_fields]
                 # Inserting list [submit, start, finish] of datetimes at the beginning of the list. Restores ordering.
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
@@ -1052,18 +1052,18 @@ class Job(object):
             variables_to_modify = []
             deep_level = 1
             max_deep_level = 10
-            for key, value in proj_param.items():
+            for key, value in list(proj_param.items()):
                 if type(proj_param[key]) is str:
                     look_non_sub_variables = re.findall('%(?<!%%)\w+%(?!%%)', proj_param[key])
                     if len(look_non_sub_variables) > 0:
                         variables_to_modify.append(key)
             while len(variables_to_modify) > 0 and deep_level < max_deep_level:
-                for key, value in parameters.items():
+                for key, value in list(parameters.items()):
                     for var in variables_to_modify:
                         proj_param[var] = re.sub('%(?<!%%)' + key + '%(?!%%)', str(value), proj_param[var])
                 deep_level = deep_level + 1
                 variables_to_modify = []
-                for key, value in proj_param.items():
+                for key, value in list(proj_param.items()):
                     if type(proj_param[key]) is str:
                         look_non_sub_variables = re.findall('%(?<!%%)\w+%(?!%%)', proj_param[key])
                         if len(look_non_sub_variables) > 0:
@@ -1086,7 +1086,7 @@ class Job(object):
         try:  # issue in tests with project_type variable while using threads
             if as_conf.get_project_type().lower() != "none":
                 template_file = open(os.path.join(
-                    as_conf.get_project_dir(), self.file), 'r')
+                    as_conf.get_project_dir(), self.file), 'rb')
                 template = ''
                 if as_conf.get_remote_dependencies():
                     if self.type == Type.BASH:
@@ -1185,7 +1185,7 @@ class Job(object):
         """
         parameters = self.parameters
         template_content = self.update_content(as_conf)
-        for key, value in parameters.items():
+        for key, value in list(parameters.items()):
             template_content = re.sub(
                 '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
         if self.undefined_variables:
@@ -1195,14 +1195,14 @@ class Job(object):
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
         self.script_name = '{0}.cmd'.format(self.name)
-        open(os.path.join(self._tmp_path, script_name),'w').write(template_content)
+        open(os.path.join(self._tmp_path, script_name),'wb').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
         return script_name
 
     def create_wrapped_script(self, as_conf, wrapper_tag='wrapped'):
         parameters = self.parameters
         template_content = self.get_wrapped_content(as_conf)
-        for key, value in parameters.items():
+        for key, value in list(parameters.items()):
             template_content = re.sub(
                 '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
         if self.undefined_variables:
@@ -1213,7 +1213,7 @@ class Job(object):
         script_name = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
         self.script_name_wrapper = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
         open(os.path.join(self._tmp_path, script_name),
-             'w').write(template_content)
+             'wb').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
         return script_name
 
@@ -1259,7 +1259,7 @@ class Job(object):
         Writes submit date and time to TOTAL_STATS file. It doesn't write if hold == True.
         """
         # print(traceback.format_stack())
-        print("Call from {} with status {}".format(self.name, self.status_str))
+        print(("Call from {} with status {}".format(self.name, self.status_str)))
         if hold == True:
             return # Do not write for HELD jobs.
         data_time = ["",time.time()]
@@ -1278,7 +1278,7 @@ class Job(object):
                 f.write(" "+str(time.time()))
         else:
             path2 = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP')
-            f2 = open(path2, 'r')
+            f2 = open(path2, 'rb')
             for line in f2.readlines():
                 if len(line) > 0:
                     data_time = line.split(" ")
@@ -1682,8 +1682,8 @@ class WrapperJob(Job):
             if job.parents is None or len(tmp) == len(job.parents):
                 not_finished_jobs_dict[job.name] = job
                 self.inner_jobs_running.append(job)
-        if len(not_finished_jobs_dict.keys()) > 0:  # Only running jobs will enter there
-            not_finished_jobs_names = ' '.join(not_finished_jobs_dict.keys())
+        if len(list(not_finished_jobs_dict.keys())) > 0:  # Only running jobs will enter there
+            not_finished_jobs_names = ' '.join(list(not_finished_jobs_dict.keys()))
             remote_log_dir = self._platform.get_remote_log_dir()
             # PREPARE SCRIPT TO SEND
             command = textwrap.dedent("""
@@ -1706,7 +1706,7 @@ class WrapperJob(Job):
             if not os.stat(log_dir):
                 os.mkdir(log_dir)
                 os.chmod(log_dir, 0o770)
-            open(multiple_checker_inner_jobs, 'w+').write(command)
+            open(multiple_checker_inner_jobs, 'wb+').write(command)
             os.chmod(multiple_checker_inner_jobs, 0o770)
             self._platform.send_file(multiple_checker_inner_jobs, False)
             command = os.path.join(

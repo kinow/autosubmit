@@ -1,4 +1,4 @@
-from tests_commands import *
+from .tests_commands import *
 import os
 import subprocess
 import string
@@ -14,7 +14,7 @@ def check_cmd(command, path=BIN_PATH, verbose='AS_TEST_VERBOSE' in os.environ):
     try:
         output = subprocess.check_output(os.path.join(path, command), shell=True, stderr=subprocess.STDOUT)
         if verbose:
-            print output
+            print(output)
 
         if 'CRITICAL' in output or 'ERROR' in output:
             return False
@@ -23,7 +23,7 @@ def check_cmd(command, path=BIN_PATH, verbose='AS_TEST_VERBOSE' in os.environ):
 
     except subprocess.CalledProcessError as e:
         if verbose:
-            print e.output
+            print(e.output)
         return False
 
 
@@ -83,7 +83,7 @@ def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
     :return: number's base36 string value
     :rtype: str
     """
-    if not isinstance(number, (int, long)):
+    if not isinstance(number, int):
         raise TypeError('number must be an integer')
 
     # Special case for zero

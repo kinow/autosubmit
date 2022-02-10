@@ -69,8 +69,8 @@ class JobListPersistencePkl(JobListPersistence):
         """
         path = os.path.join(persistence_path, persistence_file + '.pkl')
         if os.path.exists(path):
-            fd = open(path, 'r')
-            return pickle.load(fd)
+            fd = open(path, 'rb')
+            return pickle.load(fd, encoding='latin1')
         else:
             Log.printlog('File {0} does not exist'.format(path),7040)
             return list()
@@ -84,7 +84,7 @@ class JobListPersistencePkl(JobListPersistence):
 
         """
         path = os.path.join(persistence_path, persistence_file + '.pkl')
-        fd = open(path, 'w')
+        fd = open(path, 'wb')
         setrecursionlimit(50000)
         Log.debug("Saving JobList: " + path)
         jobs_data = [(job.name, job.id, job.status,
@@ -92,7 +92,7 @@ class JobListPersistencePkl(JobListPersistence):
                       job.member, job.chunk,
                       job.local_logs[0], job.local_logs[1],
                       job.remote_logs[0], job.remote_logs[1],job.wrapper_type) for job in job_list]
-        pickle.dump(jobs_data, fd)
+        pickle.dump(jobs_data, fd, protocol=2)
         Log.debug('Job list saved')
 
 

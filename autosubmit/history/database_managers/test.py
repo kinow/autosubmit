@@ -21,8 +21,8 @@ import time
 import random
 import os
 from shutil import copy2
-from experiment_history_db_manager import ExperimentHistoryDbManager
-from experiment_status_db_manager import ExperimentStatusDbManager
+from .experiment_history_db_manager import ExperimentHistoryDbManager
+from .experiment_status_db_manager import ExperimentStatusDbManager
 from autosubmit.history.data_classes.experiment_run import ExperimentRun
 from autosubmit.history.data_classes.job_data import JobData
 from autosubmit.config.basicConfig import BasicConfig

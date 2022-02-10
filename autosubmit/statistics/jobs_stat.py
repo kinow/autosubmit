@@ -1,6 +1,6 @@
 #!/bin/env/python
 from datetime import datetime, timedelta
-from utils import timedelta2hours
+from .utils import timedelta2hours
 
 class JobStat(object):
     def __init__(self, name, processors, wallclock):

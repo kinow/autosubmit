@@ -92,21 +92,21 @@ class DicJobs:
                             section), 7000)
                 elif start_end[0] > -1 and start_end[1] == -1:
                     if member:
-                        for member_number in xrange(int(start_end[0]), len(self._member_list)):
+                        for member_number in range(int(start_end[0]), len(self._member_list)):
                             parsed_list.append(member_number)
                     else:
-                        for chunk in xrange(int(start_end[0]), len(self._chunk_list) + 1):  # chunk starts in 1
+                        for chunk in range(int(start_end[0]), len(self._chunk_list) + 1):  # chunk starts in 1
                             parsed_list.append(chunk)
                 elif start_end[0] > -1 and start_end[1] > -1:
-                    for item in xrange(int(start_end[0]), int(start_end[1]) + offset):
+                    for item in range(int(start_end[0]), int(start_end[1]) + offset):
                         parsed_list.append(item)
 
                 elif start_end[0] == -1 and start_end[1] > -1:
                     if member:
-                        for item in xrange(0, int(start_end[1]) + offset):  # include last element
+                        for item in range(0, int(start_end[1]) + offset):  # include last element
                             parsed_list.append(item)
                     else:
-                        for item in xrange(1, int(start_end[1]) + offset):  # include last element
+                        for item in range(1, int(start_end[1]) + offset):  # include last element
                             parsed_list.append(item)
                 elif start_end[0] > start_end[1]:
                     raise AutosubmitCritical(

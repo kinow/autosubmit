@@ -22,7 +22,7 @@ class TestBasicConfig(TestCase):
         # act
         BasicConfig._update_config()
         # assert
-        self.assertEquals(os.path.join(BasicConfig.DB_DIR, BasicConfig.DB_FILE), BasicConfig.DB_PATH)
+        self.assertEqual(os.path.join(BasicConfig.DB_DIR, BasicConfig.DB_FILE), BasicConfig.DB_PATH)
 
     def test_read_makes_the_right_method_calls(self):
         # arrange

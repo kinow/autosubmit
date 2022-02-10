@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-from platform_monitor import PlatformMonitor
-from slurm_monitor_item import SlurmMonitorItem
+from .platform_monitor import PlatformMonitor
+from .slurm_monitor_item import SlurmMonitorItem
 
 class SlurmMonitor(PlatformMonitor):
   """ Manages Slurm commands interpretation. """

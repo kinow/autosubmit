@@ -20,7 +20,7 @@ class TestDicJobs(TestCase):
         self.date_list = ['fake-date1', 'fake-date2']
         self.member_list = ['fake-member1', 'fake-member2']
         self.num_chunks = 99
-        self.chunk_list = range(1, self.num_chunks + 1)
+        self.chunk_list = list(range(1, self.num_chunks + 1))
         self.date_format = 'H'
         self.default_retrials = 999
         self.dictionary = DicJobs(self.job_list, self.parser_mock, self.date_list, self.member_list, self.chunk_list,
@@ -136,10 +136,10 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_startdate(mock_section.name, priority, frequency, Type.BASH)
 
         # assert
-        self.assertEquals(len(self.date_list), self.dictionary.build_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
+        self.assertEqual(len(self.date_list), self.dictionary.build_job.call_count)
+        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
         for date in self.date_list:
-            self.assertEquals(self.dictionary._dic[mock_section.name][date], mock_section)
+            self.assertEqual(self.dictionary._dic[mock_section.name][date], mock_section)
 
     def test_dic_creates_right_jobs_by_member(self):
         # arrange
@@ -153,11 +153,11 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_member(mock_section.name, priority, frequency, Type.BASH)
 
         # assert
-        self.assertEquals(len(self.date_list) * len(self.member_list), self.dictionary.build_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
+        self.assertEqual(len(self.date_list) * len(self.member_list), self.dictionary.build_job.call_count)
+        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
         for date in self.date_list:
             for member in self.member_list:
-                self.assertEquals(self.dictionary._dic[mock_section.name][date][member], mock_section)
+                self.assertEqual(self.dictionary._dic[mock_section.name][date][member], mock_section)
 
     def test_dic_creates_right_jobs_by_chunk(self):
         # arrange
@@ -171,13 +171,13 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_chunk(mock_section.name, priority, frequency, Type.BASH)
 
         # assert
-        self.assertEquals(len(self.date_list) * len(self.member_list) * len(self.chunk_list),
+        self.assertEqual(len(self.date_list) * len(self.member_list) * len(self.chunk_list),
                           self.dictionary.build_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
+        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
         for date in self.date_list:
             for member in self.member_list:
                 for chunk in self.chunk_list:
-                    self.assertEquals(self.dictionary._dic[mock_section.name][date][member][chunk], mock_section)
+                    self.assertEqual(self.dictionary._dic[mock_section.name][date][member][chunk], mock_section)
 
     def test_dic_creates_right_jobs_by_chunk_with_frequency_3(self):
         # arrange
@@ -191,9 +191,9 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_chunk(mock_section.name, priority, frequency, Type.BASH)
 
         # assert
-        self.assertEquals(len(self.date_list) * len(self.member_list) * (len(self.chunk_list) / frequency),
+        self.assertEqual(len(self.date_list) * len(self.member_list) * (len(self.chunk_list) / frequency),
                           self.dictionary.build_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
+        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
 
     def test_dic_creates_right_jobs_by_chunk_with_frequency_4(self):
         # arrange
@@ -208,10 +208,10 @@ class TestDicJobs(TestCase):
 
         # assert
         # you have to multiply to the round upwards (ceil) of the next division
-        self.assertEquals(
+        self.assertEqual(
             len(self.date_list) * len(self.member_list) * math.ceil(len(self.chunk_list) / float(frequency)),
             self.dictionary.build_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
+        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
 
     def test_dic_creates_right_jobs_by_chunk_with_date_synchronize(self):
         # arrange
@@ -226,13 +226,13 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_chunk(mock_section.name, priority, frequency, Type.BASH, 'date')
 
         # assert
-        self.assertEquals(len(self.chunk_list),
+        self.assertEqual(len(self.chunk_list),
                           self.dictionary.build_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
+        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
         for date in self.date_list:
             for member in self.member_list:
                 for chunk in self.chunk_list:
-                    self.assertEquals(self.dictionary._dic[mock_section.name][date][member][chunk], mock_section)
+                    self.assertEqual(self.dictionary._dic[mock_section.name][date][member][chunk], mock_section)
 
     def test_dic_creates_right_jobs_by_chunk_with_date_synchronize_and_frequency_4(self):
         # arrange
@@ -246,9 +246,9 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_chunk(mock_section.name, priority, frequency, Type.BASH, 'date')
 
         # assert
-        self.assertEquals(math.ceil(len(self.chunk_list) / float(frequency)),
+        self.assertEqual(math.ceil(len(self.chunk_list) / float(frequency)),
                           self.dictionary.build_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
+        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
 
     def test_dic_creates_right_jobs_by_chunk_with_member_synchronize(self):
         # arrange
@@ -262,13 +262,13 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_chunk(mock_section.name, priority, frequency, Type.BASH, 'member')
 
         # assert
-        self.assertEquals(len(self.date_list) * len(self.chunk_list),
+        self.assertEqual(len(self.date_list) * len(self.chunk_list),
                           self.dictionary.build_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
+        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
         for date in self.date_list:
             for member in self.member_list:
                 for chunk in self.chunk_list:
-                    self.assertEquals(self.dictionary._dic[mock_section.name][date][member][chunk], mock_section)
+                    self.assertEqual(self.dictionary._dic[mock_section.name][date][member][chunk], mock_section)
 
     def test_dic_creates_right_jobs_by_chunk_with_member_synchronize_and_frequency_4(self):
         # arrange
@@ -282,9 +282,9 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_chunk(mock_section.name, priority, frequency, Type.BASH, 'member')
 
         # assert
-        self.assertEquals(len(self.date_list) * math.ceil(len(self.chunk_list) / float(frequency)),
+        self.assertEqual(len(self.date_list) * math.ceil(len(self.chunk_list) / float(frequency)),
                           self.dictionary.build_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
+        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
 
     def test_create_job_creates_a_job_with_right_parameters(self):
         section = ''
@@ -318,29 +318,29 @@ class TestDicJobs(TestCase):
         created_job = self.dictionary.build_job(section, priority, date, member, chunk, 'bash')
 
         # assert
-        self.assertEquals('random-id_2016010100_fc0_ch0_', created_job.name)
-        self.assertEquals(Status.WAITING, created_job.status)
-        self.assertEquals(priority, created_job.priority)
-        self.assertEquals(section, created_job.section)
-        self.assertEquals(date, created_job.date)
-        self.assertEquals(member, created_job.member)
-        self.assertEquals(chunk, created_job.chunk)
-        self.assertEquals(self.date_format, created_job.date_format)
-        self.assertEquals(options['FREQUENCY'], created_job.frequency)
-        self.assertEquals(options['DELAY'], created_job.delay)
+        self.assertEqual('random-id_2016010100_fc0_ch0_', created_job.name)
+        self.assertEqual(Status.WAITING, created_job.status)
+        self.assertEqual(priority, created_job.priority)
+        self.assertEqual(section, created_job.section)
+        self.assertEqual(date, created_job.date)
+        self.assertEqual(member, created_job.member)
+        self.assertEqual(chunk, created_job.chunk)
+        self.assertEqual(self.date_format, created_job.date_format)
+        self.assertEqual(options['FREQUENCY'], created_job.frequency)
+        self.assertEqual(options['DELAY'], created_job.delay)
         self.assertTrue(created_job.wait)
         self.assertTrue(created_job.rerun_only)
-        self.assertEquals(Type.BASH, created_job.type)
-        self.assertEquals(None, created_job.executable)
-        self.assertEquals(options['PLATFORM'], created_job.platform_name)
-        self.assertEquals(options['FILE'], created_job.file)
-        self.assertEquals(options['QUEUE'], created_job.queue)
+        self.assertEqual(Type.BASH, created_job.type)
+        self.assertEqual(None, created_job.executable)
+        self.assertEqual(options['PLATFORM'], created_job.platform_name)
+        self.assertEqual(options['FILE'], created_job.file)
+        self.assertEqual(options['QUEUE'], created_job.queue)
         self.assertTrue(created_job.check)
-        self.assertEquals(options['PROCESSORS'], created_job.processors)
-        self.assertEquals(options['THREADS'], created_job.threads)
-        self.assertEquals(options['TASKS'], created_job.tasks)
-        self.assertEquals(options['MEMORY'], created_job.memory)
-        self.assertEquals(options['WALLCLOCK'], created_job.wallclock)
+        self.assertEqual(options['PROCESSORS'], created_job.processors)
+        self.assertEqual(options['THREADS'], created_job.threads)
+        self.assertEqual(options['TASKS'], created_job.tasks)
+        self.assertEqual(options['MEMORY'], created_job.memory)
+        self.assertEqual(options['WALLCLOCK'], created_job.wallclock)
         self.assertIsNone(created_job.retrials)
         job_list_mock.append.assert_called_once_with(created_job)
 
@@ -358,8 +358,8 @@ class TestDicJobs(TestCase):
         returned_default = self.dictionary.get_option(section, option, default)
 
         # assert
-        self.assertEquals(option, returned_option)
-        self.assertEquals(default, returned_default)
+        self.assertEqual(option, returned_option)
+        self.assertEqual(default, returned_default)
 
     def test_get_member_returns_the_jobs_if_no_member(self):
         # arrange
@@ -370,7 +370,7 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary._get_member(jobs, dic, 'fake-member', None)  # expected jobs
 
         # arrange
-        self.assertEquals(jobs, returned_jobs)
+        self.assertEqual(jobs, returned_jobs)
 
     def test_get_member_returns_the_jobs_with_the_member(self):
         # arrange
@@ -382,7 +382,7 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary._get_member(jobs, dic, member, None)
 
         # arrange
-        self.assertEquals(['fake-job'] + ['any-value'], returned_jobs)  # expected jobs + member
+        self.assertEqual(['fake-job'] + ['any-value'], returned_jobs)  # expected jobs + member
 
     def test_get_member_returns_the_jobs_with_the_given_chunk_of_the_member(self):
         # arrange
@@ -394,7 +394,7 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary._get_member(jobs, dic, member, 'fake-job3')
 
         # arrange
-        self.assertEquals(['fake-job'] + ['fake'], returned_jobs)  # expected jobs + chunk
+        self.assertEqual(['fake-job'] + ['fake'], returned_jobs)  # expected jobs + chunk
 
     def test_get_member_returns_the_jobs_with_all_the_chunks_of_the_member(self):
         # arrange
@@ -406,7 +406,7 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary._get_member(jobs, dic, member, None)
 
         # arrange
-        self.assertEquals(['fake-job'] + ['fake5', 'fake8', 'fake9'], returned_jobs)  # expected jobs + all chunks
+        self.assertEqual(['fake-job'] + ['fake5', 'fake8', 'fake9'], returned_jobs)  # expected jobs + all chunks
 
     def test_get_date_returns_the_jobs_if_no_date(self):
         # arrange
@@ -417,7 +417,7 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary._get_date(jobs, dic, 'whatever', None, None)
 
         # arrange
-        self.assertEquals('fake-jobs', returned_jobs)  # expected jobs
+        self.assertEqual('fake-jobs', returned_jobs)  # expected jobs
 
     def test_get_date_returns_the_jobs_with_the_date(self):
         # arrange
@@ -429,7 +429,7 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary._get_date(jobs, dic, date, None, None)
 
         # arrange
-        self.assertEquals(['fake-job'] + ['any-value'], returned_jobs)  # expected jobs + date
+        self.assertEqual(['fake-job'] + ['any-value'], returned_jobs)  # expected jobs + date
 
     def test_get_date_returns_the_jobs_and_calls_get_member_once_with_the_given_member(self):
         # arrange
@@ -445,7 +445,7 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary._get_date(jobs, dic, date, member, chunk)
 
         # arrange
-        self.assertEquals(['fake-job'], returned_jobs)
+        self.assertEqual(['fake-job'], returned_jobs)
         self.dictionary._get_member.assert_called_once_with(jobs, date_dic, member, chunk)
 
     def test_get_date_returns_the_jobs_and_calls_get_member_for_all_its_members(self):
@@ -461,8 +461,8 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary._get_date(jobs, dic, date, None, chunk)
 
         # arrange
-        self.assertEquals(['fake-job'], returned_jobs)
-        self.assertEquals(len(self.dictionary._member_list), self.dictionary._get_member.call_count)
+        self.assertEqual(['fake-job'], returned_jobs)
+        self.assertEqual(len(self.dictionary._member_list), self.dictionary._get_member.call_count)
         for member in self.dictionary._member_list:
             self.dictionary._get_member.assert_any_call(jobs, date_dic, member, chunk)
 
@@ -475,7 +475,7 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary.get_jobs(section)
 
         # arrange
-        self.assertEquals(['fake-job'], returned_jobs)
+        self.assertEqual(['fake-job'], returned_jobs)
 
     def test_get_jobs_calls_get_date_with_given_date(self):
         # arrange
@@ -491,7 +491,7 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary.get_jobs(section, date, member, chunk)
 
         # arrange
-        self.assertEquals(list(), returned_jobs)
+        self.assertEqual(list(), returned_jobs)
         self.dictionary._get_date.assert_called_once_with(list(), dic, date, member, chunk)
 
     def test_get_jobs_calls_get_date_for_all_its_dates(self):
@@ -507,8 +507,8 @@ class TestDicJobs(TestCase):
         returned_jobs = self.dictionary.get_jobs(section, member=member, chunk=chunk)
 
         # arrange
-        self.assertEquals(list(), returned_jobs)
-        self.assertEquals(len(self.dictionary._date_list), self.dictionary._get_date.call_count)
+        self.assertEqual(list(), returned_jobs)
+        self.assertEqual(len(self.dictionary._date_list), self.dictionary._get_date.call_count)
         for date in self.dictionary._date_list:
             self.dictionary._get_date.assert_any_call(list(), dic, date, member, chunk)
 
@@ -522,7 +522,7 @@ class TestDicJobs(TestCase):
 
         self.dictionary._create_jobs_once(mock_section.name, priority, Type.BASH, dict(),splits)
 
-        self.assertEquals(mock_section, self.dictionary._dic[mock_section.name])
+        self.assertEqual(mock_section, self.dictionary._dic[mock_section.name])
         self.dictionary.build_job.assert_called_once_with(mock_section.name, priority, None, None, None, Type.BASH, {},splits)
         self.job_list.graph.add_node.assert_called_once_with(mock_section.name)
 

@@ -21,7 +21,7 @@ try:
     from configparser import SafeConfigParser
 except ImportError:
     # noinspection PyCompatibility
-    from ConfigParser import SafeConfigParser
+    from configparser import SafeConfigParser
 import os
 import re
 from log.log import Log, AutosubmitError, AutosubmitCritical

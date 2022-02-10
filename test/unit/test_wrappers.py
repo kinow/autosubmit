@@ -1378,7 +1378,7 @@ class TestWrappers(TestCase):
             "s2 s3 s5"), ordered_jobs_by_date_member)
 
     def _createDummyJobs(self, sections_dict, date_list, member_list, chunk_list):
-        for section, section_dict in sections_dict.get('sections').items():
+        for section, section_dict in list(sections_dict.get('sections').items()):
             running = section_dict['RUNNING']
             wallclock = section_dict['WALLCLOCK']
 
@@ -1464,8 +1464,7 @@ class TestWrappers(TestCase):
 
     def _filter_jobs(self, section, date=None, member=None, chunk=None):
         # TODO: improve the efficiency
-        jobs = filter(lambda job: job.section == section and job.date == date and job.member == member and job.chunk == chunk,
-                      self.job_list.get_job_list())
+        jobs = [job for job in self.job_list.get_job_list() if job.section == section and job.date == date and job.member == member and job.chunk == chunk]
         return jobs
 
     def _createDummyJob(self, name, total_wallclock, section, date=None, member=None, chunk=None):

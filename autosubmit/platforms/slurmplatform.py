@@ -265,7 +265,7 @@ class SlurmPlatform(ParamikoPlatform):
                                     line) > 7 and len(line[7]) > 0 else 0
                             else:
                                 # If packed but not end of wrapper, try to get info from current data.
-                                if "finish" in extra_data.keys() and extra_data["finish"] != "Unknown":
+                                if "finish" in list(extra_data.keys()) and extra_data["finish"] != "Unknown":
                                     # finish data exists
                                     finish = int(mktime(datetime.strptime(
                                         extra_data["finish"], "%Y-%m-%dT%H:%M:%S").timetuple()))
@@ -273,7 +273,7 @@ class SlurmPlatform(ParamikoPlatform):
                                     # if finish date does not exist, query previous step.
                                     if len(steps) >= 2 and detailed_data.__contains__(steps[-2]):
                                         new_extra_data = detailed_data[steps[-2]]
-                                        if "finish" in new_extra_data.keys() and new_extra_data["finish"] != "Unknown":
+                                        if "finish" in list(new_extra_data.keys()) and new_extra_data["finish"] != "Unknown":
                                             # This might result in an job finish < start, need to handle that in the caller function
                                             finish = int(mktime(datetime.strptime(
                                                 new_extra_data["finish"], "%Y-%m-%dT%H:%M:%S").timetuple()))
@@ -281,7 +281,7 @@ class SlurmPlatform(ParamikoPlatform):
                                             finish = int(time())
                                     else:
                                         finish = int(time())
-                                if "energy" in extra_data.keys() and extra_data["energy"] != "NA":
+                                if "energy" in list(extra_data.keys()) and extra_data["energy"] != "NA":
                                     # energy exists
                                     energy = parse_output_number(
                                         extra_data["energy"])
@@ -289,7 +289,7 @@ class SlurmPlatform(ParamikoPlatform):
                                     # if energy does not exist, query previous step
                                     if len(steps) >= 2 and detailed_data.__contains__(steps[-2]):
                                         new_extra_data = detailed_data[steps[-2]]
-                                        if "energy" in new_extra_data.keys() and new_extra_data["energy"] != "NA":
+                                        if "energy" in list(new_extra_data.keys()) and new_extra_data["energy"] != "NA":
                                             energy = parse_output_number(
                                                 new_extra_data["energy"])
                                         else:

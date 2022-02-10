@@ -23,7 +23,7 @@ import os
 from log.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
-from submitter import Submitter
+from .submitter import Submitter
 from autosubmit.platforms.psplatform import PsPlatform
 from autosubmit.platforms.lsfplatform import LsfPlatform
 from autosubmit.platforms.pbsplatform import PBSPlatform

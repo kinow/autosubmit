@@ -61,13 +61,13 @@ class JobPackager(object):
         queued_by_id = dict()
         for queued_job in queuing_jobs:
             queued_by_id[queued_job.id] = queued_job
-        queuing_jobs_len = len(queued_by_id.keys())
+        queuing_jobs_len = len(list(queued_by_id.keys()))
 
         submitted_jobs = jobs_list.get_submitted(platform)
         submitted_by_id = dict()
         for submitted_job in submitted_jobs:
             submitted_by_id[submitted_job.id] = submitted_job
-        submitted_jobs_len = len(submitted_by_id.keys())
+        submitted_jobs_len = len(list(submitted_by_id.keys()))
 
         waiting_jobs = submitted_jobs_len + queuing_jobs_len
         # Calculate available space in Platform Queue
@@ -130,7 +130,7 @@ class JobPackager(object):
                 jobs_by_section[job.section].append(job)
 
         for section in jobs_by_section:
-            if section in jobs_held_by_section.keys():
+            if section in list(jobs_held_by_section.keys()):
                 weight = len(jobs_held_by_section[section]) + 1
             else:
                 weight = 1
@@ -182,7 +182,7 @@ class JobPackager(object):
                 if held_job.id not in held_by_id:
                     held_by_id[held_job.id] = []
                 held_by_id[held_job.id].append(held_job)
-            current_held_jobs = len(held_by_id.keys())
+            current_held_jobs = len(list(held_by_id.keys()))
             remaining_held_slots = 5 - current_held_jobs
             Log.debug("there are currently {0} held jobs".format(remaining_held_slots))
             try:
@@ -389,7 +389,7 @@ class JobPackager(object):
                                     packages_to_submit.append(p)
                                 else:
                                     wallclock_sum = p.jobs[0].wallclock
-                                    for seq in xrange(1, min_v):
+                                    for seq in range(1, min_v):
                                         wallclock_sum = sum_str_hours(wallclock_sum, p.jobs[0].wallclock)
                                     next_wrappable_jobs = self._jobs_list.get_jobs_by_section(self.jobs_in_wrapper[self.current_wrapper_section])
                                     next_wrappable_jobs = [job for job in next_wrappable_jobs if job.status == Status.WAITING and job not in p.jobs ] # Get only waiting jobs
@@ -654,10 +654,10 @@ class JobPackager(object):
         if new_package is not None:
             current_package += new_package
 
-        for i in xrange(len(current_package)):
+        for i in range(len(current_package)):
             total_wallclock = sum_str_hours(total_wallclock, wallclock)
         if len(current_package) > 1:
-            for level in xrange(1, len(current_package)):
+            for level in range(1, len(current_package)):
                 for job in current_package[level]:
                     job.level = level
         return JobPackageHorizontalVertical(current_package, max_procs, total_wallclock,
@@ -685,7 +685,7 @@ class JobPackager(object):
         for job in current_package[-1]:
             total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
         if len(current_package) > 1:
-            for level in xrange(1, len(current_package)):
+            for level in range(1, len(current_package)):
                 for job in current_package[level]:
                     job.level = level
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
@@ -837,9 +837,9 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         self.ready_job = ready_job
         self.dict_jobs = dict_jobs
         # Last date from the ordering
-        date = dict_jobs.keys()[-1]
+        date = list(dict_jobs.keys())[-1]
         # Last member from the last date from the ordering
-        member = dict_jobs[date].keys()[-1]
+        member = list(dict_jobs[date].keys())[-1]
         # If job to be wrapped has date and member, use those
         if ready_job.date is not None:
             date = ready_job.date
@@ -861,7 +861,7 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         # Unnecessary assignment
         sorted_jobs = self.sorted_jobs
 
-        for index in xrange(self.index, len(sorted_jobs)):
+        for index in range(self.index, len(sorted_jobs)):
             child = sorted_jobs[index]
             if self._is_wrappable(child):
                 self.index = index + 1
@@ -1026,5 +1026,5 @@ class JobPackagerHorizontal(object):
             if job.section not in self._components_dict:
                 self._components_dict[job.section] = dict()
                 self._components_dict[job.section]['COMPONENTS'] = {parameter: job.parameters[parameter]
-                                                                    for parameter in job.parameters.keys()
+                                                                    for parameter in list(job.parameters.keys())
                                                                     if '_NUMPROC' in parameter}

@@ -22,11 +22,11 @@ import os
 import time
 from shutil import copy2
 from collections import namedtuple
-from experiment_history import ExperimentHistory
-from internal_logging import Logging
-from strategies import StraightWrapperAssociationStrategy, GeneralizedWrapperDistributionStrategy, PlatformInformationHandler
+from .experiment_history import ExperimentHistory
+from .internal_logging import Logging
+from .strategies import StraightWrapperAssociationStrategy, GeneralizedWrapperDistributionStrategy, PlatformInformationHandler
 from autosubmit.config.basicConfig import BasicConfig
-from platform_monitor.slurm_monitor import SlurmMonitor
+from .platform_monitor.slurm_monitor import SlurmMonitor
 EXPID_TT00_SOURCE = "test_database.db~"
 EXPID_TT01_SOURCE = "test_database_no_run.db~"
 EXPID = "tt00"

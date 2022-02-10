@@ -34,4 +34,4 @@ def fd_table_status_str():
     return fd_table_status_logify(fd_table_status())
 
 if __name__=='__main__':
-    print fd_table_status_str()
+    print(fd_table_status_str())

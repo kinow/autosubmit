@@ -48,12 +48,12 @@ class JobGrouping(object):
         else:
             self._create_groups(jobs_group_dict, self.ungrouped_jobs)
 
-            for group, statuses in self.group_status_dict.items():
+            for group, statuses in list(self.group_status_dict.items()):
                 status = self._set_group_status(statuses)
                 self.group_status_dict[group] = status
 
         final_jobs_group = dict()
-        for job, groups in jobs_group_dict.items():
+        for job, groups in list(jobs_group_dict.items()):
             for group in groups:
                 if group not in blacklist:
                     while group in groups_map:
@@ -89,7 +89,7 @@ class JobGrouping(object):
 
         out = nestedExpr('[', ']').parseString(text).asList()
 
-        depth = lambda L: isinstance(L, list) and max(map(depth, L)) + 1
+        depth = lambda L: isinstance(L, list) and max(list(map(depth, L))) + 1
 
         if self.group_by == 'date':
             if depth(out) == 2:
@@ -127,7 +127,7 @@ class JobGrouping(object):
                                 for chunk in member_chunks[member_count + 1]:
                                     if chunk.find("-") != -1:
                                         numbers = chunk.split("-")
-                                        for count in xrange(int(numbers[0]), int(numbers[1]) + 1):
+                                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
                                             chunks.append(count)
                                     else:
                                         chunks.append(int(chunk))
@@ -163,7 +163,7 @@ class JobGrouping(object):
                 return Status.UNKNOWN
 
     def _create_groups(self, jobs_group_dict, blacklist=list()):
-        for i in reversed(xrange(len(self.jobs))):
+        for i in reversed(range(len(self.jobs))):
             job = self.jobs[i]
 
             groups = []
@@ -243,17 +243,17 @@ class JobGrouping(object):
 
         self._create_groups(jobs_group_dict, blacklist)
 
-        for group, statuses in self.group_status_dict.items():
+        for group, statuses in list(self.group_status_dict.items()):
             status = self._set_group_status(statuses)
             self.group_status_dict[group] = status
 
-        self._create_higher_level_group(self.group_status_dict.keys(), groups_map)
+        self._create_higher_level_group(list(self.group_status_dict.keys()), groups_map)
         self._fix_splits_automatic_grouping(split_groups, split_groups_status, jobs_group_dict)
 
         # check if remaining jobs can be grouped
-        for i in reversed(xrange(len(self.jobs))):
+        for i in reversed(range(len(self.jobs))):
             job = self.jobs[i]
-            for group, status in self.group_status_dict.items():
+            for group, status in list(self.group_status_dict.items()):
                 if group in job.name and status == job.status:
                     jobs_group_dict[job.name] = [group]
                     self.jobs.pop(i)
@@ -270,17 +270,17 @@ class JobGrouping(object):
     def _fix_splits_automatic_grouping(self, split_groups, split_groups_status, jobs_group_dict):
         if split_groups and split_groups_status:
             group_maps = dict()
-            for group in self.group_status_dict.keys():
-                matching_groups = [split_group for split_group in split_groups_status.keys() if group in split_group]
+            for group in list(self.group_status_dict.keys()):
+                matching_groups = [split_group for split_group in list(split_groups_status.keys()) if group in split_group]
                 for matching_group in matching_groups:
                     group_maps[matching_group] = group
                     split_groups_status.pop(matching_group)
 
-            for split_group, statuses in split_groups_status.items():
+            for split_group, statuses in list(split_groups_status.items()):
                 status = self._set_group_status(statuses)
                 self.group_status_dict[split_group] = status
 
-            for job, groups in split_groups.items():
+            for job, groups in list(split_groups.items()):
                 final_groups = list()
                 for group in groups:
                     if group in group_maps:

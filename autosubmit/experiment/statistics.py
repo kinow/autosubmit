@@ -197,8 +197,7 @@ class ExperimentStats(object):
         Log.result('\n'.join(self._totals))
 
     def _format_stats(self):
-        self._queued = map(lambda y: timedelta2hours(y), self._queued)
-        self._run = map(lambda y: timedelta2hours(y), self._run)
-        self._fail_queued = map(
-            lambda y: timedelta2hours(y), self._fail_queued)
-        self._fail_run = map(lambda y: timedelta2hours(y), self._fail_run)
+        self._queued = [timedelta2hours(y) for y in self._queued]
+        self._run = [timedelta2hours(y) for y in self._run]
+        self._fail_queued = [timedelta2hours(y) for y in self._fail_queued]
+        self._fail_run = [timedelta2hours(y) for y in self._fail_run]

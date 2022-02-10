@@ -25,9 +25,8 @@ from abc import ABCMeta, abstractmethod
 DEFAULT_JOBDATA_DIR = os.path.join('/esarchive', 'autosubmit', 'as_metadata', 'data')
 DEFAULT_HISTORICAL_LOGS_DIR = os.path.join('/esarchive', 'autosubmit', 'as_metadata', 'logs')
 DEFAULT_LOCAL_ROOT_DIR = os.path.join('/esarchive', 'autosubmit')
-class DatabaseManager():
+class DatabaseManager(metaclass=ABCMeta):
   """ Simple database manager. Needs expid. """
-  __metaclass__ = ABCMeta
   AS_TIMES_DB_NAME = "as_times.db" # default AS_TIMES location
   ECEARTH_DB_NAME = "ecearth.db" # default EC_EARTH_DB_NAME location
   def __init__(self, expid, jobdata_dir_path=DEFAULT_JOBDATA_DIR, local_root_dir_path=DEFAULT_LOCAL_ROOT_DIR):    

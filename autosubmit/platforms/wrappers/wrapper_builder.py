@@ -44,7 +44,7 @@ class WrapperDirector:
         return wrapper_script
 class WrapperBuilder(object):
     def __init__(self, **kwargs):
-        if "retrials" in kwargs.keys():
+        if "retrials" in list(kwargs.keys()):
             self.retrials = kwargs['retrials']
         self.header_directive = kwargs['header_directive']
         self.job_scripts = kwargs['jobs_scripts']
@@ -56,7 +56,7 @@ class WrapperBuilder(object):
         self.machinefiles_name = ''
         self.machinefiles_indent = 0
         self.exit_thread = ''
-        if "wallclock_by_level" in kwargs.keys():
+        if "wallclock_by_level" in list(kwargs.keys()):
             self.wallclock_by_level = kwargs['wallclock_by_level']
     def build_header(self):
         return textwrap.dedent(self.header_directive) + self.build_imports()
@@ -861,14 +861,14 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
         total_threads = float(len(self.job_scripts))
         n_threads = float(self.threads)
         core = []
-        for thread in xrange(int(n_threads)):
+        for thread in range(int(n_threads)):
             core.append(0x0)
 
         core[0] = 0x1
         horizontal_wrapper_size=int(total_threads)
         srun_mask_values = []
-        for job_id in xrange(horizontal_wrapper_size):
-            for thread in xrange(1, int(n_threads)):
+        for job_id in range(horizontal_wrapper_size):
+            for thread in range(1, int(n_threads)):
                 core[thread] = core[thread-1]*2
             job_mask = 0x0
             for thr_mask in core:

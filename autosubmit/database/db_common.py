@@ -23,7 +23,7 @@ Module containing functions to manage autosubmit's database.
 import os
 import sqlite3
 import multiprocessing
-import Queue
+import queue
 
 from log.log import Log, AutosubmitCritical, AutosubmitError
 Log.get_logger("Autosubmit")
@@ -151,7 +151,7 @@ def save_experiment(name, description, version):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Your experiment {1} couldn't be stored in the database.".format(TIMEOUT, name))
     finally:
@@ -175,7 +175,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Check if experiment {1} exists failed to complete.".format(TIMEOUT, name))
     finally:
@@ -201,7 +201,7 @@ def update_experiment_descrip_version(name, description=None, version=None):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Update experiment {1} version failed to complete.".format(TIMEOUT, name))
     finally:
@@ -223,7 +223,7 @@ def get_autosubmit_version(expid):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Get experiment {1} version failed to complete.".format(TIMEOUT, expid))
     finally:
@@ -247,7 +247,7 @@ def last_name_used(test=False, operational=False):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Get last named used failed to complete.".format(TIMEOUT))
     finally:
@@ -269,7 +269,7 @@ def delete_experiment(experiment_id):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Delete experiment {1} failed to complete.".format(TIMEOUT, experiment_id))
     finally:

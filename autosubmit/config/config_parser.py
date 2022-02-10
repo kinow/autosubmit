@@ -3,7 +3,7 @@ try:
     from configparser import ConfigParser as ConfPar
 except ImportError:
     # noinspection PyCompatibility
-    from ConfigParser import ConfigParser as ConfPar
+    from configparser import ConfigParser as ConfPar
 import bscearth.utils.path
 import re
 from pyparsing import nestedExpr
