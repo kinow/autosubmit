@@ -252,7 +252,7 @@ class ExperimentHistoryDbManager(DatabaseManager):
     return [Models.JobDataRow(*row) for row in job_data_rows]
 
   def get_job_data_dcs_last_by_wrapper_code(self, wrapper_code):
-    if wrapper_code:
+    if wrapper_code and wrapper_code > 2:
       return [JobData.from_model(row) for row in self._get_job_data_last_by_wrapper_code(wrapper_code)]
     else:
       return []
