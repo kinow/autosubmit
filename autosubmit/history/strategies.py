@@ -73,9 +73,9 @@ class SingleAssociationStrategy(Strategy):
     try:
       if len(job_data_dcs_in_wrapper) > 0:
         return []
-      job_data_dc.submit = slurm_monitor.header.submit
-      job_data_dc.start = slurm_monitor.header.start
-      job_data_dc.finish = slurm_monitor.header.finish
+      # job_data_dc.submit = slurm_monitor.header.submit
+      # job_data_dc.start = slurm_monitor.header.start
+      # job_data_dc.finish = slurm_monitor.header.finish
       job_data_dc.ncpus = slurm_monitor.header.ncpus
       job_data_dc.nnodes = slurm_monitor.header.nnodes
       job_data_dc.energy = slurm_monitor.header.energy
