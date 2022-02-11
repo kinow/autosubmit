@@ -27,7 +27,7 @@ from abc import ABCMeta, abstractmethod
 from database_manager import DatabaseManager, DEFAULT_JOBDATA_DIR
 from datetime import datetime
 
-CURRENT_DB_VERSION = 17
+CURRENT_DB_VERSION = 18
 DB_EXPERIMENT_HEADER_SCHEMA_CHANGES = 14
 DB_VERSION_SCHEMA_CHANGES = 12
 DEFAULT_DB_VERSION = 10
