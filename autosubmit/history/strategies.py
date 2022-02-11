@@ -100,12 +100,16 @@ class StraightWrapperAssociationStrategy(Strategy):
       if len(job_data_dcs_in_wrapper) != slurm_monitor.step_count:
         return []
       result = []
-      computational_weights = self.get_calculated_weights_of_jobs_in_wrapper(job_data_dcs_in_wrapper)
-      for job_dc, step in zip(job_data_dcs_in_wrapper, slurm_monitor.steps):
+      computational_weights = self.get_calculated_weights_of_jobs_in_wrapper(job_data_dcs_in_wrapper)      
+      for job_dc, step in zip(job_data_dcs_in_wrapper, slurm_monitor.steps):        
         job_dc.energy = step.energy + computational_weights.get(job_dc.job_name, 0) * slurm_monitor.extern.energy
         job_dc.AveRSS = step.AveRSS
-        job_dc.MaxRSS = step.MaxRSS
+        job_dc.MaxRSS = step.MaxRSS        
         job_dc.platform_output = ""
+        if job_dc.job_name == job_data_dc.job_name:
+          job_data_dc.energy = job_dc.energy
+          job_data_dc.AveRSS = job_dc.AveRSS
+          job_data_dc.MaxRSS = job_dc.MaxRSS        
         result.append(job_dc)
       job_data_dc = self.set_job_data_dc_as_processed(job_data_dc, slurm_monitor.original_input)
       result.append(job_data_dc)
@@ -129,7 +133,9 @@ class GeneralizedWrapperDistributionStrategy(Strategy):
       computational_weights = self.get_calculated_weights_of_jobs_in_wrapper(job_data_dcs_in_wrapper)
       for job_dc in job_data_dcs_in_wrapper:
         job_dc.energy = round(computational_weights.get(job_dc.job_name, 0) * slurm_monitor.total_energy,2)
-        job_dc.platform_output = ""   
+        job_dc.platform_output = "" 
+        if job_dc.job_name == job_data_dc.job_name:
+          job_data_dc.energy = job_dc.energy      
         result.append(job_dc)
       job_data_dc = self.set_job_data_dc_as_processed(job_data_dc, slurm_monitor.original_input)
       result.append(job_data_dc)
@@ -159,6 +165,8 @@ class TwoDimWrapperDistributionStrategy(Strategy):
         weights = self.get_comp_weight_per_group_of_job_dcs(jobs)
         for j, job_dc in enumerate(jobs):
           job_dc.energy = round(level_energy[i] * weights[j], 2)
+          if job_dc.job_name == job_data_dc.job_name:
+            job_data_dc.energy = job_dc.energy    
           result.append(job_dc)   
       job_data_dc = self.set_job_data_dc_as_processed(job_data_dc, slurm_monitor.original_input)
       result.append(job_data_dc)
