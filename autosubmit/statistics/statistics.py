@@ -73,6 +73,7 @@ class Statistics(object):
       # type: () -> StatsSummary
       stat_summary = StatsSummary()
       for job in self.jobs_stat:
+        print("{} -> {}".format(job._name, job.expected_real_consumption))
         job_stat_dict = job.get_as_dict()
         # Counter
         stat_summary.submitted_count += job_stat_dict["submittedCount"]
@@ -80,14 +81,14 @@ class Statistics(object):
         stat_summary.completed_count += job_stat_dict["completedCount"]
         stat_summary.failed_count += job_stat_dict["failedCount"]
         # Consumption
-        stat_summary.expected_consumption = job_stat_dict["expectedConsumption"]
-        stat_summary.real_consumption = job_stat_dict["realConsumption"]
-        stat_summary.failed_real_consumption = job_stat_dict["failedRealConsumption"]
+        stat_summary.expected_consumption += job_stat_dict["expectedConsumption"]
+        stat_summary.real_consumption += job_stat_dict["realConsumption"]
+        stat_summary.failed_real_consumption += job_stat_dict["failedRealConsumption"]
         # CPU Consumption
-        stat_summary.expected_cpu_consumption = job_stat_dict["expectedCpuConsumption"] 
-        stat_summary.cpu_consumption = job_stat_dict["cpuConsumption"]
-        stat_summary.failed_cpu_consumption = job_stat_dict["failedCpuConsumption"]
-        stat_summary.total_queue_time = job_stat_dict["completedQueueTime"] + job_stat_dict["failedQueueTime"]
+        stat_summary.expected_cpu_consumption += job_stat_dict["expectedCpuConsumption"] 
+        stat_summary.cpu_consumption += job_stat_dict["cpuConsumption"]
+        stat_summary.failed_cpu_consumption += job_stat_dict["failedCpuConsumption"]
+        stat_summary.total_queue_time += job_stat_dict["completedQueueTime"] + job_stat_dict["failedQueueTime"]
       stat_summary.calculate_consumption_percentage()
       self.summary = stat_summary
 
