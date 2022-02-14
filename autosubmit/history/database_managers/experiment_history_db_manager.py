@@ -27,7 +27,7 @@ from abc import ABCMeta, abstractmethod
 from database_manager import DatabaseManager, DEFAULT_JOBDATA_DIR
 from datetime import datetime
 
-CURRENT_DB_VERSION = 17
+CURRENT_DB_VERSION = 18
 DB_EXPERIMENT_HEADER_SCHEMA_CHANGES = 14
 DB_VERSION_SCHEMA_CHANGES = 12
 DEFAULT_DB_VERSION = 10
@@ -252,7 +252,7 @@ class ExperimentHistoryDbManager(DatabaseManager):
     return [Models.JobDataRow(*row) for row in job_data_rows]
 
   def get_job_data_dcs_last_by_wrapper_code(self, wrapper_code):
-    if wrapper_code:
+    if wrapper_code and wrapper_code > 2:
       return [JobData.from_model(row) for row in self._get_job_data_last_by_wrapper_code(wrapper_code)]
     else:
       return []
