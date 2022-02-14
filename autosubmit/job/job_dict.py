@@ -377,6 +377,11 @@ class DicJobs:
             else:
                 for d in self._date_list:
                     self._get_date(jobs, dic, d, member, chunk)
+        try:
+            jobs_flattened = [job for jobs_to_flatten in jobs for job in jobs_to_flatten]
+            jobs = jobs_flattened
+        except BaseException as e:
+            pass
         return jobs
 
     def _get_date(self, jobs, dic, date, member, chunk):
@@ -401,12 +406,8 @@ class DicJobs:
         if member not in dic:
             return jobs
         dic = dic[member]
-        if type(dic) is list:
-            for job in dic:
-                jobs.append(job)
-        elif type(dic) is not dict:
+        if type(dic) is not dict:
             jobs.append(dic)
-
         else:
             if chunk is not None:
                 if chunk in dic:
