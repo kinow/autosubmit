@@ -155,6 +155,7 @@ class ExperimentHistory():
       slurm_monitor = SlurmMonitor(ssh_output)
       self._verify_slurm_monitor(slurm_monitor, job_data_dc)
       job_data_dcs_in_wrapper = self.manager.get_job_data_dcs_last_by_wrapper_code(job_data_dc.wrapper_code)
+      job_data_dcs_in_wrapper = sorted([job for job in job_data_dcs_in_wrapper if job.status == "COMPLETED"], key=lambda x: x._id)
       job_data_dcs_to_update = []      
       if len(job_data_dcs_in_wrapper) > 0:
         info_handler = PlatformInformationHandler(StraightWrapperAssociationStrategy(self._historiclog_dir_path))
