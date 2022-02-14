@@ -9,12 +9,13 @@ from log.log import AutosubmitCritical
 
 def filter_by_section(jobs, section):
   # type: (List[Job], str) -> List[Job]
-  """ Filter jobs by provided sections """
+  """ Filter jobs by provided section """
   if section and section != "Any":
     return [job for job in jobs if job.section == section]
   return jobs
   
 def discard_ready_and_waiting(jobs):
+  # type: (List[Job]) -> List[Job]
   if jobs and len(jobs) > 0:
     return [job for job in jobs if job.status not in [Status.READY, Status.WAITING]]
   return jobs
