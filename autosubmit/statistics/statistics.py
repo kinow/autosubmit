@@ -73,7 +73,7 @@ class Statistics(object):
       # type: () -> StatsSummary
       stat_summary = StatsSummary()
       for job in self.jobs_stat:
-        print("{} -> {}".format(job._name, job.expected_real_consumption))
+        # print("{} -> {}".format(job._name, job.expected_real_consumption))
         job_stat_dict = job.get_as_dict()
         # Counter
         stat_summary.submitted_count += job_stat_dict["submittedCount"]
