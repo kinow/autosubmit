@@ -193,7 +193,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
 
 
 def create_csv_stats(exp_stats, jobs_list, output_file):
-    job_names = [job.name for job in jobs_list]
+    job_names = [job.name for job in exp_stats.jobs_stat]
     start_times = exp_stats.start_times
     end_times = exp_stats.end_times
     queuing_times = exp_stats.queued
