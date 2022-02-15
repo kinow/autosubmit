@@ -2446,8 +2446,7 @@ class Autosubmit:
             job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
             Log.debug("Job list restored from {0} files", pkl_dir)
             jobs = StatisticsUtils.filter_by_section(job_list.get_job_list(), filter_type)
-            jobs, period_ini, period_fi = StatisticsUtils.filter_by_time_period(jobs, filter_period)
-            # print("After time {} {} {}".format(len(jobs), period_ini, period_fi))
+            jobs, period_ini, period_fi = StatisticsUtils.filter_by_time_period(jobs, filter_period)            
             # Package information
             job_to_package, package_to_jobs, _, _ = JobList.retrieve_packages(BasicConfig, expid, [job.name for job in job_list.get_job_list()])
             queue_time_fixes = {}

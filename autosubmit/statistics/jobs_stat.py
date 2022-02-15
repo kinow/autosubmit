@@ -29,6 +29,10 @@ class JobStat(object):
         self.failed_retrial_count += 1
 
     @property
+    def name(self):
+        return self._name
+
+    @property
     def cpu_consumption(self):
         return timedelta2hours(self._processors * self.completed_run_time) + timedelta2hours(self._processors * self.failed_run_time)
 

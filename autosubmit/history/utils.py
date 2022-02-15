@@ -67,6 +67,14 @@ def create_path_if_not_exists(path):
     return True
   return False
 
+def create_path_if_not_exists_group_permission(path):
+  # type : (str) -> bool
+  if not os.path.exists(path):
+    os.umask(0)
+    os.makedirs(path, mode=0o774)
+    return True
+  return False
+
 class SupportedStatus:
   COMPLETED = "COMPLETED"
   FAILED = "FAILED"

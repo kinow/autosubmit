@@ -34,6 +34,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
+import autosubmit.history.utils as HUtils
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from bscearth.utils.config_parser import ConfigParserFactory
 
@@ -431,22 +432,25 @@ class Monitor:
         Log.info('Creating stats file')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
+        output_filename = "{}_statistics_{}.{}".format(expid, output_date, output_format)
+        output_complete_path = ""
+        if os.access(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid), os.W_OK):
+            HUtils.create_path_if_not_exists_group_permission(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats"))                    
+            output_complete_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats", output_filename)
+        else:
+            Log.info("You don't have write access to the experiment's ({}) folder. The output file will be created in the default location: {}".format(expid, os.path.join(BasicConfig.DEFAULT_OUTPUT_DIR, "stats")))
+            HUtils.create_path_if_not_exists_group_permission(os.path.join(BasicConfig.DEFAULT_OUTPUT_DIR, "stats"))
+            output_complete_path = os.path.join(BasicConfig.DEFAULT_OUTPUT_DIR, "stats", output_filename)
+            
 
-        directory = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats")
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
-        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats", expid + "_statistics_" + output_date +
-                                   "." + output_format)
-
-        create_bar_diagram(expid, joblist, self.get_general_stats(expid), output_file, period_ini, period_fi, queue_time_fixes)
-        Log.result('Stats created at {0}', output_file)
+        create_bar_diagram(expid, joblist, self.get_general_stats(expid), output_complete_path, period_ini, period_fi, queue_time_fixes)
+        Log.result('Stats created at {0}', output_complete_path)
         if show:
             try:
-                subprocess.check_call(['xdg-open', output_file])
+                subprocess.check_call(['xdg-open', output_complete_path])
             except subprocess.CalledProcessError:
                 raise AutosubmitCritical(
-                    'File {0} could not be opened'.format(output_file), 7068)
+                    'File {0} could not be opened'.format(output_complete_path), 7068)
 
     @staticmethod
     def clean_plot(expid):
