@@ -3811,6 +3811,7 @@ class Autosubmit:
         current_time = int(time.time())
         database_path = os.path.join(
             BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
+        database_backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}_{1}.db".format(expid, str(current_time)))
         dump_file_name = 'job_data_{0}_{1}.sql'.format(expid, current_time)
         dump_file_path = os.path.join(BasicConfig.JOBDATA_DIR, dump_file_name)
         bash_command = 'sqlite3 {0} .dump > {1}'.format(
@@ -3829,10 +3830,10 @@ class Autosubmit:
                 if result is not None and os.path.exists(dump_file_path):
                     Log.info("sqldump {0} created".format(dump_file_path))
                     Log.info(
-                        "Deleting original database {0}".format(database_path))
-                    result = os.popen("rm {0}".format(database_path)).read()
+                        "Backup original database {0}".format(database_path))
+                    result = os.popen("mv {0} {1}".format(database_path, database_backup_path)).read()
                     if result is not None and not os.path.exists(database_path):
-                        Log.info("Original database deleted.")
+                        Log.info("Original database moved.")
                         Log.info("Restoring from sqldump")
                         result = os.popen("cat {0} | sqlite3 {1}".format(
                             dump_file_path, database_path)).read()
