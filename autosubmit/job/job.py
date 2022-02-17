@@ -32,6 +32,7 @@ import copy
 import traceback
 
 from bscearth.utils.config_parser import ConfigParserFactory
+import locale
 
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.job.job_common import Status, Type, increase_wallclock_by_chunk
@@ -39,6 +40,7 @@ from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPy
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.job.job_utils import get_job_package_code
 from autosubmit.config.basicConfig import BasicConfig
+import autosubmit
 from autosubmit.history.experiment_history import ExperimentHistory
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
@@ -691,7 +693,7 @@ class Job(object):
                         while log_start <= max_logs:
                             try:
                                 if platform.get_stat_file_by_retrials(stat_file+str(max_logs)):
-                                    with open(os.path.join(tmp_path,stat_file+str(max_logs)), 'r+') as f:
+                                    with open(os.path.join(tmp_path,stat_file+str(max_logs)), 'rb+') as f:
                                         total_stats = [f.readline()[:-1],f.readline()[:-1],f.readline()[:-1]]
                                     try:
                                         total_stats[0] = float(total_stats[0])
@@ -702,7 +704,7 @@ class Job(object):
                                     if max_logs != ( int(as_conf.get_retrials()) - fail_count ):
                                         time_stamp = date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S')
                                     else:
-                                        with open(os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP'), 'r+') as f2:
+                                        with open(os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP'), 'rb+') as f2:
                                             for line in f2.readlines():
                                                 if len(line) > 0:
                                                     time_stamp = line.split(" ")[0]
@@ -1195,7 +1197,7 @@ class Job(object):
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
         self.script_name = '{0}.cmd'.format(self.name)
-        open(os.path.join(self._tmp_path, script_name),'wb').write(template_content)
+        open(os.path.join(self._tmp_path, script_name),'wb').write(template_content.encode(locale.getlocale()[1]))
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
         return script_name
 
@@ -1268,10 +1270,10 @@ class Job(object):
         else:
             path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP')
         if os.path.exists(path):
-            f = open(path, 'a')
+            f = open(path, 'ab')
             f.write('\n')
         else:
-            f = open(path, 'w')
+            f = open(path, 'wb')
         if not enabled:
             f.write(date2str(datetime.datetime.now(), 'S'))
             if self.wrapper_type == "vertical":

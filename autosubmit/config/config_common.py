@@ -16,6 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import locale
+
 try:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
@@ -113,7 +115,7 @@ class AutosubmitConfig(object):
         Add a section header to the project's configuration file (if not exists)
         """
         if os.path.exists(self._proj_parser_file):
-            with open(self._proj_parser_file, 'r+') as f:
+            with open(self._proj_parser_file, 'rb+') as f:
                 first_line = f.readline()
                 if not re.match('^\[[^\[\]\# \t\n]*\][ \t]*$|^[ \t]+\[[^\[\]# \t\n]*\]', first_line):
                     content = f.read()
@@ -1350,7 +1352,7 @@ class AutosubmitConfig(object):
         """
         content = open(self._conf_parser_file, 'rb').read()
         if re.search(rb'AUTOSUBMIT_VERSION =.*', content):
-            content = content.replace(re.search(rb'AUTOSUBMIT_VERSION =.*', content).group(0),"AUTOSUBMIT_VERSION = " + str.encode(autosubmit_version,Autosubmit.inter_locale))
+            content = content.replace(re.search(rb'AUTOSUBMIT_VERSION =.*', content).group(0),"AUTOSUBMIT_VERSION = " + str.encode(autosubmit_version,locale.getlocale()[1]))
         open(self._conf_parser_file, 'wb').write(content)
 
     def get_version(self):

@@ -61,11 +61,11 @@ class SlurmPlatform(ParamikoPlatform):
         tmp_path = os.path.join(exp_id_path, "tmp")
         self._submit_script_path = os.path.join(
             tmp_path, config.LOCAL_ASLOG_DIR, "submit_" + self.name + ".sh")
-        self._submit_script_file = open(self._submit_script_path, 'w').close()
+        self._submit_script_file = open(self._submit_script_path, 'wb').close()
 
     def open_submit_script(self):
-        self._submit_script_file = open(self._submit_script_path, 'w').close()
-        self._submit_script_file = open(self._submit_script_path, 'a')
+        self._submit_script_file = open(self._submit_script_path, 'wb').close()
+        self._submit_script_file = open(self._submit_script_path, 'ab')
 
     def get_submit_script(self):
         self._submit_script_file.close()

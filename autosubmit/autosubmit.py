@@ -128,16 +128,6 @@ class Autosubmit:
     Interface class for autosubmit.
     """
 
-    def __init__(self):
-        self._inter_locale = ""
-
-    @property
-    def inter_locale(self):
-        return self._inter_locale
-
-    @inter_locale.setter
-    def inter_locale(self, value):
-        self._inter_locale = value
     sys.setrecursionlimit(500000)
     # Get the version number from the relevant file. If not, from autosubmit package
     script_dir = os.path.abspath(os.path.dirname(__file__))
@@ -753,7 +743,7 @@ class Autosubmit:
         except:
             Log.info("Locale C.utf8 is not found, using '{0}' as fallback".format("C"))
             locale.setlocale(locale.LC_ALL, 'C')
-        Autosubmit.inter_locale=locale.getlocale()
+
 
     @staticmethod
     def _check_ownership(expid,raise_error=False):
@@ -1313,7 +1303,7 @@ class Autosubmit:
         except AutosubmitError as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("There are issues that occurred during the templates generation, please check that job parameters are well set and the template path exists.",7014,e.message)
+            raise AutosubmitCritical("There are issues that occurred during the templates generation, please check that job parameters are well set and the template path exists.",7014,str(e))
         return True
 
     @staticmethod
@@ -1381,8 +1371,6 @@ class Autosubmit:
 
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
-            #for job in job_list.get_uncompleted_and_not_waiting():
-            #    job.status = Status.COMPLETED
             job_list.update_list(as_conf, False)
 
     @staticmethod
@@ -2091,7 +2079,7 @@ class Autosubmit:
                             #Log.debug("FD submit: {0}".format(log.fd_show.fd_table_status_str()))
                             package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
-                            #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str()))
+                            #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str(open()))
                         except (IOError, OSError):
                             failed_packages.append(package.jobs[0].id)
                             continue
