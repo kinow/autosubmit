@@ -7,11 +7,13 @@ How to install
 
 The Autosubmit code is maintained in *PyPi*, the main source for python packages.
 
-- Pre-requisties: These packages (bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog and GraphViz) must be available at local host machine.
 
-These packages **argparse**, **python-dateutil**, **pyparsing**, **numpy**, **pydotplus**, **matplotlib**, **paramiko**, **python2-pythondialog**, **portalocker**, **requests**, **typing** must be available for python runtime.
 
-.. important:: (SYSTEM) Graphviz version must be 2.38, 2.40 is not working, others perhaps works. You can check the version using dot -v.
+- Pre-requisties: bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk, python2-dev, graphviz >= 2.41, pip2
+
+.. important:: (SYSTEM) Graphviz version must be 2.38 or (equal or superior) 2.40 is not working. You can check the version using dot -v.
+
+- Python dependencies: argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, python2-pythondialog, portalocker, requests, typing
 
 .. important:: dot -v command should contain "dot",pdf,png,svg,xlib  in device section.
 
@@ -112,3 +114,45 @@ Create or modify /etc/autosubmitrc file or ~/.autosubmitrc with the information 
     whitelist = localhost bscesautosubmit01 bscesautosubmit02 # Add localhost only if you are not on esarchive system
 
 Now you are ready to use Autosubmit !
+
+
+Example:
+..
+
+.. code-block:: ini
+
+    # Update repositories
+    apt update
+
+    # Avoid interactive stuff
+    export DEBIAN_FRONTEND=noninteractive
+
+    # Dependencies
+    apt install wget curl python2 python-tk python2-dev graphviz -y -q
+
+    # Additional dependencies related with pycrypto
+    apt install build-essential libssl-dev libffi-dev -y -q
+
+    # Download get pip script and launch it
+    wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+    python2 get-pip.py
+
+    # Install autosubmit using pip
+    pip2 install autosubmit
+
+    # Check that we can execute autosubmit commands
+    autosubmit -h
+
+    # Configure
+    autosubmit configure
+
+    # Install
+    autosubmit install
+
+    # Get expid
+    autosubmit expid -H TEST -d "Test exp."
+
+    # Create with -np
+    # Since it was a new install the expid will be a000
+    autosubmit create a000 -np
+
