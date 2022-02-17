@@ -728,7 +728,8 @@ class JobPackagerVertical(object):
         :rtype: List() of Job Object \n
         """
         # self.jobs_list starts as only 1 member, but wrapped jobs are added in the recursion
-        if len(self.jobs_list) >= self.max_jobs or len(self.jobs_list) >= self.wrapper_limits["max_v"] or len(self.jobs_list) >= self.wrapper_limits["max_by_section"] or len(self.jobs_list) >= self.wrapper_limits["max"]:
+        test = self.wrapper_limits["max_by_section"]
+        if len(self.jobs_list) >= self.max_jobs or len(self.jobs_list) >= self.wrapper_limits["max_v"] or len(self.jobs_list) >= self.wrapper_limits["max_by_section"][job.section] or len(self.jobs_list) >= self.wrapper_limits["max"]:
             return self.jobs_list
         child = self.get_wrappable_child(job)
         # If not None, it is wrappable

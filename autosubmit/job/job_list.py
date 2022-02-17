@@ -250,9 +250,6 @@ class JobList(object):
     @staticmethod
     def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, graph, option="DEPENDENCIES"):
         for job_section in jobs_parser.sections():
-            if job_section == "REDUCE_AN":
-                test=""
-                pass
             Log.debug("Adding dependencies for {0} jobs".format(job_section))
             # If does not have dependencies, do nothing
             if not jobs_parser.has_option(job_section, option):
