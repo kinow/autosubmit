@@ -63,8 +63,6 @@ To do this use:
 
 * THREADS:  threads number to be submitted to the HPC. If not specified, defaults to 1.
 
-* TASKS: tasks number to be submitted to the HPC. If not specified, defaults to 1.
-
 * QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
 
 * RETRIALS: Number of retrials if job fails
@@ -123,7 +121,6 @@ In this first example, you can see 3 jobs in which last job (POST) shows an exam
     WALLCLOCK = 04:00
     PROCESSORS = 1616
     THREADS = 1
-    TASKS = 1
 
     [POST]
     FILE = templates/common/post.tmpl.sh
