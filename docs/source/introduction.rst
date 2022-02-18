@@ -18,9 +18,9 @@ What is Autosubmit ?
 
 +------------------------------------------------------------------------+
 +----------------------------+-------------------------------------------+
-| Autosubmit GitLab:         | https://earth.bsc.es/gitlab/es/autosubmit |
+| GitLab:         | https://earth.bsc.es/gitlab/es/autosubmit            |
 +----------------------------+-------------------------------------------+
-| Autosubmit Mailing List:   | autosubmit@bsc.es                         |
+| Mail:           | support-autosubmit@bsc.es                            |
 +----------------------------+-------------------------------------------+
 
 Why is Autosubmit needed ?
