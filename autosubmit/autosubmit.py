@@ -3807,7 +3807,7 @@ class Autosubmit:
         :rtype:        
         """
         # exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
-        # database_file =
+        os.umask(0) # Override user permissions
         current_time = int(time.time())
         database_path = os.path.join(
             BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
@@ -3834,7 +3834,8 @@ class Autosubmit:
                     result = os.popen("mv {0} {1}".format(database_path, database_backup_path)).read()
                     if result is not None and not os.path.exists(database_path):
                         Log.info("Original database moved.")
-                        Log.info("Restoring from sqldump")
+                        Log.info("Restoring from sqldump")     
+                        HUtils.create_file_with_full_permissions(database_path)                 
                         result = os.popen("cat {0} | sqlite3 {1}".format(
                             dump_file_path, database_path)).read()
                         if result is not None and os.path.exists(database_path):
