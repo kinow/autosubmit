@@ -11,7 +11,7 @@ The Autosubmit code is maintained in *PyPi*, the main source for python packages
 
 - Pre-requisties: bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk, python2-dev, graphviz >= 2.41, pip2
 
-.. important:: (SYSTEM) Graphviz version must be 2.38 or (equal or superior) 2.40 is not working. You can check the version using dot -v.
+.. important:: (SYSTEM) Graphviz version must be >= 2.38 except 2.40(not working). You can check the version using dot -v.
 
 - Python dependencies: argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, python2-pythondialog, portalocker, requests, typing
 
