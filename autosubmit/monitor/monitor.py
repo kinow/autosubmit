@@ -438,9 +438,9 @@ class Monitor:
             HUtils.create_path_if_not_exists_group_permission(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats"))                    
             output_complete_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats", output_filename)
         else:
-            Log.info("You don't have write access to the experiment's ({}) folder. The output file will be created in the default location: {}".format(expid, os.path.join(BasicConfig.DEFAULT_OUTPUT_DIR, "stats")))
-            HUtils.create_path_if_not_exists_group_permission(os.path.join(BasicConfig.DEFAULT_OUTPUT_DIR, "stats"))
-            output_complete_path = os.path.join(BasicConfig.DEFAULT_OUTPUT_DIR, "stats", output_filename)
+            Log.info("You don't have write access to the experiment's ({}) folder. The output file will be created in the default location: {}".format(expid, BasicConfig.DEFAULT_STATS_OUTPUT_DIR))
+            HUtils.create_path_if_not_exists_group_permission(BasicConfig.DEFAULT_STATS_OUTPUT_DIR)
+            output_complete_path = os.path.join(BasicConfig.DEFAULT_STATS_OUTPUT_DIR, output_filename)
             
 
         create_bar_diagram(expid, joblist, self.get_general_stats(expid), output_complete_path, period_ini, period_fi, queue_time_fixes)
