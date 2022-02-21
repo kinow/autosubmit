@@ -1614,7 +1614,6 @@ class JobList(object):
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent.status == Status.SKIPPED]
                 tmp2 = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent.status == Status.SKIPPED or parent.status == Status.FAILED]
                 tmp3 = [parent for parent in job.parents if parent.status == Status.SKIPPED or parent.status == Status.FAILED]
-
                 if job.parents is None or len(tmp) == len(job.parents):
                     job.status = Status.READY
                     job.hold = False
@@ -1640,6 +1639,16 @@ class JobList(object):
                                 break
                             if as_conf.get_remote_dependencies():
                                 all_parents_completed.append(job.name)
+                    else:
+                        if len(tmp3) == 1 and len(job.parents) == 1:
+                            for parent in job.parents:
+                                if parent.section + '?' in job.dependencies:
+                                    job.status = Status.READY
+                                    job.hold = False
+                                    Log.debug(
+                                        "Setting job: {0} status to: READY (conditional jobs are completed/failed)...".format(
+                                            job.name))
+                                    break
             if as_conf.get_remote_dependencies():
                 for job in self.get_prepared():
                     tmp = [
