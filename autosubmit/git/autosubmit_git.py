@@ -216,6 +216,13 @@ class AutosubmitGit:
                 for submodule in git_project_submodules:
                     command_1 += " git submodule update {0};".format(submodule)
         try:
+            ##command 1
+            if git_remote_project_path == '':
+                output_0 = subprocess.check_output(command_0, shell=True)
+            else:
+                command_0 = "cd {0} ; {1}".format(git_remote_path, command_0)
+                hpcarch.send_command(command_0)
+            ##command 2
             command_tmp = "cd {0}; ".format(git_path)
             if os.path.exists(os.path.join(git_path, ".githooks")):
                 for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
@@ -230,7 +237,6 @@ class AutosubmitGit:
             command_1 = command_tmp + command_1
             Log.debug('Clone command: {0}', command_0)
             if git_remote_project_path == '':
-                output_0 = subprocess.check_output(command_0, shell=True)
                 try:
                     Log.debug('Githook + Checkout and Submodules: {0}', command_1)
                     output_1 = subprocess.check_output(command_1, shell=True)
@@ -240,8 +246,6 @@ class AutosubmitGit:
                     Log.printlog(
                         "Submodule {0} has a wrong configuration".format(submodule), 6014)
             else:
-                command_0 = "cd {0} ; {1}".format(git_remote_path, command_0)
-                hpcarch.send_command(command_0)
                 hpcarch.send_command(command_1)
         except subprocess.CalledProcessError as e:
             shutil.rmtree(project_path)
