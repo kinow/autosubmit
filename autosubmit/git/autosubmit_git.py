@@ -176,7 +176,7 @@ class AutosubmitGit:
                 shutil.rmtree(project_path)
         os.mkdir(project_path)
         Log.debug("The project folder {0} has been created.", project_path)
-        command_0 = "cd {0}; ".format(project_path)
+        command_0 = ""
         command_1 = ""
         if git_remote_project_path != '':
             if git_remote_project_path[-1] == '/':
@@ -189,9 +189,9 @@ class AutosubmitGit:
 
         if git_project_commit:
             if git_single_branch:
-                command_0 = "cd {0}; git clone  {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
+                command_0 = " git clone {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
             else:
-                command_0 = "cd {0}; git clone {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
+                command_0 = " git clone {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
             command_1 += " git checkout {0};  ".format(git_project_commit)
 
             if git_project_submodules.__len__() <= 0:
@@ -218,6 +218,7 @@ class AutosubmitGit:
         try:
             ##command 1
             if git_remote_project_path == '':
+                command_0 = "cd {0} ; {1}".format(project_path, command_0)
                 output_0 = subprocess.check_output(command_0, shell=True)
             else:
                 command_0 = "cd {0} ; {1}".format(git_remote_path, command_0)
