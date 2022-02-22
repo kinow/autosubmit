@@ -194,7 +194,7 @@ class AutosubmitGit:
                 command_0 = "cd {0}; git clone  {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
             else:
                 command_0 = "cd {0}; git clone {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
-            command_1 += " git checkout (0);  ".format(git_project_commit)
+            command_1 += " git checkout {0};  ".format(git_project_commit)
 
             if git_project_submodules.__len__() <= 0:
                 command_1 += " git submodule update --init --recursive;"
