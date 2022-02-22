@@ -188,8 +188,6 @@ class AutosubmitGit:
             project_path = git_remote_path
 
         if git_project_commit:
-            Log.info("Fetching {0} into {1}", git_project_commit +
-                     " " + git_project_origin, project_path)
             if git_single_branch:
                 command_0 = "cd {0}; git clone  {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
             else:
@@ -218,21 +216,21 @@ class AutosubmitGit:
                 for submodule in git_project_submodules:
                     command_1 += " git submodule update {0};".format(submodule)
         try:
+            command_tmp = "cd {0}; ".format(git_path)
+            if os.path.exists(os.path.join(git_path, ".githooks")):
+                for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
+                    for f_dir in dirs:
+                        os.chmod(os.path.join(root_dir, f_dir), 0o750)
+                    for f_file in files:
+                        os.chmod(os.path.join(root_dir, f_file), 0o750)
+                command_tmp += " git config core.hooksPath ./.githooks ; ".format(
+                    git_path)
+            if command_1.find("checkout") == -1:
+                command_tmp += "git checkout; "
+            command_1 = command_tmp + command_1
             Log.debug('Clone command: {0}', command_0)
             if git_remote_project_path == '':
                 output_0 = subprocess.check_output(command_0, shell=True)
-                if os.path.exists(os.path.join(git_path, ".githooks")):
-                    command_tmp = "cd {0}; ".format(git_path)
-                    command_tmp += " git config core.hooksPath ./.githooks ; ".format(
-                        git_path)
-                    if command_1.find("checkout") == -1:
-                        command_tmp += "git checkout; "
-                    command_1 = command_tmp + command_1
-                    for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
-                        for f_dir in dirs:
-                            os.chmod(os.path.join(root_dir, f_dir), 0o750)
-                        for f_file in files:
-                            os.chmod(os.path.join(root_dir, f_file), 0o750)
                 try:
                     Log.debug('Githook + Checkout and Submodules: {0}', command_1)
                     output_1 = subprocess.check_output(command_1, shell=True)
@@ -244,13 +242,6 @@ class AutosubmitGit:
             else:
                 command_0 = "cd {0} ; {1}".format(git_remote_path, command_0)
                 hpcarch.send_command(command_0)
-                if os.path.exists(os.path.join(git_path, ".githooks")):
-                    command_tmp = "cd {0}; ".format(git_path)
-                    command_tmp += " git config core.hooksPath ./.githooks ; ".format(
-                        git_path)
-                    if command_1.find("checkout") == -1:
-                        command_tmp += "git checkout; "
-                    command_1 = command_tmp + command_1
                 hpcarch.send_command(command_1)
         except subprocess.CalledProcessError as e:
             shutil.rmtree(project_path)
