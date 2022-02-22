@@ -100,7 +100,7 @@ class ParamikoPlatform(Platform):
                 self.restore_connection()
                 message = "OK"
             except BaseException as e:
-                message = e.message
+                message = str(e)
             if message.find("t accept remote connections") == -1:
                 transport = self._ssh.get_transport()
                 transport.send_ignore()
@@ -111,7 +111,7 @@ class ParamikoPlatform(Platform):
         except (AutosubmitError,AutosubmitCritical,IOError):
             raise
         except BaseException as e:
-            raise AutosubmitCritical(message,7051)
+            raise AutosubmitCritical(str(e),7051)
             #raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
 
     def restore_connection(self):
@@ -210,9 +210,9 @@ class ParamikoPlatform(Platform):
                 raise AutosubmitError("File can't be located due an slow connection", 6016, e.message)
         except BaseException as e:
             self.connected = False
-            if "Authentication failed." in e.message:
+            if "Authentication failed." in str(e):
                 raise AutosubmitCritical("Authentication Failed, please check the platform.conf of {0}".format(
-                    self._host_config['hostname']), 7050, e.message)
+                    self._host_config['hostname']), 7050, str(e))
             if not reconnect and "," in self._host_config['hostname']:
                 self.restore_connection(reconnect=True)
             else:
@@ -346,9 +346,9 @@ class ParamikoPlatform(Platform):
         except BaseException as e:
             Log.error('Could not remove file {0} due a wrong configuration'.format(
                 os.path.join(self.get_files_path(), filename)))
-            if e.message.lower().find("garbage") != -1:
+            if str(e).lower().find("garbage") != -1:
                 raise AutosubmitCritical(
-                    "Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ", 7051, e.message)
+                    "Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ", 7051, str(e))
 
     def move_file(self, src, dest, must_exist=False):
         """
@@ -849,7 +849,7 @@ class ParamikoPlatform(Platform):
             raise AutosubmitError(e.message,6016)
         except BaseException as e:
             raise AutosubmitError('Command {0} in {1} warning: {2}'.format(
-                command, self.host, '\n'.join(stderr_readlines)), 6005, e.message)
+                command, self.host, '\n'.join(stderr_readlines)), 6005, str(e))
 
     def parse_job_output(self, output):
         """
@@ -1087,7 +1087,7 @@ class ParamikoPlatform(Platform):
                             self.remote_log_dir, self.host))
                 except BaseException as e:
                     raise AutosubmitError(
-                        "SFTP session not active ", 6007, e.message)
+                        "SFTP session not active ", 6007, str(e))
         else:
             try:
                 if self.send_command(self.get_mkdir_cmd()):
@@ -1098,7 +1098,7 @@ class ParamikoPlatform(Platform):
                         self.remote_log_dir, self.host))
             except BaseException as e:
                 raise AutosubmitError("Couldn't send the file {0} to HPC {1}".format(
-                    self.remote_log_dir, self.host), 6004, e.message)
+                    self.remote_log_dir, self.host), 6004, str(e))
 
 
 class ParamikoPlatformException(Exception):

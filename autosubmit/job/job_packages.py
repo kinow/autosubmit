@@ -40,7 +40,7 @@ from typing import List
 import multiprocessing
 import tarfile
 import datetime
-
+import locale
 lock = Lock()
 def threaded(fn):
     def wrapper(*args, **kwargs):
@@ -421,7 +421,7 @@ class JobPackageThread(JobPackageBase):
     def _create_common_script(self):
         script_content = self._common_script_content()
         script_file = self.name + '.cmd'
-        open(os.path.join(self._tmp_path, script_file), 'wb').write(script_content)
+        open(os.path.join(self._tmp_path, script_file), 'wb').write(script_content.encode(locale.getlocale()[1]))
         os.chmod(os.path.join(self._tmp_path, script_file), 0o755)
         return script_file
 

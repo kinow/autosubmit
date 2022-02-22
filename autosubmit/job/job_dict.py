@@ -126,7 +126,7 @@ class DicJobs:
                 except BaseException as e:
                     raise AutosubmitCritical(
                         "Wrong format for {1} parameter in section {0}".format(section,called_from), 7011,
-                        e.message)
+                        str(e))
             pass
         return parsed_list
     def read_section(self, section, priority, default_job_type, jobs_data=dict()):

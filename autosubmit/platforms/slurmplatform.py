@@ -147,10 +147,10 @@ class SlurmPlatform(ParamikoPlatform):
             try:
                 self.send_command("scancel {0}".format(job.id))
                 raise AutosubmitError(
-                    "Can't hold jobid:{0}, canceling job".format(job.id), 6000, e.message)
+                    "Can't hold jobid:{0}, canceling job".format(job.id), 6000, str(e))
             except BaseException as e:
                 raise AutosubmitError(
-                    "Can't cancel the jobid: {0}".format(job.id), 6000, e.message)
+                    "Can't cancel the jobid: {0}".format(job.id), 6000, str(e))
             except AutosubmitError as e:
                 raise
 
@@ -459,7 +459,7 @@ class SlurmPlatform(ParamikoPlatform):
                 else:
                     retries = 9999
             except BaseException as e:  # Unrecoverable error
-                if e.message.lower().find("garbage") != -1:
+                if str(e).lower().find("garbage") != -1:
                     if not wrapper_failed:
                         sleep(sleeptime)
                         sleeptime = sleeptime + 5

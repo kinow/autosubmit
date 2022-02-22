@@ -417,7 +417,7 @@ class Platform(object):
             if os.path.exists(complete_path):
                 file_type = complete_path[-3:]
                 if file_type == "out" or file_type == "err":
-                    with open(complete_path, "r+") as f:
+                    with open(complete_path, "rb+") as f:
                         # Reading into memory (Potentially slow)
                         first_line = f.readline()
                         # Not rewrite
@@ -452,7 +452,7 @@ class Platform(object):
                 file_type = complete_path[-3:]
                 # print("Detected file type {0}".format(file_type))
                 if file_type == "out" or file_type == "err":
-                    with open(complete_path, "a") as f:
+                    with open(complete_path, "ab") as f:
                         job_footer_info = "[INFO] HDATA={0}".format(job_hdata)
                         f.write(job_footer_info)
                         f.close()

@@ -600,7 +600,7 @@ class Job(object):
                             self._tmp_path, 'LOG_' + str(self.expid), local_log))
                 except BaseException as e:
                     Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
-                        e.message, self.name))
+                        str(e), self.name))
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {1}".format(
                 e.message, self.name), 6001)
@@ -673,7 +673,7 @@ class Job(object):
                         platform.restore_connection()
                     except BaseException as e:
                         Log.printlog("{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(
-                            e.message, self.name), 6001)
+                            str(e), self.name), 6001)
             if i >= retries:
                 if not out_exist or not err_exist:
                     Log.printlog("Failed to retrieve log files {1} and {2} e=6001".format(
@@ -738,7 +738,7 @@ class Job(object):
                                     self._tmp_path, 'LOG_' + str(self.expid), local_log))
                         except BaseException as e:
                             Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
-                                e.message, self.name))
+                                str(e), self.name))
                 try:
                     platform.closeConnection()
                 except BaseException as e:
@@ -1277,7 +1277,7 @@ class Job(object):
         if not enabled:
             f.write(date2str(datetime.datetime.now(), 'S'))
             if self.wrapper_type == "vertical":
-                f.write(" "+str(time.time()))
+                f.write(" "+str(time.time()).encode(locale.getlocale()))
         else:
             path2 = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP')
             f2 = open(path2, 'rb')

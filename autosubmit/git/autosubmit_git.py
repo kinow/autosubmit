@@ -238,7 +238,7 @@ class AutosubmitGit:
                     output_1 = subprocess.check_output(command_1, shell=True)
                 except BaseException as e:
                     submodule_failure = True
-                    Log.printlog("Trace: {0}".format(e.message), 6014)
+                    Log.printlog("Trace: {0}".format(str(e)), 6014)
                     Log.printlog(
                         "Submodule {0} has a wrong configuration".format(submodule), 6014)
             else:

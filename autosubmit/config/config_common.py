@@ -510,7 +510,7 @@ class AutosubmitConfig(object):
         except (AutosubmitCritical, AutosubmitError) as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Unknown issue while checking the configulation files (check_conf_files)",7040,e.message)
+            raise AutosubmitCritical("Unknown issue while checking the configulation files (check_conf_files)",7040,str(e))
         # Annotates all errors found in the configuration files in dictionaries self.warn_config and self.wrong_config.
         self.check_expdef_conf()
         self.check_platforms_conf()
@@ -1352,7 +1352,7 @@ class AutosubmitConfig(object):
         """
         content = open(self._conf_parser_file, 'rb').read()
         if re.search(rb'AUTOSUBMIT_VERSION =.*', content):
-            content = content.replace(re.search(rb'AUTOSUBMIT_VERSION =.*', content).group(0),"AUTOSUBMIT_VERSION = " + str.encode(autosubmit_version,locale.getlocale()[1]))
+            content = content.replace(re.search(rb'AUTOSUBMIT_VERSION =.*', content).group(0),str.encode("AUTOSUBMIT_VERSION = " + autosubmit_version,locale.getlocale()[1]))
         open(self._conf_parser_file, 'wb').write(content)
 
     def get_version(self):
