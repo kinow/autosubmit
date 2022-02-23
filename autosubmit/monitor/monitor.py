@@ -18,7 +18,8 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 import os
-
+import pwd
+from pydoc import Helper
 import time
 from os import path
 from os import chdir
@@ -29,12 +30,14 @@ import pydotplus
 import copy
 
 import subprocess
+import autosubmit.history.utils as HUtils
+import autosubmit.helpers.utils as HelperUtils
 
 from autosubmit.job.job_common import Status
 from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
-import autosubmit.history.utils as HUtils
+
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from bscearth.utils.config_parser import ConfigParserFactory
 
@@ -430,18 +433,26 @@ class Monitor:
         :type show: bool
         """
         Log.info('Creating stats file')
+        is_owner, is_eadmin, _ = HelperUtils.check_experiment_ownership(expid, BasicConfig, raise_error=False, logger=Log)
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_filename = "{}_statistics_{}.{}".format(expid, output_date, output_format)
-        output_complete_path = ""
-        if os.access(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid), os.W_OK):
-            HUtils.create_path_if_not_exists_group_permission(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats"))                    
+        output_complete_path = os.path.join(BasicConfig.DEFAULT_OUTPUT_DIR, output_filename)
+        is_default_path = True 
+        if is_owner or is_eadmin:
+            HUtils.create_path_if_not_exists_group_permission(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats"))
             output_complete_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats", output_filename)
+            is_default_path = False
         else:
-            Log.info("You don't have write access to the experiment's ({}) folder. The output file will be created in the default location: {}".format(expid, BasicConfig.DEFAULT_STATS_OUTPUT_DIR))
-            HUtils.create_path_if_not_exists_group_permission(BasicConfig.DEFAULT_STATS_OUTPUT_DIR)
-            output_complete_path = os.path.join(BasicConfig.DEFAULT_STATS_OUTPUT_DIR, output_filename)
-            
+            if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats")) and os.access(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats"), os.W_OK):
+                output_complete_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats", output_filename)
+                is_default_path = False
+            elif os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR)) and os.access(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR), os.W_OK):
+                    output_complete_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, output_filename)
+                    is_default_path = False
+        if is_default_path:
+            Log.info("You don't have enough permissions to the experiment's ({}) folder. The output file will be created in the default location: {}".format(expid, BasicConfig.DEFAULT_OUTPUT_DIR))
+            HUtils.create_path_if_not_exists_group_permission(BasicConfig.DEFAULT_OUTPUT_DIR)                
 
         create_bar_diagram(expid, joblist, self.get_general_stats(expid), output_complete_path, period_ini, period_fi, queue_time_fixes)
         Log.result('Stats created at {0}', output_complete_path)

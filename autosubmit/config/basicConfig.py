@@ -40,7 +40,7 @@ class BasicConfig:
         '/esarchive', 'autosubmit', 'as_metadata', 'structures')
     GLOBAL_LOG_DIR = os.path.join(
         '/esarchive', 'autosubmit', 'Aslogs')
-    DEFAULT_STATS_OUTPUT_DIR = os.path.join('/esarchive', 'autosubmit', 'stats')
+    DEFAULT_OUTPUT_DIR = os.path.join('/esarchive', 'autosubmit', 'as_output', 'stats')
     JOBDATA_DIR = os.path.join(
         '/esarchive', 'autosubmit', 'as_metadata', 'data')
     HISTORICAL_LOG_DIR = os.path.join('/esarchive', 'autosubmit', 'as_metadata', 'logs')
@@ -152,7 +152,7 @@ class BasicConfig:
         if parser.has_option('globallogs', 'path'):
             BasicConfig.GLOBAL_LOG_DIR = parser.get('globallogs', 'path')
         if parser.has_option('defaultstats', 'path'):
-            BasicConfig.DEFAULT_STATS_OUTPUT_DIR = parser.get('defaultstats', 'path')
+            BasicConfig.DEFAULT_OUTPUT_DIR = parser.get('defaultstats', 'path')
         if parser.has_option('historicdb', 'path'):
             BasicConfig.JOBDATA_DIR = parser.get('historicdb', 'path')
         if parser.has_option('historiclog', 'path'):

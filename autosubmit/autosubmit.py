@@ -87,6 +87,7 @@ from history.experiment_history import ExperimentHistory
 from typing import List
 import history.utils as HUtils
 import helpers.autosubmit_helper as AutosubmitHelper
+import helpers.utils as HelperUtils
 import statistics.utils as StatisticsUtils
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
@@ -747,43 +748,7 @@ class Autosubmit:
         :return: owner,eadmin
         :rtype: boolean,boolean
         """
-        # Read current login
-        # Read current user uid
-        my_user = os.getuid()
-        # Read eadmin user uid
-        owner = False
-        eadmin = False
-        id_eadmin = os.popen('id -u eadmin').read().strip()
-        ret = False
-        # Handling possible failure of retrieval of current owner data
-        currentOwner_id = 0
-        currentOwner = "empty"
-        try:
-            currentOwner_id = os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid
-            currentOwner = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
-        except:
-            pass
-        finally:
-            if currentOwner_id <= 0:
-                Log.info("Current owner '{0}' of experiment {1} does not exist anymore.", currentOwner, expid)
-        if currentOwner_id == my_user:
-            owner=True
-        if my_user == id_eadmin:
-            eadmin = True
-        if owner and raise_error:
-            try:
-                current_user_id = pwd.getpwuid(os.getuid())[0]
-                current_owner_id = pwd.getpwuid(os.stat(os.path.join(
-                    BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
-                if current_user_id != current_owner_id:
-                    raise AutosubmitCritical(
-                        "You don't own the experiment {0}.".format(expid), 7012)
-            except BaseException as e:
-                raise AutosubmitCritical(
-                    "User or owner does not exists", 7012, e.message)
-            except AutosubmitCritical as e:
-                raise
-        return owner,eadmin,currentOwner
+        return HelperUtils.check_experiment_ownership(expid, BasicConfig, raise_error, Log)
 
     @staticmethod
     def _delete_expid(expid_delete, force=False):
