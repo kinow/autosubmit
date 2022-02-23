@@ -3830,21 +3830,25 @@ class Autosubmit:
                 if result is not None and os.path.exists(dump_file_path):
                     Log.info("sqldump {0} created".format(dump_file_path))
                     Log.info(
-                        "Backup original database {0}".format(database_path))
+                        "Backing up original database {0}".format(database_path))
                     result = os.popen("mv {0} {1}".format(database_path, database_backup_path)).read()
+                    time.sleep(10)
                     if result is not None and not os.path.exists(database_path):
                         Log.info("Original database moved.")
                         Log.info("Restoring from sqldump")     
                         HUtils.create_file_with_full_permissions(database_path)                 
                         result = os.popen("cat {0} | sqlite3 {1}".format(
                             dump_file_path, database_path)).read()
+                        time.sleep(10)
                         if result is not None and os.path.exists(database_path):
                             Log.info(
                                 "Database {0} restored.".format(database_path))
                             Log.info("Deleting sqldump.")
                             result = os.popen(
                                 "rm {0}".format(dump_file_path)).read()
+                            sleep(5)
                             if result is not None and not os.path.exists(dump_file_path):
+                                ExperimentHistory(expid).initialize_database()
                                 Log.info("sqldump file deleted.")
                                 Log.result(
                                     "The database {0} has been fixed.".format(database_path))
