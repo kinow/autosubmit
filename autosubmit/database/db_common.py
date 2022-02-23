@@ -43,14 +43,14 @@ def create_db(qry):
         (conn, cursor) = open_conn(False)
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
 
     try:
         cursor.executescript(qry)
     except sqlite3.Error as e:
         close_conn(conn, cursor)
         raise AutosubmitCritical(
-            'Database can not be created', 7004, e.message)
+            'Database can not be created', 7004, str(e))
 
     conn.commit()
     close_conn(conn, cursor)
@@ -293,7 +293,7 @@ def _save_experiment(name, description, version):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
     try:
         cursor.execute('INSERT INTO experiment (name, description, autosubmit_version) VALUES (:name, :description, '
                        ':version)',
@@ -301,7 +301,7 @@ def _save_experiment(name, description, version):
     except sqlite3.IntegrityError as e:
         close_conn(conn, cursor)
         raise AutosubmitCritical(
-            'Couldn''t register experiment', 7005, e.message)
+            'Couldn''t register experiment', 7005, str(e))
 
     conn.commit()
     close_conn(conn, cursor)
@@ -325,7 +325,7 @@ def _check_experiment_exists(name, error_on_inexistence=True):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -405,7 +405,7 @@ def _get_autosubmit_version(expid):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -438,7 +438,7 @@ def _last_name_used(test=False, operational=False):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
     conn.text_factory = str
     if test:
         cursor.execute('SELECT name '
@@ -488,7 +488,7 @@ def _delete_experiment(experiment_id):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
         return False
     cursor.execute('DELETE FROM experiment '
                    'WHERE name=:name', {'name': experiment_id})
@@ -526,7 +526,7 @@ def _update_database(version, cursor):
             CURRENT_DATABASE_VERSION))
     except sqlite3.Error as e:
         raise AutosubmitCritical(
-            'unable to update database version', 7001, e.message)
+            'unable to update database version', 7001, str(e))
     Log.info("Update completed")
     return True
 

@@ -205,7 +205,7 @@ class Monitor:
             graph.set_strict(True)
 
         graph.add_subgraph(exp)
-
+        #Wrapper visualization
         for node in exp.get_nodes():
             name = node.obj_dict['name']
             if name in jobs_packages_dict:
@@ -217,7 +217,7 @@ class Monitor:
                     packages_subgraphs_dict[package].obj_dict['attributes']['style'] = 'dashed'
                 packages_subgraphs_dict[package].add_node(node)
 
-        for package, cluster in list(packages_subgraphs_dict.items()):
+        for package, cluster in packages_subgraphs_dict.items():
             graph.add_subgraph(cluster)
 
         Log.debug('Graph definition finalized')
@@ -342,13 +342,14 @@ class Monitor:
             raise
         except BaseException as e:
             try:
-                e.message += "\n"+e.value
-                if "GraphViz" in e.message:
-                    e.message= "Graphviz is not installed. Autosubmit need this system package in order to plot the workflow."
+                message= str(e)
+                message += "\n"+e.value
+                if "GraphViz" in message:
+                    message= "Graphviz is not installed. Autosubmit need this system package in order to plot the workflow."
             except:
                 pass
 
-            Log.printlog("{0}\nSpecified output doesn't have an available viewer installed or graphviz is not installed. The output was only writted in txt".format(e.message),7014)
+            Log.printlog("{0}\nSpecified output doesn't have an available viewer installed or graphviz is not installed. The output was only writted in txt".format(message),7014)
 
 
     def generate_output_txt(self, expid, joblist, path, classictxt=False, job_list_object=None):

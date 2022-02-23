@@ -95,7 +95,7 @@ class SlurmPlatform(ParamikoPlatform):
             jobs_id = self.get_submitted_job_id(self.get_ssh_output())
             return jobs_id
         except IOError as e:
-            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, e.message)
+            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, str(e))
         except AutosubmitError as e:
             raise
         except AutosubmitCritical as e:

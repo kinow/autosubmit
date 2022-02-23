@@ -60,7 +60,7 @@ class AutosubmitGit:
                                                      shell=True)
                 except subprocess.CalledProcessError as e:
                     raise AutosubmitCritical(
-                        "Failed to retrieve git info ...", 7064, e.message)
+                        "Failed to retrieve git info ...", 7064, str(e))
                 if output:
                     Log.info("Changes not committed detected... SKIPPING!")
                     raise AutosubmitCritical("Commit needed!", 7013)

@@ -867,7 +867,7 @@ class AutosubmitConfig(object):
             self._exp_parser = AutosubmitConfig.get_parser(
                 self.parser_factory, self._exp_parser_file)
         except IOError as e:
-            raise AutosubmitError("IO issues during the parsing of configuration files",6014,e.message)
+            raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
         except Exception as e:
             raise AutosubmitCritical(
                 "{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(str(e)), 7014)
@@ -878,7 +878,7 @@ class AutosubmitConfig(object):
                 self._proj_parser = AutosubmitConfig.get_parser(
                     self.parser_factory, self._proj_parser_file)
         except IOError as e:
-            raise AutosubmitError("IO issues during the parsing of configuration files",6014,e.message)
+            raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
 
     def load_parameters(self):
         """
@@ -905,9 +905,9 @@ class AutosubmitConfig(object):
                 parameters = parameters2
             return parameters
         except IOError as e:
-            raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.",6000,e.message)
+            raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.",6000,str(e))
         except Exception as e:
-            raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.", 6000,e.message)
+            raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.", 6000,str(e))
 
     def load_platform_parameters(self):
         """
@@ -1130,7 +1130,7 @@ class AutosubmitConfig(object):
                                              shell=True)
         except subprocess.CalledProcessError as e:
             raise AutosubmitCritical(
-                "Failed to retrieve project branch...", 7014, e.message)
+                "Failed to retrieve project branch...", 7014, str(e))
 
         project_branch = output
         Log.debug("Project branch is: " + project_branch)
@@ -1139,7 +1139,7 @@ class AutosubmitConfig(object):
                 "cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
         except subprocess.CalledProcessError as e:
             raise AutosubmitCritical(
-                "Failed to retrieve project commit SHA...", 7014, e.message)
+                "Failed to retrieve project commit SHA...", 7014, str(e))
         project_sha = output
         Log.debug("Project commit SHA is: " + project_sha)
 

@@ -207,7 +207,7 @@ class ParamikoPlatform(Platform):
             if "refused" in e.strerror:
                 raise SSHException(" {0} doesn't accept remote connections. Check if there is an typo in the hostname".format(self.host))
             else:
-                raise AutosubmitError("File can't be located due an slow connection", 6016, e.message)
+                raise AutosubmitError("File can't be located due an slow connection", 6016, str(e))
         except BaseException as e:
             self.connected = False
             if "Authentication failed." in str(e):
@@ -217,7 +217,7 @@ class ParamikoPlatform(Platform):
                 self.restore_connection(reconnect=True)
             else:
                 raise AutosubmitError(
-                    "Couldn't establish a connection to the specified host, wrong configuration?", 6003, e.message)
+                    "Couldn't establish a connection to the specified host, wrong configuration?", 6003, str(e))
 
     def check_completed_files(self, sections=None):
         if self.host == 'localhost':
@@ -272,7 +272,7 @@ class ParamikoPlatform(Platform):
             return True
         except IOError as e:
             raise AutosubmitError('Can not send file {0} to {1}'.format(os.path.join(
-                self.tmp_path, filename)), os.path.join(self.get_files_path(), filename), 6004, e.message)
+                self.tmp_path, filename)), os.path.join(self.get_files_path(), filename), 6004, str(e))
         except BaseException as e:
             raise AutosubmitError(
                 'Send file failed. Connection seems to no be active', 6004)
@@ -369,20 +369,20 @@ class ParamikoPlatform(Platform):
         except IOError as e:
             if str(e) in "Garbage":
                 raise AutosubmitError('File {0} does not exists, something went wrong with the platform'.format(
-                    path_root), 6004, e.message)
+                    path_root), 6004, str(e))
             if must_exist:
                 raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(
-                    path_root), 6004, e.message)
+                    path_root), 6004, str(e))
             else:
                 Log.debug("File {0} doesn't exists ".format(path_root))
                 return False
         except Exception as e:
             if str(e) in "Garbage":
                 raise AutosubmitError('File {0} does not exists'.format(
-                    os.path.join(self.get_files_path(), src)), 6004, e.message)
+                    os.path.join(self.get_files_path(), src)), 6004, str(e))
             if must_exist:
                 raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(
-                    os.path.join(self.get_files_path(), src)), 6004, e.message)
+                    os.path.join(self.get_files_path(), src)), 6004, str(e))
             else:
                 Log.printlog("Log file couldn't be moved: {0}".format(
                     os.path.join(self.get_files_path(), src)), 5001)

@@ -559,9 +559,9 @@ class Autosubmit:
             args = parser.parse_args()
 
         except Exception as e:
-            if type(e) is SystemExit:
+            if type(e) is SystemExit: #todo check
                 # Version keyword force an exception in parse arg due and os_exit(0) but the program is succesfully finished
-                if e.message == 0:
+                if "0" in str(e):
                     print(Autosubmit.autosubmit_version)
                     os._exit(0)
             raise AutosubmitCritical(
@@ -853,7 +853,7 @@ class Autosubmit:
                             'Current user is not the owner of the experiment. {0} can not be deleted!'.format(expid_delete), 7012)
             except Exception as e:
                 # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
-                error_message += "Couldn't delete the experiment".format(e.message)
+                error_message += "Couldn't delete the experiment".format(str(e))
             if error_message != "":
                 raise AutosubmitError("Some experiment files weren't correctly deleted\nPlease if the trace shows DATABASE IS LOCKED, report it to git\nIf there are I/O issues, wait until they're solved and then use this command again.\n",error_message,6004)
 
@@ -931,7 +931,7 @@ class Autosubmit:
                 except:
                     pass
                 raise AutosubmitCritical(
-                    "Couldn't create a new experiment, permissions?", 7012, e.message)
+                    "Couldn't create a new experiment, permissions?", 7012, str(e))
 
             except AutosubmitCritical as e:
                 try:
@@ -1042,7 +1042,7 @@ class Autosubmit:
             except (OSError, IOError) as e:
                 Autosubmit._delete_expid(exp_id, True)
                 raise AutosubmitCritical(
-                    "Can not create experiment", 7012, e.message)
+                    "Can not create experiment", 7012, str(e))
             except BaseException as e:
                 raise AutosubmitCritical(
                     "Can not create experiment", 7012, str(e))
@@ -1445,7 +1445,7 @@ class Autosubmit:
                             expid, as_conf, notransitive=notransitive)
                     except IOError as e:
                         raise AutosubmitError(
-                            "Job_list not found", 6016, e.message)
+                            "Job_list not found", 6016, str(e))
                     except AutosubmitCritical as e:
                         raise AutosubmitCritical(
                             "Corrupted job_list, backup couldn't be restored", 7040, e.message)
@@ -1481,7 +1481,7 @@ class Autosubmit:
                             BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                     except IOError as e:
                         raise AutosubmitError(
-                            "job_packages not found", 6016, e.message)
+                            "job_packages not found", 6016, str(e))
                     except BaseException as e:
                         raise AutosubmitCritical(
                             "Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages", 7040, str(e))
@@ -1492,7 +1492,7 @@ class Autosubmit:
                             packages = packages_persistence.load()
                         except IOError as e:
                             raise AutosubmitError(
-                                "job_packages not found", 6016, e.message)
+                                "job_packages not found", 6016, str(e))
                         except BaseException as e:
                             raise AutosubmitCritical(
                                 "Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages(will work on autosubmit4)",
@@ -1898,7 +1898,7 @@ class Autosubmit:
                                 Log.result("Recover of job_list has fail {0}".format(e.message))
                             except IOError as e:
                                 recovery = False
-                                Log.result("Recover of job_list has fail".format(e.message))
+                                Log.result("Recover of job_list has fail".format(str(e)))
                             except BaseException as e:
                                 recovery = False
                                 Log.result("Recover of job_list has fail".format(str(e)))
@@ -4992,7 +4992,7 @@ class Autosubmit:
                     answer = input()
                 return strtobool(answer.lower())
             except EOFError as e:
-                raise AutosubmitCritical("No input detected, the experiment won't be erased.",7011,e.message)
+                raise AutosubmitCritical("No input detected, the experiment won't be erased.",7011,str(e))
             except ValueError:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 

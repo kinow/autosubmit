@@ -162,7 +162,7 @@ class EcPlatform(ParamikoPlatform):
             output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
             if not ignore_log:
-                raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,e.message)
+                raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,str(e))
             return False
         self._ssh_output = output
         return True
@@ -175,7 +175,7 @@ class EcPlatform(ParamikoPlatform):
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError as e:
-            raise AutosubmitError('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),os.path.join(self.get_files_path(), filename)),6005,e.message)
+            raise AutosubmitError('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),os.path.join(self.get_files_path(), filename)),6005,str(e))
         return True
 
     def move_file(self, src, dest, must_exist = False):

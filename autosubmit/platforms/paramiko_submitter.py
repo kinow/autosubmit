@@ -138,7 +138,7 @@ class ParamikoSubmitter(Submitter):
                         "Queue type not specified on platform {0}".format(section))
 
             except ParamikoPlatformException as e:
-                Log.error("Queue exception: {0}".format(e.message))
+                Log.error("Queue exception: {0}".format(str(e)))
                 return None
             # Set the type and version of the platform found
             remote_platform.type = platform_type
