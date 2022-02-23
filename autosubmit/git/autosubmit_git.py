@@ -187,58 +187,46 @@ class AutosubmitGit:
                     git_remote_project_path, as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
             project_path = git_remote_path
 
-        if git_project_commit:
-            if git_single_branch:
-                command_0 = " git clone {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
-            else:
-                command_0 = " git clone {1} {4}; cd {2}; ".format(project_path,git_project_origin, git_path,git_project_commit,project_destination)
-            command_1 += " git checkout {0};  ".format(git_project_commit)
-
-            if git_project_submodules.__len__() <= 0:
-                command_1 += " git submodule update --init --recursive;"
-            else:
-                command_1 += " git submodule init;".format(project_destination)
-                for submodule in git_project_submodules:
-                    command_1 += " git submodule update {0};".format(submodule)
+        Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
+        if not git_single_branch:
+            command_0 += " git clone -b {0} {1} {2};".format(git_project_branch, git_project_origin,
+                                                             project_destination)
         else:
-            Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
-            if not git_single_branch:
-                command_0 += " git clone -b {0} {1} {2};".format(git_project_branch, git_project_origin,
-                                                                 project_destination)
-            else:
-                command_0 += " git clone --single-branch -b {0} {1} {2};".format(git_project_branch,
-                                                                                 git_project_origin,
-                                                                                 project_destination)
-
-            if git_project_submodules.__len__() > 0:
-                command_1 += " git submodule init;".format(
-                    project_destination)
-                for submodule in git_project_submodules:
-                    command_1 += " git submodule update {0};".format(submodule)
+            command_0 += " git clone --single-branch -b {0} {1} {2};".format(git_project_branch,
+                                                                             git_project_origin,
+                                                                             project_destination)
         try:
-            ##command 1
+            ##command 0
+            Log.debug('Clone command: {0}', command_0)
+
             if git_remote_project_path == '':
                 command_0 = "cd {0} ; {1}".format(project_path, command_0)
                 output_0 = subprocess.check_output(command_0, shell=True)
             else:
                 command_0 = "cd {0} ; {1}".format(git_remote_path, command_0)
                 hpcarch.send_command(command_0)
-            ##command 2
-            command_tmp = "cd {0}; ".format(git_path)
+            ##command 1
             if os.path.exists(os.path.join(git_path, ".githooks")):
                 for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
                     for f_dir in dirs:
                         os.chmod(os.path.join(root_dir, f_dir), 0o750)
                     for f_file in files:
                         os.chmod(os.path.join(root_dir, f_file), 0o750)
-                command_tmp += " git config core.hooksPath ./.githooks ; ".format(
+                command_1 += " git config core.hooksPath ./.githooks ; ".format(
                     git_path)
-            if command_1.find("checkout") == -1:
-                command_tmp += "git checkout; "
-            command_1 = command_tmp + command_1
-            Log.debug('Clone command: {0}', command_0)
+            if git_project_commit:
+                command_1 += "git checkout {0};".format(git_project_commit)
+            else:
+                command_1 += "git checkout; "
+            if git_project_submodules.__len__() <= 0:
+                command_1 += " git submodule update --init --recursive;"
+            else:
+                command_1 += " git submodule init;".format(project_destination)
+                for submodule in git_project_submodules:
+                    command_1 += " git submodule update {0};".format(submodule)
             if git_remote_project_path == '':
                 try:
+                    command_1 = "cd {0}; {1} ".format(git_path,command_1)
                     Log.debug('Githook + Checkout and Submodules: {0}', command_1)
                     output_1 = subprocess.check_output(command_1, shell=True)
                 except BaseException as e:
@@ -247,6 +235,7 @@ class AutosubmitGit:
                     Log.printlog(
                         "Submodule {0} has a wrong configuration".format(submodule), 6014)
             else:
+                command_1 = "cd {0}; {1} ".format(git_remote_path, command_1)
                 hpcarch.send_command(command_1)
         except subprocess.CalledProcessError as e:
             shutil.rmtree(project_path)
