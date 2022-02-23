@@ -756,6 +756,7 @@ class Autosubmit:
         :return: owner,eadmin
         :rtype: boolean,boolean
         """
+        #return HelperUtils.check_experiment_ownership(expid, BasicConfig, raise_error, Log)
         # Read current login
         # Read current user uid
         my_user = os.getuid()
