@@ -649,7 +649,7 @@ class Autosubmit:
                     print(f.read())
                     return True
             return False
-        elif args.command == 'dbfix':
+        elif args.command == 'dbfix':            
             return Autosubmit.database_fix(args.expid)
         elif args.command == 'pklfix':
             return Autosubmit.pkl_fix(args.expid)
@@ -692,7 +692,7 @@ class Autosubmit:
             if not os.path.exists(exp_path):
                 raise AutosubmitCritical("Experiment does not exist", 7012)
             # delete is treated differently
-            if args.command not in ["monitor", "describe", "delete", "report", "stats"]:
+            if args.command not in ["monitor", "describe", "delete", "report", "stats", "dbfix"]:
                 owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=True) #fastlook
             else:
                 owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=False) #fastlook
@@ -3832,28 +3832,17 @@ class Autosubmit:
         :type expid: str
         :return:
         :rtype:        
-        """
-        # exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
-        os.umask(0) # Override user permissions
+        """     
+        os.umask(0) # Overrides user permissions
         current_time = int(time.time())
-        database_path = os.path.join(
-            BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
+        database_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
         database_backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}_{1}.db".format(expid, str(current_time)))
         dump_file_name = 'job_data_{0}_{1}.sql'.format(expid, current_time)
         dump_file_path = os.path.join(BasicConfig.JOBDATA_DIR, dump_file_name)
-        bash_command = 'sqlite3 {0} .dump > {1}'.format(
-            database_path, dump_file_path)
-        # print(bash_command)
+        bash_command = 'sqlite3 {0} .dump > {1}'.format(database_path, dump_file_path)        
         try:
             if os.path.exists(database_path):
-                # output = subprocess.check_output(
-                #     ['sqlite3', database_path, '.dump', ' > ', dump_file_name])
                 result = os.popen(bash_command).read()
-                # process = subprocess.Popen(
-                #     bash_command.split(), stdout=subprocess.PIPE)
-                # output, error = process.communicate()
-                # print(result)
-                # print(len(result))
                 if result is not None and os.path.exists(dump_file_path):
                     Log.info("sqldump {0} created".format(dump_file_path))
                     Log.info(
@@ -3892,10 +3881,8 @@ class Autosubmit:
                     raise Exception("The sqldump file couldn't be created.")
             else:
                 raise Exception("The database file doesn't exist.")
-        except Exception as exp:
-            Log.warning(str(exp))
-            # print(error)
-            # print(output)
+        except Exception as exp:            
+            Log.critical(str(exp))
 
     @staticmethod
     def archive(expid, noclean=True, uncompress=True):
