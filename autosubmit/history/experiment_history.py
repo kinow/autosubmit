@@ -104,6 +104,9 @@ class ExperimentHistory():
                                                   wrapper_queue=wrapper_queue, 
                                                   wrapper_code=wrapper_code)
         self._log.log("write_start_time {0} start not found.".format(job_name))
+      job_data_dc_last = self.manager.get_job_data_dc_unique_latest_by_job_name(job_name)
+      if not job_data_dc_last:
+        raise Exception("Job {0} has not been found in the database.".format(job_name))
       job_data_dc_last.start = start
       job_data_dc_last.qos = self._get_defined_queue_name(wrapper_queue, wrapper_code, qos)
       job_data_dc_last.status = status
@@ -135,6 +138,9 @@ class ExperimentHistory():
                                                   wrapper_code=wrapper_code, 
                                                   children=children)
         self._log.log("write_finish_time {0} submit not found.".format(job_name))
+      job_data_dc_last = self.manager.get_job_data_dc_unique_latest_by_job_name(job_name)
+      if not job_data_dc_last:
+        raise Exception("Job {0} has not been found in the database.".format(job_name))
       job_data_dc_last.finish = finish if finish > 0 else int(time())
       job_data_dc_last.status = status
       job_data_dc_last.job_id = job_id      
