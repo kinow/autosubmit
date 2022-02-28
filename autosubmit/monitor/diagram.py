@@ -200,7 +200,7 @@ def create_csv_stats(exp_stats, jobs_list, output_file):
     running_times = exp_stats.run
 
     output_file = output_file.replace('pdf', 'csv')
-    with open(output_file, 'wb') as file:
+    with open(output_file, 'w') as file:
         file.write(
             "Job,Started,Ended,Queuing time (hours),Running time (hours)\n")
         for i in range(len(jobs_list)):

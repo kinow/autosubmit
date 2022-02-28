@@ -1272,17 +1272,17 @@ class Job(object):
         else:
             path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP')
         if os.path.exists(path):
-            f = open(path, 'ab')
+            f = open(path, 'a')
             f.write('\n')
         else:
-            f = open(path, 'wb')
+            f = open(path, 'w')
         if not enabled:
             f.write(date2str(datetime.datetime.now(), 'S'))
             if self.wrapper_type == "vertical":
-                f.write(" "+str(time.time()).encode(locale.getlocale()))
+                f.write(" "+str(time.time()))
         else:
             path2 = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP')
-            f2 = open(path2, 'rb')
+            f2 = open(path2, 'r')
             for line in f2.readlines():
                 if len(line) > 0:
                     data_time = line.split(" ")

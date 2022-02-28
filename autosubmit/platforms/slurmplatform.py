@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import locale
 import os
 from time import sleep
 from time import mktime
@@ -361,12 +361,13 @@ class SlurmPlatform(ParamikoPlatform):
             else:
                 return export + self._submit_hold_cmd + job_script
         else:
-            if not hold:
-                self._submit_script_file.write(
-                    export + self._submit_cmd + job_script + "\n")
-            else:
-                self._submit_script_file.write(
-                    export + self._submit_hold_cmd + job_script + "\n")
+            try:
+                if not hold:
+                    self._submit_script_file.write((export + self._submit_cmd + job_script + "\n").encode(locale.getlocale()[1]))
+                else:
+                    self._submit_script_file.write((export + self._submit_hold_cmd + job_script + "\n").encode(locale.getlocale()[1]))
+            except BaseException as e:
+                pass
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -X --jobs {1} -o "State"'.format(self.host, job_id)

@@ -810,16 +810,15 @@ class ParamikoPlatform(Platform):
                 stderr.close()
 
 
-            self._ssh_output = b""
-            self._ssh_output_err = b""
+            self._ssh_output = ""
+            self._ssh_output_err = ""
             for s in stdout_chunks:
-                if s != b'':
-                    self._ssh_output += s
+                if s.decode(locale.getlocale()[1]) != '':
+                    self._ssh_output += s.decode(locale.getlocale()[1])
             for errorLineCase in stderr_readlines:
-                self._ssh_output_err += errorLineCase
+                self._ssh_output_err += errorLineCase.decode(locale.getlocale()[1])
 
-            for errorLineCase in stderr_readlines:
-                errorLine = errorLineCase.lower()
+                errorLine = errorLineCase.lower().decode(locale.getlocale()[1])
                 if "not active" in errorLine:
                     raise AutosubmitError(
                         'SSH Session not active, will restart the platforms', 6005)
@@ -834,7 +833,7 @@ class ParamikoPlatform(Platform):
             if not ignore_log:
                 if len(stderr_readlines) > 0:
                     Log.printlog('Command {0} in {1} warning: {2}'.format(
-                        command, self.host, '\n'.join(stderr_readlines)), 6006)
+                        command, self.host, '\n'.join(stderr_readlines.decode(locale.getlocale()[1]))), 6006)
                 else:
                     pass
                     #Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
