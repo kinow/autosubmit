@@ -1054,18 +1054,18 @@ class Job(object):
             variables_to_modify = []
             deep_level = 1
             max_deep_level = 10
-            for key, value in list(proj_param.items()):
+            for key, value in proj_param.items():
                 if type(proj_param[key]) is str:
                     look_non_sub_variables = re.findall('%(?<!%%)\w+%(?!%%)', proj_param[key])
                     if len(look_non_sub_variables) > 0:
                         variables_to_modify.append(key)
             while len(variables_to_modify) > 0 and deep_level < max_deep_level:
-                for key, value in list(parameters.items()):
+                for key, value in parameters.items():
                     for var in variables_to_modify:
                         proj_param[var] = re.sub('%(?<!%%)' + key + '%(?!%%)', str(value), proj_param[var])
                 deep_level = deep_level + 1
                 variables_to_modify = []
-                for key, value in list(proj_param.items()):
+                for key, value in proj_param.items():
                     if type(proj_param[key]) is str:
                         look_non_sub_variables = re.findall('%(?<!%%)\w+%(?!%%)', proj_param[key])
                         if len(look_non_sub_variables) > 0:
@@ -1187,7 +1187,7 @@ class Job(object):
         """
         parameters = self.parameters
         template_content = self.update_content(as_conf)
-        for key, value in list(parameters.items()):
+        for key, value in parameters.items():
             template_content = re.sub(
                 '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
         if self.undefined_variables:
@@ -1198,13 +1198,15 @@ class Job(object):
         script_name = '{0}.cmd'.format(self.name)
         self.script_name = '{0}.cmd'.format(self.name)
         open(os.path.join(self._tmp_path, script_name),'wb').write(template_content.encode(locale.getlocale()[1]))
+        #open(os.path.join(self._tmp_path, script_name),'wb').write(template_content)
+
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
         return script_name
 
     def create_wrapped_script(self, as_conf, wrapper_tag='wrapped'):
         parameters = self.parameters
         template_content = self.get_wrapped_content(as_conf)
-        for key, value in list(parameters.items()):
+        for key, value in parameters.items():
             template_content = re.sub(
                 '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
         if self.undefined_variables:
@@ -1322,7 +1324,7 @@ class Job(object):
                                ".out", self.name + "." + timestamp + ".err")
 
             path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-            f = open(path, 'a')
+            f = open(path, 'ab')
             f.write(' ')
             # noinspection PyTypeChecker
             f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
@@ -1344,7 +1346,7 @@ class Job(object):
             self._platform.get_stat_file(self.name, retries=5)
             end_time = self.check_end_time()
             path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-            f = open(path, 'a')
+            f = open(path, 'ab')
             f.write(' ')
             finish_time = None
             final_status = None
@@ -1380,7 +1382,7 @@ class Job(object):
 
     def write_total_stat_by_retries_fix_newline(self):
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-        f = open(path, 'a')
+        f = open(path, 'ab')
         f.write('\n')
         f.close()
 

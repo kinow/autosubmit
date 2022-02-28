@@ -25,7 +25,7 @@ from os import chdir
 from os import listdir
 from os import remove
 
-import pydotplus
+import py3dotplus as pydotplus
 import copy
 
 import subprocess
@@ -165,7 +165,7 @@ class Monitor:
 
         if groups:
             if not hide_groups:
-                for job, group in list(groups['jobs'].items()):
+                for job, group in groups['jobs'].items():
                     if len(group) > 1:
                         group_name = 'cluster_' + '_'.join(group)
                         if group_name not in graph.obj_dict['subgraphs']:

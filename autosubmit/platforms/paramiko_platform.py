@@ -1,3 +1,4 @@
+import locale
 from time import sleep
 import sys
 import socket
@@ -242,7 +243,7 @@ class ParamikoPlatform(Platform):
         multiple_delete_previous_run = os.path.join(
             log_dir, "multiple_delete_previous_run.sh")
         if os.path.exists(log_dir):
-            open(multiple_delete_previous_run, 'wb+').write("rm -f" + filenames)
+            open(multiple_delete_previous_run, 'wb+').write( ("rm -f" + filenames).encode(locale.getlocale()[1]) )
             os.chmod(multiple_delete_previous_run, 0o770)
             self.send_file(multiple_delete_previous_run, False)
             command = os.path.join(self.get_files_path(),
@@ -809,10 +810,10 @@ class ParamikoPlatform(Platform):
                 stderr.close()
 
 
-            self._ssh_output = ""
-            self._ssh_output_err = ""
+            self._ssh_output = b""
+            self._ssh_output_err = b""
             for s in stdout_chunks:
-                if s != '':
+                if s != b'':
                     self._ssh_output += s
             for errorLineCase in stderr_readlines:
                 self._ssh_output_err += errorLineCase

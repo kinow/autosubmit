@@ -212,7 +212,7 @@ class SubJobManager(object):
                                     new_queues[sub_children_name] = fixed_queue_time
                                     # print(new_queues[sub_name])
 
-                for key, value in list(new_queues.items()):
+                for key, value in new_queues.items():
                     self.subjobindex[key].queue = value
                     # print("{} : {}".format(key, value))
                 for name in fixes_applied:

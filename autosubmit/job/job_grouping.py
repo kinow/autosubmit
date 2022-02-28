@@ -48,12 +48,12 @@ class JobGrouping(object):
         else:
             self._create_groups(jobs_group_dict, self.ungrouped_jobs)
 
-            for group, statuses in list(self.group_status_dict.items()):
+            for group, statuses in self.group_status_dict.items():
                 status = self._set_group_status(statuses)
                 self.group_status_dict[group] = status
 
         final_jobs_group = dict()
-        for job, groups in list(jobs_group_dict.items()):
+        for job, groups in jobs_group_dict.items():
             for group in groups:
                 if group not in blacklist:
                     while group in groups_map:
@@ -243,7 +243,7 @@ class JobGrouping(object):
 
         self._create_groups(jobs_group_dict, blacklist)
 
-        for group, statuses in list(self.group_status_dict.items()):
+        for group, statuses in self.group_status_dict.items():
             status = self._set_group_status(statuses)
             self.group_status_dict[group] = status
 
@@ -253,7 +253,7 @@ class JobGrouping(object):
         # check if remaining jobs can be grouped
         for i in reversed(range(len(self.jobs))):
             job = self.jobs[i]
-            for group, status in list(self.group_status_dict.items()):
+            for group, status in self.group_status_dict.items():
                 if group in job.name and status == job.status:
                     jobs_group_dict[job.name] = [group]
                     self.jobs.pop(i)
@@ -276,11 +276,11 @@ class JobGrouping(object):
                     group_maps[matching_group] = group
                     split_groups_status.pop(matching_group)
 
-            for split_group, statuses in list(split_groups_status.items()):
+            for split_group, statuses in split_groups_status.items():
                 status = self._set_group_status(statuses)
                 self.group_status_dict[split_group] = status
 
-            for job, groups in list(split_groups.items()):
+            for job, groups in split_groups.items():
                 final_groups = list()
                 for group in groups:
                     if group in group_maps:

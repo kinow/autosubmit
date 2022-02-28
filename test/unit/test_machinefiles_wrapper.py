@@ -41,7 +41,7 @@ class TestMachinefiles(TestCase):
 
         machinefiles_dict = result["machinefiles_dict"]
         all_machines = list()
-        for job, machines in list(machinefiles_dict.items()):
+        for job, machines in machinefiles_dict.items():
             machines = machines.split("\n")[:-1]
             job_section = job.split("_")[0]
             job_cores = int(jobs_resources[job_section]['PROCESSORS'])
@@ -81,7 +81,7 @@ class TestMachinefiles(TestCase):
 
         exec (script, result)
         machinefiles_dict = result["machinefiles_dict"]
-        for job, machines in list(machinefiles_dict.items()):
+        for job, machines in machinefiles_dict.items():
             machines = machines.split("\n")[:-1]
             job_section = job.split("_")[0]
             job_cores = int(jobs_resources[job_section]['PROCESSORS'])

@@ -16,6 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import locale
+
 try:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
@@ -156,7 +158,7 @@ class JobList(object):
                 self._ordered_jobs_by_date_member[wrapper_section] = {}
         pass
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True):
+                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True,conf=None):
         """
         Creates all jobs needed for the current workflow
 
@@ -196,13 +198,31 @@ class JobList(object):
         priority = 0
         if show_log:
             Log.info("Creating jobs...")
-        jobs_data = dict()
         # jobs_data includes the name of the .our and .err files of the job in LOG_expid
+        jobs_data = dict()
         if not new:
             try:
-                jobs_data = {str(row[0]): row for row in self.load()}
+            #     for row in self.load():
+            #         row = list(row)
+            #         row_aux = []
+            #         for vpicklealue in row:
+            #             if type(value) is str:
+            #                 row_aux.append(value.encode(locale.getlocale()[1]))
+            #             else:
+            #                 row_aux.append(value)
+            #         jobs_data[row_aux[0]] = tuple(row_aux)
+                jobs_data = {row[0]: row for row in self.load()}
             except:
-                jobs_data = {str(row[0]): row for row in self.backup_load()}
+                try:
+                    jobs_data = {row[0]: row for row in self.backup_load()}
+                except:
+                    pass
+                    Log.info("Deleting previous pkl due being incompatible with current AS version")
+                    if os.path.exists(os.path.join(self._persistence_path, self._persistence_file+".pkl")):
+                        os.remove(os.path.join(self._persistence_path, self._persistence_file+".pkl"))
+                    if os.path.exists(os.path.join(self._persistence_path, self._persistence_file+"_backup.pkl")):
+                        os.remove(os.path.join(self._persistence_path, self._persistence_file+"_backup.pkl"))
+
         self._create_jobs(dic_jobs, jobs_parser, priority,
                           default_job_type, jobs_data)
         if show_log:
@@ -1355,7 +1375,7 @@ class JobList(object):
         """
         try:
             if os.path.exists(filename):
-                fd = open(filename, 'rw')
+                fd = open(filename, 'rb')
                 return pickle.load(fd)
             else:
                 return list()

@@ -1505,7 +1505,7 @@ class Autosubmit:
                                     job_list.packages_dict[package_name] = []
                                 job_list.packages_dict[package_name].append(
                                     job_list.get_job_by_name(job_name))
-                            for package_name, jobs in list(job_list.packages_dict.items()):
+                            for package_name, jobs in job_list.packages_dict.items():
                                 from .job.job import WrapperJob
                                 wrapper_status = Status.SUBMITTED
                                 all_completed = True
@@ -1655,7 +1655,7 @@ class Autosubmit:
                             list_prevStatus = []
                             queuing_jobs = job_list.get_in_queue_grouped_id(platform)
                             Log.debug('Checking jobs for platform={0}'.format(platform.name))
-                            for job_id, job in list(queuing_jobs.items()):
+                            for job_id, job in queuing_jobs.items():
                                 # Check Wrappers one-by-one
                                 if job_list.job_package_map and job_id in job_list.job_package_map:
                                     wrapper_job = job_list.job_package_map[job_id]
@@ -1845,7 +1845,7 @@ class Autosubmit:
                                     job_list.packages_dict[package_name].append(
                                         job_list.get_job_by_name(job_name))
                                 # Recovery wrappers [Wrapper status]
-                                for package_name, jobs in list(job_list.packages_dict.items()):
+                                for package_name, jobs in job_list.packages_dict.items():
                                     from .job.job import WrapperJob
                                     wrapper_status = Status.SUBMITTED
                                     all_completed = True
@@ -3176,7 +3176,7 @@ class Autosubmit:
                     tmp_path, parameter_output), 'w').close()
                 parameter_file = open(os.path.join(
                     tmp_path, parameter_output), 'a')
-                for key, value in list(exp_parameters.items()):
+                for key, value in exp_parameters.items():
                     if value is not None:
                         parameter_file.write(key + "=" + str(value) + "\n")
                     else:
@@ -3202,7 +3202,7 @@ class Autosubmit:
                         "Gathering the selected parameters (all keys are on upper_case)")
                     template_file = open(template_file_path, 'rb')
                     template_content = template_file.read()
-                    for key, value in list(exp_parameters.items()):
+                    for key, value in exp_parameters.items():
                         template_content = re.sub(
                             '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
                     # Performance metrics

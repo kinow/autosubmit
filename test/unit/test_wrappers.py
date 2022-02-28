@@ -1378,7 +1378,7 @@ class TestWrappers(TestCase):
             "s2 s3 s5"), ordered_jobs_by_date_member)
 
     def _createDummyJobs(self, sections_dict, date_list, member_list, chunk_list):
-        for section, section_dict in list(sections_dict.get('sections').items()):
+        for section, section_dict in sections_dict.get('sections').items():
             running = section_dict['RUNNING']
             wallclock = section_dict['WALLCLOCK']
 
