@@ -44,6 +44,7 @@ from autosubmit.config.yaml_parser import YAMLParserFactory
 from .diagram import create_bar_diagram
 from typing import Dict, List
 
+GENERAL_STATS_OPTION_MAX_LENGTH = 1000
 
 class Monitor:
     """Class to handle monitoring of Jobs at HPC."""
@@ -509,7 +510,7 @@ class Monitor:
     def get_general_stats(expid):
         # type: (str) -> List[str]
         """
-        Returns all the options in the sections of the %DEFAULT.EXPID%_GENERAL_STATS
+        Returns all the options in the sections of the %expid%_GENERAL_STATS. Options with values larger than GENERAL_STATS_OPTION_MAX_LENGTH characters are not added.
 
         :param expid: experiment's identifier  
         :type expid: str  
@@ -524,5 +525,15 @@ class Monitor:
                 YAMLParserFactory(), general_stats_path)
             for section in parser.sections():
                 general_stats.append((section, ''))
-                general_stats += parser.items(section)        
-        return general_stats
+                general_stats += parser.items(section)
+        result = []
+        for stat_item in general_stats:
+            try:
+                key, value = stat_item
+                if len(value) > GENERAL_STATS_OPTION_MAX_LENGTH:
+                    Log.critical("General Stats {}: The value for the key \"{}\" is too long ({} characters) and won't be added to the general_stats plot. Maximum length allowed: {} characters.".format(general_stats_path, key, len(value), GENERAL_STATS_OPTION_MAX_LENGTH))
+                    continue
+                result.append(stat_item)
+            except:
+                Log.error("Error while processing general_stats of {}".format(expid))
+        return result

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from autosubmit.job.job import Job
 from .jobs_stat import JobStat
 from .stats_summary import StatsSummary
-from .utils import timedelta2hours
+from .utils import timedelta2hours, parse_number_processors
 from typing import List, Union, Dict
 # from collections import namedtuple
 
@@ -46,7 +46,7 @@ class Statistics(object):
           for retrial in retrials:
               # print(retrial)
               job_stat = self._name_to_jobstat_dict.setdefault(
-                  job.name, JobStat(job.name, job.total_processors, job.total_wallclock))
+                  job.name, JobStat(job.name, parse_number_processors(job.processors), job.total_wallclock))
               job_stat.inc_retrial_count()
               if Job.is_a_completed_retrial(retrial):
                   job_stat.inc_completed_retrial_count()
