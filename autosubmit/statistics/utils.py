@@ -1,5 +1,5 @@
 #!/bin/env/python
-
+import math
 from autosubmit.job.job import Job
 from datetime import datetime, timedelta
 from autosubmit.job.job_common import Status
@@ -35,3 +35,19 @@ def filter_by_time_period(jobs, hours_span):
 def timedelta2hours(deltatime):
     # type: (timedelta) -> float
     return deltatime.days * 24 + deltatime.seconds / 3600.0
+
+def parse_number_processors(processors_str):
+  """ Defaults to 1 in case of error """
+  # type: (str) -> int
+  if ':' in processors_str:  
+    components = processors_str.split(":")
+    processors = int(sum(
+        [math.ceil(float(x) / 36.0) * 36.0 for x in components]))
+    return processors
+  else:
+    try:
+      processors = int(processors_str)
+      return processors
+    except:
+      return 1
+  

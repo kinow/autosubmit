@@ -107,9 +107,6 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
             if l2 - l1 <= 0:
                 continue
             ind = np.arange(l2 - l1)
-            # print("TOTAL {}".format(len(exp_stats.jobs_stat)))
-            # print("{} -> {}".format(l1,l2))            
-            # print(ind)
             # Building plot axis
             ax.append(fig.add_subplot(grid_spec[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
             ax[plot - 1].set_ylabel('hours')
@@ -120,15 +117,9 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
             upper_limit = round(1.10 * exp_stats.max_time, 4)
             ax[plot - 1].set_yticks(np.arange(0, upper_limit, round(upper_limit/10, 4)))
             ax[plot - 1].set_ylim(0, float(1.10 * exp_stats.max_time))
-            # Axis 2
-            # ax2.append(ax[plot - 1].twinx())
-            # ax2[plot - 1].set_ylabel('# failed jobs')
-            # ax2[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
-            # ax2[plot - 1].set_ylim(0, exp_stats.max_fail + 1)
             # Building rects
             rects[0] = ax[plot - 1].bar(ind, exp_stats.queued[l1:l2], width, color='lightpink')
             rects[1] = ax[plot - 1].bar(ind + width, exp_stats.run[l1:l2], width, color='green')
-            # rects[2] = ax2[plot - 1].bar(ind + width * 2, exp_stats.failed_jobs[l1:l2], width, color='red')
             rects[2] = ax[plot - 1].bar(ind + width * 3, exp_stats.fail_queued[l1:l2], width, color='lightsalmon')
             rects[3] = ax[plot - 1].bar(ind + width * 4, exp_stats.fail_run[l1:l2], width, color='salmon')
             rects[4] = ax[plot - 1].plot([0., width * 6 * MAX_JOBS_PER_PLOT], [exp_stats.threshold, exp_stats.threshold], "k--", label='wallclock sim')
@@ -146,24 +137,14 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
             if l2 - l1 <= 0:
                 continue
             ind = np.arange(l2 - l1)
-            # print("TOTAL {}".format(len(job_names_in_failed)))
-            # print("{} -> {}".format(l1,l2))            
-            # print(ind)
-            # print("i {}, j {}".format(i_plot, j_plot))
             plot = i_plot + j_plot 
             ax.append(fig.add_subplot(grid_spec[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
-            # print("len {}, plot {}".format(len(ax), plot))
             ax[plot - 1].set_ylabel('# failed attempts')
             ax[plot - 1].set_xticks(ind + width)
             ax[plot - 1].set_xticklabels([name for name in job_names_in_failed[l1:l2]], rotation='vertical')
             ax[plot - 1].set_title(experiment_id, fontsize=20)
             ax[plot - 1].set_ylim(0, float(1.10 * exp_stats.max_fail))
             ax[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
-            # Axis 2
-            # ax2.append(ax[plot - 1].twinx())
-            # ax2[plot - 1].set_ylabel('# failed attempts')
-            # ax2[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
-            # ax2[plot - 1].set_ylim(0, exp_stats.max_fail + 1)
             failed_jobs_rects[0] = ax[plot - 1].bar(ind + width * 2, [exp_stats.failed_jobs_dict[name] for name in job_names_in_failed[l1:l2]], width, color='red')
         except Exception as exp:
             print(traceback.format_exc())
