@@ -193,8 +193,8 @@ In this workflow you can see an illustrated example of conditional dependencies.
 
 Conditional dependencies, work like this way:
 
-X job only has one parent. X job parent can have "COMPLETED or FAILED" as status for current job to run.
-X job has more than one parent. One of the X job parent must have "COMPLETED" as status while the rest can be  "FAILED or COMPLETED".
+* X job only has one parent. X job parent can have "COMPLETED or FAILED" as status for current job to run.
+* X job has more than one parent. One of the X job parent must have "COMPLETED" as status while the rest can be  "FAILED or COMPLETED".
 
 .. code-block:: ini
 
