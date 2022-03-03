@@ -2020,10 +2020,8 @@ class Autosubmit:
                     # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
-                            #Log.debug("FD submit: {0}".format(log.fd_show.fd_table_status_str()))
                             package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
-                            #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str()))
                         except (IOError, OSError):
                             failed_packages.append(package.jobs[0].id)
                             continue
@@ -2045,7 +2043,7 @@ class Autosubmit:
                             raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
                                 e.job_name), 7014, e.message)
                         except Exception as e:
-                            raise AutosubmitError("{0} submission failed".format(
+                            raise AutosubmitCritical("{0} submission failed".format(
                                 platform.name), 6015, str(e))
                 except WrongTemplateException as e:
                     raise AutosubmitCritical(
