@@ -21,9 +21,10 @@ This is the minimum job definition and usually is not enough. You usually will n
   member, chunk
 
 * DEPENDENCIES: defines dependencies from job as a list of parents jobs separated by spaces. For example, if
-  'new_job' has to wait for "old_job" to finish, you must add the line "DEPENDENCIES = old_job". For dependencies to
-  jobs running in previous chunks, members or start-dates, use -(DISTANCE). For example, for a job "SIM" waiting for
-  the previous "SIM" job to finish, you have to add "DEPENDENCIES = SIM-1". For dependencies that are not mandatory for the normal workflow behaviour, you must add the char '?' at the end of the dependency.
+  'new_job' has to wait for "old_job" to finish, you must add the line "DEPENDENCIES = old_job".
+    * For dependencies to jobs running in previous chunks, members or start-dates, use -(DISTANCE). For example, for a job "SIM" waiting for
+  the previous "SIM" job to finish, you have to add "DEPENDENCIES = SIM-1".
+    * For dependencies that are not mandatory for the normal workflow behaviour, you must add the char '?' at the end of the dependency.
 
 * SELECT_CHUNKS (optional): by default, all sections depend on all jobs the items specified on the DEPENDENCIES parameter. However, with this parameter, you could select the chunks of a specific job section. At the end of this doc, you will find diverse examples of this feature. The syntaxis is as follows:
 
@@ -39,11 +40,11 @@ This is the minimum job definition and usually is not enough. You usually will n
 
 .. code-block:: ini
 
-    [EXPDEF]
+    [expdef.conf]
     ...
     MEMBERS = AA BB CC DD
     ...
-    [jobs]
+    [jobs.conf]
     SELECT_MEMBERS = SIM*[1]*[3] # Enables the dependency of member BB with member DD. While AA and CC won't be linked.
     SELECT_MEMBERS = SIM*[1:3] # Enables the dependency of member  BB,CC and DD. While AA won't be linked.
     SELECT_MEMBERS = SIM*[1,3] # Enables the dependency of member BB and DD. While AA and CC won't be linked
