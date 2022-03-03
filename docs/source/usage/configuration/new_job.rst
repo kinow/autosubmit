@@ -263,8 +263,8 @@ Jobs_conf:
     RUNNING = chunk
     SYNCHRONIZE = member
 
-    .. figure:: ../../workflows/Select_members.png
-       :name: simple
-       :width: 100%
-       :align: center
-       :alt: select_members
+.. figure:: ../../workflows/Select_members.png
+   :name: simple
+   :width: 100%
+   :align: center
+   :alt: select_members
