@@ -2043,7 +2043,7 @@ class Autosubmit:
                             raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
                                 e.job_name), 7014, e.message)
                         except Exception as e:
-                            raise AutosubmitCritical("{0} submission failed".format(
+                            raise AutosubmitError("{0} submission failed. May be related to running a job with check=on_submission and another that affect this job template".format(
                                 platform.name), 6015, str(e))
                 except WrongTemplateException as e:
                     raise AutosubmitCritical(
