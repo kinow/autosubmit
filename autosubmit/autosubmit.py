@@ -2083,7 +2083,6 @@ class Autosubmit:
                     # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
-                            #Log.debug("FD submit: {0}".format(log.fd_show.fd_table_status_str()))
                             package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
                             #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str(open()))
@@ -2112,7 +2111,7 @@ class Autosubmit:
                         except AutosubmitError:
                             raise
                         except Exception as e:
-                            raise AutosubmitError("{0} submission failed".format(
+                            raise AutosubmitCritical("{0} submission failed".format(
                                 platform.name), 6015, str(e))
                 except WrongTemplateException as e:
                     raise AutosubmitCritical(

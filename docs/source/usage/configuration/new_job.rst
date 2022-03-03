@@ -190,6 +190,11 @@ Example 4: Conditional dependencies
 
 In this workflow you can see an illustrated example of conditional dependencies.
 
+Conditional dependencies, work like this way:
+
+X job only has one parent. X job parent can have "COMPLETED or FAILED" as status for current job to run.
+X job has more than one parent. One of the X job parent must have "COMPLETED" as status while the rest can be  "FAILED or COMPLETED".
+
 .. code-block:: ini
 
     [GET_FILES]
@@ -207,11 +212,11 @@ In this workflow you can see an illustrated example of conditional dependencies.
     RUNNING = chunk
     SYNCHRONIZE = member
 
-    .. figure:: ../../workflows/Dashed.png
-       :name: simple
-       :width: 100%
-       :align: center
-       :alt: dashed_workflow
+.. figure:: ../../workflows/Dashed.png
+   :name: simple
+   :width: 100%
+   :align: center
+   :alt: dashed_workflow
 
 Example 5: Select Member
 --------------------
