@@ -419,34 +419,34 @@ class JobPackager(object):
                                                 else:
                                                     package = JobPackageSimple([job])
                                                 packages_to_submit.append(package)
-                                    if len(active_jobs) > 0 or not error:
-                                        Log.printlog(
-                                            "Wrapper policy is set to MIXED and there are not enough jobs to form a wrapper.[wrappeable:{4} < defined_min:{5}] [wrappeable_h:{0} < defined_min_h:{1}]|[wrappeable_v:{2} < defined_min_v:{3}] waiting until the wrapper can be formed.".format(
-                                                min_h, wrapper_limits["min_h"], min_v,
-                                                wrapper_limits["min_v"], wrapper_limits["min"], len(active_jobs)),
-                                            6013)
-                                    else:
-
-                                        message = "Wrapper couldn't be formed under {0} POLICY due minimum limit not being reached: [wrappeable:{4} < defined_min:{5}] [wrappeable_h:{1} < defined_min_h:{2}]|[wrappeable_v:{3} < defined_min_v:{4}] ".format(
-                                            self.wrapper_policy[self.current_wrapper_section], min_h,
-                                            wrapper_limits["min_h"], min_v, wrapper_limits["min_v"],
-                                            wrapper_limits["min"], len(active_jobs))
-                                        if hard_deadlock:
-                                            message += "\nCheck your configuration: The next wrappeable job can't be wrapped until some of inner jobs of current packages finishes which is imposible"
-                                        if min_v > 1:
-                                            message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.conf.".format(wallclock_sum)
+                                    if error:
+                                        if len(active_jobs) > 0:
+                                            Log.printlog(
+                                                "Wrapper policy is set to MIXED and there are not enough jobs to form a wrapper.[wrappeable:{4} <= defined_min:{5}] [wrappeable_h:{0} <= defined_min_h:{1}]|[wrappeable_v:{2} <= defined_min_v:{3}] waiting until the wrapper can be formed.\nIf all values are <=, some innerjob has failed under strict policy".format(
+                                                    min_h, wrapper_limits["min_h"], min_v,
+                                                    wrapper_limits["min_v"], wrapper_limits["min"], len(active_jobs)),
+                                                6013)
                                         else:
-                                            message += "\nCheck your configuration: Only jobs_in_wrappers are active, check their dependencies."
-                                        if not balanced:
-                                            message += "\nPackages are not well balanced: Check your dependencies(This is not the main cause of the Critical error)"
-                                        if len(self._jobs_list.get_in_queue()) == 0:
-                                            raise AutosubmitCritical(message, 7014)
+                                            message = "Wrapper couldn't be formed under {0} POLICY due minimum limit not being reached: [wrappeable:{4} < defined_min:{5}] [wrappeable_h:{1} < defined_min_h:{2}]|[wrappeable_v:{3} < defined_min_v:{4}] ".format(
+                                                self.wrapper_policy[self.current_wrapper_section], min_h,
+                                                wrapper_limits["min_h"], min_v, wrapper_limits["min_v"],
+                                                wrapper_limits["min"], len(active_jobs))
+                                            if hard_deadlock:
+                                                message += "\nCheck your configuration: The next wrappeable job can't be wrapped until some of inner jobs of current packages finishes which is imposible"
+                                            if min_v > 1:
+                                                message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.conf.".format(wallclock_sum)
+                                            else:
+                                                message += "\nCheck your configuration: Only jobs_in_wrappers are active, check their dependencies."
+                                            if not balanced:
+                                                message += "\nPackages are not well balanced: Check your dependencies(This is not the main cause of the Critical error)"
+                                            if len(self._jobs_list.get_in_queue()) == 0:
+                                                raise AutosubmitCritical(message, 7014)
                                 elif self.wrapper_policy[self.current_wrapper_section] == "mixed":
                                     error = True
                                     show_log = True
                                     for job in p.jobs:
-                                        job.packed = False
                                         if job in self._jobs_list.jobs_to_run_first:
+                                            job.packed = False
                                             error = False
                                             if job.status == Status.READY:
                                                 if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
@@ -455,18 +455,19 @@ class JobPackager(object):
                                                 else:
                                                     package = JobPackageSimple([job])
                                                 packages_to_submit.append(package)
-                                        else:
-                                            if job.fail_count > 0 and job.status == Status.READY:
-                                                Log.printlog(
-                                                    "Wrapper policy is set to mixed, there is a failed job that will be sent sequential")
-                                                error = False
-                                                show_log = False
-                                                if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
-                                                    package = JobPackageSimpleWrapped(
-                                                        [job])
-                                                else:
-                                                    package = JobPackageSimple([job])
-                                                packages_to_submit.append(package)
+                                        if job.fail_count > 0 and job.status == Status.READY:
+                                            job.packed = False
+                                            Log.printlog(
+                                                "Wrapper policy is set to mixed, there is a failed job that will be sent sequential")
+                                            error = False
+                                            show_log = False
+                                            if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                                                package = JobPackageSimpleWrapped(
+                                                    [job])
+                                            else:
+                                                package = JobPackageSimple([job])
+                                            packages_to_submit.append(package)
+                                    if error:
                                         if len(active_jobs) > 0:
                                             if show_log:
                                                 Log.printlog(
