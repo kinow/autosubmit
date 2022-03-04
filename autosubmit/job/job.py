@@ -1769,10 +1769,11 @@ class WrapperJob(Job):
                 if output is None or output == '':
                     sleep(wait)
                 retries = retries - 1
-            if output is not None and output != '' and 'COMPLETED' in output:
+            if (output is not None and output != '') or 'COMPLETED' in output:
                 job.new_status = Status.COMPLETED
-        job.update_status(self.as_config.get_copy_remote_logs()
-                          == 'true', failed_file)
+            else:
+                failed_file = True
+        job.update_status(self.as_config.get_copy_remote_logs() == 'true', failed_file)
         self.running_jobs_start.pop(job, None)
 
     def update_failed_jobs(self, check_ready_jobs=False):
