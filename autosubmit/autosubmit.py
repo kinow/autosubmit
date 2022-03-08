@@ -1647,7 +1647,7 @@ class Autosubmit:
                     except Exception as e:
                         # Connection to status database ec_earth.db can fail.
                         # API worker will fix the status.
-                        Log.printlog("Autosubmit couldn't set your experiment as running on the main database. Exception: {0}".format(str(e)), 7003)
+                        Log.debug("Autosubmit couldn't set your experiment as running on the main database. Exception: {0}".format(str(e)), 7003)
                     if allowed_members:
                         # Set allowed members after checks have been performed. This triggers the setter and main logic of the -rm feature.
                         job_list.run_members = allowed_members
