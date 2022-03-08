@@ -3,8 +3,8 @@ from datetime import datetime, timedelta
 from utils import timedelta2hours
 
 class JobStat(object):
-    def __init__(self, name, processors, wallclock):
-      # type: (str, int, float) -> None
+    def __init__(self, name, processors, wallclock, section, date, member, chunk):
+      # type: (str, int, float, str, str, str, str) -> None
       self._name = name
       self._processors = processors
       self._wallclock = wallclock
@@ -18,6 +18,10 @@ class JobStat(object):
       self.retrial_count = 0
       self.completed_retrial_count = 0
       self.failed_retrial_count = 0
+      self.section = section
+      self.date = date
+      self.member = member
+      self.chunk = chunk     
 
     def inc_retrial_count(self):
         self.retrial_count += 1
@@ -27,10 +31,6 @@ class JobStat(object):
 
     def inc_failed_retrial_count(self):
         self.failed_retrial_count += 1
-
-    @property
-    def name(self):
-        return self._name
 
     @property
     def cpu_consumption(self):
@@ -51,6 +51,10 @@ class JobStat(object):
     @property
     def expected_cpu_consumption(self):
         return self._wallclock * self._processors
+    
+    @property
+    def name(self):
+        return self._name
 
     def get_as_dict(self):
         return {
