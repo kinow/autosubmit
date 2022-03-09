@@ -186,12 +186,12 @@ In this workflow you can see an illustrated example of SKIPPABLE parameter used 
    :align: center
    :alt: skip_workflow
 
-Example 4: Conditional dependencies
+Example 4: Weak dependencies
 --------------------
 
-In this workflow you can see an illustrated example of conditional dependencies.
+In this workflow you can see an illustrated example of weak dependencies.
 
-Conditional dependencies, work like this way:
+Weak dependencies, work like this way:
 
 * X job only has one parent. X job parent can have "COMPLETED or FAILED" as status for current job to run.
 * X job has more than one parent. One of the X job parent must have "COMPLETED" as status while the rest can be  "FAILED or COMPLETED".
