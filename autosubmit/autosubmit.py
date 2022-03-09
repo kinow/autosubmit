@@ -3968,25 +3968,27 @@ class Autosubmit:
         if as_conf.get_project_type() != 'none':
             if as_conf.get_file_project_conf():
                 copy = True
-                if os.path.exists(project_destiny):
-                    if force_model_conf:
-                        os.remove(project_destiny)
-                    else:
-                        copy = False
-                if copy:
-                    shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()),
-                                    project_destiny)
+                if os.path.exists(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf())):
+                    if os.path.exists(project_destiny):
+                        if force_model_conf:
+                            os.rename(project_destiny,project_destiny+"_backup")
+                        else:
+                            copy = False
+                    if copy:
+                        shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()),
+                                        project_destiny)
 
             if as_conf.get_file_jobs_conf():
                 copy = True
-                if os.path.exists(jobs_destiny):
-                    if force_jobs_conf:
-                        os.remove(jobs_destiny)
-                    else:
-                        copy = False
-                if copy:
-                    shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_jobs_conf()),
-                                    jobs_destiny)
+                if os.path.exists(os.path.join(as_conf.get_project_dir(), as_conf.get_file_jobs_conf())):
+                    if os.path.exists(jobs_destiny):
+                        if force_jobs_conf:
+                            os.rename(jobs_destiny,jobs_destiny+"_backup")
+                        else:
+                            copy = False
+                    if copy:
+                        shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_jobs_conf()),
+                                        jobs_destiny)
 
     @staticmethod
     def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(), notransitive=False, check_wrappers=False, detail=False):
