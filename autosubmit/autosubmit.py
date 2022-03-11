@@ -2930,28 +2930,35 @@ class Autosubmit:
                         try:
                             # Avoid infinite loop unrealistic upper limit, only for rsync failure
                             while not finished and rsync_retries < limit:
-                                p.send_command("rsync -ah --remove-source-files " + os.path.join(
-                                    p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
-                                if "no such file or directory" in p.get_ssh_output_err().lower():
-                                    finished = True
-                                elif "warning: rsync" in p.get_ssh_output_err().lower() or "connection unexpectedly closed" in p.get_ssh_output_err().lower():
+                                pipeline_broke = False
+                                try:
+                                    p.send_command("rsync -ah --remove-source-files " + os.path.join(
+                                        p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
+                                except BaseException as e:
                                     rsync_retries += 1
                                     finished = False
-                                elif p.get_ssh_output_err() == "":
-                                    finished = True
+                                    pipeline_broke = True
+                                if not pipeline_broke:
+                                    if "no such file or directory" in p.get_ssh_output_err().lower():
+                                        finished = True
+                                    elif "warning: rsync" in p.get_ssh_output_err().lower() or "connection unexpectedly closed" in p.get_ssh_output_err().lower():
+                                        rsync_retries += 1
+                                        finished = False
+                                    elif p.get_ssh_output_err() == "":
+                                        finished = True
+                                    else:
+                                        error = True
+                                        finished = True
+                                        raise AutosubmitError("{0}".format(
+                                            p.get_ssh_output_err().lower()), 6012)
                                 else:
-                                    error = True
-                                    finished = True
-                                    raise AutosubmitError("{0}".format(
-                                        p.get_ssh_output_err().lower()), 6012)
-                                p.send_command("chmod 755 -R " + p.root_dir)
-                                Log.result(
-                                    "Files/dirs on {0} have been successfully picked up", platform)
-                                p.send_command(
-                                    "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
-                                Log.result(
-                                    "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
-
+                                    p.send_command("chmod 755 -R " + p.root_dir)
+                                    Log.result(
+                                        "Files/dirs on {0} have been successfully picked up", platform)
+                                    p.send_command(
+                                        "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
+                                    Log.result(
+                                        "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
                         except IOError as e:
                             raise AutosubmitError(
                                 "I/O Issues", 6016, e.message)
