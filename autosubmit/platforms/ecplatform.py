@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import locale
 import os
 import subprocess
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
@@ -164,7 +164,7 @@ class EcPlatform(ParamikoPlatform):
             if not ignore_log:
                 raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,str(e))
             return False
-        self._ssh_output = output
+        self._ssh_output = output.decode(locale.getlocale()[1])
         return True
 
     def send_file(self, filename, check=True):

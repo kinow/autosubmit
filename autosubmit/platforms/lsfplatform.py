@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -97,7 +97,7 @@ class LsfPlatform(ParamikoPlatform):
     @staticmethod
     def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives):
         return """\
-        #!/usr/bin/env python
+        #!/usr/bin/env python3
         ###############################################################################
         #              {0}
         ###############################################################################

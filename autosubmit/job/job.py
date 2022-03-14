@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -1324,7 +1324,7 @@ class Job(object):
                                ".out", self.name + "." + timestamp + ".err")
 
             path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-            f = open(path, 'ab')
+            f = open(path, 'a')
             f.write(' ')
             # noinspection PyTypeChecker
             f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
@@ -1346,7 +1346,7 @@ class Job(object):
             self._platform.get_stat_file(self.name, retries=5)
             end_time = self.check_end_time()
             path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-            f = open(path, 'ab')
+            f = open(path, 'a')
             f.write(' ')
             finish_time = None
             final_status = None
@@ -1573,9 +1573,9 @@ class WrapperJob(Job):
         # Fail can come from check function or running/completed checkers.
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.status = Status.FAILED
-            if self.prev_status  in [Status.SUBMITTED,Status.QUEUING]:
+            if self.prev_status in [Status.SUBMITTED,Status.QUEUING]:
                 self.update_failed_jobs(True) # check false ready jobs
-            elif self.prev_status  in [Status.FAILED, Status.UNKNOWN]:
+            elif self.prev_status in [Status.FAILED, Status.UNKNOWN]:
                 self.failed = True
                 self._check_running_jobs()
             if len(self.inner_jobs_running) > 0:

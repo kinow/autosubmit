@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 
@@ -1089,6 +1089,8 @@ class Autosubmit:
                                   str(exp_id) + ".conf"), 0o755)
         except:
             pass #some folder may no exists, like proj
+        Log.debug("Finished")
+
         return exp_id
 
     @staticmethod
@@ -1403,6 +1405,9 @@ class Autosubmit:
                 if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
                     raise AutosubmitCritical("Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
                                              "Or with the -v parameter: autosubmit run {2} -v ".format(as_conf.get_version(), Autosubmit.autosubmit_version, expid), 7067)
+        except AutosubmitCritical:
+            raise
+
         except BaseException as e:
             raise AutosubmitCritical("Failure during the loading of the experiment configuration, check file paths",7014,str(e))
 
@@ -1615,7 +1620,7 @@ class Autosubmit:
                                 active_threads = False
                                 for thread in all_threads:
                                     if "JOB_" in thread.name:
-                                        if thread.isAlive():
+                                        if thread.is_alive():
                                             active_threads = True
                                             Log.info("{0} is still retrieving outputs, time remaining is {1} seconds.".format(
                                                 thread.name, 60 - timeout))
@@ -1670,9 +1675,7 @@ class Autosubmit:
                                     if check_wrapper:
                                         Log.debug('Checking Wrapper {0}'.format(str(job_id)))
                                         wrapper_job.checked_time = datetime.datetime.now()
-                                        # This is where wrapper will be checked on the slurm platform, update takes place.
                                         platform.check_job(wrapper_job)
-                                        #Log.info("FD 3Wrapper checked: {0}".format(log.fd_show.fd_table_status_str()))
                                         try:
                                             if wrapper_job.status != wrapper_job.new_status:
                                                 Log.info('Wrapper job ' + wrapper_job.name + ' changed from ' + str(
@@ -2100,6 +2103,10 @@ class Autosubmit:
                         except WrongTemplateException as e:
                             raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
                                 e.job_name), 7014, e.message)
+                        except AutosubmitCritical:
+                            raise
+                        except AutosubmitError:
+                            raise
                         except Exception as e:
                             raise AutosubmitError("{0} submission failed".format(
                                 platform.name), 6015, str(e))
@@ -2118,9 +2125,7 @@ class Autosubmit:
                     valid_packages_to_submit = [ package for package in valid_packages_to_submit if package.x11 != True]
                     if len(valid_packages_to_submit) > 0:
                         try:
-                            #Log.debug("FD submit: {0}".format(log.fd_show.fd_table_status_str()))
                             jobs_id = platform.submit_Script(hold=hold)
-                            #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str()))
                         except AutosubmitError as e:
                             jobs_id = None
                             if e.message.lower().find("bad parameters") != -1 or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1:

@@ -1,3 +1,4 @@
+import locale
 import os
 
 from log.log import Log
@@ -311,7 +312,7 @@ class Platform(object):
             os.remove(stat_local_path)
         if self.check_file_exists(filename):
             if self.get_file(filename, True):
-                Log.debug('{0}_STAT file have been transfered', job_name)
+                Log.debug('{0}_STAT file have been transferred', job_name)
                 return True
         Log.debug('{0}_STAT file not found', job_name)
         return False
@@ -413,7 +414,7 @@ class Platform(object):
         :rtype: Boolean
         """
         try:
-            title_job = "[INFO] JOBID=" + str(jobid)
+            title_job = b"[INFO] JOBID=" + str(jobid).encode(locale.getlocale()[1])
             if os.path.exists(complete_path):
                 file_type = complete_path[-3:]
                 if file_type == "out" or file_type == "err":
@@ -421,13 +422,13 @@ class Platform(object):
                         # Reading into memory (Potentially slow)
                         first_line = f.readline()
                         # Not rewrite
-                        if not first_line.startswith("[INFO] JOBID="):
+                        if not first_line.startswith(b'[INFO] JOBID='):
                             content = f.read()
                             # Write again (Potentially slow)
                             # start = time()
                             # Log.info("Attempting job identification of " + str(jobid))
                             f.seek(0, 0)
-                            f.write(title_job + "\n\n" + first_line + content)
+                            f.write(title_job + b"\n\n" + first_line + content)
                         f.close()
                         # finish = time()
                         # Log.info("Job correctly identified in " + str(finish - start) + " seconds")

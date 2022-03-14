@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 
@@ -117,7 +117,7 @@ class PythonWrapperBuilder(WrapperBuilder):
         import sys
         #from bscearth.utils.date import date2str 
         from threading import Thread
-        from commands import getstatusoutput
+        from subprocess import getstatusoutput
         from datetime import datetime
         import time
         from math import ceil
@@ -154,7 +154,7 @@ class PythonWrapperBuilder(WrapperBuilder):
                 #os.system("echo $(date +%s) > "+jobname+"_STAT")
                 out = str(self.template) + ".out"
                 err = str(self.template) + ".err"
-                print(out+"\\n")
+                print((out+"\\n"))
                 command = "./" + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
         """).format('\n'.ljust(13))
@@ -282,11 +282,12 @@ processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
             failed_path = os.path.join(os.getcwd(), failed_filename)
             failed_wrapper = os.path.join(os.getcwd(), wrapper_id)
             if os.path.exists(completed_path):
-                print datetime.now(), "The job ", current.template," has been COMPLETED"
+                print(datetime.now(), "The job ", current.template," has been COMPLETED")
             else:
                 open(failed_wrapper,'w').close()
                 open(failed_path, 'w').close()
-                print datetime.now(), "The job ", current.template," has FAILED"
+                print(datetime.now(), "The job ", current.template," has FAILED")
+
                 #{1}
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
             sequential_threads_launcher += self._indent(textwrap.dedent("""
@@ -302,7 +303,7 @@ processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
                 if os.path.exists(failed_wrapper):
                     os.remove(os.path.join(os.getcwd(),wrapper_id))
                     wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")
-                    open(wrapper_failed, 'w').close()
+                    open(wrapper_failed, 'wb').close()
                     os._exit(1)
 
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
@@ -333,11 +334,11 @@ for i in range(len(pid_list)):
         failed_path = os.path.join(os.getcwd(),failed_filename)
         failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         if os.path.exists(completed_path):
-            print datetime.now(), "The job ", pid.template," has been COMPLETED"
+            print(datetime.now(), "The job ", pid.template," has been COMPLETED")
         else:
             open(failed_wrapper, 'w').close()
             open(failed_path, 'w').close()
-            print datetime.now(), "The job ", pid.template," has FAILED"
+            print(datetime.now(), "The job ", pid.template," has FAILED")
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     def build_parallel_threads_launcher_horizontal(self, jobs_list, thread, footer=True):
@@ -368,11 +369,11 @@ for i in range(len(pid_list)):
         failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         Failed = False
         if os.path.exists(completed_path):
-            print datetime.now(), "The job ", pid.template," has been COMPLETED"
+            print((datetime.now(), "The job ", pid.template," has been COMPLETED"))
         else:
             open(failed_wrapper, 'w').close()
             open(failed_path, 'w').close()
-            print datetime.now(), "The job ", pid.template," has FAILED"
+            print((datetime.now(), "The job ", pid.template," has FAILED"))
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
@@ -404,11 +405,11 @@ for i in range(len(pid_list)):
         failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         Failed = False
         if os.path.exists(completed_path):
-            print datetime.now(), "The job ", pid.template," has been COMPLETED"
+            print((datetime.now(), "The job ", pid.template," has been COMPLETED"))
         else:
             open(failed_wrapper, 'w').close()
             open(failed_path, 'w').close()
-            print datetime.now(), "The job ", pid.template," has FAILED"
+            print((datetime.now(), "The job ", pid.template," has FAILED"))
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
@@ -432,7 +433,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
         failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         retrials = {2}
         total_steps = 0 
-        print "JOB.ID:"+ os.getenv('SLURM_JOBID')
+        print("JOB.ID:"+ os.getenv('SLURM_JOBID'))
         for i in range(len({0})):
             job_retrials = retrials
             completed = False
@@ -455,22 +456,22 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 os.system("echo "+str(time.time())+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials+1)) #Completed
                 if os.path.exists(completed_path):
                     completed = True
-                    print datetime.now(), "The job ", current.template," has been COMPLETED"
+                    print(datetime.now(), "The job ", current.template," has been COMPLETED")
                     os.system("echo COMPLETED >>  " + scripts[i][:-4]+"_STAT_"+str(job_retrials+1))
                 else:
-                    print datetime.now(), "The job ", current.template," has FAILED"
+                    print(datetime.now(), "The job ", current.template," has FAILED")
                     os.system("echo FAILED >>  " + scripts[i][:-4]+"_STAT_"+str(job_retrials+1))
                     #{1}
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
             sequential_threads_launcher += self._indent(textwrap.dedent("""
             if not os.path.exists(completed_path):
-                open(failed_wrapper,'w').close()
-                open(failed_path, 'w').close()
+                open(failed_wrapper,'wb').close()
+                open(failed_path, 'wb').close()
                 
             if os.path.exists(failed_wrapper):
                 os.remove(os.path.join(os.getcwd(),wrapper_id))
                 wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")
-                open(wrapper_failed, 'w').close()
+                open(wrapper_failed, 'wb').close()
                 os._exit(1)
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         return sequential_threads_launcher
@@ -489,12 +490,12 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 #os.system("echo $(date +%s) > "+jobname+"_STAT")
                 out = str(self.template) + ".out." + str(self.retrials)
                 err = str(self.template) + ".err." + str(self.retrials)
-                print(out+"\\n")
+                print((out+"\\n"))
                 command = "./" + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
-                print(command+"\\n")
+                print((command+"\\n"))
                 (self.status) = getstatusoutput("timeout {0} " + command + " > " + out + " 2> " + err)
                 for i in self.status:
-                    print(str(i)+"\\n")
+                    print((str(i)+"\\n"))
 
                 
         """).format(str(self.wallclock_by_level),'\n'.ljust(13))
@@ -560,11 +561,11 @@ for i in range(len(pid_list)):
         failed_path = os.path.join(os.getcwd(),failed_filename)
         failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         if os.path.exists(completed_path):
-            print datetime.now(), "The job ", pid.template," has been COMPLETED"
+            print(datetime.now(), "The job ", pid.template," has been COMPLETED")
         else:
-            open(failed_wrapper, 'w').close()
-            open(failed_path, 'w').close()
-            print datetime.now(), "The job ", pid.template," has FAILED"
+            open(failed_wrapper, 'wb').close()
+            open(failed_path, 'wb').close()
+            print(datetime.now(), "The job ", pid.template," has FAILED")
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     def build_joblist_thread(self):

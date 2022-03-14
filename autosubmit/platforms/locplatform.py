@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import locale
 import os
 from xml.dom.minidom import parseString
 import subprocess
@@ -99,13 +99,13 @@ class LocalPlatform(ParamikoPlatform):
 
     def send_command(self, command,ignore_log=False, x11 = False):
         try:
-            output = subprocess.check_output(command, shell=True)
+            output = subprocess.check_output(command.encode(locale.getlocale()[1]), shell=True)
         except subprocess.CalledProcessError as e:
             if not ignore_log:
                 Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
             return False
         Log.debug("Command '{0}': {1}", command, output)
-        self._ssh_output = output
+        self._ssh_output = output.decode(locale.getlocale()[1])
         return True
 
     def send_file(self, filename):
