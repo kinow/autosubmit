@@ -208,7 +208,8 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument(
                 '-f', '--force', action='store_true', help='deletes experiment without confirmation')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Monitor
             subparser = subparsers.add_parser(
                 'monitor', description="plots specified experiment")
@@ -226,7 +227,6 @@ class Autosubmit:
                                    default=False, help='Hides the groups from the plot')
             subparser.add_argument('-cw', '--check_wrapper', action='store_true',
                                    default=False, help='Generate possible wrapper in the current workflow')
-
             group2 = subparser.add_mutually_exclusive_group(required=False)
 
             group.add_argument('-fs', '--filter_status', type=str,
@@ -258,7 +258,8 @@ class Autosubmit:
                                    default=False, help='Disable transitive reduction')
             # subparser.add_argument('-d', '--detail', action='store_true',
             #                        default=False, help='Shows Job List view in terminal')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Stats
             subparser = subparsers.add_parser(
                 'stats', description="plots statistics for specified experiment")
@@ -274,7 +275,8 @@ class Autosubmit:
                                    help='hides plot window')
             subparser.add_argument('-nt', '--notransitive', action='store_true',
                                    default=False, help='Disable transitive reduction')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Clean
             subparser = subparsers.add_parser(
                 'clean', description="clean specified experiment")
@@ -285,7 +287,8 @@ class Autosubmit:
                                    help='clean plot, only 2 last will remain')
             subparser.add_argument('-s', '--stats', action="store_true",
                                    help='clean stats, only last will remain')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Recovery
             subparser = subparsers.add_parser(
                 'recovery', description="recover specified experiment")
@@ -314,6 +317,8 @@ class Autosubmit:
                                    default=False, help='Show Job List view in terminal')
             subparser.add_argument('-f', '--force', action='store_true',
                                    default=False, help='Cancel active jobs ')
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Migrate
             subparser = subparsers.add_parser(
                 'migrate', description="Migrate experiments from current user to another")
@@ -325,6 +330,8 @@ class Autosubmit:
                                default=False, help='Pick-up released experiment')
             subparser.add_argument('-r', '--onlyremote', action="store_true",
                                    default=False, help='Only moves remote files')
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Inspect
             subparser = subparsers.add_parser(
                 'inspect', description="Generate all .cmd files")
@@ -335,7 +342,8 @@ class Autosubmit:
                 '-f', '--force', action="store_true", help='Overwrite all cmd')
             subparser.add_argument('-cw', '--check_wrapper', action='store_true',
                                    default=False, help='Generate possible wrapper in the current workflow')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             group.add_argument('-fs', '--filter_status', type=str,
                                choices=('Any', 'READY', 'COMPLETED',
                                         'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
@@ -360,11 +368,14 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-nt', '--notransitive', action='store_true',
                                    default=False, help='Disable transitive reduction')
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Describe
             subparser = subparsers.add_parser(
                 'describe', description="Show details for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
 
             # Report
             subparser = subparsers.add_parser(
@@ -378,6 +389,8 @@ class Autosubmit:
                 '-fp', '--folder_path', type=str, help='Allows to select a non-default folder.')
             subparser.add_argument(
                 '-p', '--placeholders', default=False, action='store_true', help='disables the sustitution of placeholders by -')
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Create
             subparser = subparsers.add_parser(
                 'create', description="create specified experiment joblist")
@@ -401,7 +414,8 @@ class Autosubmit:
                                    default=False, help='Disable transitive reduction')
             subparser.add_argument('-cw', '--check_wrapper', action='store_true',
                                    default=False, help='Generate possible wrapper in the current workflow')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Configure
             subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
                                                                        "can be done at machine, user or local level."
@@ -446,6 +460,8 @@ class Autosubmit:
                                             'QUEUING', 'RUNNING', 'HELD'),
                                    required=True,
                                    help='Supply the target status')
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             group = subparser.add_mutually_exclusive_group(required=True)
             group.add_argument('-fl', '--list', type=str,
                                help='Supply the list of job names to be changed. Default = "Any". '
@@ -510,7 +526,8 @@ class Autosubmit:
                 'updatedescrip', description="Updates the experiment's description.")
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('description', help='New description.')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Test
             subparser = subparsers.add_parser(
                 'test', description='test experiment')
@@ -523,7 +540,8 @@ class Autosubmit:
                 '-H', '--HPC', help='HPC to run experiment on it')
             subparser.add_argument(
                 '-b', '--branch', help='branch of git to run (or revision from subversion)')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Refresh
             subparser = subparsers.add_parser(
                 'refresh', description='refresh project directory for an experiment')
@@ -532,11 +550,14 @@ class Autosubmit:
                                    help='overwrite model conf file')
             subparser.add_argument('-jc', '--jobs_conf', default=False, action='store_true',
                                    help='overwrite jobs conf file')
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Update Version
             subparser = subparsers.add_parser(
                 'updateversion', description='refresh experiment version')
             subparser.add_argument('expid', help='experiment identifier')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Archive
             subparser = subparsers.add_parser(
                 'archive', description='archives an experiment')
@@ -545,7 +566,8 @@ class Autosubmit:
                                    help='Avoid Cleaning of experiment folder')
             subparser.add_argument('-uc', '--uncompress', default=False, action='store_true',
                                    help='Only does a container without compress')
-
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Unarchive
             subparser = subparsers.add_parser(
                 'unarchive', description='unarchives an experiment')
@@ -554,6 +576,8 @@ class Autosubmit:
                                    help='Avoid Cleaning of experiment folder')
             subparser.add_argument('-uc', '--uncompressed', default=False, action='store_true',
                                    help='Untar an uncompressed tar')
+            subparser.add_argument('-v', '--update_version', action='store_true',
+                                   default=False, help='Update experiment version')
             # Readme
             subparsers.add_parser('readme', description='show readme')
 
@@ -686,6 +710,8 @@ class Autosubmit:
             if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and host not in BasicConfig.ALLOWED_HOSTS[args.command]:
                 raise AutosubmitCritical(message, 7004)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
+            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf.reload()
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
@@ -725,6 +751,23 @@ class Autosubmit:
                                               args.command + expid + '_err.log'), "err")
                     Log.printlog("Permissions of {0} are {1}. The log is being written in the {2} path instead of {1}. Please tell to the owner to fix the permissions".format(tmp_path,oct_perm,BasicConfig.GLOBAL_LOG_DIR))
             Log.file_path = tmp_path
+            if owner:
+                if "update_version" in args:
+                    force_update_version = args.update_version
+                else:
+                    force_update_version = False
+                if force_update_version:
+                    if as_conf.get_version() != Autosubmit.autosubmit_version:
+                        Log.info("The {2} experiment {0} version is being updated to {1} for match autosubmit version",
+                                 as_conf.get_version(), Autosubmit.autosubmit_version, expid)
+                        as_conf.set_version(Autosubmit.autosubmit_version)
+                else:
+                    if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
+                        raise AutosubmitCritical(
+                            "Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
+                            "Or with the -v parameter: autosubmit {3} {2} -v ".format(as_conf.get_version(),
+                                                                                      Autosubmit.autosubmit_version, expid,args.command),
+                            7067)
         else:
             if expid == 'None':
                 exp_id = ""
@@ -747,6 +790,9 @@ class Autosubmit:
         except:
             Log.info("Locale C.utf8 is not found, using '{0}' as fallback".format("C"))
             locale.setlocale(locale.LC_ALL, 'C')
+        Log.info(
+            "Autosubmit is running with {0}", Autosubmit.autosubmit_version)
+
 
 
     @staticmethod
@@ -1460,22 +1506,6 @@ class Autosubmit:
 
             as_conf.check_conf_files(True)
 
-            Log.info(
-                "Autosubmit is running with {0}", Autosubmit.autosubmit_version)
-            if update_version:
-                if as_conf.get_version() != Autosubmit.autosubmit_version:
-                    Log.info("The {2} experiment {0} version is being updated to {1} for match autosubmit version",
-                             as_conf.get_version(), Autosubmit.autosubmit_version, expid)
-                    as_conf.set_version(Autosubmit.autosubmit_version)
-            else:
-                if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
-                    raise AutosubmitCritical("Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
-                                             "Or with the -v parameter: autosubmit run {2} -v ".format(as_conf.get_version(), Autosubmit.autosubmit_version, expid), 7067)
-        except AutosubmitCritical:
-            raise
-
-        except AutosubmitError as e:
-            raise AutosubmitCritical(e.message,e.code,e.trace)
 
         except BaseException as e:
             raise AutosubmitCritical("Failure during the loading of the experiment configuration, check file paths",7014,str(e))
@@ -2019,9 +2049,14 @@ class Autosubmit:
                 platform_issues += "\n[{0}] has configuration issues.\n Check that the connection is passwd-less.(ssh {1}@{4})\n Check the parameters that build the root_path are correct:{{scratch_dir/project/user}} = {{{3}/{2}/{1}}}".format(
                     platform.name, platform.user, platform.project, platform.scratch,platform.host)
                 issues += platform_issues
-            if platform_issues != "":
-                Log.result("[{1}] Connection successful to host {0}",platform.host, platform.name)
+            if platform_issues == "":
+                platform.connected = False
+                Log.result("[{1}] Connection failed to host {0}", platform.host, platform.name)
+            else:
+                platform.connected = False
+                Log.result("[{1}] Connection successful to host {0}", platform.host, platform.name)
         if issues != "":
+            platform.connected = False
             raise AutosubmitCritical(
                 "Issues while checking the connectivity of platforms.", 7010, issues+"\n"+ssh_config_issues)
 
@@ -2090,6 +2125,7 @@ class Autosubmit:
                             failed_packages.append(package.jobs[0].id)
                             continue
                         except AutosubmitError as e:
+                            platform.connected = False
                             if e.message.lower().find("bad parameters") != -1:
                                 error_msg = ""
                                 for package_tmp in valid_packages_to_submit:
@@ -2111,6 +2147,7 @@ class Autosubmit:
                         except AutosubmitError:
                             raise
                         except Exception as e:
+                            platform.connected = False
                             raise AutosubmitError("{0} submission failed. May be related to running a job with check=on_submission and another that affect this job template".format(
                                 platform.name), 6015, str(e))
                 except WrongTemplateException as e:
@@ -2995,7 +3032,7 @@ class Autosubmit:
                             while not finished and rsync_retries < limit:
                                 pipeline_broke = False
                                 try:
-                                    p.send_command("rsync -ah --remove-source-files " + os.path.join(
+                                    p.send_command("rsync --contimeout=0 --timeout=0 --bwlimit=20000 -ah --remove-source-files " + os.path.join(
                                         p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
                                 except BaseException as e:
                                     rsync_retries += 1

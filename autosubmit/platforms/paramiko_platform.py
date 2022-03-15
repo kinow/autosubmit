@@ -95,23 +95,27 @@ class ParamikoPlatform(Platform):
         """
         Test if the connection is still alive, reconnect if not.
         """
-        try:            
-            self.reset()            
-            try:
-                self.restore_connection()
-                message = "OK"
-            except BaseException as e:
-                message = str(e)
-            if message.find("t accept remote connections") == -1:
-                transport = self._ssh.get_transport()
-                transport.send_ignore()
-            return message
+        try:
+            if not self.connected:
+                self.reset()
+                try:
+                    self.restore_connection()
+                    message = "OK"
+                except BaseException as e:
+                    message = str(e)
+                if message.find("t accept remote connections") == -1:
+                    transport = self._ssh.get_transport()
+                    transport.send_ignore()
+                return message
         except EOFError as e:
+            self.connected = False
             raise AutosubmitError("[{0}] not alive. Host: {1}".format(
                 self.name, self.host), 6002, e.message)
         except (AutosubmitError,AutosubmitCritical,IOError):
+            self.connected = False
             raise
         except BaseException as e:
+            self.connected = False
             raise AutosubmitCritical(str(e),7051)
             #raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
 
