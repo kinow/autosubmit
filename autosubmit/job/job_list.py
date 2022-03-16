@@ -1391,14 +1391,11 @@ class JobList(object):
                 for job in self._base_job_list:
                     if job.name not in job_names:
                         job_list.append(job)
-            #Log.info("update_status_log start: {0}".format(log.fd_show.fd_table_status_str()))
             self.update_status_log()
-            #Log.info("update_status_log end: {0}".format(log.fd_show.fd_table_status_str()))
 
             try:
                 self._persistence.save(self._persistence_path,
                                        self._persistence_file, self._job_list if self.run_members is None or job_list is None else job_list)
-                # Log.info("_persistence end: {0}".format(log.fd_show.fd_table_status_str()))
                 pass
             except BaseException as e:
                 raise AutosubmitError(e.message,6040,"Failure while saving the job_list")
