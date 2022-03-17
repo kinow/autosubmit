@@ -955,12 +955,12 @@ class Job(object):
             parameters['Chunk_START_DAY'] = str(chunk_start.day).zfill(2)
             parameters['Chunk_START_HOUR'] = str(chunk_start.hour).zfill(2)
 
-            parameters['Chunk_SECOND_LAST_DATE'] = date2str(
+            parameters['Chunk_SECOND_TO_LAST_DATE'] = date2str(
                 chunk_end_1, self.date_format)
-            parameters['Chunk_SECOND_LAST_YEAR'] = str(chunk_end_1.year)
-            parameters['Chunk_SECOND_LAST_MONTH'] = str(chunk_end_1.month).zfill(2)
-            parameters['Chunk_SECOND_LAST_DAY'] = str(chunk_end_1.day).zfill(2)
-            parameters['Chunk_SECOND_LAST_HOUR'] = str(chunk_end_1.hour).zfill(2)
+            parameters['Chunk_SECOND_TO_LAST_YEAR'] = str(chunk_end_1.year)
+            parameters['Chunk_SECOND_TO_LAST_MONTH'] = str(chunk_end_1.month).zfill(2)
+            parameters['Chunk_SECOND_TO_LAST_DAY'] = str(chunk_end_1.day).zfill(2)
+            parameters['Chunk_SECOND_TO_LAST_HOUR'] = str(chunk_end_1.hour).zfill(2)
 
             parameters['Chunk_END_DATE'] = date2str(
                 chunk_end_1, self.date_format)
