@@ -2962,18 +2962,29 @@ class Autosubmit:
                         Log.info("Copying from {0} to {1}", os.path.join(
                             p.temp_dir, experiment_id), p.root_dir)
                         finished = False
-                        limit = 100
+                        limit = 50
                         rsync_retries = 0
                         try:
                             # Avoid infinite loop unrealistic upper limit, only for rsync failure
                             while not finished and rsync_retries < limit:
+                                finished = False
                                 pipeline_broke = False
+                                Log.info("Rsync launched {0} times. Can take up to 50 retrials or all data is transfered".format(rsync_retries+1))
                                 try:
                                     p.send_command("rsync --contimeout=0 --timeout=0 --bwlimit=20000 -ah --remove-source-files " + os.path.join(
                                         p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
                                 except BaseException as e:
+                                    Log.debug("{0}".format(str(e)))
                                     rsync_retries += 1
-                                    finished = False
+                                    try:
+                                        if p.get_ssh_output_err() == "":
+                                            finished = True
+                                        elif "no such file or directory" in p.get_ssh_output_err().lower():
+                                            finished = True
+                                        else:
+                                            finished = False
+                                    except:
+                                        finished = False
                                     pipeline_broke = True
                                 if not pipeline_broke:
                                     if "no such file or directory" in p.get_ssh_output_err().lower():
@@ -2985,17 +2996,22 @@ class Autosubmit:
                                         finished = True
                                     else:
                                         error = True
-                                        finished = True
-                                        raise AutosubmitError("{0}".format(
-                                            p.get_ssh_output_err().lower()), 6012)
-                                else:
-                                    p.send_command("chmod 755 -R " + p.root_dir)
-                                    Log.result(
-                                        "Files/dirs on {0} have been successfully picked up", platform)
-                                    p.send_command(
-                                        "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
-                                    Log.result(
-                                        "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
+                                        finished = False
+                                        break
+                            if finished:
+                                p.send_command("chmod 755 -R " + p.root_dir)
+                                Log.result(
+                                    "Files/dirs on {0} have been successfully picked up", platform)
+                                p.send_command(
+                                    "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
+                                Log.result(
+                                    "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
+                            else:
+                                Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(
+                                    os.path.join(p.temp_dir, experiment_id), p.root_dir), 6012)
+                                error=True
+                                break
+
                         except IOError as e:
                             raise AutosubmitError(
                                 "I/O Issues", 6016, e.message)
@@ -3004,7 +3020,6 @@ class Autosubmit:
                             Log.printlog("The files/dirs on {0} cannot be copied to {1}.\nTRACE:{2}".format(
                                 os.path.join(p.temp_dir, experiment_id), p.root_dir, e.message), 6012)
                             break
-                        backup_files.append(platform)
                     else:
                         Log.result(
                             "Files/dirs on {0} have been successfully picked up", platform)
@@ -3013,8 +3028,6 @@ class Autosubmit:
                     "Unable to pickup all platforms, the non-moved files are on the TEMP_DIR\n You can try again with autosubmit {0} -p --onlyremote".format(experiment_id), 7012)
             else:
                 Log.result("The experiment has been successfully picked up.")
-                #Log.info("Refreshing the experiment.")
-                # Autosubmit.refresh(experiment_id,False,False)
                 return True
 
     @staticmethod
