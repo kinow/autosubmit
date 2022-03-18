@@ -2971,7 +2971,7 @@ class Autosubmit:
                                 pipeline_broke = False
                                 Log.info("Rsync launched {0} times. Can take up to 50 retrials or until all data is transfered".format(rsync_retries+1))
                                 try:
-                                    p.send_command("rsync --contimeout=0 --timeout=0 --bwlimit=20000 -ah --remove-source-files " + os.path.join(
+                                    p.send_command("rsync --timeout=3600 --bwlimit=20000 -aq --remove-source-files " + os.path.join(
                                         p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
                                 except BaseException as e:
                                     Log.debug("{0}".format(str(e)))
@@ -2998,12 +2998,17 @@ class Autosubmit:
                                         error = True
                                         finished = False
                                         break
+                                p.send_command(
+                                    "find {0} -depth -type d -empty -delete".format(
+                                        os.path.join(p.temp_dir, experiment_id)))
+                                Log.result(
+                                    "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
                             if finished:
                                 p.send_command("chmod 755 -R " + p.root_dir)
                                 Log.result(
                                     "Files/dirs on {0} have been successfully picked up", platform)
-                                p.send_command(
-                                    "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
+                                #p.send_command(
+                                #    "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
                                 Log.result(
                                     "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
                             else:
