@@ -2969,7 +2969,7 @@ class Autosubmit:
                             while not finished and rsync_retries < limit:
                                 finished = False
                                 pipeline_broke = False
-                                Log.info("Rsync launched {0} times. Can take up to 50 retrials or all data is transfered".format(rsync_retries+1))
+                                Log.info("Rsync launched {0} times. Can take up to 50 retrials or until all data is transfered".format(rsync_retries+1))
                                 try:
                                     p.send_command("rsync --contimeout=0 --timeout=0 --bwlimit=20000 -ah --remove-source-files " + os.path.join(
                                         p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
