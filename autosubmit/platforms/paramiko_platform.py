@@ -1009,7 +1009,7 @@ class ParamikoPlatform(Platform):
                 '%TASKS_PER_NODE_DIRECTIVE%', self.header.get_tasks_per_node(job))
         if hasattr(self.header, 'get_threads_per_task'):
             header = header.replace(
-                '%THREADS%', self.header.get_threads_per_task(job))
+                '%THREADS_PER_TASK_DIRECTIVE%', self.header.get_threads_per_task(job))
         if job.x11:
             header = header.replace(
                 '%X11%', "SBATCH --x11=batch")

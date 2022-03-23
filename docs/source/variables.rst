@@ -35,6 +35,8 @@ This variables are relatives to the current job.
 - **Chunk_LAST**: True if the current chunk is the last, false otherwise.
 - **NUMPROC**: Number of processors that the job will use.
 - **NUMTHREADS**: Number of threads that the job will use.
+- **NUMTASKS**: Number of tasks that the job will use.
+- **HYPERTHREADING**: Detects if hyperthreading is enabled or not.
 - **WALLCLOCK**: Number of processors that the job will use.
 - **SCRATCH_FREE_SPACE**: Percentage of free space required on the ``scratch``.
 - **NOTIFY_ON**: Determine the job statuses you want to be notified.

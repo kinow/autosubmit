@@ -1013,15 +1013,21 @@ class Job(object):
             self.custom_directives = []
 
         parameters['NUMPROC'] = self.processors
+        parameters['PROCESSORS'] = self.processors
         parameters['MEMORY'] = self.memory
         parameters['MEMORY_PER_TASK'] = self.memory_per_task
         parameters['NUMTHREADS'] = self.threads
         parameters['THREADS'] = self.threads
+        parameters['CPUS_PER_TASK'] = self.threads
         parameters['NUMTASK'] = self.tasks
+        parameters['TASKS'] = self.tasks
+        parameters['TASKS_PER_NODE'] = self.tasks
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
         parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
         parameters['CUSTOM_DIRECTIVES'] = self.custom_directives
+        parameters['HYPERTHREADING'] = self.hyperthreading
+
 
         parameters['CURRENT_ARCH'] = job_platform.name
         parameters['CURRENT_HOST'] = job_platform.host
@@ -1036,11 +1042,9 @@ class Job(object):
         parameters['CURRENT_SCRATCH_DIR'] = job_platform.scratch
         parameters['CURRENT_ROOTDIR'] = job_platform.root_dir
         parameters['CURRENT_LOGDIR'] = job_platform.get_files_path()
-
         parameters['ROOTDIR'] = os.path.join(
             BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()
-
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['WRAPPER'] = as_conf.get_wrapper_type()
         parameters['DEPENDENCIES'] = as_conf.jobs_data[self.section].get("DEPENDENCIES","")

@@ -48,6 +48,10 @@ In the file:
     # PROCESSORS = 1
     ## Threads number to be submitted to the HPC. If not specified, defaults to 1.
     # THREADS = 1
+    ## Tasks number to be submitted to the HPC. If not specified, defaults to 1.
+    # Tasks = 1
+    ## Enables hyperthreading. If not specified, defaults to false.
+    # HYPERTHREADING = false
     ## Memory requirements for the job in MB
     # MEMORY = 4096
     ##  Number of retrials if a job fails. If not specified, defaults to the value given on experiment's autosubmit.conf

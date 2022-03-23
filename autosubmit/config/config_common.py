@@ -275,6 +275,15 @@ class AutosubmitConfig(object):
         """
         return self.get_section([section, 'WCHUNKINC'], "")
 
+    def get_hyperthreading(self, section):
+        """
+        Gets hyperthreading status
+        :param section: job type
+        :type section: str
+        :return: true/false/none
+        :rtype: str
+        """
+        return self._jobs_parser.get_option(section, 'HYPERTHREADING', 'None')
     def get_synchronize(self, section):
         """
         Gets wallclock for the given job type

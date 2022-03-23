@@ -116,8 +116,8 @@ class SlurmHeader(object):
         :return: tasks per node directive
         :rtype: str
         """
-        #if job.parameters['NUMTASK'] != '':
-        #    return "SBATCH --tasks-per-node={0}".format(job.parameters['NUMTASK'])
+        if job.parameters['TASKS_PER_NODE'] != '':
+            return "SBATCH --tasks-per-node={0}".format(job.parameters['TASKS'])
         return ""
 
     SERIAL = textwrap.dedent("""\
@@ -128,9 +128,9 @@ class SlurmHeader(object):
 #%QUEUE_DIRECTIVE%
 #%ACCOUNT_DIRECTIVE%
 #%MEMORY_DIRECTIVE%
+
+#%THREADS_PER_TASK_DIRECTIVE%
 #%TASKS_PER_NODE_DIRECTIVE%
-#%THREADS%
-#%NUMTASK%
 #SBATCH -n %NUMPROC%
 #SBATCH -t %WALLCLOCK%:00
 #SBATCH -J %JOBNAME%
@@ -151,9 +151,9 @@ class SlurmHeader(object):
 #%ACCOUNT_DIRECTIVE%
 #%MEMORY_DIRECTIVE%
 #%MEMORY_PER_TASK_DIRECTIVE%
-#%TASKS_PER_NODE_DIRECTIVE%
-#%THREADS%
+#%THREADS_PER_TASK_DIRECTIVE%
 #SBATCH -n %NUMPROC%
+#%TASKS_PER_NODE_DIRECTIVE%
 #SBATCH -t %WALLCLOCK%:00
 #SBATCH -J %JOBNAME%
 #SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
