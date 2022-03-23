@@ -59,7 +59,7 @@ class Pbs11Header(object):
             #!/bin/sh --login
             #PBS -N %JOBNAME%
             #PBS -l mppwidth=%NUMPROC%
-            #PBS -l mppnppn=%NUMTASK%
+            #PBS -l mppnppn=%TASKS_PER_NODE_DIRECTIVE%
             #PBS -l walltime=%WALLCLOCK%
             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
@@ -76,7 +76,7 @@ class Pbs11Header(object):
             #!/bin/sh --login
             #PBS -N %JOBNAME%
             #PBS -l mppwidth=%NUMPROC%
-            #PBS -l mppnppn=%NUMTASK%
+            #PBS -l mppnppn=%TASKS_PER_NODE_DIRECTIVE%
             #PBS -l walltime=%WALLCLOCK%
             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%

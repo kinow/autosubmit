@@ -64,6 +64,9 @@ To do this use:
 
 * THREADS:  threads number to be submitted to the HPC. If not specified, defaults to 1.
 
+* TASKS:  tasks number to be submitted to the HPC. If not specified, defaults to 1.
+
+* HYPERTHREADING: Enables Hyperthreading, this will double the max amount of threads. defaults to false. ( Not avaliable on slurm platforms )
 * QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
 
 * RETRIALS: Number of retrials if job fails
