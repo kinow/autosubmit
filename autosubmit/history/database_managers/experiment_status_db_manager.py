@@ -23,14 +23,17 @@ import traceback
 import textwrap
 import time
 from .database_manager import DatabaseManager, DEFAULT_LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
 import autosubmit.history.utils as HUtils
 from . import database_models as Models
+
+BasicConfig.read()
 
 class ExperimentStatusDbManager(DatabaseManager):
   """ Manages the actions on the status database """
   def __init__(self, expid, db_dir_path, main_db_name, local_root_dir_path=DEFAULT_LOCAL_ROOT_DIR):
       super(ExperimentStatusDbManager, self).__init__(expid, local_root_dir_path=local_root_dir_path)
-      self._as_times_file_path = os.path.join(db_dir_path, self.AS_TIMES_DB_NAME)
+      self._as_times_file_path = os.path.join(db_dir_path, BasicConfig.AS_TIMES_DB)
       self._ecearth_file_path = os.path.join(db_dir_path, main_db_name)
       self._pkl_file_path = os.path.join(local_root_dir_path, self.expid, "pkl", "job_list_{0}.pkl".format(self.expid))
       self._validate_status_database()
