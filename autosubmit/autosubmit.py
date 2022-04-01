@@ -50,7 +50,7 @@ from job.job_utils import SubJob, SubJobManager
 from job.job import Job
 from git.autosubmit_git import AutosubmitGit
 from job.job_common import Status
-from config.config_parser import ConfigParserFactory
+from config.yaml_parser import YAMLParserFactory
 from config.config_common import AutosubmitConfig
 from config.basicConfig import BasicConfig
 import locale
@@ -206,7 +206,7 @@ class Autosubmit:
                 'monitor', description="plots specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg', 'txt'),
-                                   help='chooses type of output for generated plot')  # Default -o value comes from .conf
+                                   help='chooses type of output for generated plot')  # Default -o value comes from .yml
             subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
                                    help='Groups the jobs automatically or by date, member, chunk or split')
             subparser.add_argument('-expand', type=str,
@@ -407,9 +407,9 @@ class Autosubmit:
                 '-dbf', '--databasefilename', default=None, help='database filename')
             subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
                                                                                 'supplied, it will prompt for it')
-            subparser.add_argument('-pc', '--platformsconfpath', default=None, help='path to platforms.conf file to '
+            subparser.add_argument('-pc', '--platformsconfpath', default=None, help='path to platforms.yml file to '
                                                                                     'use by default. Optional')
-            subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.conf file to use by '
+            subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.yml file to use by '
                                                                                'default. Optional')
             subparser.add_argument(
                 '-sm', '--smtphostname', default=None, help='STMP server hostname. Optional')
@@ -895,10 +895,10 @@ class Autosubmit:
                         new_filename = filename[:index] + \
                             "_" + exp_id + filename[index:]
 
-                        if filename == 'platforms.conf' and BasicConfig.DEFAULT_PLATFORMS_CONF != '':
+                        if filename == 'platforms.yml' and BasicConfig.DEFAULT_PLATFORMS_CONF != '':
                             content = open(os.path.join(
                                 BasicConfig.DEFAULT_PLATFORMS_CONF, filename)).read()
-                        elif filename == 'jobs.conf' and BasicConfig.DEFAULT_JOBS_CONF != '':
+                        elif filename == 'jobs.yml' and BasicConfig.DEFAULT_JOBS_CONF != '':
                             content = open(os.path.join(
                                 BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
                         else:
@@ -930,17 +930,17 @@ class Autosubmit:
                 if os.path.exists(root_folder):
                     # List of allowed files from conf
                     conf_copy_filter_folder = []
-                    conf_copy_filter = ["autosubmit_" + str(copy_id) + ".conf",
-                                        "expdef_" + str(copy_id) + ".conf",
-                                        "jobs_" + str(copy_id) + ".conf",
-                                        "platforms_" + str(copy_id) + ".conf",
-                                        "proj_" + str(copy_id) + ".conf"]
+                    conf_copy_filter = ["autosubmit_" + str(copy_id) + ".yml",
+                                        "expdef_" + str(copy_id) + ".yml",
+                                        "jobs_" + str(copy_id) + ".yml",
+                                        "platforms_" + str(copy_id) + ".yml",
+                                        "proj_" + str(copy_id) + ".yml"]
                     if root_folder != os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id):
-                        conf_copy_filter_folder = ["autosubmit.conf",
-                                                   "expdef.conf",
-                                                   "jobs.conf",
-                                                   "platforms.conf",
-                                                   "proj.conf"]
+                        conf_copy_filter_folder = ["autosubmit.yml",
+                                                   "expdef.yml",
+                                                   "jobs.yml",
+                                                   "platforms.yml",
+                                                   "proj.yml"]
                         exp_id = new_experiment(
                             description, Autosubmit.autosubmit_version, test, operational)
                     else:
@@ -977,7 +977,7 @@ class Autosubmit:
                                     content = open(
                                         BasicConfig.CUSTOM_PLATFORMS_PATH, 'r').readlines()
                                 # Setting email notifications to false
-                                if filename == str("autosubmit_" + str(copy_id) + ".conf"):
+                                if filename == str("autosubmit_" + str(copy_id) + ".yml"):
                                     content = ["NOTIFICATIONS = False\n" if line.startswith(
                                         ("NOTIFICATIONS =", "notifications =")) else line for line in content]
                                 # Putting content together before writing
@@ -987,7 +987,7 @@ class Autosubmit:
                         if filename in conf_copy_filter_folder:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.split(
-                                    ".")[0] + "_" + exp_id + ".conf"
+                                    ".")[0] + "_" + exp_id + ".yml"
                                 content = open(os.path.join(
                                     conf_copy_id, filename), 'r').read()
                                 # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
@@ -1003,7 +1003,7 @@ class Autosubmit:
                         exp_id, hpc, Autosubmit.autosubmit_version, dummy, copy_id)
                     #####
                     autosubmit_config = AutosubmitConfig(
-                        exp_id, BasicConfig, ConfigParserFactory())
+                        exp_id, BasicConfig, YAMLParserFactory())
                     autosubmit_config.check_conf_files(False)
                     project_type = autosubmit_config.get_project_type()
                     if project_type == "git":
@@ -1051,19 +1051,19 @@ class Autosubmit:
             os.chmod(os.path.join(exp_id_path, "tmp"), 0o775)
             os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
             os.chmod(os.path.join(exp_id_path, "conf/autosubmit_" +
-                                  str(exp_id) + ".conf"), 0o755)
+                                  str(exp_id) + ".yml"), 0o755)
             os.chmod(os.path.join(exp_id_path, "conf/expdef_" +
-                                  str(exp_id) + ".conf"), 0o755)
+                                  str(exp_id) + ".yml"), 0o755)
             os.chmod(os.path.join(exp_id_path, "conf/jobs_" +
-                                  str(exp_id) + ".conf"), 0o755)
+                                  str(exp_id) + ".yml"), 0o755)
             os.chmod(os.path.join(exp_id_path, "conf/platforms_" +
-                                  str(exp_id) + ".conf"), 0o755)
+                                  str(exp_id) + ".yml"), 0o755)
             try:
                 os.chmod(os.path.join(exp_id_path, "tmp/ASLOGS"), 0o755)
             except:
                 pass
             os.chmod(os.path.join(exp_id_path, "conf/proj_" +
-                                  str(exp_id) + ".conf"), 0o755)
+                                  str(exp_id) + ".yml"), 0o755)
         except:
             pass #some folder may no exists, like proj
         return exp_id
@@ -1120,7 +1120,7 @@ class Autosubmit:
             platform.add_parameters(parameters)
         # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
         if as_conf.get_platform().lower() not in platforms.keys():
-            Log.warning("Main platform is not defined in platforms.conf")
+            Log.warning("Main platform is not defined in platforms.yml")
         else:
             platform = platforms[as_conf.get_platform().lower()]
             platform.add_parameters(parameters, True)
@@ -1148,7 +1148,7 @@ class Autosubmit:
             Log.info("Starting inspect command")
             os.system('clear')
             signal.signal(signal.SIGINT, signal_handler)
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.check_conf_files(True)
             project_type = as_conf.get_project_type()
             safetysleeptime = as_conf.get_safetysleeptime()
@@ -1370,7 +1370,7 @@ class Autosubmit:
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             import platform
             host = platform.node()
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
 
             as_conf.check_conf_files(True)
 
@@ -1781,7 +1781,7 @@ class Autosubmit:
                         #Log.debug("FD recovery: {0}".format(log.fd_show.fd_table_status_str()))
                         # No need to wait until the remote platform reconnection
                         recovery = False
-                        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+                        as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
                         while not recovery and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
                             sleep(15)
@@ -2073,7 +2073,7 @@ class Autosubmit:
                                     if job_tmp.section not in error_msg:
                                         error_msg += job_tmp.section + "&"
                                 raise AutosubmitCritical(
-                                    "Submission failed, check job and queue specified in jobs.conf. Sections that could be affected: {0}".format(
+                                    "Submission failed, check job and queue specified in jobs.yml. Sections that could be affected: {0}".format(
                                         error_msg[:-1]), 7014, e.trace)
                             raise
                         except WrongTemplateException as e:
@@ -2249,7 +2249,7 @@ class Autosubmit:
         try:
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             Log.info("Getting job list...")
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.check_conf_files(False)
             # Getting output type from configuration
             output_type = as_conf.get_output_type()
@@ -2439,7 +2439,7 @@ class Autosubmit:
         """
         try:
             Log.info("Loading jobs...")
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.check_conf_files(False)
 
             pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
@@ -2506,7 +2506,7 @@ class Autosubmit:
 
             if project:
                 autosubmit_config = AutosubmitConfig(
-                    expid, BasicConfig, ConfigParserFactory())
+                    expid, BasicConfig, YAMLParserFactory())
                 autosubmit_config.check_conf_files(False)
 
                 project_type = autosubmit_config.get_project_type()
@@ -2554,7 +2554,7 @@ class Autosubmit:
 
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.check_conf_files(True)
 
             Log.info('Recovering experiment {0}'.format(expid))
@@ -2715,7 +2715,7 @@ class Autosubmit:
 
         if offer:
             as_conf = AutosubmitConfig(
-                experiment_id, BasicConfig, ConfigParserFactory())
+                experiment_id, BasicConfig, YAMLParserFactory())
             as_conf.check_conf_files(True)
             pkl_dir = os.path.join(
                 BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
@@ -2836,7 +2836,7 @@ class Autosubmit:
                                 "The platform {0} does not contain absolute symlinks", platform)
                         except BaseException:
                             Log.printlog(
-                                "Absolute symlinks failed to convert, check user in platform.conf", 3000)
+                                "Absolute symlinks failed to convert, check user in platform.yml", 3000)
                             error = True
                             break
                         try:
@@ -2861,7 +2861,7 @@ class Autosubmit:
                     "Files/dirs on {0} have been successfully offered", platform)
             if error:
                 as_conf = AutosubmitConfig(
-                    experiment_id, BasicConfig, ConfigParserFactory())
+                    experiment_id, BasicConfig, YAMLParserFactory())
                 as_conf.check_conf_files(False)
                 for platform in backup_files:
                     p = submitter.platforms[platform]
@@ -2919,7 +2919,7 @@ class Autosubmit:
                         "Experiment seems to be archived, no action is performed", 7012)
 
             as_conf = AutosubmitConfig(
-                experiment_id, BasicConfig, ConfigParserFactory())
+                experiment_id, BasicConfig, YAMLParserFactory())
             as_conf.check_conf_files(False)
             pkl_dir = os.path.join(
                 BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
@@ -2949,10 +2949,10 @@ class Autosubmit:
                 Autosubmit.restore_platforms(platforms_to_test)
             except AutosubmitCritical as e:
                 raise AutosubmitCritical(
-                    e.message + "\nInvalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, e.trace)
+                    e.message + "\nInvalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.yml with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, e.trace)
             except Exception as e:
                 raise AutosubmitCritical(
-                    "Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, str(e))
+                    "Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.yml with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, str(e))
             for platform in platforms:
                 p = submitter.platforms[platform]
                 if p.temp_dir is not None and p.temp_dir not in already_moved:
@@ -3023,7 +3023,7 @@ class Autosubmit:
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
             as_conf = AutosubmitConfig(
-                experiment_id, BasicConfig, ConfigParserFactory())
+                experiment_id, BasicConfig, YAMLParserFactory())
             as_conf.check_conf_files(False)
 
             project_type = as_conf.get_project_type()
@@ -3087,7 +3087,7 @@ class Autosubmit:
             import platform
             host = platform.node()
             # Gather experiment info
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             try:
                 as_conf.check_conf_files(False)
             except Exception as e:
@@ -3227,7 +3227,7 @@ class Autosubmit:
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
             as_conf = AutosubmitConfig(
-                experiment_id, BasicConfig, ConfigParserFactory())
+                experiment_id, BasicConfig, YAMLParserFactory())
             as_conf.check_conf_files(False)
 
             user = os.stat(as_conf.experiment_file).st_uid
@@ -3340,12 +3340,12 @@ class Autosubmit:
             if platforms_conf_path is not None:
                 platforms_conf_path = platforms_conf_path.replace('~', home_path)
                 if not os.path.exists(platforms_conf_path):
-                    Log.error("platforms.conf path does not exist.")
+                    Log.error("platforms.yml path does not exist.")
                     return False
             if jobs_conf_path is not None:
                 jobs_conf_path = jobs_conf_path.replace('~', home_path)
                 if not os.path.exists(jobs_conf_path):
-                    Log.error("jobs.conf path does not exist.")
+                    Log.error("jobs.yml path does not exist.")
                     return False
 
             if machine:
@@ -3481,7 +3481,7 @@ class Autosubmit:
             if os.path.isfile(path):
                 parser = SafeConfigParser()
                 parser.optionxform = str
-                parser.read(path)
+                parser.load(path)
                 if parser.has_option('database', 'path'):
                     database_path = parser.get('database', 'path')
                 if parser.has_option('database', 'filename'):
@@ -3539,9 +3539,9 @@ class Autosubmit:
                 (code, tag) = d.form(text="",
                                      elements=[("Database filename", 1, 1, database_filename, 1, 40, 20, 20),
                                                (
-                                                   "Default platform.conf path", 2, 1, platforms_conf_path, 2, 40, 40,
+                                                   "Default platform.yml path", 2, 1, platforms_conf_path, 2, 40, 40,
                                                    200),
-                                               ("Default jobs.conf path", 3, 1, jobs_conf_path, 3, 40, 40, 200)],
+                                               ("Default jobs.yml path", 3, 1, jobs_conf_path, 3, 40, 40, 200)],
                                      height=20,
                                      width=80,
                                      form_height=10,
@@ -3664,7 +3664,7 @@ class Autosubmit:
         """
         try:
             Autosubmit._check_ownership(expid,raise_error=True)
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.reload()
             as_conf.check_conf_files()
         except (AutosubmitError,AutosubmitCritical):
@@ -3694,7 +3694,7 @@ class Autosubmit:
         """
         Autosubmit._check_ownership(expid,raise_error=True)
 
-        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
         as_conf.reload()
         as_conf.check_expdef_conf()
 
@@ -4066,8 +4066,7 @@ class Autosubmit:
                     Log.info(
                         "Preparing .lock file to avoid multiple instances with same expid.")
 
-                    as_conf = AutosubmitConfig(
-                        expid, BasicConfig, ConfigParserFactory())
+                    as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
                     as_conf.check_conf_files(False)
 
                     project_type = as_conf.get_project_type()
@@ -4104,7 +4103,7 @@ class Autosubmit:
                     rerun = as_conf.get_rerun()
 
                     Log.info("\nCreating the jobs list...")
-                    job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
+                    job_list = JobList(expid, BasicConfig, YAMLParserFactory(),
                                        Autosubmit._get_job_list_persistence(expid, as_conf))
                     prev_job_list = Autosubmit.load_job_list(
                         expid, as_conf, notransitive=notransitive)
@@ -4412,7 +4411,7 @@ class Autosubmit:
                 Log.debug('Sections to change: {0}', filter_section)
                 wrongExpid = 0
                 as_conf = AutosubmitConfig(
-                    expid, BasicConfig, ConfigParserFactory())
+                    expid, BasicConfig, YAMLParserFactory())
                 as_conf.check_conf_files(True)
 
                 # Getting output type from configuration
@@ -5000,7 +4999,7 @@ class Autosubmit:
         :param dummy: if True, creates a dummy experiment adding some default values
         :type dummy: bool
         """
-        as_conf = AutosubmitConfig(exp_id, BasicConfig, ConfigParserFactory())
+        as_conf = AutosubmitConfig(exp_id, BasicConfig, YAMLParserFactory())
         as_conf.set_version(autosubmit_version)
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
@@ -5262,9 +5261,9 @@ class Autosubmit:
 
     @staticmethod
     def _change_conf(testid, hpc, start_date, member, chunks, branch, random_select=False):
-        as_conf = AutosubmitConfig(testid, BasicConfig, ConfigParserFactory())
+        as_conf = AutosubmitConfig(testid, BasicConfig, YAMLParserFactory())
         exp_parser = as_conf.get_parser(
-            ConfigParserFactory(), as_conf.experiment_file)
+            YAMLParserFactory(), as_conf.experiment_file)
         if exp_parser.get_bool_option('rerun', "RERUN", True):
             raise AutosubmitCritical('Can not test a RERUN experiment', 7014)
 
@@ -5272,7 +5271,7 @@ class Autosubmit:
         if random_select:
             if hpc is None:
                 platforms_parser = as_conf.get_parser(
-                    ConfigParserFactory(), as_conf.platforms_file)
+                    YAMLParserFactory(), as_conf.platforms_file)
                 test_platforms = list()
                 for section in platforms_parser.sections():
                     if platforms_parser.get_option(section, 'TEST_SUITE', 'false').lower() == 'true':
@@ -5319,7 +5318,7 @@ class Autosubmit:
     def load_job_list(expid, as_conf, notransitive=False, monitor=False):
         rerun = as_conf.get_rerun()
 
-        job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
+        job_list = JobList(expid, BasicConfig, YAMLParserFactory(),
                            Autosubmit._get_job_list_persistence(expid, as_conf))
         run_only_members = as_conf.get_member_list(run_only=True)
         date_list = as_conf.get_date_list()

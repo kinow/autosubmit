@@ -16,12 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-try:
-    # noinspection PyCompatibility
-    from configparser import SafeConfigParser
-except ImportError:
-    # noinspection PyCompatibility
-    from ConfigParser import SafeConfigParser
+from ruamel.yaml import YAML
 import os
 import re
 import subprocess
@@ -52,20 +47,19 @@ class AutosubmitConfig(object):
         self.parser_factory = parser_factory
 
         self._conf_parser = None
-        self._conf_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
-                                              "autosubmit_" + expid + ".conf")
+        self._conf_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf","autosubmit_" + expid + ".yml")
         self._exp_parser = None
         self._exp_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
-                                             "expdef_" + expid + ".conf")
+                                             "expdef_" + expid + ".yml")
         self._platforms_parser = None
         self._platforms_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
-                                                   "platforms_" + expid + ".conf")
+                                                   "platforms_" + expid + ".yml")
         self._jobs_parser = None
         self._jobs_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
-                                              "jobs_" + expid + ".conf")
+                                              "jobs_" + expid + ".yml")
         self._proj_parser = None
         self._proj_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
-                                              "proj_" + expid + ".conf")
+                                              "proj_" + expid + ".yml")
         self.ignore_file_path = False
         self.wrong_config = defaultdict(list)
         self.warn_config = defaultdict(list)
@@ -543,32 +537,29 @@ class AutosubmitConfig(object):
         :rtype: bool
         """
 
-        self._conf_parser.read(self._conf_parser_file)
-        if not self._conf_parser.check_exists('config', 'AUTOSUBMIT_VERSION'):
+        if not self._conf_parser_file.check_exists('config', 'AUTOSUBMIT_VERSION'):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "AUTOSUBMIT_VERSION parameter not found"]]
-        if not self._conf_parser.check_is_int('config', 'MAXWAITINGJOBS', True):
+        if not self._conf_parser_file.check_exists('config', 'MAXWAITINGJOBS')[1] == type(int):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "MAXWAITINGJOBS parameter not found or non-integer"]]
-        if not self._conf_parser.check_is_int('config', 'TOTALJOBS', True):
+        if not self._conf_parser.check_is_int('config', 'TOTALJOBS')[1] == type(int):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "TOTALJOBS parameter not found or non-integer"]]
-        if not self._conf_parser.check_is_int('config', 'SAFETYSLEEPTIME', True):
+        if not self._conf_parser.check_is_int('config', 'SAFETYSLEEPTIME')[1] == type(int):
             self.set_safetysleeptime(10)
             # self.wrong_config["Autosubmit"] += [['config',
             #                                     "SAFETYSLEEPTIME parameter not found or non-integer"]]
-        if not self._conf_parser.check_is_int('config', 'RETRIALS', True):
+        if not self._conf_parser.check_is_int('config', 'RETRIALS')[1] == type(int):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "RETRIALS parameter not found or non-integer"]]
-        if not self._conf_parser.check_is_boolean('mail', 'NOTIFICATIONS', False):
+        if not self._conf_parser.check_is_boolean('mail', 'NOTIFICATIONS')[1] == type(bool):
             self.wrong_config["Autosubmit"] += [['mail',
                                                  "NOTIFICATIONS parameter not found or non-boolean"]]
-        if not self.is_valid_communications_library():
-            self.wrong_config["Autosubmit"] += [['config',
-                                                 "LIBRARY parameter not found or is not paramiko"]]
-        if not self.is_valid_storage_type():
+        if self._conf_parser.check_is_choice('storage', 'TYPE', False, ['pkl', 'db']):
             self.wrong_config["Autosubmit"] += [['storage',
                                                  "TYPE parameter not found"]]
+
         if self.get_wrapper_type().lower() == 'multi':
             list_of_wrappers = self.get_wrapper_multi() # list
             for wrapper_section_name in self.get_wrapper_multi():
@@ -596,26 +587,18 @@ class AutosubmitConfig(object):
         """
         Checks experiment's queues configuration file.
         """
-        if len(self._platforms_parser.sections()) == 0:
-            self.wrong_config["Platform"] += [["Global",
-                                               "Platform file is not well-configured or found"]]
-
-        if len(self._platforms_parser.sections()) != len(set(self._platforms_parser.sections())):
-            self.wrong_config["Platform"] += [["Global",
-                                               "There are repeated platforms"]]
         main_platform_found = False
-        if self.hpcarch in ["local", "LOCAL"]:
+        if self.hpcarch.lower() == "local":
             main_platform_found = True
         elif self.ignore_undefined_platforms:
             main_platform_found = True
-        for section in self._platforms_parser.sections():
-            if section in self.hpcarch:
+        for section in self._platforms_parser.data:
+            if section == self.hpcarch:
                 main_platform_found = True
-            if not self._platforms_parser.check_exists(section, 'TYPE'):
-                self.wrong_config["Platform"] += [[section,
-                                                   "Mandatory TYPE parameter not found"]]
-                platform_type = self._platforms_parser.get_option(
-                    section, 'TYPE', '').lower()
+                platform_type = self._platforms_parser.check_exists(section, 'TYPE')[0]
+                if not platform_type:
+                    self.wrong_config["Platform"] += [[section,"Mandatory TYPE parameter not found"]]
+                platform_type = platform_type.lower()
                 if platform_type != 'ps':
                     if not self._platforms_parser.check_exists(section, 'PROJECT'):
                         self.wrong_config["Platform"] += [[section,
@@ -629,16 +612,16 @@ class AutosubmitConfig(object):
             if not self._platforms_parser.check_exists(section, 'SCRATCH_DIR'):
                 self.wrong_config["Platform"] += [[section,
                                                    "Mandatory SCRATCH_DIR parameter not found"]]
-            if not self._platforms_parser.check_is_boolean(section, 'ADD_PROJECT_TO_HOST', False):
+            if not self._platforms_parser.check_exists(section, 'ADD_PROJECT_TO_HOST')[1] == type(bool):
                 self.wrong_config["Platform"] += [
                     [section, "Mandatory ADD_PROJECT_TO_HOST parameter not found or non-boolean"]]
-            if not self._platforms_parser.check_is_boolean(section, 'TEST_SUITE', False):
+            if not self._platforms_parser.check_exists(section, 'TEST_SUITE')[1] == type(bool):
                 self.wrong_config["Platform"] += [[section,
                                                    "Mandatory TEST_SUITE parameter not found or non-boolean"]]
-            if not self._platforms_parser.check_is_int(section, 'MAX_WAITING_JOBS', False):
+            if not self._platforms_parser.check_exists(section, 'MAX_WAITING_JOBS')[1] == type(int):
                 self.wrong_config["Platform"] += [
                     [section, "Mandatory MAX_WAITING_JOBS parameter not found or non-integer"]]
-            if not self._platforms_parser.check_is_int(section, 'TOTAL_JOBS', False):
+            if not self._platforms_parser.check_exists(section, 'TOTAL_JOBS')[1] == type(int):
                 self.wrong_config["Platform"] += [[section,
                                                    "Mandatory TOTAL_JOBS parameter not found or non-integer"]]
         if not main_platform_found:
@@ -658,20 +641,15 @@ class AutosubmitConfig(object):
         :rtype: bool
         """
         parser = self._jobs_parser
-        sections = parser.sections()
-        platforms = self._platforms_parser.sections()
-        platforms.append('LOCAL')
-        platforms.append('local')
-        if len(sections) != len(set(sections)):
-            self.wrong_config["Jobs"] += [["Global",
-                                           "There are repeated job names"]]
-
-        for section in sections:
+        platforms = self._platforms_parser.data
+        #platforms.append('LOCAL')
+        #platforms.append('local')
+        for section in parser.data:
             if not parser.check_exists(section, 'FILE'):
                 self.wrong_config["Jobs"] += [[section,
                                                "Mandatory FILE parameter not found"]]
             else:
-                section_file_path = parser.get_option(section, 'FILE')
+                section_file_path = parser.check_exists(section, 'FILE')
                 try:
                     if self.ignore_file_path:
                         if not os.path.exists(os.path.join(self.get_project_dir(), section_file_path)):
@@ -684,16 +662,16 @@ class AutosubmitConfig(object):
                                     os.path.join(self.get_project_dir(), section_file_path))]]
                 except BaseException:
                     pass  # tests conflict quick-patch
-            if not parser.check_is_boolean(section, 'RERUN_ONLY', False):
+            if not parser.check_exists(section, 'RERUN_ONLY')[1] == type(bool):
                 self.wrong_config["Jobs"] += [[section,
                                                "Mandatory RERUN_ONLY parameter not found or non-bool"]]
-            if parser.has_option(section, 'PLATFORM'):
-                if not parser.check_is_choice(section, 'PLATFORM', False, platforms):
-                    self.wrong_config["Jobs"] += [
-                        [section, "PLATFORM parameter is invalid, this platform is not configured"]]
+            if not parser.check_is_choice(section, 'PLATFORM', False, platforms):
+                self.wrong_config["Jobs"] += [
+                    [section, "PLATFORM parameter is invalid, this platform is not configured"]]
 
-            if parser.has_option(section, 'DEPENDENCIES'):
-                for dependency in str(parser.get_option(section, 'DEPENDENCIES', '')).split(' '):
+            dependencies = str(parser.check_exists(section, 'DEPENDENCIES')[0])
+            if not dependencies:
+                for dependency in dependencies.split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     elif '+' in dependency:
@@ -704,17 +682,17 @@ class AutosubmitConfig(object):
                         dependency = dependency.split('?')[0]
                     if '[' in dependency:
                         dependency = dependency[:dependency.find('[')]
-                    if dependency not in sections:
+                    if dependency not in parser.data.keys():
                         self.warn_config["Jobs"].append(
                             [section, "Dependency parameter is invalid, job {0} is not configured".format(dependency)])
-
-            if parser.has_option(section, 'RERUN_DEPENDENCIES'):
-                for dependency in str(parser.get_option(section, 'RERUN_DEPENDENCIES', '')).split(' '):
+            rerun_dependencies = str(parser.check_exists(section, 'RERUN_DEPENDENCIES')[0])
+            if not rerun_dependencies:
+                for dependency in rerun_dependencies.split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     if '[' in dependency:
                         dependency = dependency[:dependency.find('[')]
-                    if dependency not in sections:
+                    if dependency not in parser.data.keys():
                         self.warn_config["Jobs"] += [
                             [section, "RERUN_DEPENDENCIES parameter is invalid, job {0} is not configured".format(dependency)]]
 
@@ -739,15 +717,10 @@ class AutosubmitConfig(object):
             self.wrong_config["Expdef"] += [['DEFAULT',
                                              "Mandatory EXPID parameter is invalid"]]
 
-        if not parser.check_exists('DEFAULT', 'HPCARCH'):
+        self.hpcarch,_ = parser.check_exists('DEFAULT', 'HPCARCH')
+        if not self.hpcarch:
             self.wrong_config["Expdef"] += [['DEFAULT',
                                              "Mandatory HPCARCH parameter is invalid"]]
-        else:
-            try:
-                self.hpcarch = self.get_platform()
-            except:
-                self.wrong_config["Expdef"] += [['Default',
-                                                 "HPCARCH value is not a valid platform (check typo)"]]
         if not parser.check_exists('experiment', 'DATELIST'):
             self.wrong_config["Expdef"] += [['DEFAULT',
                                              "Mandatory DATELIST parameter is invalid"]]
@@ -755,13 +728,12 @@ class AutosubmitConfig(object):
             self.wrong_config["Expdef"] += [['DEFAULT',
                                              "Mandatory MEMBERS parameter is invalid"]]
         if not parser.check_is_choice('experiment', 'CHUNKSIZEUNIT', True, ['year', 'month', 'day', 'hour']):
-            self.wrong_config["Expdef"] += [['experiment',
-                                             "Mandatory CHUNKSIZEUNIT choice is invalid"]]
+            self.wrong_config["Expdef"] += [['experiment',"Mandatory CHUNKSIZEUNIT choice is invalid"]]
 
-        if not parser.check_is_int('experiment', 'CHUNKSIZE', True):
+        if not parser.check_exists('experiment', 'CHUNKSIZE'):
             self.wrong_config["Expdef"] += [['experiment',
                                              "Mandatory CHUNKSIZE is not an integer"]]
-        if not parser.check_is_int('experiment', 'NUMCHUNKS', True):
+        if parser.check_exists('experiment', 'NUMCHUNKS')[1] == type(int):
             self.wrong_config["Expdef"] += [['experiment',
                                              "Mandatory NUMCHUNKS is not an integer"]]
 
@@ -770,13 +742,11 @@ class AutosubmitConfig(object):
             self.wrong_config["Expdef"] += [['experiment',
                                              "Mandatory CALENDAR choice is invalid"]]
 
-        if not parser.check_is_boolean('rerun', 'RERUN', True):
+        if parser.check_exists('rerun', 'RERUN')[1] == type(bool):
             self.wrong_config["Expdef"] += [['experiment',
                                              "Mandatory RERUN choice is not a boolean"]]
-
-        if parser.check_is_choice('project', 'PROJECT_TYPE', True, ['none', 'git', 'svn', 'local']):
-            project_type = parser.get_option('project', 'PROJECT_TYPE', '')
-
+        project_type = parser.check_is_choice('project', 'PROJECT_TYPE', True, ['none', 'git', 'svn', 'local'])
+        if project_type is not False:
             if project_type == 'git':
                 if not parser.check_exists('git', 'PROJECT_ORIGIN'):
                     self.wrong_config["Expdef"] += [['git',
@@ -1502,7 +1472,7 @@ class AutosubmitConfig(object):
         :rtype: string
         """
 
-        return self._conf_parser.get_option(wrapper_section_name, 'TYPE', 'None').lower()
+        return self._conf_parser.check_exists(wrapper_section_name, 'TYPE').lower()
 
     def get_wrapper_retrials(self, wrapper_section_name="wrapper"):
         """
@@ -1519,7 +1489,7 @@ class AutosubmitConfig(object):
         :return: wrapper section list
         :rtype: string
         """
-        list_of_wrappers = self._conf_parser.get_option("wrapper", 'WRAPPER_LIST', [])
+        list_of_wrappers = self._conf_parser.check_exists("wrapper", 'WRAPPER_LIST')
         if "," in list_of_wrappers:
             list_of_wrappers = list_of_wrappers.split(',')
         else:
@@ -1753,13 +1723,13 @@ class AutosubmitConfig(object):
         :param file_path: path to file to be parsed
         :type file_path: str
         :return: parser
-        :rtype: SafeConfigParser
+        :rtype: YAMLParser
         """
         parser = parser_factory.create_parser()
-        parser.optionxform = str
         # For testing purposes
         if file_path.find('/dummy/local/root/dir/a000/conf/') >= 0 or file_path.find('dummy/file/path') >= 0:
-            parser.read(file_path)
+            parser.data = parser.load(file_path)
+
             return parser
 
         if file_path.find('proj_') > 0:
@@ -1767,17 +1737,16 @@ class AutosubmitConfig(object):
             if not os.path.exists(file_path):
                 Log.warning(
                     "{0} was not found. Some variables might be missing. If your experiment does not need a proj file, you can ignore this message.", file_path)
-            parser.read(file_path)
+            parser.data = parser.load(file_path)
         else:
             # This block may rise an exception but all its callers handle it
             try:
                 with open(file_path) as f:
-                    parser.read(file_path)
+                    parser.data = parser.load(f)
             except IOError as exp:
                 raise
             except Exception as exp:
                 raise Exception(
                     "{}\n This file and the correctness of its content are necessary.".format(str(exp)))
-        # parser.read(file_path)
         return parser
 

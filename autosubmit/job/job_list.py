@@ -178,9 +178,9 @@ class JobList(object):
         :type default_retrials: int
         :param new: is it a new generation?
         :type new: bool \n
-        :param wrapper_type: Type of wrapper defined by the user in autosubmit_.conf [wrapper] section. \n
+        :param wrapper_type: Type of wrapper defined by the user in autosubmit_.yml [wrapper] section. \n
         :type wrapper type: String \n
-        :param wrapper_jobs: Job types defined in autosubmit_.conf [wrapper sections] to be wrapped. \n
+        :param wrapper_jobs: Job types defined in autosubmit_.yml [wrapper sections] to be wrapped. \n
         :type wrapper_jobs: String \n
         """
         self._parameters = parameters
@@ -243,7 +243,7 @@ class JobList(object):
                 else:
                     self._ordered_jobs_by_date_member[wrapper_section] = {}
         except BaseException as e:
-            raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.conf".format(wrapper_section),7014,e.message)
+            raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.yml".format(wrapper_section),7014,e.message)
         pass
 
 
@@ -538,7 +538,7 @@ class JobList(object):
     def _create_sorted_dict_jobs(self, wrapper_jobs):
         """
         Creates a sorting of the jobs whose job.section is in wrapper_jobs, according to the following filters in order of importance:
-        date, member, RUNNING, and chunk number; where RUNNING is defined in jobs_.conf for each section.
+        date, member, RUNNING, and chunk number; where RUNNING is defined in jobs_.yml for each section.
 
         If the job does not have a chunk number, the total number of chunks configured for the experiment is used.
 
@@ -563,7 +563,7 @@ class JobList(object):
             char = " "
         wrapper_jobs_reverse = wrapper_jobs.split(char)
         for section in wrapper_jobs_reverse:
-            # RUNNING = once, as default. This value comes from jobs_.conf
+            # RUNNING = once, as default. This value comes from jobs_.yml
             sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", 'once')
 
         # Select only relevant jobs, those belonging to the sections defined in the wrapper
@@ -1734,7 +1734,7 @@ class JobList(object):
                 self._config.STRUCTURES_DIR, "structure_" + self.expid + ".db")
             m_time_db = None
             jobs_conf_path = os.path.join(
-                self._config.LOCAL_ROOT_DIR, self.expid, "conf", "jobs_{0}.conf".format(self.expid))
+                self._config.LOCAL_ROOT_DIR, self.expid, "conf", "jobs_{0}.yml".format(self.expid))
             m_time_job_conf = None
             if os.path.exists(db_path):
                 try:
@@ -1754,11 +1754,11 @@ class JobList(object):
                 if m_time_job_conf:
                     if m_time_job_conf > m_time_db:
                         Log.info(
-                            "File jobs_{0}.conf has been modified since the last time the structure persistence was saved.".format(self.expid))
+                            "File jobs_{0}.yml has been modified since the last time the structure persistence was saved.".format(self.expid))
                         structure_valid = False
                 else:
                     Log.info(
-                        "File jobs_{0}.conf was not found.".format(self.expid))
+                        "File jobs_{0}.yml was not found.".format(self.expid))
 
                 if structure_valid == True:
                     for job in self._job_list:
@@ -1925,8 +1925,8 @@ class JobList(object):
     def _get_jobs_parser(self):
         jobs_parser = self._parser_factory.create_parser()
         jobs_parser.optionxform = str
-        jobs_parser.read(
-            os.path.join(self._config.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
+        jobs_parser.load(
+            os.path.join(self._config.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".yaml"))
         return jobs_parser
 
     def remove_rerun_only_jobs(self, notransitive=False):

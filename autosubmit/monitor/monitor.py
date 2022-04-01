@@ -35,7 +35,7 @@ from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from log.log import Log, AutosubmitError, AutosubmitCritical
-from bscearth.utils.config_parser import ConfigParserFactory
+from autosubmit.config.yaml_parser import YAMLParserFactory
 
 from diagram import create_bar_diagram
 from typing import Dict, List
@@ -505,7 +505,7 @@ class Monitor:
             BasicConfig.LOCAL_ROOT_DIR, expid, "tmp", expid + "_GENERAL_STATS")
         if os.path.exists(general_stats_path):
             parser = AutosubmitConfig.get_parser(
-                ConfigParserFactory(), general_stats_path)
+                YAMLParserFactory(), general_stats_path)
             for section in parser.sections():
                 general_stats.append((section, ''))
                 general_stats += parser.items(section)        

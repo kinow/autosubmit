@@ -72,7 +72,7 @@ class JobPackager(object):
         waiting_jobs = submitted_jobs_len + queuing_jobs_len
         # Calculate available space in Platform Queue
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
-        # .total_jobs is defined in each section of platforms_.conf, if not from there, it comes form autosubmit_.conf
+        # .total_jobs is defined in each section of platforms_.yml, if not from there, it comes form autosubmit_.yml
         # .total_jobs Maximum number of jobs at the same time
         self._max_jobs_to_submit = platform.total_jobs - queuing_jobs_len
         # Substracting running jobs
@@ -246,7 +246,7 @@ class JobPackager(object):
                         self.current_wrapper_section = wrapper_section
                         break
             if wrapper_defined and self._platform.allow_wrappers and self.wrapper_type[self.current_wrapper_section] in ['horizontal', 'vertical','vertical-horizontal', 'horizontal-vertical'] :
-                # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
+                # Trying to find the value in jobs_parser, if not, default to an autosubmit_.yml value (Looks first in [wrapper] section)
                 wrapper_limits = dict()
                 wrapper_limits["max_by_section"] = dict()
                 wrapper_limits["max"] = self._as_config.get_max_wrapped_jobs(self.current_wrapper_section)
@@ -460,7 +460,7 @@ class JobPackager(object):
                                             if hard_deadlock:
                                                 message += "\nCheck your configuration: The next wrappeable job can't be wrapped until some of inner jobs of current packages finishes which is imposible"
                                             if min_v > 1:
-                                                message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.conf.".format(wallclock_sum)
+                                                message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.yml.".format(wallclock_sum)
                                             else:
                                                 message += "\nCheck your configuration: Only jobs_in_wrappers are active, check their dependencies."
                                             if not balanced:
@@ -506,7 +506,7 @@ class JobPackager(object):
                                                 if hard_deadlock:
                                                     message += "\nCheck your configuration: The next wrappeable job can't be wrapped until some of inner jobs of current packages finishes which is imposible"
                                                 if min_v > 1:
-                                                    message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.conf.".format(
+                                                    message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.yml.".format(
                                                         wallclock_sum)
                                                 else:
                                                     message += "\nCheck your configuration: Only jobs_in_wrappers are active, check your jobs_in_wrapper dependencies."
@@ -547,7 +547,7 @@ class JobPackager(object):
         :param jobs_list: list of jobs to be divided
         :rtype: Dictionary Key: Section Name, Value: List(Job Object)
         """
-        # .jobs_in_wrapper defined in .conf, see constructor.
+        # .jobs_in_wrapper defined in .yml, see constructor.
         sections_split = set()
         for jobs_in_wrapper_section in self.jobs_in_wrapper:
             sections_split.update(set(self.jobs_in_wrapper[jobs_in_wrapper_section].split()))
@@ -764,7 +764,7 @@ class JobPackagerVerticalSimple(JobPackagerVertical):
     :type total_wallclock: String \n
     :param max_jobs: Maximum number of jobs per platform. \n
     :type max_jobs: Integer \n
-    :param wrapper_limits: Value from jobs_parser, if not found default to an autosubmit_.conf value (Looks first in [wrapper] section). \n
+    :param wrapper_limits: Value from jobs_parser, if not found default to an autosubmit_.yml value (Looks first in [wrapper] section). \n
     :type wrapper_limits: Integer \n
     :param max_wallclock: Value from Platform. \n
     :type max_wallclock: Integer

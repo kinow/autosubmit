@@ -31,7 +31,7 @@ from collections import OrderedDict
 import copy
 import traceback
 
-from bscearth.utils.config_parser import ConfigParserFactory
+from autosubmit.config.yaml_parser import YAMLParser
 
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.job.job_common import Status, Type, increase_wallclock_by_chunk
@@ -612,7 +612,7 @@ class Job(object):
         max_logs = 0
         sleep(5)
         try:
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.reload()
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
@@ -835,7 +835,7 @@ class Job(object):
             local_logs = copy.deepcopy(self.local_logs)
             remote_logs = copy.deepcopy(self.remote_logs)
             as_conf = AutosubmitConfig(
-                expid, BasicConfig, ConfigParserFactory())
+                expid, BasicConfig, YAMLParserFactory())
             as_conf.reload()
             if as_conf.get_disable_recovery_threads(self.platform.name) == "true":
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
@@ -1246,7 +1246,7 @@ class Job(object):
                     Log.printlog("The following set of variables to be substituted in template script is not part of parameters set, and will be replaced by a blank value: {0}".format(
                         self.undefined_variables), 6013)
 
-            # Check which variables in the proj.conf are not being used in the templates
+            # Check which variables in the proj.yml are not being used in the templates
             if show_logs:
                 if not set(variables).issuperset(set(parameters)):
                     Log.printlog("The following set of variables are not being used in the templates: {0}".format(
