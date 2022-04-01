@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -69,7 +69,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
         failed_jobs_dict = exp_stats.build_failed_jobs_only_list()        
     except Exception as exp:
         print(exp)
-        print(traceback.format_exc())
+        print((traceback.format_exc()))
 
     # Stats variables definition
     normal_plots_count = int(np.ceil(len(exp_stats.jobs_stat) / MAX_JOBS_PER_PLOT))
@@ -99,7 +99,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     # print("Total plots: {}".format(total_plots_count))
     grid_spec = gridspec.GridSpec(RATIO * total_plots_count + 2, 1)
     i_plot = 0
-    for plot in xrange(1, normal_plots_count + 1):
+    for plot in range(1, normal_plots_count + 1):
         try:
             # Calculating jobs inside the given plot
             l1 = int((plot - 1) * MAX_JOBS_PER_PLOT)
@@ -134,7 +134,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
             rects[4] = ax[plot - 1].plot([0., width * 6 * MAX_JOBS_PER_PLOT], [exp_stats.threshold, exp_stats.threshold], "k--", label='wallclock sim')
             i_plot = plot
         except Exception as exp:
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
             print(exp)
     
     job_names_in_failed = [name for name in exp_stats.failed_jobs_dict]
@@ -158,7 +158,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
             ax[plot - 1].set_xticklabels([name for name in job_names_in_failed[l1:l2]], rotation='vertical')
             ax[plot - 1].set_title(experiment_id, fontsize=20)
             ax[plot - 1].set_ylim(0, float(1.10 * exp_stats.max_fail))
-            ax[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
+            ax[plot - 1].set_yticks(list(range(0, exp_stats.max_fail + 2)))
             # Axis 2
             # ax2.append(ax[plot - 1].twinx())
             # ax2[plot - 1].set_ylabel('# failed attempts')
@@ -166,7 +166,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
             # ax2[plot - 1].set_ylim(0, exp_stats.max_fail + 1)
             failed_jobs_rects[0] = ax[plot - 1].bar(ind + width * 2, [exp_stats.failed_jobs_dict[name] for name in job_names_in_failed[l1:l2]], width, color='red')
         except Exception as exp:
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
             print(exp)
 
 
@@ -189,7 +189,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
         create_csv_stats(exp_stats, jobs_list, output_file)
     except Exception as exp:
         print(exp)
-        print(traceback.format_exc())
+        print((traceback.format_exc()))
 
 
 def create_csv_stats(exp_stats, jobs_list, output_file):
@@ -200,10 +200,10 @@ def create_csv_stats(exp_stats, jobs_list, output_file):
     running_times = exp_stats.run
 
     output_file = output_file.replace('pdf', 'csv')
-    with open(output_file, 'wb') as file:
+    with open(output_file, 'w') as file:
         file.write(
             "Job,Started,Ended,Queuing time (hours),Running time (hours)\n")
-        for i in xrange(len(jobs_list)):
+        for i in range(len(jobs_list)):
             file.write("{0},{1},{2},{3},{4}\n".format(
                 job_names[i], start_times[i], end_times[i], queuing_times[i], running_times[i]))
 
@@ -240,7 +240,7 @@ def build_legends(plot, rects, experiment_stats, general_stats):
 
 def create_legends(plot, rects, titles, locs, handlelengths):
     legends = []
-    for i in xrange(len(rects)):
+    for i in range(len(rects)):
         legends.append(create_legend(
             plot, rects[i], titles[i], locs[i], handlelengths[i]))
     return legends
@@ -252,4 +252,4 @@ def create_legend(plot, rects, titles, loc, handlelength=None):
 
 def get_whites_array(length):
     white = mpatches.Rectangle((0, 0), 0, 0, alpha=0.0)
-    return [white for _ in xrange(length)]
+    return [white for _ in range(length)]

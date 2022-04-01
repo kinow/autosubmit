@@ -39,22 +39,22 @@ class TestJob(TestCase):
         create_relationship(self.jobs[0], self.jobs[3])
         create_relationship(self.jobs[0], self.jobs[4])
         # Checking there are redundant parents
-        self.assertEquals(3, len(self.jobs[3].parents))
-        self.assertEquals(3, len(self.jobs[4].parents))
+        self.assertEqual(3, len(self.jobs[3].parents))
+        self.assertEqual(3, len(self.jobs[4].parents))
         # Treating the redundant parents
         self.jobs[3].remove_redundant_parents()
         self.jobs[4].remove_redundant_parents()
         # Checking there aren't redundant parents
-        self.assertEquals(2, len(self.jobs[3].parents))
-        self.assertEquals(2, len(self.jobs[4].parents))
+        self.assertEqual(2, len(self.jobs[3].parents))
+        self.assertEqual(2, len(self.jobs[4].parents))
 
     def check_ancestors_array(self, job, assertions):
         for i in range(len(self.jobs)):
-            self.assertEquals(assertions[i], job.is_ancestor(self.jobs[i]))
+            self.assertEqual(assertions[i], job.is_ancestor(self.jobs[i]))
 
     def check_parents_array(self, job, assertions):
         for i in range(len(self.jobs)):
-            self.assertEquals(assertions[i], job.is_parent(self.jobs[i]))
+            self.assertEqual(assertions[i], job.is_parent(self.jobs[i]))
 
 
 def create_relationship(parent, child):

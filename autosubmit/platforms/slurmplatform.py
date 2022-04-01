@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import locale
 import os
 from time import sleep
 from time import mktime
@@ -61,11 +61,11 @@ class SlurmPlatform(ParamikoPlatform):
         tmp_path = os.path.join(exp_id_path, "tmp")
         self._submit_script_path = os.path.join(
             tmp_path, config.LOCAL_ASLOG_DIR, "submit_" + self.name + ".sh")
-        self._submit_script_file = open(self._submit_script_path, 'w').close()
+        self._submit_script_file = open(self._submit_script_path, 'wb').close()
 
     def open_submit_script(self):
-        self._submit_script_file = open(self._submit_script_path, 'w').close()
-        self._submit_script_file = open(self._submit_script_path, 'a')
+        self._submit_script_file = open(self._submit_script_path, 'wb').close()
+        self._submit_script_file = open(self._submit_script_path, 'ab')
 
     def get_submit_script(self):
         self._submit_script_file.close()
@@ -95,7 +95,7 @@ class SlurmPlatform(ParamikoPlatform):
             jobs_id = self.get_submitted_job_id(self.get_ssh_output())
             return jobs_id
         except IOError as e:
-            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, e.message)
+            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, str(e))
         except AutosubmitError as e:
             raise
         except AutosubmitCritical as e:
@@ -147,10 +147,10 @@ class SlurmPlatform(ParamikoPlatform):
             try:
                 self.send_command("scancel {0}".format(job.id))
                 raise AutosubmitError(
-                    "Can't hold jobid:{0}, canceling job".format(job.id), 6000, e.message)
+                    "Can't hold jobid:{0}, canceling job".format(job.id), 6000, str(e))
             except BaseException as e:
                 raise AutosubmitError(
-                    "Can't cancel the jobid: {0}".format(job.id), 6000, e.message)
+                    "Can't cancel the jobid: {0}".format(job.id), 6000, str(e))
             except AutosubmitError as e:
                 raise
 
@@ -265,7 +265,7 @@ class SlurmPlatform(ParamikoPlatform):
                                     line) > 7 and len(line[7]) > 0 else 0
                             else:
                                 # If packed but not end of wrapper, try to get info from current data.
-                                if "finish" in extra_data.keys() and extra_data["finish"] != "Unknown":
+                                if "finish" in list(extra_data.keys()) and extra_data["finish"] != "Unknown":
                                     # finish data exists
                                     finish = int(mktime(datetime.strptime(
                                         extra_data["finish"], "%Y-%m-%dT%H:%M:%S").timetuple()))
@@ -273,7 +273,7 @@ class SlurmPlatform(ParamikoPlatform):
                                     # if finish date does not exist, query previous step.
                                     if len(steps) >= 2 and detailed_data.__contains__(steps[-2]):
                                         new_extra_data = detailed_data[steps[-2]]
-                                        if "finish" in new_extra_data.keys() and new_extra_data["finish"] != "Unknown":
+                                        if "finish" in list(new_extra_data.keys()) and new_extra_data["finish"] != "Unknown":
                                             # This might result in an job finish < start, need to handle that in the caller function
                                             finish = int(mktime(datetime.strptime(
                                                 new_extra_data["finish"], "%Y-%m-%dT%H:%M:%S").timetuple()))
@@ -281,7 +281,7 @@ class SlurmPlatform(ParamikoPlatform):
                                             finish = int(time())
                                     else:
                                         finish = int(time())
-                                if "energy" in extra_data.keys() and extra_data["energy"] != "NA":
+                                if "energy" in list(extra_data.keys()) and extra_data["energy"] != "NA":
                                     # energy exists
                                     energy = parse_output_number(
                                         extra_data["energy"])
@@ -289,7 +289,7 @@ class SlurmPlatform(ParamikoPlatform):
                                     # if energy does not exist, query previous step
                                     if len(steps) >= 2 and detailed_data.__contains__(steps[-2]):
                                         new_extra_data = detailed_data[steps[-2]]
-                                        if "energy" in new_extra_data.keys() and new_extra_data["energy"] != "NA":
+                                        if "energy" in list(new_extra_data.keys()) and new_extra_data["energy"] != "NA":
                                             energy = parse_output_number(
                                                 new_extra_data["energy"])
                                         else:
@@ -361,12 +361,13 @@ class SlurmPlatform(ParamikoPlatform):
             else:
                 return export + self._submit_hold_cmd + job_script
         else:
-            if not hold:
-                self._submit_script_file.write(
-                    export + self._submit_cmd + job_script + "\n")
-            else:
-                self._submit_script_file.write(
-                    export + self._submit_hold_cmd + job_script + "\n")
+            try:
+                if not hold:
+                    self._submit_script_file.write((export + self._submit_cmd + job_script + "\n").encode(locale.getlocale()[1]))
+                else:
+                    self._submit_script_file.write((export + self._submit_hold_cmd + job_script + "\n").encode(locale.getlocale()[1]))
+            except BaseException as e:
+                pass
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -X --jobs {1} -o "State"'.format(self.host, job_id)
@@ -459,7 +460,7 @@ class SlurmPlatform(ParamikoPlatform):
                 else:
                     retries = 9999
             except BaseException as e:  # Unrecoverable error
-                if e.message.lower().find("garbage") != -1:
+                if str(e).lower().find("garbage") != -1:
                     if not wrapper_failed:
                         sleep(sleeptime)
                         sleeptime = sleeptime + 5

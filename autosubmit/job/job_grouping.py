@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -89,7 +89,7 @@ class JobGrouping(object):
 
         out = nestedExpr('[', ']').parseString(text).asList()
 
-        depth = lambda L: isinstance(L, list) and max(map(depth, L)) + 1
+        depth = lambda L: isinstance(L, list) and max(list(map(depth, L))) + 1
 
         if self.group_by == 'date':
             if depth(out) == 2:
@@ -127,7 +127,7 @@ class JobGrouping(object):
                                 for chunk in member_chunks[member_count + 1]:
                                     if chunk.find("-") != -1:
                                         numbers = chunk.split("-")
-                                        for count in xrange(int(numbers[0]), int(numbers[1]) + 1):
+                                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
                                             chunks.append(count)
                                     else:
                                         chunks.append(int(chunk))
@@ -163,7 +163,7 @@ class JobGrouping(object):
                 return Status.UNKNOWN
 
     def _create_groups(self, jobs_group_dict, blacklist=list()):
-        for i in reversed(xrange(len(self.jobs))):
+        for i in reversed(range(len(self.jobs))):
             job = self.jobs[i]
 
             groups = []
@@ -247,11 +247,11 @@ class JobGrouping(object):
             status = self._set_group_status(statuses)
             self.group_status_dict[group] = status
 
-        self._create_higher_level_group(self.group_status_dict.keys(), groups_map)
+        self._create_higher_level_group(list(self.group_status_dict.keys()), groups_map)
         self._fix_splits_automatic_grouping(split_groups, split_groups_status, jobs_group_dict)
 
         # check if remaining jobs can be grouped
-        for i in reversed(xrange(len(self.jobs))):
+        for i in reversed(range(len(self.jobs))):
             job = self.jobs[i]
             for group, status in self.group_status_dict.items():
                 if group in job.name and status == job.status:
@@ -270,8 +270,8 @@ class JobGrouping(object):
     def _fix_splits_automatic_grouping(self, split_groups, split_groups_status, jobs_group_dict):
         if split_groups and split_groups_status:
             group_maps = dict()
-            for group in self.group_status_dict.keys():
-                matching_groups = [split_group for split_group in split_groups_status.keys() if group in split_group]
+            for group in list(self.group_status_dict.keys()):
+                matching_groups = [split_group for split_group in list(split_groups_status.keys()) if group in split_group]
                 for matching_group in matching_groups:
                     group_maps[matching_group] = group
                     split_groups_status.pop(matching_group)

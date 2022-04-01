@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -22,7 +22,7 @@ try:
     from configparser import SafeConfigParser
 except ImportError:
     # noinspection PyCompatibility
-    from ConfigParser import SafeConfigParser
+    from configparser import SafeConfigParser
 
 import os
 from datetime import timedelta
@@ -40,7 +40,7 @@ from typing import List
 import multiprocessing
 import tarfile
 import datetime
-
+import locale
 lock = Lock()
 def threaded(fn):
     def wrapper(*args, **kwargs):
@@ -121,7 +121,7 @@ class JobPackageBase(object):
             self._custom_directives = self._custom_directives | set(job.custom_directives)
     @threaded
     def _create_scripts_threaded(self,jobs,configuration):
-        for i in xrange(0, len(jobs)):
+        for i in range(0, len(jobs)):
             self._job_scripts[jobs[i].name] = jobs[i].create_script(configuration)
 
     def _create_common_script(self):
@@ -167,7 +167,7 @@ class JobPackageBase(object):
                     self._custom_directives = self._custom_directives | set(job.custom_directives)
             else:
                 Lhandle = list()
-                for i in xrange(0, len(self.jobs), chunksize):
+                for i in range(0, len(self.jobs), chunksize):
                     Lhandle.append(self.check_scripts(self.jobs[i:i + chunksize], configuration, parameters, only_generate, hold))
                 for dataThread in Lhandle:
                     dataThread.join()
@@ -180,7 +180,7 @@ class JobPackageBase(object):
                 self._create_scripts(configuration)
             else:
                 Lhandle = list()
-                for i in xrange(0, len(self.jobs), chunksize):
+                for i in range(0, len(self.jobs), chunksize):
                     Lhandle.append(self._create_scripts_threaded(self.jobs[i:i + chunksize],configuration))
                 for dataThread in Lhandle:
                     dataThread.join()
@@ -288,7 +288,7 @@ class JobPackageArray(JobPackageBase):
 
     def _create_scripts(self, configuration):
         timestamp = str(int(time.time()))
-        for i in xrange(0, len(self.jobs)):
+        for i in range(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
             self._job_inputs[self.jobs[i].name] = self._create_i_input(timestamp, i)
         self._common_script = self._create_common_script(timestamp)
@@ -296,7 +296,7 @@ class JobPackageArray(JobPackageBase):
     def _create_i_input(self, filename, index):
         filename += '.{0}'.format(index)
         input_content = self._job_scripts[self.jobs[index].name]
-        open(os.path.join(self._tmp_path, filename), 'w').write(input_content)
+        open(os.path.join(self._tmp_path, filename), 'wb').write(input_content)
         os.chmod(os.path.join(self._tmp_path, filename), 0o755)
         return filename
 
@@ -305,7 +305,7 @@ class JobPackageArray(JobPackageBase):
                                                            self._num_processors,
                                                            directives=self.platform.custom_directives)
         filename += '.cmd'
-        open(os.path.join(self._tmp_path, filename), 'w').write(script_content)
+        open(os.path.join(self._tmp_path, filename), 'wb').write(script_content)
         os.chmod(os.path.join(self._tmp_path, filename), 0o755)
         return filename
 
@@ -325,7 +325,7 @@ class JobPackageArray(JobPackageBase):
         if package_id is None:
             return
 
-        for i in xrange(0, len(self.jobs)):
+        for i in range(0, len(self.jobs)):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id) + '[{0}]'.format(i)
             self.jobs[i].status = Status.SUBMITTED            
@@ -415,13 +415,13 @@ class JobPackageThread(JobPackageBase):
     def set_job_dependency(self, dependency):
         self._job_dependency = dependency
     def _create_scripts(self, configuration):
-        for i in xrange(0, len(self.jobs)):
+        for i in range(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
         self._common_script = self._create_common_script()
     def _create_common_script(self):
         script_content = self._common_script_content()
         script_file = self.name + '.cmd'
-        open(os.path.join(self._tmp_path, script_file), 'w').write(script_content)
+        open(os.path.join(self._tmp_path, script_file), 'wb').write(script_content.encode(locale.getlocale()[1]))
         os.chmod(os.path.join(self._tmp_path, script_file), 0o755)
         return script_file
 
@@ -471,7 +471,7 @@ class JobPackageThread(JobPackageBase):
         if package_id is None:
             return
 
-        for i in xrange(0, len(self.jobs) ):
+        for i in range(0, len(self.jobs) ):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id)
             self.jobs[i].status = Status.SUBMITTED            
@@ -521,14 +521,14 @@ class JobPackageThreadWrapped(JobPackageThread):
         return self._platform.project
 
     def _create_scripts(self, configuration):
-        for i in xrange(0, len(self.jobs)):
+        for i in range(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
         self._common_script = self._create_common_script()
 
     def _create_common_script(self):
         script_content = self._common_script_content()
         script_file = self.name + '.cmd'
-        open(os.path.join(self._tmp_path, script_file), 'w').write(script_content)
+        open(os.path.join(self._tmp_path, script_file), 'wb').write(script_content)
         os.chmod(os.path.join(self._tmp_path, script_file), 0o755)
         return script_file
 
@@ -549,7 +549,7 @@ class JobPackageThreadWrapped(JobPackageThread):
         if package_id is None:
             raise Exception('Submission failed')
 
-        for i in xrange(0, len(self.jobs)):
+        for i in range(0, len(self.jobs)):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id)
             self.jobs[i].status = Status.SUBMITTED            

@@ -16,7 +16,7 @@ class TestDbManager(TestCase):
         # act
         command = DbManager.generate_create_table_command(table_name, table_fields)
         # assert
-        self.assertEquals(expected_command, command)
+        self.assertEqual(expected_command, command)
 
     def test_insert_command_returns_a_valid_command(self):
         # arrange
@@ -27,7 +27,7 @@ class TestDbManager(TestCase):
         # act
         command = DbManager.generate_insert_command(table_name, columns, values)
         # assert
-        self.assertEquals(expected_command, command)
+        self.assertEqual(expected_command, command)
 
     def test_insert_many_command_returns_a_valid_command(self):
         # arrange
@@ -37,7 +37,7 @@ class TestDbManager(TestCase):
         # act
         command = DbManager.generate_insert_many_command(table_name, num_of_values)
         # assert
-        self.assertEquals(expected_command, command)
+        self.assertEqual(expected_command, command)
 
     def test_select_command_returns_a_valid_command(self):
         # arrange
@@ -47,7 +47,7 @@ class TestDbManager(TestCase):
         # act
         command = DbManager.generate_select_command(table_name, where)
         # assert
-        self.assertEquals(expected_command, command)
+        self.assertEqual(expected_command, command)
 
     def test_when_database_already_exists_then_is_not_initialized_again(self):
         sys.modules['os'].path.exists = Mock(return_value=True)

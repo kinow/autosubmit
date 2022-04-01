@@ -1,6 +1,6 @@
-from tests_log import Log
-from tests_utils import check_cmd, next_experiment_id, copy_experiment_conf_files, create_database, clean_database
-from tests_commands import *
+from .tests_log import Log
+from .tests_utils import check_cmd, next_experiment_id, copy_experiment_conf_files, create_database, clean_database
+from .tests_commands import *
 from threading import Thread
 from time import sleep
 import argparse
@@ -9,7 +9,7 @@ try:
     from configparser import SafeConfigParser
 except ImportError:
     # noinspection PyCompatibility
-    from ConfigParser import SafeConfigParser
+    from configparser import SafeConfigParser
 
 # Configuration file where the regression tests are defined with INI style
 tests_parser_file = 'tests.conf'

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 
@@ -23,7 +23,7 @@ Module containing functions to manage autosubmit's database.
 import os
 import sqlite3
 import multiprocessing
-import Queue
+import queue
 
 from log.log import Log, AutosubmitCritical, AutosubmitError
 Log.get_logger("Autosubmit")
@@ -43,14 +43,14 @@ def create_db(qry):
         (conn, cursor) = open_conn(False)
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
 
     try:
         cursor.executescript(qry)
     except sqlite3.Error as e:
         close_conn(conn, cursor)
         raise AutosubmitCritical(
-            'Database can not be created', 7004, e.message)
+            'Database can not be created', 7004, str(e))
 
     conn.commit()
     close_conn(conn, cursor)
@@ -151,7 +151,7 @@ def save_experiment(name, description, version):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Your experiment {1} couldn't be stored in the database.".format(TIMEOUT, name))
     finally:
@@ -175,7 +175,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Check if experiment {1} exists failed to complete.".format(TIMEOUT, name))
     finally:
@@ -201,7 +201,7 @@ def update_experiment_descrip_version(name, description=None, version=None):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Update experiment {1} version failed to complete.".format(TIMEOUT, name))
     finally:
@@ -223,7 +223,7 @@ def get_autosubmit_version(expid):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Get experiment {1} version failed to complete.".format(TIMEOUT, expid))
     finally:
@@ -247,7 +247,7 @@ def last_name_used(test=False, operational=False):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Get last named used failed to complete.".format(TIMEOUT))
     finally:
@@ -269,7 +269,7 @@ def delete_experiment(experiment_id):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except Queue.Empty:
+    except queue.Empty:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Delete experiment {1} failed to complete.".format(TIMEOUT, experiment_id))
     finally:
@@ -293,7 +293,7 @@ def _save_experiment(name, description, version):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
     try:
         cursor.execute('INSERT INTO experiment (name, description, autosubmit_version) VALUES (:name, :description, '
                        ':version)',
@@ -301,7 +301,7 @@ def _save_experiment(name, description, version):
     except sqlite3.IntegrityError as e:
         close_conn(conn, cursor)
         raise AutosubmitCritical(
-            'Couldn''t register experiment', 7005, e.message)
+            'Couldn''t register experiment', 7005, str(e))
 
     conn.commit()
     close_conn(conn, cursor)
@@ -325,7 +325,7 @@ def _check_experiment_exists(name, error_on_inexistence=True):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -405,7 +405,7 @@ def _get_autosubmit_version(expid):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -438,7 +438,7 @@ def _last_name_used(test=False, operational=False):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
     conn.text_factory = str
     if test:
         cursor.execute('SELECT name '
@@ -488,7 +488,7 @@ def _delete_experiment(experiment_id):
         (conn, cursor) = open_conn()
     except DbException as e:
         raise AutosubmitCritical(
-            "Could not establish a connection to database", 7001, e.message)
+            "Could not establish a connection to database", 7001, str(e))
         return False
     cursor.execute('DELETE FROM experiment '
                    'WHERE name=:name', {'name': experiment_id})
@@ -526,7 +526,7 @@ def _update_database(version, cursor):
             CURRENT_DATABASE_VERSION))
     except sqlite3.Error as e:
         raise AutosubmitCritical(
-            'unable to update database version', 7001, e.message)
+            'unable to update database version', 7001, str(e))
     Log.info("Update completed")
     return True
 

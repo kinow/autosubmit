@@ -13,42 +13,42 @@ class TestExpid(TestCase):
         current_experiment_id = "empty"
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version)
-        self.assertEquals("a000", experiment_id)
+        self.assertEqual("a000", experiment_id)
 
     @patch('autosubmit.experiment.experiment_common.db_common')
     def test_create_new_test_experiment(self, db_common_mock):
         current_experiment_id = "empty"
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version, True)
-        self.assertEquals("t000", experiment_id)
+        self.assertEqual("t000", experiment_id)
 
     @patch('autosubmit.experiment.experiment_common.db_common')
     def test_create_new_operational_experiment(self, db_common_mock):
         current_experiment_id = "empty"
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version, False, True)
-        self.assertEquals("o000", experiment_id)
+        self.assertEqual("o000", experiment_id)
 
     @patch('autosubmit.experiment.experiment_common.db_common')
     def test_create_new_experiment_with_previous_one(self, db_common_mock):
         current_experiment_id = "a006"
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version)
-        self.assertEquals("a007", experiment_id)
+        self.assertEqual("a007", experiment_id)
 
     @patch('autosubmit.experiment.experiment_common.db_common')
     def test_create_new_test_experiment_with_previous_one(self, db_common_mock):
         current_experiment_id = "t0ab"
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version, True)
-        self.assertEquals("t0ac", experiment_id)
+        self.assertEqual("t0ac", experiment_id)
 
     @patch('autosubmit.experiment.experiment_common.db_common')
     def test_create_new_operational_experiment_with_previous_one(self, db_common_mock):
         current_experiment_id = "o112"
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version, False, True)
-        self.assertEquals("o113", experiment_id)
+        self.assertEqual("o113", experiment_id)
 
     @staticmethod
     def _build_db_mock(current_experiment_id, mock_db_common):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -149,7 +149,7 @@ class StatisticsSnippetPython:
     Class to handle the statistics snippet of a job. It contains header and tailer for
     local and remote jobs
     """
-    def __init__(self,version="2"):
+    def __init__(self,version="3"):
         self.version=version
 
     def as_header(self,scheduler_header, executable):

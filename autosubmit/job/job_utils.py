@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -161,7 +161,7 @@ class SubJobManager(object):
         """
         """
         if (self.job_to_package) and (self.package_to_jobs):
-            if(self.current_structure) and len(self.current_structure.keys()) > 0:
+            if(self.current_structure) and len(list(self.current_structure.keys())) > 0:
                 # Structure exists
                 new_queues = dict()
                 fixes_applied = dict()
@@ -170,8 +170,8 @@ class SubJobManager(object):
                     local_structure = dict()
                     # SubJob Name -> SubJob Object
                     local_index = dict()
-                    subjobs_in_package = filter(lambda x: x.package ==
-                                                package, self.subjobList)
+                    subjobs_in_package = [x for x in self.subjobList if x.package ==
+                                                package]
                     local_jobs_in_package = [job for job in subjobs_in_package]
                     # Build index
                     for sub in local_jobs_in_package:
@@ -222,8 +222,8 @@ class SubJobManager(object):
                 # There is no structure
                 for package in self.package_to_jobs:
                     # Filter only jobs in the current package
-                    filtered = filter(lambda x: x.package ==
-                                      package, self.subjobList)
+                    filtered = [x for x in self.subjobList if x.package ==
+                                      package]
                     # Order jobs by total time (queue + run)
                     filtered = sorted(
                         filtered, key=lambda x: x.total, reverse=False)

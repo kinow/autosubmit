@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 
@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from ruamel.yaml import YAML
+import locale
 import os
 import re
 import subprocess
@@ -107,7 +108,7 @@ class AutosubmitConfig(object):
         Add a section header to the project's configuration file (if not exists)
         """
         if os.path.exists(self._proj_parser_file):
-            with open(self._proj_parser_file, 'r+') as f:
+            with open(self._proj_parser_file, 'rb+') as f:
                 first_line = f.readline()
                 if not re.match('^\[[^\[\]\# \t\n]*\][ \t]*$|^[ \t]+\[[^\[\]# \t\n]*\]', first_line):
                     content = f.read()
@@ -364,8 +365,8 @@ class AutosubmitConfig(object):
                 r'[^#]\bUSER\b =.*', contentToMod).group(0)[1:], "USER = " + new_user)
             contentToMod = contentToMod.replace(re.search(
                 r'[^#]\bUSER_TO\b =.*', contentToMod).group(0)[1:], "USER_TO = " + old_user)
-        open(self._platforms_parser_file, 'w').write(content)
-        open(self._platforms_parser_file, 'a').write(contentToMod)
+        open(self._platforms_parser_file, 'wb').write(content)
+        open(self._platforms_parser_file, 'ab').write(contentToMod)
 
     def set_new_host(self, section, new_host):
         """
@@ -393,8 +394,8 @@ class AutosubmitConfig(object):
                 r'[^#]\bHOST\b =.*', contentToMod).group(0)[1:], "HOST = " + new_host)
             contentToMod = contentToMod.replace(re.search(
                 r'[^#]\bHOST_TO\b =.*', contentToMod).group(0)[1:], "HOST_TO = " + old_host)
-        open(self._platforms_parser_file, 'w').write(content)
-        open(self._platforms_parser_file, 'a').write(contentToMod)
+        open(self._platforms_parser_file, 'wb').write(content)
+        open(self._platforms_parser_file, 'ab').write(contentToMod)
 
     def get_migrate_project_to(self, section):
         """
@@ -440,8 +441,8 @@ class AutosubmitConfig(object):
                 r"[^#]\bPROJECT\b =.*", contentToMod).group(0)[1:], "PROJECT = " + new_project)
             contentToMod = contentToMod.replace(re.search(
                 r"[^#]\bPROJECT_TO\b =.*", contentToMod).group(0)[1:], "PROJECT_TO = " + old_project)
-        open(self._platforms_parser_file, 'w').write(content)
-        open(self._platforms_parser_file, 'a').write(contentToMod)
+        open(self._platforms_parser_file, 'wb').write(content)
+        open(self._platforms_parser_file, 'ab').write(contentToMod)
 
     def get_custom_directives(self, section):
         """
@@ -455,11 +456,11 @@ class AutosubmitConfig(object):
 
     def show_messages(self):
 
-        if len(self.warn_config.keys()) == 0 and len(self.wrong_config.keys()) == 0:
+        if len(list(self.warn_config.keys())) == 0 and len(list(self.wrong_config.keys())) == 0:
             Log.result("Configuration files OK\n")
-        elif len(self.warn_config.keys()) > 0 and len(self.wrong_config.keys()) == 0:
+        elif len(list(self.warn_config.keys())) > 0 and len(list(self.wrong_config.keys())) == 0:
             Log.result("Configuration files contain some issues ignored")
-        if len(self.warn_config.keys()) > 0:
+        if len(list(self.warn_config.keys())) > 0:
             message = "In Configuration files:\n"
             for section in self.warn_config:
                 message += "Issues in [{0}] config file:".format(section)
@@ -469,7 +470,7 @@ class AutosubmitConfig(object):
                 message += "\n"
             Log.printlog(message, 6013)
 
-        if len(self.wrong_config.keys()) > 0:
+        if len(list(self.wrong_config.keys())) > 0:
             message = "On Configuration files:\n"
             for section in self.wrong_config:
                 message += "Critical Issues on [{0}] config file:".format(
@@ -502,7 +503,7 @@ class AutosubmitConfig(object):
         except (AutosubmitCritical, AutosubmitError) as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Unknown issue while checking the configulation files (check_conf_files)",7040,e.message)
+            raise AutosubmitCritical("Unknown issue while checking the configulation files (check_conf_files)",7040,str(e))
         # Annotates all errors found in the configuration files in dictionaries self.warn_config and self.wrong_config.
         self.check_expdef_conf()
         self.check_platforms_conf()
@@ -835,7 +836,7 @@ class AutosubmitConfig(object):
             self._exp_parser = AutosubmitConfig.get_parser(
                 self.parser_factory, self._exp_parser_file)
         except IOError as e:
-            raise AutosubmitError("IO issues during the parsing of configuration files",6014,e.message)
+            raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
         except Exception as e:
             raise AutosubmitCritical(
                 "{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(str(e)), 7014)
@@ -846,7 +847,7 @@ class AutosubmitConfig(object):
                 self._proj_parser = AutosubmitConfig.get_parser(
                     self.parser_factory, self._proj_parser_file)
         except IOError as e:
-            raise AutosubmitError("IO issues during the parsing of configuration files",6014,e.message)
+            raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
 
     def load_parameters(self):
         """
@@ -873,9 +874,9 @@ class AutosubmitConfig(object):
                 parameters = parameters2
             return parameters
         except IOError as e:
-            raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.",6000,e.message)
+            raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.",6000,str(e))
         except Exception as e:
-            raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.", 6000,e.message)
+            raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.", 6000,str(e))
 
     def load_platform_parameters(self):
         """
@@ -905,7 +906,7 @@ class AutosubmitConfig(object):
         for job in job_list.get_job_list():
             if job.platform_name is None:
                 job.platform_name = self.hpcarch
-            if job.section not in job_list_by_section.keys():
+            if job.section not in list(job_list_by_section.keys()):
                 job_list_by_section[job.section] = [job]
             else:
                 job_list_by_section[job.section].append(job)
@@ -914,12 +915,12 @@ class AutosubmitConfig(object):
             except:
                 job.platform = submitter.platforms["local"]
 
-        for section in job_list_by_section.keys():
+        for section in list(job_list_by_section.keys()):
             job_list_by_section[section][0].update_parameters(
                 as_conf, job_list.parameters)
-            section_list = job_list_by_section[section][0].parameters.keys()
+            section_list = list(job_list_by_section[section][0].parameters.keys())
             for section_param in section_list:
-                if section_param not in job_list.parameters.keys():
+                if section_param not in list(job_list.parameters.keys()):
                     parameters[section + "_" +
                                section_param] = job_list_by_section[section][0].parameters[section_param]
         return parameters
@@ -953,13 +954,13 @@ class AutosubmitConfig(object):
         if re.search('EXPID =.*', content):
             content = content.replace(
                 re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        open(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'wb').write(content)
 
         content = open(self._conf_parser_file).read()
         if re.search('EXPID =.*', content):
             content = content.replace(
                 re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        open(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'wb').write(content)
 
     def get_project_type(self):
         """
@@ -1098,7 +1099,7 @@ class AutosubmitConfig(object):
                                              shell=True)
         except subprocess.CalledProcessError as e:
             raise AutosubmitCritical(
-                "Failed to retrieve project branch...", 7014, e.message)
+                "Failed to retrieve project branch...", 7014, str(e))
 
         project_branch = output
         Log.debug("Project branch is: " + project_branch)
@@ -1107,7 +1108,7 @@ class AutosubmitConfig(object):
                 "cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
         except subprocess.CalledProcessError as e:
             raise AutosubmitCritical(
-                "Failed to retrieve project commit SHA...", 7014, e.message)
+                "Failed to retrieve project commit SHA...", 7014, str(e))
         project_sha = output
         Log.debug("Project commit SHA is: " + project_sha)
 
@@ -1119,7 +1120,7 @@ class AutosubmitConfig(object):
         if re.search('PROJECT_COMMIT =.*', content):
             content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
                                       "PROJECT_COMMIT = " + project_sha)
-        open(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'wb').write(content)
         Log.debug(
             "Project commit SHA succesfully registered to the configuration file.")
         return True
@@ -1169,7 +1170,7 @@ class AutosubmitConfig(object):
                 for split_in in split:
                     if split_in.find("-") != -1:
                         numbers = split_in.split("-")
-                        for count in xrange(int(numbers[0]), int(numbers[1]) + 1):
+                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
                             date_list.append(parse_date(
                                 string_date + str(count).zfill(len(numbers[0]))))
                     else:
@@ -1247,7 +1248,7 @@ class AutosubmitConfig(object):
                 for split_in in split:
                     if split_in.find("-") != -1:
                         numbers = split_in.split("-")
-                        for count in xrange(int(numbers[0]), int(numbers[1]) + 1):
+                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
                             member_list.append(
                                 string_member + str(count).zfill(len(numbers[0])))
                     else:
@@ -1309,7 +1310,7 @@ class AutosubmitConfig(object):
         if re.search('HPCARCH =.*', content):
             content = content.replace(
                 re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
-        open(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'wb').write(content)
 
     def set_version(self, autosubmit_version):
         """
@@ -1318,11 +1319,10 @@ class AutosubmitConfig(object):
         :param autosubmit_version: autosubmit's version
         :type autosubmit_version: str
         """
-        content = open(self._conf_parser_file).read()
-        if re.search('AUTOSUBMIT_VERSION =.*', content):
-            content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0),
-                                      "AUTOSUBMIT_VERSION = " + autosubmit_version)
-        open(self._conf_parser_file, 'w').write(content)
+        content = open(self._conf_parser_file, 'rb').read()
+        if re.search(rb'AUTOSUBMIT_VERSION =.*', content):
+            content = content.replace(re.search(rb'AUTOSUBMIT_VERSION =.*', content).group(0),str.encode("AUTOSUBMIT_VERSION = " + autosubmit_version,locale.getlocale()[1]))
+        open(self._conf_parser_file, 'wb').write(content)
 
     def get_version(self):
         """
@@ -1414,7 +1414,7 @@ class AutosubmitConfig(object):
         content = open(self._conf_parser_file).read()
         content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
                                   "SAFETYSLEEPTIME = %d" % sleep_time)
-        open(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'wb').write(content)
 
     def get_retrials(self):
         """

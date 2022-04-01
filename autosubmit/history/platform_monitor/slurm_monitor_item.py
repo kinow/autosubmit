@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 # This file is part of Autosubmit.
@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-import platform_utils as utils
+from . import platform_utils as utils
 
 class SlurmMonitorItem():
   def __init__(self, name, status, ncpus, nnodes, submit, start, finish, energy="0", MaxRSS=0.0, AveRSS=0.0):

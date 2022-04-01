@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import locale
 import pickle
 from sys import setrecursionlimit
 
@@ -69,10 +69,10 @@ class JobListPersistencePkl(JobListPersistence):
         """
         path = os.path.join(persistence_path, persistence_file + '.pkl')
         if os.path.exists(path):
-            fd = open(path, 'r')
+            fd = open(path, 'rb')
             return pickle.load(fd)
         else:
-            Log.printlog('File {0} does not exist'.format(path),7040)
+            #Log.printlog('File {0} does not exist'.format(path),5040)
             return list()
 
     def save(self, persistence_path, persistence_file, job_list):
@@ -84,7 +84,7 @@ class JobListPersistencePkl(JobListPersistence):
 
         """
         path = os.path.join(persistence_path, persistence_file + '.pkl')
-        fd = open(path, 'w')
+        fd = open(path, 'wb')
         setrecursionlimit(50000)
         Log.debug("Saving JobList: " + path)
         jobs_data = [(job.name, job.id, job.status,
@@ -92,7 +92,7 @@ class JobListPersistencePkl(JobListPersistence):
                       job.member, job.chunk,
                       job.local_logs[0], job.local_logs[1],
                       job.remote_logs[0], job.remote_logs[1],job.wrapper_type) for job in job_list]
-        pickle.dump(jobs_data, fd)
+        pickle.dump(jobs_data, fd, protocol=2)
         Log.debug('Job list saved')
 
 

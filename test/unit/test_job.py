@@ -12,7 +12,7 @@ from mock import patch
 from sys import version_info
 
 if version_info.major == 2:
-    import __builtin__ as builtins
+    import builtins as builtins
 else:
     import builtins
 
@@ -36,7 +36,7 @@ class TestJob(TestCase):
 
         returned_platform = self.job.platform
 
-        self.assertEquals(platform, returned_platform)
+        self.assertEqual(platform, returned_platform)
 
     def test_when_the_job_has_only_one_processor_returns_the_serial_platform(self):
         platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig)
@@ -47,15 +47,15 @@ class TestJob(TestCase):
 
         returned_platform = self.job.platform
 
-        self.assertEquals('serial-platform', returned_platform)
+        self.assertEqual('serial-platform', returned_platform)
 
     def test_set_platform(self):
         dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig)
-        self.assertNotEquals(dummy_platform, self.job.platform)
+        self.assertNotEqual(dummy_platform, self.job.platform)
 
         self.job.platform = dummy_platform
 
-        self.assertEquals(dummy_platform, self.job.platform)
+        self.assertEqual(dummy_platform, self.job.platform)
 
     def test_when_the_job_has_a_queue_returns_that_queue(self):
         dummy_queue = 'whatever'
@@ -63,7 +63,7 @@ class TestJob(TestCase):
 
         returned_queue = self.job.queue
 
-        self.assertEquals(dummy_queue, returned_queue)
+        self.assertEqual(dummy_queue, returned_queue)
 
     def test_when_the_job_has_not_a_queue_and_some_processors_returns_the_queue_of_the_platform(self):
         dummy_queue = 'whatever-parallel'
@@ -76,7 +76,7 @@ class TestJob(TestCase):
         returned_queue = self.job.queue
 
         self.assertIsNotNone(returned_queue)
-        self.assertEquals(dummy_queue, returned_queue)
+        self.assertEqual(dummy_queue, returned_queue)
 
     def test_when_the_job_has_not_a_queue_and_one_processor_returns_the_queue_of_the_serial_platform(self):
         serial_queue = 'whatever-serial'
@@ -97,23 +97,23 @@ class TestJob(TestCase):
         returned_queue = self.job.queue
 
         self.assertIsNotNone(returned_queue)
-        self.assertEquals(serial_queue, returned_queue)
-        self.assertNotEquals(parallel_queue, returned_queue)
+        self.assertEqual(serial_queue, returned_queue)
+        self.assertNotEqual(parallel_queue, returned_queue)
 
     def test_set_queue(self):
         dummy_queue = 'whatever'
-        self.assertNotEquals(dummy_queue, self.job._queue)
+        self.assertNotEqual(dummy_queue, self.job._queue)
 
         self.job.queue = dummy_queue
 
-        self.assertEquals(dummy_queue, self.job.queue)
+        self.assertEqual(dummy_queue, self.job.queue)
 
     def test_that_the_increment_fails_count_only_adds_one(self):
         initial_fail_count = self.job.fail_count
         self.job.inc_fail_count()
         incremented_fail_count = self.job.fail_count
 
-        self.assertEquals(initial_fail_count + 1, incremented_fail_count)
+        self.assertEqual(initial_fail_count + 1, incremented_fail_count)
 
     def test_parents_and_children_management(self):
         random_job1 = Job('dummy-name', 111, Status.WAITING, 0)
@@ -125,10 +125,10 @@ class TestJob(TestCase):
                             random_job3)
 
         # assert added
-        self.assertEquals(3, len(self.job.parents))
-        self.assertEquals(1, len(random_job1.children))
-        self.assertEquals(1, len(random_job2.children))
-        self.assertEquals(1, len(random_job3.children))
+        self.assertEqual(3, len(self.job.parents))
+        self.assertEqual(1, len(random_job1.children))
+        self.assertEqual(1, len(random_job2.children))
+        self.assertEqual(1, len(random_job3.children))
 
         # assert contains
         self.assertTrue(self.job.parents.__contains__(random_job1))
@@ -145,10 +145,10 @@ class TestJob(TestCase):
 
         # assert deletions
         self.job.delete_parent(random_job3)
-        self.assertEquals(2, len(self.job.parents))
+        self.assertEqual(2, len(self.job.parents))
 
         random_job1.delete_child(self.job)
-        self.assertEquals(0, len(random_job1.children))
+        self.assertEqual(0, len(random_job1.children))
 
     def test_create_script(self):
         # arrange
@@ -232,7 +232,7 @@ class TestJob(TestCase):
 
         # assert
         exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path, self.job.name + '_COMPLETED'))
-        self.assertEquals(Status.COMPLETED, self.job.status)
+        self.assertEqual(Status.COMPLETED, self.job.status)
 
     def test_completed_file_not_exists_then_sets_status_to_failed(self):
         # arrange
@@ -244,7 +244,7 @@ class TestJob(TestCase):
 
         # assert
         exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path, self.job.name + '_COMPLETED'))
-        self.assertEquals(Status.FAILED, self.job.status)
+        self.assertEqual(Status.FAILED, self.job.status)
 
     def test_job_script_checking_contains_the_right_default_variables(self):
         # This test (and feature) was implemented in order to avoid
@@ -275,10 +275,10 @@ class TestJob(TestCase):
         self.assertTrue('d_' in parameters)
         self.assertTrue('Y' in parameters)
         self.assertTrue('Y_' in parameters)
-        self.assertEquals('%d%', parameters['d'])
-        self.assertEquals('%d_%', parameters['d_'])
-        self.assertEquals('%Y%', parameters['Y'])
-        self.assertEquals('%Y_%', parameters['Y_'])
+        self.assertEqual('%d%', parameters['d'])
+        self.assertEqual('%d_%', parameters['d_'])
+        self.assertEqual('%Y%', parameters['Y'])
+        self.assertEqual('%Y_%', parameters['Y_'])
 
 
 class FakeBasicConfig:

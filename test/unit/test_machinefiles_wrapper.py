@@ -45,11 +45,11 @@ class TestMachinefiles(TestCase):
             machines = machines.split("\n")[:-1]
             job_section = job.split("_")[0]
             job_cores = int(jobs_resources[job_section]['PROCESSORS'])
-            self.assertEquals(len(machines), job_cores)
+            self.assertEqual(len(machines), job_cores)
             all_machines += machines
 
         machines_count = collections.Counter(all_machines)
-        for count in machines_count.values():
+        for count in list(machines_count.values()):
             self.assertLessEqual(count, int(jobs_resources['PROCESSORS_PER_NODE']))
 
     def test_job_more_than_48_cores_standard(self):
@@ -85,7 +85,7 @@ class TestMachinefiles(TestCase):
             machines = machines.split("\n")[:-1]
             job_section = job.split("_")[0]
             job_cores = int(jobs_resources[job_section]['PROCESSORS'])
-            self.assertEquals(len(machines), job_cores)
+            self.assertEqual(len(machines), job_cores)
 
     def _create_nodelist(self, num_cores):
         num_nodes = int(ceil(num_cores/float(48)))

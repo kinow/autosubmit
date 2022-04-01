@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2014 Climate Forecasting Unit, IC3
 
@@ -23,7 +23,7 @@ import os
 from log.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
-from submitter import Submitter
+from .submitter import Submitter
 from autosubmit.platforms.psplatform import PsPlatform
 from autosubmit.platforms.lsfplatform import LsfPlatform
 from autosubmit.platforms.pbsplatform import PBSPlatform
@@ -138,7 +138,7 @@ class ParamikoSubmitter(Submitter):
                         "Queue type not specified on platform {0}".format(section))
 
             except ParamikoPlatformException as e:
-                Log.error("Queue exception: {0}".format(e.message))
+                Log.error("Queue exception: {0}".format(str(e)))
                 return None
             # Set the type and version of the platform found
             remote_platform.type = platform_type

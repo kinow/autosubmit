@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 # This file is part of Autosubmit.
@@ -21,8 +21,8 @@ import time
 import random
 import os
 from shutil import copy2
-from experiment_history_db_manager import ExperimentHistoryDbManager
-from experiment_status_db_manager import ExperimentStatusDbManager
+from .experiment_history_db_manager import ExperimentHistoryDbManager
+from .experiment_status_db_manager import ExperimentStatusDbManager
 from autosubmit.history.data_classes.experiment_run import ExperimentRun
 from autosubmit.history.data_classes.job_data import JobData
 from autosubmit.config.basicConfig import BasicConfig

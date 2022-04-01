@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 # This file is part of Autosubmit.
@@ -17,9 +17,9 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
-from database_managers.experiment_status_db_manager import ExperimentStatusDbManager
-from database_managers.database_manager import DEFAULT_LOCAL_ROOT_DIR, DEFAULT_HISTORICAL_LOGS_DIR
-from internal_logging import Logging
+from .database_managers.experiment_status_db_manager import ExperimentStatusDbManager
+from .database_managers.database_manager import DEFAULT_LOCAL_ROOT_DIR, DEFAULT_HISTORICAL_LOGS_DIR
+from .internal_logging import Logging
 from autosubmit.config.basicConfig import BasicConfig
 
 class ExperimentStatus():

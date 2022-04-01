@@ -58,8 +58,8 @@ def main():
     except Exception as e:
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
             os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
-        Log.error("Trace: {0}", str(e.message))
-        if "temporarily unavailable" in str(e.message):
+        Log.error("Trace: {0}", str(e))
+        if "temporarily unavailable" in str(e):
             Log.critical(
                 "Another instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock", 7000)
         else:

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -16,12 +16,14 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import locale
+
 try:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
 except ImportError:
     # noinspection PyCompatibility
-    from ConfigParser import SafeConfigParser
+    from configparser import SafeConfigParser
 import json
 import re
 import os
@@ -142,7 +144,7 @@ class JobList(object):
             #     job.parents) == 0 or len(set(old_job_list_names).intersection(set([jobp.name for jobp in job.parents]))) == len(job.parents)]
 
     def create_dictionary(self, date_list, member_list, num_chunks, chunk_ini, date_format, default_retrials, wrapper_jobs):
-        chunk_list = range(chunk_ini, num_chunks + 1)
+        chunk_list = list(range(chunk_ini, num_chunks + 1))
 
         jobs_parser = self._get_jobs_parser()
         dic_jobs = DicJobs(self, jobs_parser, date_list, member_list,
@@ -156,7 +158,7 @@ class JobList(object):
                 self._ordered_jobs_by_date_member[wrapper_section] = {}
         pass
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True):
+                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True,conf=None):
         """
         Creates all jobs needed for the current workflow
 
@@ -186,7 +188,7 @@ class JobList(object):
         self._parameters = parameters
         self._date_list = date_list
         self._member_list = member_list
-        chunk_list = range(chunk_ini, num_chunks + 1)
+        chunk_list = list(range(chunk_ini, num_chunks + 1))
         self._chunk_list = chunk_list
 
         jobs_parser = self._get_jobs_parser()
@@ -196,13 +198,31 @@ class JobList(object):
         priority = 0
         if show_log:
             Log.info("Creating jobs...")
-        jobs_data = dict()
         # jobs_data includes the name of the .our and .err files of the job in LOG_expid
+        jobs_data = dict()
         if not new:
             try:
-                jobs_data = {str(row[0]): row for row in self.load()}
+            #     for row in self.load():
+            #         row = list(row)
+            #         row_aux = []
+            #         for vpicklealue in row:
+            #             if type(value) is str:
+            #                 row_aux.append(value.encode(locale.getlocale()[1]))
+            #             else:
+            #                 row_aux.append(value)
+            #         jobs_data[row_aux[0]] = tuple(row_aux)
+                jobs_data = {row[0]: row for row in self.load()}
             except:
-                jobs_data = {str(row[0]): row for row in self.backup_load()}
+                try:
+                    jobs_data = {row[0]: row for row in self.backup_load()}
+                except:
+                    pass
+                    Log.info("Deleting previous pkl due being incompatible with current AS version")
+                    if os.path.exists(os.path.join(self._persistence_path, self._persistence_file+".pkl")):
+                        os.remove(os.path.join(self._persistence_path, self._persistence_file+".pkl"))
+                    if os.path.exists(os.path.join(self._persistence_path, self._persistence_file+"_backup.pkl")):
+                        os.remove(os.path.join(self._persistence_path, self._persistence_file+"_backup.pkl"))
+
         self._create_jobs(dic_jobs, jobs_parser, priority,
                           default_job_type, jobs_data)
         if show_log:
@@ -243,7 +263,7 @@ class JobList(object):
                 else:
                     self._ordered_jobs_by_date_member[wrapper_section] = {}
         except BaseException as e:
-            raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.yml".format(wrapper_section),7014,e.message)
+            raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.conf".format(wrapper_section),7014,str(e))
         pass
 
 
@@ -262,10 +282,12 @@ class JobList(object):
                 num_jobs = 1
                 if isinstance(job, list):
                     num_jobs = len(job)
-                for i in xrange(num_jobs):
+                for i in range(num_jobs):
                     _job = job[i] if num_jobs > 1 else job
                     JobList._manage_job_dependencies(dic_jobs, _job, date_list, member_list, chunk_list, dependencies_keys,
                                                      dependencies, graph)
+            test = ""
+        pass
 
 
     @staticmethod
@@ -313,7 +335,7 @@ class JobList(object):
                         info = section_chunk.split('*')
                         if info[0] in key:
                             auxiliar_relation_list = []
-                            for relation in xrange(1, len(info)):
+                            for relation in range(1, len(info)):
                                 auxiliar_relation_list.append(dic_jobs.parse_relation(section,False,info[relation],"Select_chunks"))
                             selected_chunks.append(auxiliar_relation_list)
                 else:
@@ -327,7 +349,7 @@ class JobList(object):
                         info = section_member.split('*')
                         if info[0] in key:
                             auxiliar_relation_list = []
-                            for relation in xrange(1, len(info)):
+                            for relation in range(1, len(info)):
                                 auxiliar_relation_list.append(dic_jobs.parse_relation(section, True, info[relation], "Select_Members"))
                             selected_member.append(auxiliar_relation_list)
                 else:
@@ -354,7 +376,7 @@ class JobList(object):
                 numbers = str_split.split(":")
                 # change this to be checked in job_common.py
                 max_splits = min(int(numbers[1]), max_splits)
-                for count in xrange(int(numbers[0]), max_splits + 1):
+                for count in range(int(numbers[0]), max_splits + 1):
                     splits.append(int(str(count).zfill(len(numbers[0]))))
             else:
                 if int(str_split) <= max_splits:
@@ -401,12 +423,12 @@ class JobList(object):
                 if dependency.delay == -1 or chunk > dependency.delay:
                     if isinstance(parent, list):
                         if job.split is not None:
-                            parent = filter(
-                                lambda _parent: _parent.split == job.split, parent)[0]
+                            parent = list(filter(
+                                lambda _parent: _parent.split == job.split, parent))
+                            parent = parent[0]
                         else:
                             if dependency.splits is not None:
-                                parent = filter(
-                                    lambda _parent: _parent.split in dependency.splits, parent)
+                                parent = [_parent for _parent in parent if _parent.split in dependency.splits]
                 #Select chunk + select member
                 if parent.running in ["once"] or ( len(dependency.select_members_orig) <= 0 and len(dependency.select_chunks_orig) <= 0):
                     job.add_parent(parent)
@@ -490,7 +512,7 @@ class JobList(object):
                 max_distance = (chunk_list.index(chunk) + 1) % job.frequency
                 if max_distance == 0:
                     max_distance = job.frequency
-                for distance in xrange(1, max_distance):
+                for distance in range(1, max_distance):
                     for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                         if parent not in visited_parents:
                             job.add_parent(parent)
@@ -500,7 +522,7 @@ class JobList(object):
                 max_distance = (member_index + 1) % job.frequency
                 if max_distance == 0:
                     max_distance = job.frequency
-                for distance in xrange(1, max_distance, 1):
+                for distance in range(1, max_distance, 1):
                     for parent in dic_jobs.get_jobs(section_name, date,
                                                     member_list[member_index - distance], chunk):
                         if parent not in visited_parents:
@@ -511,7 +533,7 @@ class JobList(object):
                 max_distance = (date_index + 1) % job.frequency
                 if max_distance == 0:
                     max_distance = job.frequency
-                for distance in xrange(1, max_distance, 1):
+                for distance in range(1, max_distance, 1):
                     for parent in dic_jobs.get_jobs(section_name, date_list[date_index - distance],
                                                     member, chunk):
                         if parent not in visited_parents:
@@ -523,7 +545,7 @@ class JobList(object):
         num_parents = 1
         if isinstance(parents, list):
             num_parents = len(parents)
-        for i in xrange(num_parents):
+        for i in range(num_parents):
             parent = parents[i] if isinstance(parents, list) else parents
             graph.add_edge(parent.name, job.name)
             pass
@@ -572,7 +594,7 @@ class JobList(object):
         for section in sections_running_type_map:
             sections_to_filter += section
 
-        filtered_jobs_list = filter(lambda job: job.section in sections_running_type_map, self._job_list)
+        filtered_jobs_list = [job for job in self._job_list if job.section in sections_running_type_map]
 
         filtered_jobs_fake_date_member, fake_original_job_map = self._create_fake_dates_members(
             filtered_jobs_list)
@@ -581,8 +603,8 @@ class JobList(object):
             str_date = self._get_date(date)
             for member in self._member_list:
                 # Filter list of fake jobs according to date and member, result not sorted at this point
-                sorted_jobs_list = filter(lambda job: job.name.split("_")[1] == str_date and
-                                          job.name.split("_")[2] == member, filtered_jobs_fake_date_member)
+                sorted_jobs_list = [job for job in filtered_jobs_fake_date_member if job.name.split("_")[1] == str_date and
+                                          job.name.split("_")[2] == member]
 
                 previous_job = sorted_jobs_list[0]
 
@@ -592,7 +614,7 @@ class JobList(object):
                 jobs_to_sort = [previous_job]
                 previous_section_running_type = None
                 # Index starts at 1 because 0 has been taken in a previous step
-                for index in xrange(1, len(sorted_jobs_list) + 1):
+                for index in range(1, len(sorted_jobs_list) + 1):
                     # If not last item
                     if index < len(sorted_jobs_list):
                         job = sorted_jobs_list[index]
@@ -611,7 +633,7 @@ class JobList(object):
                                                                             if len(k.name.split('_')) == 5 else num_chunks + 1)))
 
                         # Bringing back original job if identified
-                        for idx in xrange(0, len(jobs_to_sort)):
+                        for idx in range(0, len(jobs_to_sort)):
                             # Test if it is a fake job
                             if jobs_to_sort[idx] in fake_original_job_map:
                                 fake_job = jobs_to_sort[idx]
@@ -1353,7 +1375,7 @@ class JobList(object):
         """
         try:
             if os.path.exists(filename):
-                fd = open(filename, 'rw')
+                fd = open(filename, 'rb')
                 return pickle.load(fd)
             else:
                 return list()
@@ -1404,11 +1426,11 @@ class JobList(object):
                 # Log.info("_persistence end: {0}".format(log.fd_show.fd_table_status_str()))
                 pass
             except BaseException as e:
-                raise AutosubmitError(e.message,6040,"Failure while saving the job_list")
+                raise AutosubmitError(str(e),6040,"Failure while saving the job_list")
         except AutosubmitError as e:
             raise
         except BaseException as e:
-            raise AutosubmitError(e.message,6040,"Unknown failure while saving the job_list")
+            raise AutosubmitError(str(e),6040,"Unknown failure while saving the job_list")
 
 
     def backup_save(self):
@@ -1639,14 +1661,14 @@ class JobList(object):
                 Log.debug('Updating Held jobs')
                 if self.job_package_map:
                     held_jobs = [job for job in self.get_held_jobs() if (
-                        job.id not in self.job_package_map.keys())]
-                    held_jobs += [wrapper_job for wrapper_job in self.job_package_map.values()
+                        job.id not in list(self.job_package_map.keys()))]
+                    held_jobs += [wrapper_job for wrapper_job in list(self.job_package_map.values())
                                   if wrapper_job.status == Status.HELD]
                 else:
                     held_jobs = self.get_held_jobs()
 
                 for job in held_jobs:
-                    if self.job_package_map and job.id in self.job_package_map.keys():  # Wrappers and inner jobs
+                    if self.job_package_map and job.id in list(self.job_package_map.keys()):  # Wrappers and inner jobs
                         hold_wrapper = False
                         for inner_job in job.job_list:
                             valid_parents = [
@@ -1963,7 +1985,7 @@ class JobList(object):
         result = (bcolors.BOLD if nocolor == False else '') + \
             "## String representation of Job List [" + str(len(allJobs)) + "] "
         if statusChange is not None:
-            result += "with " + (bcolors.OKGREEN if nocolor == False else '') + str(len(statusChange.keys())
+            result += "with " + (bcolors.OKGREEN if nocolor == False else '') + str(len(list(statusChange.keys()))
                                                                                     ) + " Change(s) ##" + (bcolors.ENDC + bcolors.ENDC if nocolor == False else '')
         else:
             result += " ## "
@@ -2022,7 +2044,7 @@ class JobList(object):
         if job.name not in visited:
             visited.append(job.name)
             prefix = ""
-            for i in xrange(level):
+            for i in range(level):
                 prefix += "|  "
             # Prefix + Job Name
             result = "\n" + prefix + \
@@ -2108,14 +2130,14 @@ class JobList(object):
                     # package_to_jobs[package_name].append(name)
                 for key in package_to_jobs:
                     package_to_package_id[key] = key.split("_")[2]
-                list_packages = job_to_package.values()
+                list_packages = list(job_to_package.values())
                 for i in range(len(list_packages)):
                     if i % 2 == 0:
                         package_to_symbol[list_packages[i]] = 'square'
                     else:
                         package_to_symbol[list_packages[i]] = 'hexagon'
             except Exception as ex:
-                print(traceback.format_exc())
+                print((traceback.format_exc()))
 
         return (job_to_package, package_to_jobs, package_to_package_id, package_to_symbol)
 
@@ -2211,7 +2233,7 @@ class JobList(object):
                 # For job times completed we no longer use timedeltas, but timestamps
                 status = Status.VALUE_TO_KEY[status_code]
                 if (job_times) and status_code not in [Status.READY, Status.WAITING, Status.SUSPENDED]:
-                    if name in job_times.keys():
+                    if name in list(job_times.keys()):
                         submit_time, start_time, finish_time, status, detail_id = job_times[
                             name]
                         seconds_running = finish_time - start_time
@@ -2225,7 +2247,7 @@ class JobList(object):
                     finish_time = 0
 
         except Exception as exp:
-            print(traceback.format_exc())
+            print((traceback.format_exc()))
             return
 
         seconds_queued = seconds_queued * \

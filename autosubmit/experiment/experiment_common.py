@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 
@@ -136,7 +136,7 @@ def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
     :return: number's base36 string value
     :rtype: str
     """
-    if not isinstance(number, (int, long)):
+    if not isinstance(number, int):
         raise TypeError('number must be an integer')
 
     # Special case for zero

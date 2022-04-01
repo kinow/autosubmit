@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -31,7 +31,7 @@ class FixedSizeList(list):
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-            return [list(self)[i] if 0 <= i < len(self) else self._default for i in xrange(key.start, key.stop, key.step or 1)]
+            return [list(self)[i] if 0 <= i < len(self) else self._default for i in range(key.start, key.stop, key.step or 1)]
         return list(self)[key]
 
     def __getslice__(self, i, j):

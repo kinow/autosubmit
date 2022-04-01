@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
@@ -22,9 +22,9 @@ import sqlite3
 import traceback
 import textwrap
 import time
-from database_manager import DatabaseManager, DEFAULT_LOCAL_ROOT_DIR
+from .database_manager import DatabaseManager, DEFAULT_LOCAL_ROOT_DIR
 import autosubmit.history.utils as HUtils
-import database_models as Models
+from . import database_models as Models
 
 class ExperimentStatusDbManager(DatabaseManager):
   """ Manages the actions on the status database """
@@ -55,8 +55,8 @@ class ExperimentStatusDbManager(DatabaseManager):
       for experiment in self._get_experiment_status_content():
           print(experiment)
       if self.current_experiment_status_row:
-          print("Current Row:\n\t" + self.current_experiment_status_row.name + "\n\t" +
-                str(self.current_experiment_status_row.exp_id) + "\n\t" + self.current_experiment_status_row.status)
+          print(("Current Row:\n\t" + self.current_experiment_status_row.name + "\n\t" +
+                str(self.current_experiment_status_row.exp_id) + "\n\t" + self.current_experiment_status_row.status))
 
   def is_running(self, time_condition=600):
       # type : (int) -> bool

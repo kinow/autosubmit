@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import locale
 import os
 import subprocess
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
@@ -162,9 +162,9 @@ class EcPlatform(ParamikoPlatform):
             output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
             if not ignore_log:
-                raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,e.message)
+                raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,str(e))
             return False
-        self._ssh_output = output
+        self._ssh_output = output.decode(locale.getlocale()[1])
         return True
 
     def send_file(self, filename, check=True):
@@ -175,7 +175,7 @@ class EcPlatform(ParamikoPlatform):
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError as e:
-            raise AutosubmitError('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),os.path.join(self.get_files_path(), filename)),6005,e.message)
+            raise AutosubmitError('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),os.path.join(self.get_files_path(), filename)),6005,str(e))
         return True
 
     def move_file(self, src, dest, must_exist = False):

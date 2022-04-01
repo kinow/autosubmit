@@ -12,7 +12,7 @@ from datetime import datetime
 from sys import version_info
 
 if version_info.major == 2:
-    import __builtin__ as builtins
+    import builtins as builtins
 else:
     import builtins
 
@@ -83,7 +83,7 @@ class TestAutosubmitConfig(TestCase):
         returned_project_dir = config.get_project_dir()
 
         # assert
-        self.assertEquals(os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.any_expid, FakeBasicConfig.LOCAL_PROJ_DIR,
+        self.assertEqual(os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.any_expid, FakeBasicConfig.LOCAL_PROJ_DIR,
                                        '/dummy/path'), returned_project_dir)
 
     def test_get_wallclock(self):
@@ -225,7 +225,7 @@ class TestAutosubmitConfig(TestCase):
         parser_mock.items.assert_any_call('DUMMY_SECTION_2')
         #self.assertEquals(4, len(project_parameters))
         for i in range(1, 4):
-            self.assertEquals(project_parameters.get('dummy_key' + str(i)), 'dummy_value' + str(i))
+            self.assertEqual(project_parameters.get('dummy_key' + str(i)), 'dummy_value' + str(i))
 
     def test_get_startdates_list(self):
         # arrange
@@ -243,7 +243,7 @@ class TestAutosubmitConfig(TestCase):
         returned_dates = config.get_date_list()
 
         # assert
-        self.assertEquals(5, len(returned_dates))
+        self.assertEqual(5, len(returned_dates))
         self.assertTrue(datetime(1920, 1, 1) in returned_dates)
         self.assertTrue(datetime(1930, 5, 1) in returned_dates)
         self.assertTrue(datetime(1940, 9, 9) in returned_dates)
@@ -299,13 +299,13 @@ class TestAutosubmitConfig(TestCase):
         returned_parameters = config.load_parameters()
 
         # assert
-        self.assertEquals(7, len(returned_parameters))
-        self.assertTrue(returned_parameters.has_key('dummy-option1'))
-        self.assertTrue(returned_parameters.has_key('dummy-option2'))
-        self.assertTrue(returned_parameters.has_key('dummy-option3'))
-        self.assertTrue(returned_parameters.has_key('dummy-option4'))
-        self.assertTrue(returned_parameters.has_key('dummy-key1'))
-        self.assertTrue(returned_parameters.has_key('dummy-key2'))
+        self.assertEqual(7, len(returned_parameters))
+        self.assertTrue('dummy-option1' in returned_parameters)
+        self.assertTrue('dummy-option2' in returned_parameters)
+        self.assertTrue('dummy-option3' in returned_parameters)
+        self.assertTrue('dummy-option4' in returned_parameters)
+        self.assertTrue('dummy-key1' in returned_parameters)
+        self.assertTrue('dummy-key2' in returned_parameters)
 
     def test_git_project_commit(self):
         # arrange

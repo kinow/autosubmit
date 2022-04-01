@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 # This file is part of Autosubmit.
@@ -18,8 +18,7 @@
 
 from abc import ABCMeta, abstractmethod
 
-class PlatformMonitor():
-  __metaclass__ = ABCMeta
+class PlatformMonitor(metaclass=ABCMeta):
   def __init__(self, platform_output):
     self.original_input = platform_output
     self.input = str(platform_output).strip()

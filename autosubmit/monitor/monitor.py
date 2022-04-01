@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2015-2020Earth Sciences Department, BSC-CNS
 
@@ -25,7 +25,7 @@ from os import chdir
 from os import listdir
 from os import remove
 
-import pydotplus
+import py3dotplus as pydotplus
 import copy
 
 import subprocess
@@ -37,7 +37,7 @@ from autosubmit.config.config_common import AutosubmitConfig
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from autosubmit.config.yaml_parser import YAMLParserFactory
 
-from diagram import create_bar_diagram
+from .diagram import create_bar_diagram
 from typing import Dict, List
 
 
@@ -179,7 +179,7 @@ class Monitor:
                         if len(subgraph.get_node(group[0])) == 0:
                             subgraph.add_node(previous_node)
 
-                        for i in xrange(1, len(group)):
+                        for i in range(1, len(group)):
                             node = exp.get_node(group[i])[0]
                             if len(subgraph.get_node(group[i])) == 0:
                                 subgraph.add_node(node)
@@ -205,7 +205,7 @@ class Monitor:
             graph.set_strict(True)
 
         graph.add_subgraph(exp)
-
+        #Wrapper visualization
         for node in exp.get_nodes():
             name = node.obj_dict['name']
             if name in jobs_packages_dict:
@@ -342,13 +342,14 @@ class Monitor:
             raise
         except BaseException as e:
             try:
-                e.message += "\n"+e.value
-                if "GraphViz" in e.message:
-                    e.message= "Graphviz is not installed. Autosubmit need this system package in order to plot the workflow."
+                message= str(e)
+                message += "\n"+e.value
+                if "GraphViz" in message:
+                    message= "Graphviz is not installed. Autosubmit need this system package in order to plot the workflow."
             except:
                 pass
 
-            Log.printlog("{0}\nSpecified output doesn't have an available viewer installed or graphviz is not installed. The output was only writted in txt".format(e.message),7014)
+            Log.printlog("{0}\nSpecified output doesn't have an available viewer installed or graphviz is not installed. The output was only writted in txt".format(message),7014)
 
 
     def generate_output_txt(self, expid, joblist, path, classictxt=False, job_list_object=None):
@@ -459,7 +460,7 @@ class Monitor:
         """
         search_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot")
         chdir(search_dir)
-        files = filter(path.isfile, listdir(search_dir))
+        files = list(filter(path.isfile, listdir(search_dir)))
         files = [path.join(search_dir, f)
                  for f in files if 'statistics' not in f]
         files.sort(key=lambda x: path.getmtime(x))
@@ -480,7 +481,7 @@ class Monitor:
         """
         search_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot")
         chdir(search_dir)
-        files = filter(path.isfile, listdir(search_dir))
+        files = list(filter(path.isfile, listdir(search_dir)))
         files = [path.join(search_dir, f) for f in files if 'statistics' in f]
         files.sort(key=lambda x: path.getmtime(x))
         remain = files[-1:]

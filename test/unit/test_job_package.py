@@ -35,13 +35,13 @@ class TestJobPackage(TestCase):
             JobPackageSimple(this.jobs)
 
     def test_job_package_length(self):
-        self.assertEquals(2, len(self.job_package))
+        self.assertEqual(2, len(self.job_package))
 
     def test_job_package_jobs_getter(self):
-        self.assertEquals(self.jobs, self.job_package.jobs)
+        self.assertEqual(self.jobs, self.job_package.jobs)
 
     def test_job_package_platform_getter(self):
-        self.assertEquals(self.platform, self.job_package.platform)
+        self.assertEqual(self.platform, self.job_package.platform)
 
     def test_job_package_submission(self):
         # arrange

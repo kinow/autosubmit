@@ -1,3 +1,4 @@
+import locale
 from time import sleep
 import sys
 import socket
@@ -100,7 +101,7 @@ class ParamikoPlatform(Platform):
                 self.restore_connection()
                 message = "OK"
             except BaseException as e:
-                message = e.message
+                message = str(e)
             if message.find("t accept remote connections") == -1:
                 transport = self._ssh.get_transport()
                 transport.send_ignore()
@@ -111,7 +112,7 @@ class ParamikoPlatform(Platform):
         except (AutosubmitError,AutosubmitCritical,IOError):
             raise
         except BaseException as e:
-            raise AutosubmitCritical(message,7051)
+            raise AutosubmitCritical(str(e),7051)
             #raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
 
     def restore_connection(self):
@@ -207,17 +208,17 @@ class ParamikoPlatform(Platform):
             if "refused" in e.strerror:
                 raise SSHException(" {0} doesn't accept remote connections. Check if there is an typo in the hostname".format(self.host))
             else:
-                raise AutosubmitError("File can't be located due an slow connection", 6016, e.message)
+                raise AutosubmitError("File can't be located due an slow connection", 6016, str(e))
         except BaseException as e:
             self.connected = False
-            if "Authentication failed." in e.message:
+            if "Authentication failed." in str(e):
                 raise AutosubmitCritical("Authentication Failed, please check the platform.conf of {0}".format(
-                    self._host_config['hostname']), 7050, e.message)
+                    self._host_config['hostname']), 7050, str(e))
             if not reconnect and "," in self._host_config['hostname']:
                 self.restore_connection(reconnect=True)
             else:
                 raise AutosubmitError(
-                    "Couldn't establish a connection to the specified host, wrong configuration?", 6003, e.message)
+                    "Couldn't establish a connection to the specified host, wrong configuration?", 6003, str(e))
 
     def check_completed_files(self, sections=None):
         if self.host == 'localhost':
@@ -242,7 +243,7 @@ class ParamikoPlatform(Platform):
         multiple_delete_previous_run = os.path.join(
             log_dir, "multiple_delete_previous_run.sh")
         if os.path.exists(log_dir):
-            open(multiple_delete_previous_run, 'w+').write("rm -f" + filenames)
+            open(multiple_delete_previous_run, 'wb+').write( ("rm -f" + filenames).encode(locale.getlocale()[1]) )
             os.chmod(multiple_delete_previous_run, 0o770)
             self.send_file(multiple_delete_previous_run, False)
             command = os.path.join(self.get_files_path(),
@@ -272,7 +273,7 @@ class ParamikoPlatform(Platform):
             return True
         except IOError as e:
             raise AutosubmitError('Can not send file {0} to {1}'.format(os.path.join(
-                self.tmp_path, filename)), os.path.join(self.get_files_path(), filename), 6004, e.message)
+                self.tmp_path, filename)), os.path.join(self.get_files_path(), filename), 6004, str(e))
         except BaseException as e:
             raise AutosubmitError(
                 'Send file failed. Connection seems to no be active', 6004)
@@ -346,9 +347,9 @@ class ParamikoPlatform(Platform):
         except BaseException as e:
             Log.error('Could not remove file {0} due a wrong configuration'.format(
                 os.path.join(self.get_files_path(), filename)))
-            if e.message.lower().find("garbage") != -1:
+            if str(e).lower().find("garbage") != -1:
                 raise AutosubmitCritical(
-                    "Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ", 7051, e.message)
+                    "Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ", 7051, str(e))
 
     def move_file(self, src, dest, must_exist=False):
         """
@@ -369,20 +370,20 @@ class ParamikoPlatform(Platform):
         except IOError as e:
             if str(e) in "Garbage":
                 raise AutosubmitError('File {0} does not exists, something went wrong with the platform'.format(
-                    path_root), 6004, e.message)
+                    path_root), 6004, str(e))
             if must_exist:
                 raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(
-                    path_root), 6004, e.message)
+                    path_root), 6004, str(e))
             else:
                 Log.debug("File {0} doesn't exists ".format(path_root))
                 return False
         except Exception as e:
             if str(e) in "Garbage":
                 raise AutosubmitError('File {0} does not exists'.format(
-                    os.path.join(self.get_files_path(), src)), 6004, e.message)
+                    os.path.join(self.get_files_path(), src)), 6004, str(e))
             if must_exist:
                 raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(
-                    os.path.join(self.get_files_path(), src)), 6004, e.message)
+                    os.path.join(self.get_files_path(), src)), 6004, str(e))
             else:
                 Log.printlog("Log file couldn't be moved: {0}".format(
                     os.path.join(self.get_files_path(), src)), 5001)
@@ -641,13 +642,14 @@ class ParamikoPlatform(Platform):
         while session.recv_stderr_ready():
             sys.stderr.write(session.recv_stderr(4096))
 
-    def x11_handler(self, channel, (src_addr, src_port)):
+    def x11_handler(self, channel, xxx_todo_changeme):
         '''handler for incoming x11 connections
         for each x11 incoming connection,
         - get a connection to the local display
         - maintain bidirectional map of remote x11 channel to local x11 channel
         - add the descriptors to the poller
         - queue the channel (use transport.accept())'''
+        (src_addr, src_port) = xxx_todo_changeme
         x11_chanfd = channel.fileno()
         local_x11_socket = xlib_connect.get_socket(*self.local_x11_display[:4])
         local_x11_socket_fileno = local_x11_socket.fileno()
@@ -677,7 +679,7 @@ class ParamikoPlatform(Platform):
                     if fd == session_fileno:
                         self.flush_out(session)
                     # data either on local/remote x11 socket
-                    if fd in self.channels.keys():
+                    if fd in list(self.channels.keys()):
                         channel, counterpart = self.channels[fd]
                         try:
                             # forward data between local/remote x11 socket.
@@ -731,8 +733,8 @@ class ParamikoPlatform(Platform):
                 else:
                     chan.exec_command(command)
                 stdin = chan.makefile('wb', bufsize)
-                stdout = chan.makefile('r', bufsize)
-                stderr = chan.makefile_stderr('r', bufsize)
+                stdout = chan.makefile('rb', bufsize)
+                stderr = chan.makefile_stderr('rb', bufsize)
                 return stdin, stdout, stderr
             except paramiko.SSHException as e:
                 if str(e) in "SSH session not active":
@@ -811,13 +813,12 @@ class ParamikoPlatform(Platform):
             self._ssh_output = ""
             self._ssh_output_err = ""
             for s in stdout_chunks:
-                if s != '':
-                    self._ssh_output += s
+                if s.decode(locale.getlocale()[1]) != '':
+                    self._ssh_output += s.decode(locale.getlocale()[1])
             for errorLineCase in stderr_readlines:
-                self._ssh_output_err += errorLineCase
+                self._ssh_output_err += errorLineCase.decode(locale.getlocale()[1])
 
-            for errorLineCase in stderr_readlines:
-                errorLine = errorLineCase.lower()
+                errorLine = errorLineCase.lower().decode(locale.getlocale()[1])
                 if "not active" in errorLine:
                     raise AutosubmitError(
                         'SSH Session not active, will restart the platforms', 6005)
@@ -832,7 +833,7 @@ class ParamikoPlatform(Platform):
             if not ignore_log:
                 if len(stderr_readlines) > 0:
                     Log.printlog('Command {0} in {1} warning: {2}'.format(
-                        command, self.host, '\n'.join(stderr_readlines)), 6006)
+                        command, self.host, '\n'.join(stderr_readlines.decode(locale.getlocale()[1]))), 6006)
                 else:
                     pass
                     #Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
@@ -848,7 +849,7 @@ class ParamikoPlatform(Platform):
             raise AutosubmitError(e.message,6016)
         except BaseException as e:
             raise AutosubmitError('Command {0} in {1} warning: {2}'.format(
-                command, self.host, '\n'.join(stderr_readlines)), 6005, e.message)
+                command, self.host, '\n'.join(stderr_readlines)), 6005, str(e))
 
     def parse_job_output(self, output):
         """
@@ -1086,7 +1087,7 @@ class ParamikoPlatform(Platform):
                             self.remote_log_dir, self.host))
                 except BaseException as e:
                     raise AutosubmitError(
-                        "SFTP session not active ", 6007, e.message)
+                        "SFTP session not active ", 6007, str(e))
         else:
             try:
                 if self.send_command(self.get_mkdir_cmd()):
@@ -1097,7 +1098,7 @@ class ParamikoPlatform(Platform):
                         self.remote_log_dir, self.host))
             except BaseException as e:
                 raise AutosubmitError("Couldn't send the file {0} to HPC {1}".format(
-                    self.remote_log_dir, self.host), 6004, e.message)
+                    self.remote_log_dir, self.host), 6004, str(e))
 
 
 class ParamikoPlatformException(Exception):

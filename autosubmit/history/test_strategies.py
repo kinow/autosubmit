@@ -18,9 +18,9 @@
 
 import unittest
 from collections import namedtuple
-from data_classes.job_data import JobData
-from strategies import StraightWrapperAssociationStrategy, GeneralizedWrapperDistributionStrategy, PlatformInformationHandler, TwoDimWrapperDistributionStrategy
-from platform_monitor.slurm_monitor import SlurmMonitor
+from .data_classes.job_data import JobData
+from .strategies import StraightWrapperAssociationStrategy, GeneralizedWrapperDistributionStrategy, PlatformInformationHandler, TwoDimWrapperDistributionStrategy
+from .platform_monitor.slurm_monitor import SlurmMonitor
 job_dc = namedtuple("Job", ["job_name", "date", "member", "status_str", "children", "children_list"])
 
 class Test2DWrapperDistributionStrategy(unittest.TestCase):
@@ -74,7 +74,7 @@ class Test2DWrapperDistributionStrategy(unittest.TestCase):
     info_handler = PlatformInformationHandler(TwoDimWrapperDistributionStrategy())
     job_dcs = info_handler.execute_distribution(self.job_data_dcs_in_wrapper[0], self.job_data_dcs_in_wrapper, slurm_monitor)
     for job in job_dcs:
-      print("{0} -> {1} and {2} : ncpus {3} running {4}".format(job.job_name, job.energy, job.rowstatus, job.ncpus, job.running_time))
+      print(("{0} -> {1} and {2} : ncpus {3} running {4}".format(job.job_name, job.energy, job.rowstatus, job.ncpus, job.running_time)))
     for level in info_handler.strategy.jobs_per_level:
       print([job.job_name for job in level])
     total_in_jobs = sum(job.energy for job in job_dcs[:-1]) # ignore last

@@ -130,7 +130,7 @@ class Log:
     NO_LOG = CRITICAL + 1000
     logging.basicConfig()
     log_dict_debug = logging.Logger.manager.loggerDict
-    if 'Autosubmit' in logging.Logger.manager.loggerDict.keys():
+    if 'Autosubmit' in list(logging.Logger.manager.loggerDict.keys()):
         log = logging.getLogger('Autosubmit')
     else:
         log = logging.Logger('Autosubmit', EVERYTHING)
