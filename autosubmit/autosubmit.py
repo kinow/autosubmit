@@ -1782,6 +1782,12 @@ class Autosubmit:
                                 Log.info("Recovering job_list...")
                                 job_list = Autosubmit.load_job_list(
                                     expid, as_conf, notransitive=notransitive)
+                                if allowed_members:
+                                    # Set allowed members after checks have been performed. This triggers the setter and main logic of the -rm feature.
+                                    job_list.run_members = allowed_members
+                                    Log.result(
+                                        "Only jobs with member value in {0} or no member will be allowed in this run. Also, those jobs already SUBMITTED, QUEUING, or RUNNING will be allowed to complete and will be tracked.".format(
+                                            str(allowed_members)))
                                 platforms_to_test = set()
                                 for job in job_list.get_job_list():
                                     if job.platform_name is None:

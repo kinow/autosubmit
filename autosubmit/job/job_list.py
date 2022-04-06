@@ -580,7 +580,8 @@ class JobList(object):
                 # Filter list of fake jobs according to date and member, result not sorted at this point
                 sorted_jobs_list = filter(lambda job: job.name.split("_")[1] == str_date and
                                           job.name.split("_")[2] == member, filtered_jobs_fake_date_member)
-
+                if len(sorted_jobs_list) == 0:
+                    continue
                 previous_job = sorted_jobs_list[0]
 
                 # get RUNNING for this section

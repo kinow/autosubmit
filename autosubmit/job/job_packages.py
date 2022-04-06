@@ -40,7 +40,7 @@ from typing import List
 import multiprocessing
 import tarfile
 import datetime
-
+import re
 lock = Lock()
 def threaded(fn):
     def wrapper(*args, **kwargs):
@@ -574,39 +574,49 @@ class JobPackageVertical(JobPackageThread):
                                                                                   self._num_processors,
                                                                                   len(self._jobs))
 
+    def parse_time(self):
+        regex = re.compile(r'((?P<hours>\d+?):)?((?P<minutes>\d+?):)?(?P<seconds>\d+?)?')
+        parts = regex.match(self._wallclock)
+        if not parts:
+            return
+        parts = parts.groupdict()
+        time_params = {}
+        for name, param in parts.items():
+            if param:
+                time_params[name] = int(param)
+        return timedelta(**time_params)
     def _common_script_content(self):
         if self.jobs[0].wrapper_type == "vertical":
-            wallclock = datetime.datetime.strptime(self._wallclock, '%H:%M')
-            total = 0.0
-            if wallclock.hour > 0:
-                total = wallclock.hour
-            if wallclock.minute > 0:
-                total += wallclock.minute / 60.0
-            if wallclock.second > 0:
-                total += wallclock.second / 60.0 / 60.0
-            wallclock = total
+            #wallclock = datetime.datetime.strptime(self._wallclock, '%H:%M')
+            wallclock = self.parse_time()
+            total = wallclock.days + wallclock.seconds / 86400.0
             total = total * 1.15
-            hour = int(total)
+            hour = int(total * 24.0)
             minute = int((total - int(total)) * 60.0)
             second = int(((total - int(total)) * 60 -
                           int((total - int(total)) * 60.0)) * 60.0)
             wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,seconds=second)
-            #####
-            # split in hh, mm, ss
-            hh, mm, ss = str(wallclock_delta).split(':')
-            wallclock_seconds=int(hh) * 3600 + int(mm) * 60 + int(ss)
+            wallclock_seconds = wallclock_delta.days*86400.0 + wallclock_delta.seconds
             wallclock_by_level = wallclock_seconds/(self.jobs[-1].level+1)
             if self.extensible_wallclock > 0:
-                hour = int(wallclock)
-                minute = int((wallclock - int(wallclock)) * 60.0)
-                second = int(((wallclock - int(wallclock)) * 60 -
-                              int((wallclock - int(wallclock)) * 60.0)) * 60.0)
-                wallclock_seconds = int(hour) * 3600 + int(minute) * 60 + int(second)
-                wallclock_seconds = int(wallclock_seconds + wallclock_seconds * self.extensible_wallclock)
+                original_wallclock_to_seconds = wallclock.days * 86400.0 + wallclock.seconds
+                wallclock_seconds = int(original_wallclock_to_seconds + wallclock_by_level * self.extensible_wallclock)
                 wallclock_delta = datetime.timedelta(hours=0, minutes=0, seconds=wallclock_seconds)
-                hh, mm, ss = str(wallclock_delta).split(':')
-                self._wallclock = hh + ":"+mm
-                Log.info("Submitting {2} with wallclock {0}:{1}".format(hh,mm,self._name))
+                total = wallclock_delta.days + wallclock_delta.seconds / 86400.0
+                hh = int(total * 24.0)
+                mm = int((total - int(total)) * 60.0)
+                ss = int(((total - int(total)) * 60 -
+                              int((total - int(total)) * 60.0)) * 60.0)
+                if hh < 10:
+                    hh_str='0'+str(hh)
+                else:
+                    hh_str = str(hh)
+                if mm < 10:
+                    mm_str='0'+str(mm)
+                else:
+                    mm_str = str(mm)
+                self._wallclock = "{0}:{1}".format(hh_str,mm_str)
+                Log.info("Submitting {2} with wallclock {0}:{1}".format(hh_str,mm_str,self._name))
         else:
             wallclock_by_level = None
 

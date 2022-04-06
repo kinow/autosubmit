@@ -1042,6 +1042,17 @@ class Job(object):
         parameters['PROJDIR'] = as_conf.get_project_dir()
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['WRAPPER'] = as_conf.get_wrapper_type()
+        parameters['WRAPPER' + "_POLICY"] = as_conf.get_wrapper_policy()
+        parameters['WRAPPER' + "_METHOD"] = as_conf.get_wrapper_method().lower()
+        parameters['WRAPPER' + "_JOBS"] = as_conf.get_wrapper_jobs()
+        parameters['WRAPPER' + "_EXTENSIBLE"] = int(as_conf.get_extensible_wallclock())
+        if parameters['WRAPPER'] == "multi":
+            for wrapper_section in as_conf.get_wrapper_multi():
+                parameters[wrapper_section.upper()] = as_conf.get_wrapper_type(wrapper_section)
+                parameters[wrapper_section.upper()+"_POLICY"] = as_conf.get_wrapper_policy(wrapper_section)
+                parameters[wrapper_section.upper()+"_METHOD"] = as_conf.get_wrapper_method(wrapper_section).lower()
+                parameters[wrapper_section.upper()+"_JOBS"] = as_conf.get_wrapper_jobs(wrapper_section)
+                parameters[wrapper_section.upper()+"_EXTENSIBLE"] = int(as_conf.get_extensible_wallclock(wrapper_section))
         parameters['DEPENDENCIES'] = as_conf.get_dependencies(self.section)
         self.dependencies = parameters['DEPENDENCIES']
 
