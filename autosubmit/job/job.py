@@ -1041,6 +1041,7 @@ class Job(object):
             BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
+        parameters['CURRENT_WRAPPER'] = self.wrapper_type
         parameters['WRAPPER'] = as_conf.get_wrapper_type()
         parameters['WRAPPER' + "_POLICY"] = as_conf.get_wrapper_policy()
         parameters['WRAPPER' + "_METHOD"] = as_conf.get_wrapper_method().lower()
