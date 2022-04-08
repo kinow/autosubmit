@@ -477,7 +477,7 @@ class DicJobs:
         job.tasks = str(self.get_option(section, "TASKS", '0'))
         job.memory = self.get_option(section, "MEMORY", '')
         job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
-        job.wallclock = self.get_option(section, "WALLCLOCK", '00:30:00')
+        job.wallclock = self.get_option(section, "WALLCLOCK", '00:30')
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
         job.delay_retrials = str(self.get_option(section, 'DELAY_RETRY_TIME', "-1"))
         if job.retrials == -1:

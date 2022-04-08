@@ -195,7 +195,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'WALLCLOCK', '02:00')
+        return self._jobs_parser.get_option(section, 'WALLCLOCK', '00:30')
 
 
     def get_export(self, section):

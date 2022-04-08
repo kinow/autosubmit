@@ -1569,7 +1569,7 @@ class Autosubmit:
                 if unparsed_two_step_start != "":
                     job_list.parse_jobs_by_filter(unparsed_two_step_start)
 
-                main_loop_retrials = 480  # Hard limit of tries 480 tries at 30seconds sleep each try
+                main_loop_retrials = 3650  # Hard limit of tries 3650 tries at 15-120seconds sleep each try
                 # establish the connection to all platforms
 
                 Autosubmit.restore_platforms(platforms_to_test)
@@ -1773,10 +1773,13 @@ class Autosubmit:
                         # No need to wait until the remote platform reconnection
                         recovery = False
                         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+                        consecutive_retrials = 0 
+                        delay = min(15*consecutive_retrials,120)
                         while not recovery and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
-                            sleep(15)
-                            Log.info("Waiting 15 seconds before continue")
+                            sleep(delay)
+                            consecutive_retrials = consecutive_retrials + 1
+                            Log.info("Waiting {0} seconds before continue".format(delay))
                             try:
                                 as_conf.reload()
                                 Log.info("Recovering job_list...")
@@ -1884,12 +1887,14 @@ class Autosubmit:
                         times = 0
                         max = 10
                         Log.info("Restoring the connection to all experiment platforms")
+                        consecutive_retrials = 0
+                        delay = min(15*consecutive_retrials,120)
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
-
                             Log.info("Recovering the remote platform connection")
-                            Log.info("Waiting 15 seconds before continue")
-                            sleep(15)
+                            Log.info("Waiting {0} seconds before continue".format(delay))
+                            sleep(delay)
+                            consecutive_retrials = consecutive_retrials + 1
                             try:
                                 if times % max == 0:
                                     mail_notify = True
@@ -2070,7 +2075,7 @@ class Autosubmit:
                             if package.jobs[0].id != 0:
                                 failed_packages.append(package.jobs[0].id)
                             platform.connected = False
-                            if e.message.lower().find("bad parameters") != -1 or e.message.lower().find("scheduler is not installed") != -1:
+                            if e.trace.lower().find("bad parameters") != -1 or e.message.lower().find("scheduler is not installed") != -1:
                                 error_msg = ""
                                 for package_tmp in valid_packages_to_submit:
                                     for job_tmp in package_tmp.jobs:
@@ -2079,7 +2084,7 @@ class Autosubmit:
                                 for job_tmp in package.jobs:
                                     if job_tmp.section not in error_msg:
                                         error_msg += job_tmp.section + "&"
-                                if e.message.lower().find("bad parameters") != -1:
+                                if e.trace.lower().find("bad parameters") != -1:
                                     error_message+="\ncheck job and queue specified in jobs.conf. Sections that could be affected: {0}".format(
                                             error_msg[:-1])
                                 else:
@@ -2112,17 +2117,18 @@ class Autosubmit:
                         except AutosubmitError as e:
                             jobs_id = None
                             platform.connected = False
-                            if e.message.lower().find("bad parameters") != -1 or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1 or e.message.lower().find("scheduler is not installed") != -1:
+                            if e.trace.lower().find("bad parameters") != -1 or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1 or e.message.lower().find("scheduler is not installed") != -1:
                                 error_msg = ""
                                 for package_tmp in valid_packages_to_submit:
                                     for job_tmp in package_tmp.jobs:
                                         if job_tmp.section not in error_msg:
                                             error_msg += job_tmp.section + "&"
-                                if e.message.lower().find("bad parameters") != -1:
-                                    error_message+="\ncheck job and queue specified in jobs.conf. Sections that could be affected: {0}".format(error_msg[:-1])
+                                if e.trace.lower().find("bad parameters") != -1:
+                                    error_message+="Check job and queue specified in jobs.conf. Sections that could be affected: {0}".format(error_msg[:-1])
                                 else:
-                                    error_message+="\ncheck that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
+                                    error_message+="Check that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
                                             error_msg[:-1], platform.name)
+                                raise AutosubmitCritical(error_message,7014,e.trace)
                         except IOError as e:
                             raise AutosubmitError(
                                 "IO issues ", 6016, e.message)
@@ -2133,7 +2139,7 @@ class Autosubmit:
                                 "Submission failed, this can be due a failure on the platform", 6015, e.message)
                         if jobs_id is None or len(jobs_id) <= 0:
                             raise AutosubmitError(
-                                "Submission failed, this can be due a failure on the platform", 6015)
+                                "Submission failed, this can be due a failure on the platform\n{0}\n{1}".format(e.message,e.trace), 6015)
                         i = 0
                         if hold:
                             sleep(10)

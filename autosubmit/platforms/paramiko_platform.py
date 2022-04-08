@@ -829,8 +829,7 @@ class ParamikoPlatform(Platform):
                     raise AutosubmitError("scheduler is not installed.",7052,self._ssh_output_err)
                 elif errorLine.find("refused") != -1 or errorLine.find("slurm_persist_conn_open_without_init") != -1 or errorLine.find("slurmdbd") != -1 or errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1 or errorLine.find("sbatch: error: ") != -1 or errorLine.find("not submitted") != -1:
                     if (self._submit_command_name == "sbatch" and errorLine.find("policy") != -1) or (self._submit_command_name == "sbatch" and errorLine.find("argument") != -1) or (self._submit_command_name == "bsub" and errorLine.find("job not submitted") != -1) or self._submit_command_name == "ecaccess-job-submit" or self._submit_command_name == "qsub ":
-                        raise AutosubmitError(
-                            "bad parameters", 7014, self._ssh_output_err)
+                        raise AutosubmitError(errorLine, 7014, "Bad Parameters.")
                     raise AutosubmitError('Command {0} in {1} warning: {2}'.format(command, self.host,self._ssh_output_err, 6005))
 
             if not ignore_log:
