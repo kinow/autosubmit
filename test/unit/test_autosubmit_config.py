@@ -119,7 +119,7 @@ class TestAutosubmitConfig(TestCase):
     def test_get_tasks(self):
         # arrange
         expected_value = '99999'
-        default_value = 0
+        default_value = '0'
         config, parser_mock = self._arrange_config(expected_value)
         # act
         returned_value = config.get_tasks(self.section)
