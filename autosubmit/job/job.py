@@ -94,7 +94,7 @@ class Job(object):
         self.section = None # type: str
         self.wallclock = None # type: str
         self.wchunkinc = None
-        self.tasks = '0' 
+        self.tasks = '0'
         self.threads = '1'
         self.processors = '1'
         self.memory = ''
