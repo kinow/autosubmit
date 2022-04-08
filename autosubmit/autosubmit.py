@@ -1711,7 +1711,7 @@ class Autosubmit:
                 if unparsed_two_step_start != "":
                     job_list.parse_jobs_by_filter(unparsed_two_step_start)
 
-                main_loop_retrials = 480  # Hard limit of tries 480 tries at 30seconds sleep each try
+                main_loop_retrials = 3650  # Hard limit of tries 3650 tries at 15-120seconds sleep each try
                 # establish the connection to all platforms
 
                 Autosubmit.restore_platforms(platforms_to_test)
@@ -1840,8 +1840,9 @@ class Autosubmit:
                         delay = min(15*consecutive_retrials,120)
                         while not recovery and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
-                            sleep(15)
-                            Log.info("Waiting 15 seconds before continue")
+                            sleep(delay)
+                            consecutive_retrials = consecutive_retrials + 1
+                            Log.info("Waiting {0} seconds before continue".format(delay))
                             try:
                                 as_conf.reload(first_load=True)
                                 Log.info("Recovering job_list...")
@@ -1953,10 +1954,10 @@ class Autosubmit:
                         delay = min(15*consecutive_retrials,120)
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
-
                             Log.info("Recovering the remote platform connection")
-                            Log.info("Waiting 15 seconds before continue")
-                            sleep(15)
+                            Log.info("Waiting {0} seconds before continue".format(delay))
+                            sleep(delay)
+                            consecutive_retrials = consecutive_retrials + 1
                             try:
                                 if times % max == 0:
                                     mail_notify = True
