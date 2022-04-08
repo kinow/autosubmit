@@ -1773,7 +1773,7 @@ class Autosubmit:
                         # No need to wait until the remote platform reconnection
                         recovery = False
                         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-                        consecutive_retrials = 0 
+                        consecutive_retrials = 1
                         delay = min(15*consecutive_retrials,120)
                         while not recovery and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
@@ -1887,7 +1887,7 @@ class Autosubmit:
                         times = 0
                         max = 10
                         Log.info("Restoring the connection to all experiment platforms")
-                        consecutive_retrials = 0
+                        consecutive_retrials = 1
                         delay = min(15*consecutive_retrials,120)
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
