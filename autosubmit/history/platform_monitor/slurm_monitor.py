@@ -58,7 +58,7 @@ class SlurmMonitor(PlatformMonitor):
     return next((extern for extern in self.input_items if extern.is_extern), None)
   
   def steps_plus_extern_approximate_header_energy(self):
-    return abs(self.steps_energy + self.extern.energy - self.header.energy) <= 10
+    return abs(self.steps_energy + self.extern.energy - self.header.energy) <= 0.01*self.header.energy
 
   def print_items(self):
     for item in self.input_items:
