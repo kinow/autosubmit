@@ -36,7 +36,7 @@ from .notifications.notifier import Notifier
 from .notifications.mail_notifier import MailNotifier
 from bscearth.utils.date import date2str
 
-from config.yaml_parser import YAMLParserFactory
+from .config.yaml_parser import YAMLParserFactory
 from .monitor.monitor import Monitor
 from .database.db_common import get_autosubmit_version, check_experiment_exists
 from .database.db_common import delete_experiment, update_experiment_descrip_version

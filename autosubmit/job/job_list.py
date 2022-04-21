@@ -457,7 +457,7 @@ class JobList(object):
     @staticmethod
     def _calculate_dependency_metadata(chunk, chunk_list, member, member_list, date, date_list, dependency):
         skip = False
-        if dependency.sign is '-':
+        if dependency.sign == '-':
             if chunk is not None and dependency.running == 'chunk':
                 chunk_index = chunk_list.index(chunk)
                 if chunk_index >= dependency.distance:
@@ -477,7 +477,7 @@ class JobList(object):
                 else:
                     skip = True
 
-        if dependency.sign is '+':
+        if dependency.sign == '+':
             if chunk is not None and dependency.running == 'chunk':
                 chunk_index = chunk_list.index(chunk)
                 if (chunk_index + dependency.distance) < len(chunk_list):

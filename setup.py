@@ -34,8 +34,8 @@ setup(
     version=version,
     description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse '
                 'Supercomputing Environments',
-    author='Domingo Manubens-Gil',
-    author_email='domingo.manubens@bsc.es',
+    author='Daniel Beltrán Mora',
+    author_email='daniel.beltran@bsc.es',
     url='http://www.bsc.es/projects/earthscience/autosubmit/',
     download_url='https://earth.bsc.es/wiki/doku.php?id=tools:autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],

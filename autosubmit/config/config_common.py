@@ -537,37 +537,36 @@ class AutosubmitConfig(object):
         :return: True if everything is correct, False if it founds any error
         :rtype: bool
         """
-
-        if not self._conf_parser_file.check_exists('config', 'AUTOSUBMIT_VERSION'):
+        if not self._conf_parser.check_exists('config', 'AUTOSUBMIT_VERSION'):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "AUTOSUBMIT_VERSION parameter not found"]]
-        if not self._conf_parser_file.check_exists('config', 'MAXWAITINGJOBS')[1] == type(int):
+        if not self._conf_parser.check_exists('config', 'MAXWAITINGJOBS')[1] == type(int):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "MAXWAITINGJOBS parameter not found or non-integer"]]
-        if not self._conf_parser.check_is_int('config', 'TOTALJOBS')[1] == type(int):
+        if not self._conf_parser.check_exists('config', 'TOTALJOBS')[1] == type(int):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "TOTALJOBS parameter not found or non-integer"]]
-        if not self._conf_parser.check_is_int('config', 'SAFETYSLEEPTIME')[1] == type(int):
+        if not self._conf_parser.check_exists('config', 'SAFETYSLEEPTIME')[1] == type(int):
             self.set_safetysleeptime(10)
             # self.wrong_config["Autosubmit"] += [['config',
             #                                     "SAFETYSLEEPTIME parameter not found or non-integer"]]
-        if not self._conf_parser.check_is_int('config', 'RETRIALS')[1] == type(int):
+        if not self._conf_parser.check_exists('config', 'RETRIALS')[1] == type(int):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "RETRIALS parameter not found or non-integer"]]
-        if not self._conf_parser.check_is_boolean('mail', 'NOTIFICATIONS')[1] == type(bool):
+        if not self._conf_parser.check_exists('mail', 'NOTIFICATIONS')[1] == type(bool):
             self.wrong_config["Autosubmit"] += [['mail',
                                                  "NOTIFICATIONS parameter not found or non-boolean"]]
         if self._conf_parser.check_is_choice('storage', 'TYPE', False, ['pkl', 'db']):
             self.wrong_config["Autosubmit"] += [['storage',
                                                  "TYPE parameter not found"]]
 
-        if self.get_wrapper_type().lower() == 'multi':
+
+        if self.get_wrapper_type()[0] == 'multi':
             list_of_wrappers = self.get_wrapper_multi() # list
             for wrapper_section_name in self.get_wrapper_multi():
                 self.check_wrapper_conf(wrapper_section_name)
-        elif self.get_wrapper_type() != 'None':
+        elif self.get_wrapper_type()[0]:
             self.check_wrapper_conf()
-
 
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
@@ -1412,9 +1411,8 @@ class AutosubmitConfig(object):
         :type sleep_time: int
         """
         content = open(self._conf_parser_file).read()
-        content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
-                                  "SAFETYSLEEPTIME = %d" % sleep_time)
-        open(self._conf_parser_file, 'wb').write(content)
+        content = content.replace(re.search('SAFETYSLEEPTIME:.*', content).group(0),"SAFETYSLEEPTIME: %d" % sleep_time)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_retrials(self):
         """
@@ -1472,7 +1470,11 @@ class AutosubmitConfig(object):
         :rtype: string
         """
 
-        return self._conf_parser.check_exists(wrapper_section_name, 'TYPE').lower()
+        value1,value2 = self._conf_parser.check_exists(wrapper_section_name, 'TYPE')
+        if not value1:
+            return value1,value2
+        else:
+            return value1.lower(),value2
 
     def get_wrapper_retrials(self, wrapper_section_name="wrapper"):
         """
