@@ -992,8 +992,13 @@ class Job(object):
             self.tasks = job_platform.processors_per_node
         self.memory = as_conf.jobs_data[self.section].get("MEMORY","")
         self.memory_per_task = as_conf.jobs_data[self.section].get("MEMORY_PER_TASK","")
-        self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK","02:00")
+        self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK",None)
         self.wchunkinc = as_conf.jobs_data[self.section].get("WCHUNKINC","")
+        if self.wallclock is None and self.platform_name.lower() != "local":
+            self.wallclock = "01:59"
+        elif self.wallclock is None and self.platform_name.lower() == "local":
+            self.wallclock = "00:00"
+        self.wchunkinc = as_conf.get_wchunkinc(self.section)
         # Increasing according to chunk
         self.wallclock = increase_wallclock_by_chunk(
             self.wallclock, self.wchunkinc, chunk)
