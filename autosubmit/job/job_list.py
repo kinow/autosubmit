@@ -1630,11 +1630,17 @@ class JobList(object):
                         if len(tmp2) == len(job.parents):
                             for parent in job.parents:
                                 if parent.section+'?' in job.dependencies:
-                                    job.status = Status.READY
-                                    job.hold = False
-                                    Log.debug(
-                                        "Setting job: {0} status to: READY (conditional jobs are completed/failed)...".format(job.name))
+                                    weak_dependencies_failure = True
+                                elif parent.section in job.dependencies:
+                                    if parent.status not in [Status.COMPLETED,Status.SKIPPED]:
+                                        strong_dependencies_failure = True
                                     break
+                            if not strong_dependencies_failure and weak_dependencies_failure:
+                                job.status = Status.READY
+                                job.hold = False
+                                Log.debug(
+                                    "Setting job: {0} status to: READY (conditional jobs are completed/failed)...".format(job.name))
+                                break
                             if as_conf.get_remote_dependencies():
                                 all_parents_completed.append(job.name)
             if as_conf.get_remote_dependencies():
