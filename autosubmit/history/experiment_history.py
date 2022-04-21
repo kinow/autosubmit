@@ -279,8 +279,10 @@ class ExperimentHistory():
     differences = []
     for job_dc in current_job_data_dcs:
       if job_dc.job_name in job_name_to_job and job_dc.status != job_name_to_job[job_dc.job_name].status_str:
-        job_dc.status = job_name_to_job[job_dc.job_name].status_str
-        differences.append(job_dc)
+        if not (job_dc.status in ["COMPLETED", "FAILED"] and job_name_to_job[job_dc.job_name].status_str in ["WAITING", "READY"]):
+           # If the job is not changing from a finalized status to a starting status
+          job_dc.status = job_name_to_job[job_dc.job_name].status_str
+          differences.append(job_dc)
     return differences
 
   def _get_defined_rowtype(self, code):  
