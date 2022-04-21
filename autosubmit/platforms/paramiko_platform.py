@@ -6,6 +6,8 @@ import os
 import paramiko
 import datetime
 import select
+import re
+from datetime import timedelta
 import random
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
@@ -1045,6 +1047,17 @@ class ParamikoPlatform(Platform):
             header = header.replace(
                 '%HYPERTHREADING_DIRECTIVE%', self.header.get_hyperthreading_directive(job))
         return header
+    def parse_time(self,wallclock):
+        regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
+        parts = regex.match(wallclock)
+        if not parts:
+            return
+        parts = parts.groupdict()
+        time_params = {}
+        for name, param in parts.items():
+            if param:
+                time_params[name] = int(param)
+        return timedelta(**time_params)
 
     def closeConnection(self):
         if self._ftpChannel is not None:

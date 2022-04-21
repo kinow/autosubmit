@@ -1617,12 +1617,13 @@ class JobList(object):
                 if job.status != Status.READY:
                     if len(tmp3) != len(job.parents):
                         if len(tmp2) == len(job.parents):
+                            strong_dependencies_failure = False
+                            weak_dependencies_failure = False
                             for parent in job.parents:
                                 if parent.section+'?' in job.dependencies:
                                     weak_dependencies_failure = True
                                 elif parent.section in job.dependencies:
-                                    if parent.status not in [Status.COMPLETED,Status.SKIPPED]:
-                                        strong_dependencies_failure = True
+                                    strong_dependencies_failure = True
                                     break
                             if not strong_dependencies_failure and weak_dependencies_failure:
                                 job.status = Status.READY
