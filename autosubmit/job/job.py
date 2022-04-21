@@ -902,6 +902,7 @@ class Job(object):
         :type parameters: dict
         """
         chunk = 1
+        as_conf.reload()
         parameters = parameters.copy()
         parameters.update(default_parameters)
         parameters['JOBNAME'] = self.name
@@ -988,9 +989,9 @@ class Job(object):
         self.memory = as_conf.get_memory(self.section)
         self.memory_per_task = as_conf.get_memory_per_task(self.section)
         self.wallclock = as_conf.get_wallclock(self.section)
-        if self.wallclock is None and self.platform_name.lower() != "local":
+        if self.wallclock is None and job_platform.type not in ['ps','local']:
             self.wallclock = "01:59"
-        elif self.wallclock is None and self.platform_name.lower() == "local":
+        elif self.wallclock is None and job_platform.type in ['ps','local']:
             self.wallclock = "00:00"
         self.wchunkinc = as_conf.get_wchunkinc(self.section)
         # Increasing according to chunk
@@ -1122,7 +1123,7 @@ class Job(object):
                 template = ''
                 if as_conf.get_remote_dependencies():
                     if self.type == Type.BASH:
-                        template = 'sleep 30' + "\n"
+                        template = 'sleep 5' + "\n"
                     elif self.type == Type.PYTHON:
                         template = 'time.sleep(30)' + "\n"
                     elif self.type == Type.R:

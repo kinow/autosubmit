@@ -477,11 +477,12 @@ class DicJobs:
         job.tasks = str(self.get_option(section, "TASKS", '0'))
         job.memory = self.get_option(section, "MEMORY", '')
         job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
-        job.wallclock = self.get_option(section, "WALLCLOCK", None)
-        if job.wallclock is None and job.platform_name.lower() != "local":
-            job.wallclock = "01:59"
-        elif job.wallclock is None and job.platform_name.lower() == "local":
-            job.wallclock = "00:00"
+        if job.wallclock is None:
+            job.wallclock = self.get_option(section, "WALLCLOCK", None)
+        #if job.wallclock is None and job.platform_name.lower() != "local":
+        #    job.wallclock = "01:59"
+        #elif job.wallclock is None and job.platform_name.lower() == "local":
+        #    job.wallclock = "00:00"
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
         job.delay_retrials = str(self.get_option(section, 'DELAY_RETRY_TIME', "-1"))
         if job.retrials == -1:

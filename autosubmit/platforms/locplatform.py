@@ -20,8 +20,7 @@
 import os
 from xml.dom.minidom import parseString
 import subprocess
-import re
-from datetime import timedelta
+
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.local_header import LocalHeader
@@ -81,17 +80,7 @@ class LocalPlatform(ParamikoPlatform):
         dom = parseString('')
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
-    def parse_time(self,wallclock):
-        regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
-        parts = regex.match(wallclock)
-        if not parts:
-            return
-        parts = parts.groupdict()
-        time_params = {}
-        for name, param in parts.items():
-            if param:
-                time_params[name] = int(param)
-        return timedelta(**time_params)
+
     def get_submit_cmd(self, job_script, job, hold=False, export=""):
         wallclock = self.parse_time(job.wallclock)
         seconds = int(wallclock.days * 86400 + wallclock.seconds)
