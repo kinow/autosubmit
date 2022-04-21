@@ -1607,6 +1607,7 @@ class JobList(object):
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent.status == Status.SKIPPED]
                 tmp2 = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent.status == Status.SKIPPED or parent.status == Status.FAILED]
                 tmp3 = [parent for parent in job.parents if parent.status == Status.SKIPPED or parent.status == Status.FAILED]
+                failed_ones = [parent for parent in job.parents if parent.status == Status.FAILED]
                 if job.parents is None or len(tmp) == len(job.parents):
                     job.status = Status.READY
                     job.hold = False
@@ -1619,7 +1620,7 @@ class JobList(object):
                         if len(tmp2) == len(job.parents):
                             strong_dependencies_failure = False
                             weak_dependencies_failure = False
-                            for parent in job.parents:
+                            for parent in failed_ones:
                                 if parent.section+'?' in job.dependencies:
                                     weak_dependencies_failure = True
                                 elif parent.section in job.dependencies:
