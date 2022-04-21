@@ -926,7 +926,7 @@ class ParamikoPlatform(Platform):
     def get_ssh_output_err(self):
         return self._ssh_output_err
 
-    def get_call(self, job_script, job, export="none"):
+    def get_call(self, job_script, job, export="none",timeout=-1):
         """
         Gets execution command for given job
 
@@ -945,12 +945,18 @@ class ParamikoPlatform(Platform):
         elif job.type == Type.R:
             executable = 'Rscript'
         remote_logs = (job.script_name + ".out", job.script_name + ".err")
-        command = export + ' nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
-            os.path.join(self.remote_log_dir, job_script),
-            os.path.join(self.remote_log_dir, remote_logs[0]),
-            os.path.join(self.remote_log_dir, remote_logs[1]),
-
-        )
+        if timeout < 1:
+            command = export + ' nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+                os.path.join(self.remote_log_dir, job_script),
+                os.path.join(self.remote_log_dir, remote_logs[0]),
+                os.path.join(self.remote_log_dir, remote_logs[1]),
+            )
+        else:
+            command = export + "timeout {0}".format(timeout) + ' nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+                os.path.join(self.remote_log_dir, job_script),
+                os.path.join(self.remote_log_dir, remote_logs[0]),
+                os.path.join(self.remote_log_dir, remote_logs[1]),
+            )
         return command
 
 

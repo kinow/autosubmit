@@ -575,7 +575,7 @@ class JobPackageVertical(JobPackageThread):
                                                                                   len(self._jobs))
 
     def parse_time(self):
-        regex = re.compile(r'((?P<hours>\d+?):)?((?P<minutes>\d+?):)?(?P<seconds>\d+?)?')
+        regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
         parts = regex.match(self._wallclock)
         if not parts:
             return
