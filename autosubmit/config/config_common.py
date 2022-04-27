@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2015-2020 Earth Sciences Department, BSC-CNS
+# Copyright 2015-2022 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -31,7 +31,9 @@ from log.log import Log, AutosubmitError, AutosubmitCritical
 
 from autosubmit.config.basicConfig import BasicConfig
 from collections import defaultdict
-
+import collections
+import pathlib
+from pathlib import Path
 
 class AutosubmitConfig(object):
     """
@@ -46,21 +48,25 @@ class AutosubmitConfig(object):
         self.expid = expid
         self.basic_config = basic_config
         self.parser_factory = parser_factory
+        self.experiment_data = None
 
         self._conf_parser = None
-        self._conf_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf","autosubmit_" + expid + ".yml")
+        self._conf_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("autosubmit_" + expid + ".yml")
         self._exp_parser = None
-        self._exp_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
-                                             "expdef_" + expid + ".yml")
+        self._exp_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("expdef_" + expid + ".yml")
         self._platforms_parser = None
-        self._platforms_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
-                                                   "platforms_" + expid + ".yml")
+        self._platforms_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("platforms_" + expid + ".yml")
         self._jobs_parser = None
-        self._jobs_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
-                                              "jobs_" + expid + ".yml")
+        self._jobs_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("jobs_" + expid + ".yml")
         self._proj_parser = None
-        self._proj_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
-                                              "proj_" + expid + ".yml")
+        self._proj_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("proj_" + expid +".yml")
+        custom_folder_path = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf"
+        self._custom_parser_files = []
+        #todo convert rest of files to path
+        for f in custom_folder_path.rglob("*.yml"):
+            if not f == self._proj_parser_file and not f.samefile(self._jobs_parser_file) and not f.samefile(self._platforms_parser_file) and not f.samefile(self._exp_parser_file) and not f.samefile(self._conf_parser_file):
+                self._custom_parser_files.append(f)
+
         self.ignore_file_path = False
         self.wrong_config = defaultdict(list)
         self.warn_config = defaultdict(list)
@@ -150,14 +156,16 @@ class AutosubmitConfig(object):
         result["proj"] = get_data(
             self._proj_parser) if self._proj_parser else None
         return result
-    def get_wrapper_export(self,wrapper_section_name="wrapper"):
+
+    def get_wrapper_export(self,wrapper_name=[]):
         """
          Returns modules variable from wrapper
 
          :return: string
          :rtype: string
          """
-        return self._conf_parser.get_option(wrapper_section_name, 'EXPORT', 'none')
+        wrapper_section = ["WRAPPERS"].extend(wrapper_name)
+        return self.get_section(wrapper_section.extend('EXPORT'), 'none')
 
     def get_full_config_as_json(self):
         """
@@ -190,7 +198,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'WALLCLOCK', '02:00')
+        return self.get_section([["JOBS"]+section, 'WALLCLOCK'], '02:00')
 
 
     def get_export(self, section):
@@ -201,7 +209,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'EXPORT', "none")
+        return self.get_section([["JOBS"]+section, 'EXPORT'], None)
 
     def get_x11(self, section):
         """
@@ -211,7 +219,56 @@ class AutosubmitConfig(object):
         :return: false/true
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'X11', 'false')
+        return self.get_section(section, 'X11', 'false')
+
+    def deep_search(self,unified_config, new_dict):
+        """
+        Update a nested dictionary or similar mapping.
+        Modify ``source`` in place.
+        """
+        for key, val in new_dict.items():
+            if isinstance(val, collections.Mapping):
+                tmp = self.deep_update(unified_config.get(key, {}), val)
+                unified_config[key] = tmp
+            elif isinstance(val, list):
+                unified_config[key] = (unified_config.get(key, []) + val)
+            else:
+                unified_config[key] = new_dict[key]
+        return unified_config
+    def get_section(self, section, d_value="-", must_exists = False ):
+        """
+        Gets any section if it exists within the dictionary, else returns - or error if must exists.
+        :param section:
+        :type list
+        :param must_exists:
+        :type bool
+        :param d_value:
+        :type str
+        :return:
+        """
+        section = [ s.upper() for s in section ]
+        current_value = self.data
+        section_str = str(section[0])
+        # For text redeability
+        for section_str in section[:1]:
+            section_str += "." + str(section_str)
+        # Look for section
+        for section_level in section:
+            if current_value is not type(dict):
+                if must_exists:
+                    raise AutosubmitCritical("INDEX ERROR, {0} must exists.Check that subsection is really an subsedtion{1} exists.".format(section_str, str(section_level)), 7014)
+                else:
+                    current_value = d_value
+                    break
+            if section_level not in current_value:
+                if must_exists:
+                    raise AutosubmitCritical("{0} must exists. Check that subsection {1} exists.".format(section_str,str(section_level)), 7014)
+                return d_value
+            else:
+                current_value = current_value[section_level]
+
+        return current_value
+
 
     def get_wchunkinc(self, section):
         """
@@ -221,7 +278,7 @@ class AutosubmitConfig(object):
         :return: wallclock increase per chunk
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'WCHUNKINC', '')
+        return self.get_section(section, 'WCHUNKINC', '')
 
     def get_synchronize(self, section):
         """
@@ -231,7 +288,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'SYNCHRONIZE', '')
+        return self.get_section(section, 'SYNCHRONIZE', '')
 
     def get_processors(self, section):
         """
@@ -241,7 +298,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return str(self._jobs_parser.get_option(section, 'PROCESSORS', 1))
+        return str(self.get_section(section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
         """
@@ -251,7 +308,8 @@ class AutosubmitConfig(object):
         :return: threads needed
         :rtype: str
         """
-        return str(self._jobs_parser.get_option(section, 'THREADS', 1))
+
+        return str(self.get_section(section, 'THREADS', 1))
 
     def get_tasks(self, section):
         """
@@ -261,7 +319,7 @@ class AutosubmitConfig(object):
         :return: tasks (processes) per host
         :rtype: str
         """
-        return str(self._jobs_parser.get_option(section, 'TASKS', 0))
+        return str(self.get_section(section, 'TASKS', 0))
 
     def get_scratch_free_space(self, section):
         """
@@ -271,7 +329,7 @@ class AutosubmitConfig(object):
         :return: percentage of scratch free space needed
         :rtype: int
         """
-        return int(self._jobs_parser.get_option(section, 'SCRATCH_FREE_SPACE', 0))
+        return int(self.get_section(section, 'SCRATCH_FREE_SPACE', 0))
 
     def get_memory(self, section):
         """
@@ -281,7 +339,7 @@ class AutosubmitConfig(object):
         :return: memory needed
         :rtype: str
         """
-        return str(self._jobs_parser.get_option(section, 'MEMORY', ''))
+        return str(self.get_section(section, 'MEMORY', ''))
 
     def get_memory_per_task(self, section):
         """
@@ -291,7 +349,7 @@ class AutosubmitConfig(object):
         :return: memory per task needed
         :rtype: str
         """
-        return str(self._jobs_parser.get_option(section, 'MEMORY_PER_TASK', ''))
+        return str(self.get_section(section, 'MEMORY_PER_TASK', ''))
 
     def get_migrate_user_to(self, section):
         """
@@ -300,7 +358,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'USER_TO', '').lower()
+        return self.get_section(section, 'USER_TO', '').lower()
 
     def get_migrate_duplicate(self, section):
         """
@@ -309,7 +367,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'SAME_USER', 'false').lower()
+        return self.get_section(section, 'SAME_USER', 'false').lower()
 
     def get_current_user(self, section):
         """
@@ -318,7 +376,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'USER', '').lower()
+        return self.get_section(section, 'USER', '').lower()
 
     def get_current_host(self, section):
         """
@@ -327,7 +385,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'HOST', '')
+        return self.get_section(section, 'HOST', '')
 
     def get_current_project(self, section):
         """
@@ -336,7 +394,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'PROJECT', '')
+        return self.get_section(section, 'PROJECT', '')
 
     def set_new_user(self, section, new_user):
         """
@@ -404,7 +462,7 @@ class AutosubmitConfig(object):
         :return: migrate project to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'PROJECT_TO', '')
+        return self.get_section(section, 'PROJECT_TO', '')
 
     def get_migrate_host_to(self, section):
         """
@@ -413,7 +471,7 @@ class AutosubmitConfig(object):
         :return: host_to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'HOST_TO', "none")
+        return self.get_section(section, 'HOST_TO', "none")
 
     def set_new_project(self, section, new_project):
         """
@@ -452,7 +510,7 @@ class AutosubmitConfig(object):
         :return: custom directives needed
         :rtype: str
         """
-        return str(self._jobs_parser.get_option(section, 'CUSTOM_DIRECTIVES', ''))
+        return str(self.get_section(section, 'CUSTOM_DIRECTIVES', ''))
 
     def show_messages(self):
 
@@ -482,6 +540,50 @@ class AutosubmitConfig(object):
         else:
             return True
 
+    def deep_normalize(self,data):
+        """
+        normalize a nested dictionary or similar mapping to uppercase.
+        Modify ``source`` in place.
+        """
+        normalized_data =  dict()
+        for key, val in data.items():
+            normalized_data[key.upper()] = val
+            if isinstance(val, collections.Mapping):
+                normalized_value = self.deep_normalize(data.get(key, {}))
+                normalized_data[key.upper()] = normalized_value
+        return normalized_data
+
+    def deep_update(self,unified_config, new_dict):
+        """
+        Update a nested dictionary or similar mapping.
+        Modify ``source`` in place.
+        """
+        for key, val in new_dict.items():
+            if isinstance(val, collections.Mapping):
+                tmp = self.deep_update(unified_config.get(key, {}), val)
+                unified_config[key] = tmp
+            elif isinstance(val, list):
+                unified_config[key] = (unified_config.get(key, []) + val)
+            else:
+                unified_config[key] = new_dict[key]
+        return unified_config
+    def unify_conf(self, running_time= False):
+        self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
+        self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
+        self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
+        self._platforms_parser.data = self.deep_normalize(self._platforms_parser.data)
+        self.experiment_data = self.deep_update(self._conf_parser.data,self._exp_parser.data)
+        self.experiment_data = self.deep_update(self.experiment_data,self._jobs_parser.data)
+        self.experiment_data = self.deep_update(self.experiment_data,self._platforms_parser.data)
+        if self._proj_parser_file.exists():
+            self._proj_parser.data = self.deep_normalize(self._proj_parser.data)
+            self.experiment_data = self.deep_update(self.experiment_data,self._proj_parser.data)
+        for c_parser in self._custom_parser:
+            c_parser.data = self.deep_normalize(c_parser.data)
+            self.experiment_data = self.deep_update(self.experiment_data,c_parser.data)
+
+
+
     def check_conf_files(self, running_time=False):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
@@ -505,6 +607,7 @@ class AutosubmitConfig(object):
         except BaseException as e:
             raise AutosubmitCritical("Unknown issue while checking the configulation files (check_conf_files)",7040,str(e))
         # Annotates all errors found in the configuration files in dictionaries self.warn_config and self.wrong_config.
+        # TODO checks should be now a single function without rely on get_option methods
         self.check_expdef_conf()
         self.check_platforms_conf()
         self.check_jobs_conf()
@@ -568,8 +671,8 @@ class AutosubmitConfig(object):
         elif self.get_wrapper_type()[0]:
             self.check_wrapper_conf()
 
-        if self.get_notifications() == 'true':
-            for mail in self.get_mails_to():
+        if self.get_notifications() is True:
+            for mail in self.data["NOTIFICATIONS"]:
                 if not self.is_valid_mail_address(mail):
                     self.wrong_config["Autosubmit"] += [['mail',
                                                          "invalid e-mail"]]
@@ -834,6 +937,10 @@ class AutosubmitConfig(object):
                 self.parser_factory, self._jobs_parser_file)
             self._exp_parser = AutosubmitConfig.get_parser(
                 self.parser_factory, self._exp_parser_file)
+            self._custom_parser = []
+            for custom_file in self._custom_parser_files:
+                self._custom_parser.append(AutosubmitConfig.get_parser(
+                self.parser_factory, custom_file))
         except IOError as e:
             raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
         except Exception as e:
@@ -847,6 +954,7 @@ class AutosubmitConfig(object):
                     self.parser_factory, self._proj_parser_file)
         except IOError as e:
             raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
+        self.unify_conf()
 
     def load_parameters(self):
         """
@@ -968,7 +1076,7 @@ class AutosubmitConfig(object):
         :return: project type
         :rtype: str
         """
-        return self._exp_parser.get_option('project', 'PROJECT_TYPE', 'none').lower()
+        return self.get_section(["project", "project_type"],must_exists=True)
 
 
     def get_parse_two_step_start(self):
@@ -979,7 +1087,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
 
-        return self._exp_parser.get_option('experiment', 'TWO_STEP_START', '').lower()
+        return self.get_section('experiment', 'TWO_STEP_START', '').lower()
 
     def get_rerun_jobs(self):
         """
@@ -989,7 +1097,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
 
-        return self._exp_parser.get_option('rerun', 'RERUN_JOBLIST', '').lower()
+        return self.get_section('rerun', 'RERUN_JOBLIST', '').lower()
 
     def get_file_project_conf(self):
         """
@@ -1007,7 +1115,7 @@ class AutosubmitConfig(object):
         :return: path to project config file
         :rtype: str
         """
-        return self._exp_parser.get_option('project_files', 'FILE_JOBS_CONF', '')
+        return self.get_section('project_files', 'FILE_JOBS_CONF', '')
 
     def get_git_project_origin(self):
         """
@@ -1016,7 +1124,7 @@ class AutosubmitConfig(object):
         :return: git origin
         :rtype: str
         """
-        return self._exp_parser.get_option('git', 'PROJECT_ORIGIN', '')
+        return self.get_section('git', 'PROJECT_ORIGIN', '')
 
     def get_git_project_branch(self):
         """
@@ -1025,7 +1133,7 @@ class AutosubmitConfig(object):
         :return: git branch
         :rtype: str
         """
-        return self._exp_parser.get_option('git', 'PROJECT_BRANCH', 'master')
+        return self.get_section('git', 'PROJECT_BRANCH', 'master')
 
     def get_git_project_commit(self):
         """
@@ -1034,7 +1142,7 @@ class AutosubmitConfig(object):
         :return: git commit
         :rtype: str
         """
-        return self._exp_parser.get_option('git', 'PROJECT_COMMIT', None)
+        return self.get_section('git', 'PROJECT_COMMIT', None)
 
     def get_git_remote_project_root(self):
         """
@@ -1043,7 +1151,7 @@ class AutosubmitConfig(object):
         :return: git commit
         :rtype: str
         """
-        return self._exp_parser.get_option('git', 'REMOTE_CLONE_ROOT', '')
+        return self.get_section('git', 'REMOTE_CLONE_ROOT', '')
 
     def get_submodules_list(self):
         """
@@ -1052,7 +1160,7 @@ class AutosubmitConfig(object):
         :return: submodules to load
         :rtype: list
         """
-        return ' '.join(self._exp_parser.get_option('git', 'PROJECT_SUBMODULES', '').split()).split()
+        return ' '.join(self.get_section('git', 'PROJECT_SUBMODULES', '').split()).split()
 
     def get_fetch_single_branch(self):
         """
@@ -1061,7 +1169,7 @@ class AutosubmitConfig(object):
         :return: fetch_single_branch(Y/N)
         :rtype: boolean
         """
-        return self._exp_parser.get_option('git', 'FETCH_SINGLE_BRANCH', 'False').lower()
+        return self.get_section('git', 'FETCH_SINGLE_BRANCH', 'False').lower()
 
     def get_project_destination(self):
         """
@@ -1200,7 +1308,7 @@ class AutosubmitConfig(object):
         :return: initial chunk
         :rtype: int
         """
-        chunk_ini = self._exp_parser.get_option(
+        chunk_ini = self.get_section(
             'experiment', 'CHUNKINI', default)
         if chunk_ini == '':
             return default
@@ -1222,7 +1330,7 @@ class AutosubmitConfig(object):
         :return: Chunksize, 1 as default.
         :rtype: int
         """
-        chunk_size = self._exp_parser.get_option(
+        chunk_size = self.get_section(
             'experiment', 'CHUNKSIZE', default)
         if chunk_size == '':
             return default
@@ -1236,7 +1344,7 @@ class AutosubmitConfig(object):
         :rtype: list
         """
         member_list = list()
-        string = self._exp_parser.get('experiment', 'MEMBERS') if run_only == False else self._exp_parser.get_option(
+        string = self._exp_parser.get('experiment', 'MEMBERS') if run_only == False else self.get_section(
             'experiment', 'RUN_ONLY_MEMBERS', '')
         if not string.startswith("["):
             string = '[{0}]'.format(string)
@@ -1330,7 +1438,7 @@ class AutosubmitConfig(object):
         :return: version
         :rtype: str
         """
-        return self._conf_parser.get_option('config', 'AUTOSUBMIT_VERSION', 'None')
+        return self.get_section(['config', 'AUTOSUBMIT_VERSION'], 'None')
 
     def get_total_jobs(self):
         """
@@ -1348,7 +1456,7 @@ class AutosubmitConfig(object):
         :return: output type
         :rtype: string
         """
-        return self._conf_parser.get_option('config', 'OUTPUT', 'pdf')
+        return self.get_section(['config', 'OUTPUT'], 'pdf')
 
     def get_max_wallclock(self):
         """
@@ -1356,7 +1464,7 @@ class AutosubmitConfig(object):
 
         :rtype: str
         """
-        return self._conf_parser.get_option('config', 'MAX_WALLCLOCK', '')
+        return self.get_section(['config', 'MAX_WALLCLOCK'], '')
 
     def get_disable_recovery_threads(self, section):
         """
@@ -1364,7 +1472,7 @@ class AutosubmitConfig(object):
         :return: recovery_threads_option
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'DISABLE_RECOVERY_THREADS', 'FALSE').lower()
+        return self.get_section(section, 'DISABLE_RECOVERY_THREADS', 'FALSE').lower()
 
     def get_max_processors(self):
         """
@@ -1372,9 +1480,7 @@ class AutosubmitConfig(object):
 
         :rtype: str
         """
-        config_value = self._conf_parser.get_option(
-            'config', 'MAX_PROCESSORS', None)
-        return int(config_value) if config_value is not None else config_value
+        return  self.get_section(['config', 'MAX_PROCESSORS'], None)
 
     def get_max_waiting_jobs(self):
         """
@@ -1392,7 +1498,7 @@ class AutosubmitConfig(object):
         :return: default type such as bash, python, r..
         :rtype: str
         """
-        return self._exp_parser.get_option('project_files', 'JOB_SCRIPTS_TYPE', 'bash')
+        return self.get_section('project_files', 'JOB_SCRIPTS_TYPE', 'bash')
 
     def get_safetysleeptime(self):
         """
@@ -1401,7 +1507,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return int(self._conf_parser.get_option('config', 'SAFETYSLEEPTIME', 10))
+        return self.get_section(['config', 'SAFETYSLEEPTIME'], 10)
 
     def set_safetysleeptime(self, sleep_time):
         """
@@ -1430,7 +1536,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return self._conf_parser.get_option('config', 'DELAY_RETRY_TIME', "-1")
+        return self.get_section(['config', 'DELAY_RETRY_TIME'], -1)
 
     def get_notifications(self):
         """
@@ -1439,7 +1545,8 @@ class AutosubmitConfig(object):
         :return: if notifications
         :rtype: string
         """
-        return self._conf_parser.get_option('mail', 'NOTIFICATIONS', 'false').lower()
+        return self._conf_parser.check_exists('config', 'MAXWAITINGJOBS')
+
     def get_notifications_crash(self):
         """
         Returns if the user has enabled the notifications from autosubmit's config file
@@ -1447,7 +1554,7 @@ class AutosubmitConfig(object):
         :return: if notifications
         :rtype: string
         """
-        return self._conf_parser.get_option('mail', 'NOTIFY_ON_REMOTE_FAIL', 'true').lower()
+        return self.get_section(['mail', 'NOTIFY_ON_REMOTE_FAIL'], True)
     def get_remote_dependencies(self):
         """
         Returns if the user has enabled the PRESUBMISSION configuration parameter from autosubmit's config file
@@ -1455,12 +1562,8 @@ class AutosubmitConfig(object):
         :return: if remote dependencies
         :rtype: bool
         """
-        config_value = self._conf_parser.get_option(
-            'config', 'PRESUBMISSION', 'false').lower()
-        if config_value == "true":
-            return True
-        else:
-            return False
+        return self.get_section(['config', 'PRESUBMISSION'], False)
+
 
     def get_wrapper_type(self, wrapper_section_name="wrapper"):
         """
@@ -1476,14 +1579,15 @@ class AutosubmitConfig(object):
         else:
             return value1.lower(),value2
 
-    def get_wrapper_retrials(self, wrapper_section_name="wrapper"):
+    def get_wrapper_retrials(self, wrapper_section_name=[]):
         """
         Returns max number of retrials for job from autosubmit's config file
 
         :return: safety sleep time
         :rtype: int
         """
-        return self._conf_parser.get_option(wrapper_section_name, 'INNER_RETRIALS', 0)
+        #todo
+        return self.get_section(["WRAPPER"].extend(wrapper_section_name)+['INNER_RETRIALS'], 0)
     def get_wrapper_multi(self):
         """
         return the section name of the wrappers
@@ -1505,7 +1609,7 @@ class AutosubmitConfig(object):
         :return: wrapper type (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option(wrapper_section_name, 'POLICY', 'flexible').lower()
+        return self.get_section(wrapper_section_name, 'POLICY', 'flexible').lower()
 
     def get_wrapper_jobs(self,wrapper_section_name="wrapper"):
         """
@@ -1514,7 +1618,7 @@ class AutosubmitConfig(object):
         :return: expression (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option(wrapper_section_name, 'JOBS_IN_WRAPPER', 'None')
+        return self.get_section(wrapper_section_name, 'JOBS_IN_WRAPPER', 'None')
 
     def get_extensible_wallclock(self, wrapper_section_name="wrapper"):
         """
@@ -1524,7 +1628,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return int(self._conf_parser.get_option(wrapper_section_name, 'EXTEND_WALLCLOCK', 0))
+        return int(self.get_section(wrapper_section_name, 'EXTEND_WALLCLOCK', 0))
 
     def get_x11_jobs(self):
         """
@@ -1533,7 +1637,7 @@ class AutosubmitConfig(object):
         :return: expression (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option('config', 'X11_JOBS', 'None')
+        return self.get_section(['config', 'X11_JOBS'], None)
 
     def get_wrapper_queue(self,wrapper_section_name="wrapper"):
         """
@@ -1542,7 +1646,7 @@ class AutosubmitConfig(object):
         :return: expression (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option(wrapper_section_name, 'QUEUE', 'None')
+        return self.get_section(wrapper_section_name, 'QUEUE', 'None')
 
     def get_min_wrapped_jobs(self,wrapper_section_name="wrapper"):
         """
@@ -1551,7 +1655,7 @@ class AutosubmitConfig(object):
         :return: minim number of jobs (or total jobs)
         :rtype: int
         """
-        return int(self._conf_parser.get_option(wrapper_section_name, 'MIN_WRAPPED', 2))
+        return int(self.get_section(wrapper_section_name, 'MIN_WRAPPED', 2))
 
     def get_max_wrapped_jobs(self,wrapper_section_name="wrapper"):
         """
@@ -1560,7 +1664,7 @@ class AutosubmitConfig(object):
          :return: maximum number of jobs (or total jobs)
          :rtype: int
          """
-        return int(self._conf_parser.get_option(wrapper_section_name, 'MAX_WRAPPED', self.get_total_jobs()))
+        return int(self.get_section(wrapper_section_name, 'MAX_WRAPPED', self.get_total_jobs()))
 
     def get_max_wrapped_jobs_vertical(self, wrapper_section_name="wrapper"):
         """
@@ -1570,7 +1674,7 @@ class AutosubmitConfig(object):
          :rtype: int
          """
         max_wrapped = self.get_max_wrapped_jobs(wrapper_section_name)
-        return int(self._conf_parser.get_option(wrapper_section_name, 'MAX_WRAPPED_V', max_wrapped))
+        return int(self.get_section(wrapper_section_name, 'MAX_WRAPPED_V', max_wrapped))
 
     def get_max_wrapped_jobs_horizontal(self, wrapper_section_name="wrapper"):
         """
@@ -1580,7 +1684,7 @@ class AutosubmitConfig(object):
          :rtype: int
          """
         max_wrapped = self.get_max_wrapped_jobs(wrapper_section_name)
-        return int(self._conf_parser.get_option(wrapper_section_name, 'MAX_WRAPPED_H', max_wrapped))
+        return int(self.get_section(wrapper_section_name, 'MAX_WRAPPED_H', max_wrapped))
 
     def get_min_wrapped_jobs_vertical(self, wrapper_section_name="wrapper"):
         """
@@ -1589,7 +1693,7 @@ class AutosubmitConfig(object):
          :return: maximum number of jobs (or total jobs)
          :rtype: int
          """
-        return int(self._conf_parser.get_option(wrapper_section_name, 'MIN_WRAPPED_V', 1))
+        return int(self.get_section(wrapper_section_name, 'MIN_WRAPPED_V', 1))
 
     def get_min_wrapped_jobs_horizontal(self, wrapper_section_name="wrapper"):
         """
@@ -1598,7 +1702,7 @@ class AutosubmitConfig(object):
          :return: maximum number of jobs (or total jobs)
          :rtype: int
          """
-        return int(self._conf_parser.get_option(wrapper_section_name, 'MIN_WRAPPED_H', 1))
+        return int(self.get_section(wrapper_section_name, 'MIN_WRAPPED_H', 1))
 
     def get_wrapper_method(self,wrapper_section_name="wrapper"):
         """
@@ -1607,7 +1711,7 @@ class AutosubmitConfig(object):
          :return: method
          :rtype: string
          """
-        return self._conf_parser.get_option(wrapper_section_name, 'METHOD', 'ASThread')
+        return self.get_section(wrapper_section_name, 'METHOD', 'ASThread')
 
     def get_wrapper_check_time(self,wrapper_section_name="wrapper"):
         """
@@ -1616,7 +1720,7 @@ class AutosubmitConfig(object):
          :return: wrapper check time
          :rtype: int
          """
-        return int(self._conf_parser.get_option(wrapper_section_name, 'CHECK_TIME_WRAPPER', self.get_safetysleeptime()))
+        return int(self.get_section(wrapper_section_name, 'CHECK_TIME_WRAPPER', self.get_safetysleeptime()))
 
     def get_wrapper_machinefiles(self,wrapper_section_name="wrapper"):
         """
@@ -1625,7 +1729,7 @@ class AutosubmitConfig(object):
          :return: machinefiles function to use
          :rtype: string
          """
-        return self._conf_parser.get_option(wrapper_section_name, 'MACHINEFILES', '')
+        return self.get_section(wrapper_section_name, 'MACHINEFILES', '')
     def get_export(self, section):
         """
         Gets command line for being submitted with
@@ -1634,7 +1738,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'EXPORT', "none")
+        return self.get_section(section, 'EXPORT', "none")
 
     def get_jobs_sections(self):
         """
@@ -1652,7 +1756,7 @@ class AutosubmitConfig(object):
         :return: if logs local copy
         :rtype: bool
         """
-        return self._conf_parser.get_option('storage', 'COPY_REMOTE_LOGS', 'true').lower()
+        return self.get_section(['storage', 'COPY_REMOTE_LOGS'], True)
 
     def get_mails_to(self):
         """
@@ -1661,7 +1765,7 @@ class AutosubmitConfig(object):
         :return: mail address
         :rtype: [str]
         """
-        return [str(x) for x in self._conf_parser.get_option('mail', 'TO', '').split(' ')]
+        return  self.get_section(['mail', 'TO'], [])
 
     def get_communications_library(self):
         """
@@ -1670,16 +1774,16 @@ class AutosubmitConfig(object):
         :return: communications library
         :rtype: str
         """
-        return self._conf_parser.get_option('communications', 'API', 'paramiko').lower()
+        return self.get_section(['communications', 'API'], 'paramiko')
 
     def get_storage_type(self):
         """
-        Returns the communications library from autosubmit's config file. Paramiko by default.
+        Returns the storage system from autosubmit's config file. Pkl by default.
 
         :return: communications library
         :rtype: str
         """
-        return self._conf_parser.get_option('storage', 'TYPE', 'pkl').lower()
+        return self.get_section(['storage', 'TYPE'], 'pkl').lower()
 
     @staticmethod
     def is_valid_mail_address(mail_address):
@@ -1723,23 +1827,24 @@ class AutosubmitConfig(object):
 
         :param parser_factory:
         :param file_path: path to file to be parsed
-        :type file_path: str
+        :type file_path: Path
         :return: parser
         :rtype: YAMLParser
         """
         parser = parser_factory.create_parser()
         # For testing purposes
-        if file_path.find('/dummy/local/root/dir/a000/conf/') >= 0 or file_path.find('dummy/file/path') >= 0:
+        if file_path == Path('/dummy/local/root/dir/a000/conf/') or file_path == Path('dummy/file/path'):
             parser.data = parser.load(file_path)
 
             return parser
 
-        if file_path.find('proj_') > 0:
             # proj file might not be present
-            if not os.path.exists(file_path):
-                Log.warning(
-                    "{0} was not found. Some variables might be missing. If your experiment does not need a proj file, you can ignore this message.", file_path)
-            parser.data = parser.load(file_path)
+
+        if file_path.match("*proj*"):
+            if file_path.exists():
+                parser.data = parser.load(file_path)
+            else:
+                Log.warning( "{0} was not found. Some variables might be missing. If your experiment does not need a proj file, you can ignore this message.", file_path)
         else:
             # This block may rise an exception but all its callers handle it
             try:
