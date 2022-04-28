@@ -172,7 +172,7 @@ class JobList(object):
         :type num_chunks: int
         :param chunk_ini: the experiment will start by the given chunk
         :type chunk_ini: int
-        :param parameters: parameters for the jobs
+        :param parameters: experiment parameters
         :type parameters: dict
         :param date_format: option to format dates
         :type date_format: str
@@ -191,9 +191,8 @@ class JobList(object):
         chunk_list = list(range(chunk_ini, num_chunks + 1))
         self._chunk_list = chunk_list
 
-        jobs_parser = self._get_jobs_parser()
 
-        dic_jobs = DicJobs(self, jobs_parser, date_list, member_list,chunk_list, date_format, default_retrials)
+        dic_jobs = DicJobs(self,date_list, member_list,chunk_list, date_format, default_retrials)
         self._dic_jobs = dic_jobs
         priority = 0
         if show_log:
@@ -202,15 +201,6 @@ class JobList(object):
         jobs_data = dict()
         if not new:
             try:
-            #     for row in self.load():
-            #         row = list(row)
-            #         row_aux = []
-            #         for vpicklealue in row:
-            #             if type(value) is str:
-            #                 row_aux.append(value.encode(locale.getlocale()[1]))
-            #             else:
-            #                 row_aux.append(value)
-            #         jobs_data[row_aux[0]] = tuple(row_aux)
                 jobs_data = {row[0]: row for row in self.load()}
             except:
                 try:
@@ -223,11 +213,10 @@ class JobList(object):
                     if os.path.exists(os.path.join(self._persistence_path, self._persistence_file+"_backup.pkl")):
                         os.remove(os.path.join(self._persistence_path, self._persistence_file+"_backup.pkl"))
 
-        self._create_jobs(dic_jobs, jobs_parser, priority,
-                          default_job_type, jobs_data)
+        self._create_jobs(dic_jobs, priority,default_job_type, jobs_data)
         if show_log:
             Log.info("Adding dependencies...")
-        self._add_dependencies(date_list, member_list,chunk_list, dic_jobs, jobs_parser, self.graph)
+        self._add_dependencies(date_list, member_list,chunk_list, dic_jobs, self.graph)
 
         if show_log:
             Log.info("Removing redundant dependencies...")
@@ -268,8 +257,8 @@ class JobList(object):
 
 
     @staticmethod
-    def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, graph, option="DEPENDENCIES"):
-        for job_section in jobs_parser.sections():
+    def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_param, graph, option="DEPENDENCIES"):
+        for job_section in jobs_param.keys():
             Log.debug("Adding dependencies for {0} jobs".format(job_section))
             # If does not have dependencies, do nothing
             if not jobs_parser.has_option(job_section, option):
@@ -551,9 +540,9 @@ class JobList(object):
             pass
 
     @staticmethod
-    def _create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data=dict()):
-        for section in parser.sections():
-            Log.debug("Creating {0} jobs".format(section))
+    def _create_jobs(dic_jobs, priority, default_job_type, jobs_data=dict()):
+        for section in dic_jobs._jobs_data.keys():
+            Log.debug("Creating {0} jobs".format(section[0]))
             dic_jobs.read_section(section, priority, default_job_type, jobs_data)
             priority += 1
 

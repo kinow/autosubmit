@@ -43,15 +43,16 @@ class DicJobs:
 
     """
 
-    def __init__(self, jobs_list, parser, date_list, member_list, chunk_list, date_format, default_retrials):
+    def __init__(self, jobs_list, date_list, member_list, chunk_list, date_format, default_retrials):
         self._date_list = date_list
         self._jobs_list = jobs_list
         self._member_list = member_list
         self._chunk_list = chunk_list
-        self._parser = parser
+        self._jobs_data = jobs_list.parameters["JOBS"]
         self._date_format = date_format
         self.default_retrials = default_retrials
         self._dic = dict()
+
 
     def parse_relation(self, section,member=True, unparsed_option=[],called_from=""):
         """
@@ -137,26 +138,25 @@ class DicJobs:
         :type default_job_type: str
         :param jobs_data: dictionary containing the plain data from jobs
         :type jobs_data: dict
-        :param section: section to read
-        :type section: str
+        :param section: section to read and it's info
+        :type section: tuple(str,dict)
         :param priority: priority for the jobs
         :type priority: int
         """
-        running = 'once'
-        splits = int(self.get_option(section, "SPLITS", -1))
-        if self._parser.has_option(section, 'RUNNING'):
-            running = self._parser.get(section, 'RUNNING').lower()
-        frequency = int(self.get_option(section, "FREQUENCY", 1))
+
+        splits = self._jobs_data[section].get("SPLITS", -1)
+        running = self._jobs_data[section].get('RUNNING',"once").lower()
+        frequency = self._jobs_data[section].get("FREQUENCY", 1)
         if running == 'once':
             self._create_jobs_once(section, priority, default_job_type, jobs_data,splits)
         elif running == 'date':
             self._create_jobs_startdate(section, priority, frequency, default_job_type, jobs_data,splits)
         elif running == 'member':
-            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits,self.parse_relation(section,True,self.get_option(section, "EXCLUDED_MEMBERS", []),"EXCLUDED_MEMBERS"))
+            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits,self.parse_relation(section,True,self._jobs_data[section].get( "EXCLUDED_MEMBERS", []),"EXCLUDED_MEMBERS"))
         elif running == 'chunk':
-            synchronize = self.get_option(section, "SYNCHRONIZE", None)
-            delay = int(self.get_option(section, "DELAY", -1))
-            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data,excluded_chunks=self.parse_relation(section,False,self.get_option(section, "EXCLUDED_CHUNKS", []),"EXCLUDED_CHUNKS"),excluded_members=self.parse_relation(section,True,self.get_option(section, "EXCLUDED_MEMBERS", []),"EXCLUDED_MEMBERS"))
+            synchronize = self._jobs_data[section].get("SYNCHRONIZE", None)
+            delay = self._jobs_data[section].get("DELAY", -1)
+            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data,excluded_chunks=self.parse_relation(section,False,self._jobs_data[section].get( "EXCLUDED_CHUNKS", []),"EXCLUDED_CHUNKS"),excluded_members=self.parse_relation(section,True,self._jobs_data[section].get( "EXCLUDED_MEMBERS", []),"EXCLUDED_MEMBERS"))
         pass
 
     def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict(),splits=0):
@@ -448,12 +448,15 @@ class DicJobs:
         if split > -1:
             job.split = split
 
-        job.frequency = int(self.get_option(section, "FREQUENCY", 1))
-        job.delay = int(self.get_option(section, "DELAY", -1))
-        job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
-        job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
-        job_type = self.get_option(section, "TYPE", default_job_type).lower()
-        job.dependencies = self.get_option(section, "DEPENDENCIES", "").split()
+        job.frequency = self._jobs_data[section].get( "FREQUENCY", 1)
+        job.delay = self._jobs_data[section].get( "DELAY", -1)
+        job.wait = self._jobs_data[section].get( "WAIT", True)
+        job.rerun_only = self._jobs_data[section].get( "RERUN_ONLY", False)
+        job_type = self._jobs_data[section].get( "TYPE", default_job_type).lower()
+
+        job.dependencies = self._jobs_data[section].get( "DEPENDENCIES", [])
+        if type(job.dependencies) is not list:
+            job.dependencies = job.dependencies.split()
         if job_type == 'bash':
             job.type = Type.BASH
         elif job_type == 'python' or job_type == 'python2':
@@ -462,40 +465,30 @@ class DicJobs:
             job.type = Type.PYTHON3
         elif job_type == 'r':
             job.type = Type.R
-        job.executable = self.get_option(section, "EXECUTABLE", None)
-
-        job.platform_name = self.get_option(section, "PLATFORM", None)
-        if job.platform_name is not None:
-            job.platform_name = job.platform_name
-        job.file = self.get_option(section, "FILE", None)
-        job.queue = self.get_option(section, "QUEUE", None)
-        job.check = str(self.get_option(section, "CHECK", 'True')).lower()
-        job.export = str(self.get_option(section, "EXPORT", None))
-        job.processors = str(self.get_option(section, "PROCESSORS", 1))
-        job.threads = str(self.get_option(section, "THREADS", 1))
-        job.tasks = str(self.get_option(section, "TASKS", '0'))
-        job.memory = self.get_option(section, "MEMORY", '')
-        job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
-        job.wallclock = self.get_option(section, "WALLCLOCK", '')
-        job.retrials = int(self.get_option(section, 'RETRIALS', -1))
-        job.delay_retrials = str(self.get_option(section, 'DELAY_RETRY_TIME', "-1"))
+        job.executable = self._jobs_data[section].get( "EXECUTABLE", None)
+        job.platform_name = self._jobs_data[section].get( "PLATFORM", None)
+        job.file = self._jobs_data[section].get( "FILE", None)
+        job.queue = self._jobs_data[section].get( "QUEUE", None)
+        job.check = self._jobs_data[section].get( "CHECK", True)
+        job.export = self._jobs_data[section].get( "EXPORT", None)
+        job.processors = self._jobs_data[section].get( "PROCESSORS", 1)
+        job.threads = self._jobs_data[section].get( "THREADS", 1)
+        job.tasks = self._jobs_data[section].get( "TASKS", 0)
+        job.memory = self._jobs_data[section].get("MEMORY", '')
+        job.memory_per_task = self._jobs_data[section].get("MEMORY_PER_TASK", '')
+        job.wallclock = self._jobs_data[section].get("WALLCLOCK", '')
+        job.retrials = self._jobs_data[section].get( 'RETRIALS', -1)
+        job.delay_retrials = self._jobs_data[section].get( 'DELAY_RETRY_TIME', -1)
         if job.retrials == -1:
             job.retrials = None
-        job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
-        job.synchronize = self.get_option(section, "SYNCHRONIZE", None)
-        job.check_warnings = str(self.get_option(section, "SHOW_CHECK_WARNINGS", 'false')).lower()
-        job.running = self.get_option(section, 'RUNNING', 'once').lower()
-        job.x11 = bool(self.get_option(section, 'X11', False ))
-
-        if self.get_option(section, "SKIPPABLE", "False").lower() == "true":
-            job.skippable = True
-        else:
-            job.skippable = False
-        if job.check_warnings == 'true':
-            job.check_warnings = True
-        else:
-            job.check_warnings = False
-
+        notify_on = self._jobs_data[section].get("NOTIFY_ON",[])
+        if type(notify_on) == str:
+            job.notify_on = [x.upper() for x in notify_on.split(' ')]
+        job.synchronize = self._jobs_data[section].get( "SYNCHRONIZE", None)
+        job.check_warnings = self._jobs_data[section].get("SHOW_CHECK_WARNINGS", False)
+        job.running = self._jobs_data[section].get( 'RUNNING', 'once')
+        job.x11 = self._jobs_data[section].get( 'X11', False )
+        job.skippable = self._jobs_data[section].get( "SKIPPABLE", False)
         self._jobs_list.get_job_list().append(job)
 
         return job

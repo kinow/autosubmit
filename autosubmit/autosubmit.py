@@ -4146,7 +4146,7 @@ class Autosubmit:
                             wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
                     wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs("wrapper")
 
-                    job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
+                    job_list.generate(as_conf.experiment_data["JOBS"],date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
                                       as_conf.get_default_job_type(),
                                       as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive, update_structure=True, run_only_members=run_only_members)
@@ -5346,15 +5346,16 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
+        #TODO
         wrapper_jobs = dict()
-        wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs()
-        if as_conf.get_wrapper_type() == "multi":
-            for wrapper_section in as_conf.get_wrapper_multi():
-                wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
+        # wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs()
+        # if as_conf.get_wrapper_type() == "multi":
+        #     for wrapper_section in as_conf.get_wrapper_multi():
+        #         wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
 
 
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
-                          as_conf.load_parameters(), date_format, as_conf.get_retrials(),
+                          as_conf.experiment_data, date_format, as_conf.get_retrials(),
                           as_conf.get_default_job_type(), as_conf.get_wrapper_type(), wrapper_jobs,
                           new=False, notransitive=notransitive, run_only_members=run_only_members)
         if rerun == "true":
