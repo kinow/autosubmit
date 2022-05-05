@@ -158,7 +158,7 @@ class JobList(object):
                 self._ordered_jobs_by_date_member[wrapper_section] = {}
         pass
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True,conf=None):
+                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True,jobs_data={}):
         """
         Creates all jobs needed for the current workflow
 
@@ -192,7 +192,7 @@ class JobList(object):
         self._chunk_list = chunk_list
 
 
-        dic_jobs = DicJobs(self,date_list, member_list,chunk_list, date_format, default_retrials)
+        dic_jobs = DicJobs(self,date_list, member_list,chunk_list, date_format, default_retrials,jobs_data)
         self._dic_jobs = dic_jobs
         priority = 0
         if show_log:
@@ -247,7 +247,7 @@ class JobList(object):
         # Perhaps this should be done by default independent of the wrapper_type supplied
         try:
             for wrapper_section in wrapper_jobs:
-                if wrapper_jobs[wrapper_section] != 'None':
+                if wrapper_jobs[wrapper_section] != 'None' and wrapper_jobs[wrapper_section] is not None:
                     self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
                 else:
                     self._ordered_jobs_by_date_member[wrapper_section] = {}
@@ -257,14 +257,17 @@ class JobList(object):
 
 
     @staticmethod
-    def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_param, graph, option="DEPENDENCIES"):
-        for job_section in jobs_param.keys():
+    def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, graph, option="DEPENDENCIES"):
+        jobs_data = dic_jobs._jobs_data["JOBS"]
+        for job_section in jobs_data.keys():
             Log.debug("Adding dependencies for {0} jobs".format(job_section))
             # If does not have dependencies, do nothing
-            if not jobs_parser.has_option(job_section, option):
+            if not (job_section, option):
                 continue
 
-            dependencies_keys = jobs_parser.get(job_section, option).split()
+            dependencies_keys = jobs_data[job_section].get(option,"")
+            if type(dependencies_keys) is str:
+                dependencies_keys = dependencies_keys.split()
             dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs, job_section)
 
             for job in dic_jobs.get_jobs(job_section):
@@ -275,12 +278,12 @@ class JobList(object):
                     _job = job[i] if num_jobs > 1 else job
                     JobList._manage_job_dependencies(dic_jobs, _job, date_list, member_list, chunk_list, dependencies_keys,
                                                      dependencies, graph)
-            test = ""
         pass
 
 
     @staticmethod
     def _manage_dependencies(dependencies_keys, dic_jobs, job_section):
+        parameters = dic_jobs._jobs_data["JOBS"]
         dependencies = dict()
         for key in dependencies_keys:
             distance = None
@@ -312,10 +315,9 @@ class JobList(object):
                     section, splits_section)
                 section = section_name
 
-            dependency_running_type = dic_jobs.get_option(
-                section, 'RUNNING', 'once').lower()
-            delay = int(dic_jobs.get_option(section, 'DELAY', -1))
-            select_chunks_opt = dic_jobs.get_option(job_section, 'SELECT_CHUNKS', None)
+            dependency_running_type = parameters[section].get('RUNNING', 'once').lower()
+            delay = int(parameters[section].get('DELAY', -1))
+            select_chunks_opt = parameters[job_section].get( 'SELECT_CHUNKS', None)
             selected_chunks = []
             if select_chunks_opt is not None:
                 if '*' in select_chunks_opt:
@@ -329,7 +331,7 @@ class JobList(object):
                             selected_chunks.append(auxiliar_relation_list)
                 else:
                     raise AutosubmitCritical("Wrong syntax for select_chunks. The correct Syntax is:Dependency_KEY*[#chunk_number,#chunk_number...] Dependency_Key...",7011)
-            select_member_opt = dic_jobs.get_option(job_section, 'SELECT_MEMBERS', None)
+            select_member_opt = parameters[job_section].get('SELECT_MEMBERS', None)
             selected_member = []
             if select_member_opt is not None:
                 if '*' in select_member_opt:
@@ -541,8 +543,8 @@ class JobList(object):
 
     @staticmethod
     def _create_jobs(dic_jobs, priority, default_job_type, jobs_data=dict()):
-        for section in dic_jobs._jobs_data.keys():
-            Log.debug("Creating {0} jobs".format(section[0]))
+        for section in dic_jobs._jobs_data["JOBS"].keys():
+            Log.debug("Creating {0} jobs".format(section))
             dic_jobs.read_section(section, priority, default_job_type, jobs_data)
             priority += 1
 
@@ -575,7 +577,7 @@ class JobList(object):
         wrapper_jobs_reverse = wrapper_jobs.split(char)
         for section in wrapper_jobs_reverse:
             # RUNNING = once, as default. This value comes from jobs_.yml
-            sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", 'once')
+            sections_running_type_map[section] = self._dic_jobs._get_option(section, "RUNNING", 'once')
 
         # Select only relevant jobs, those belonging to the sections defined in the wrapper
 

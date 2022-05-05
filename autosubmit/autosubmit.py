@@ -54,7 +54,6 @@ from .job.job_utils import SubJob, SubJobManager
 from .job.job import Job
 from .git.autosubmit_git import AutosubmitGit
 from .job.job_common import Status
-from .config.config_parser import ConfigParserFactory
 from .config.config_common import AutosubmitConfig
 from .config.basicConfig import BasicConfig
 import locale
@@ -62,10 +61,10 @@ from distutils.util import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from typing import Set
 
-try:
-    import dialog
-except Exception:
-    dialog = None
+#try:
+#    import pythondialog as dialog
+#except Exception:
+dialog = None
 from time import sleep
 import argparse
 import subprocess
@@ -4146,10 +4145,10 @@ class Autosubmit:
                             wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
                     wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs("wrapper")
 
-                    job_list.generate(as_conf.experiment_data["JOBS"],date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
+                    job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
                                       as_conf.get_default_job_type(),
-                                      as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive, update_structure=True, run_only_members=run_only_members)
+                                      as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive, update_structure=True, run_only_members=run_only_members,jobs_data= as_conf.experiment_data)
 
                     if rerun == "true":
                         job_list.rerun(as_conf.get_rerun_jobs())
@@ -5357,7 +5356,7 @@ class Autosubmit:
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.experiment_data, date_format, as_conf.get_retrials(),
                           as_conf.get_default_job_type(), as_conf.get_wrapper_type(), wrapper_jobs,
-                          new=False, notransitive=notransitive, run_only_members=run_only_members)
+                          new=False, notransitive=notransitive, run_only_members=run_only_members,jobs_data=as_conf.experiment_data)
         if rerun == "true":
             rerun_jobs  = as_conf.get_rerun_jobs()
             job_list.rerun(rerun_jobs,monitor=monitor)
