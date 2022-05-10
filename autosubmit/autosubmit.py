@@ -1148,10 +1148,10 @@ class Autosubmit:
             # Call method from platform.py parent object
             platform.add_parameters(parameters)
         # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
-        if as_conf.get_platform().lower() not in platforms.keys():
+        if as_conf.get_platform() not in platforms.keys():
             Log.warning("Main platform is not defined in platforms.yml")
         else:
-            platform = platforms[as_conf.get_platform().lower()]
+            platform = platforms[as_conf.get_platform()]
             platform.add_parameters(parameters, True)
         # Attach paramenters to JobList
         job_list.parameters = parameters
@@ -1825,14 +1825,14 @@ class Autosubmit:
                                 for job in job_list.get_job_list():
                                     if job.platform_name is None or job.platform_name == "":
                                         job.platform_name = hpcarch
-                                    job.platform = submitter.platforms[job.platform_name.lower()]
+                                    job.platform = submitter.platforms[job.platform_name]
                                     platforms_to_test.add(job.platform)
                                 #Recover job_list while keeping job.fail_count
                                 failed_names = {}
                                 for job in job_list.get_job_list():
                                     if job.platform_name is None or job.platform_name == "":
                                         job.platform_name = hpcarch
-                                    job.platform = submitter.platforms[job.platform_name.lower()]
+                                    job.platform = submitter.platforms[job.platform_name]
                                     platforms_to_test.add(job.platform)
                                     if job.fail_count > 0:
                                         failed_names[job.name] = job.fail_count
@@ -1841,7 +1841,7 @@ class Autosubmit:
                                         job.fail_count = failed_names[job.name]
                                     if job.platform_name is None or job.platform_name == "":
                                         job.platform_name = hpcarch
-                                    job.platform = submitter.platforms[job.platform_name.lower()]
+                                    job.platform = submitter.platforms[job.platform_name]
                                 Log.info("Recovering parameters...")
                                 Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                                 # Recovery wrapper [Packages]

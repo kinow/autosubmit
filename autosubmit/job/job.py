@@ -50,6 +50,7 @@ from log.log import Log, AutosubmitCritical, AutosubmitError
 from typing import List, Union
 from functools import reduce
 Log.get_logger("Autosubmit")
+from ..config.yaml_parser import YAMLParserFactory
 
 # A wrapper for encapsulate threads , TODO: Python 3+ to be replaced by the < from concurrent.futures >
 
@@ -618,7 +619,7 @@ class Job(object):
             as_conf.reload()
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
-            platform = submitter.platforms[platform_name.lower()]
+            platform = submitter.platforms[platform_name]
             try:
                 platform.test_connection()
             except:
@@ -833,7 +834,7 @@ class Job(object):
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             # New thread, check if file exist
             expid = copy.deepcopy(self.expid)
-            platform_name = copy.deepcopy(self.platform_name.lower())
+            platform_name = copy.deepcopy(self.platform_name)
             local_logs = copy.deepcopy(self.local_logs)
             remote_logs = copy.deepcopy(self.remote_logs)
             as_conf = AutosubmitConfig(

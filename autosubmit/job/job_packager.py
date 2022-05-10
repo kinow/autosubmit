@@ -164,7 +164,7 @@ class JobPackager(object):
         jobs_ready = list()
         if len(self._jobs_list.jobs_to_run_first) > 0:
             jobs_ready = [job for job in self._jobs_list.jobs_to_run_first if
-                     ( self._platform is None or job.platform.name.lower() == self._platform.name.lower() ) and
+                     ( self._platform is None or job.platform.name == self._platform.name) and
                      job.status == Status.READY]
         if len(jobs_ready) == 0:
             if self.hold:

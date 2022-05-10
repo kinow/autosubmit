@@ -80,7 +80,7 @@ class ParamikoSubmitter(Submitter):
         # Traverse jobs defined in jobs_.conf and add platforms found if not already included
         jobs_data = exp_data['JOBS']
         for job in jobs_data:
-            hpc = jobs_data[job].get('PLATFORM', hpcarch).lower()
+            hpc = jobs_data[job].get('PLATFORM', hpcarch).upper()
             if hpc not in platforms_used:
                 platforms_used.append(hpc)
 
@@ -116,22 +116,22 @@ class ParamikoSubmitter(Submitter):
             try:
                 if platform_type == 'pbs':
                     remote_platform = PBSPlatform(
-                        asconf.expid, section.lower(), BasicConfig, platform_version)
+                        asconf.expid, section, BasicConfig, platform_version)
                 elif platform_type == 'sge':
                     remote_platform = SgePlatform(
-                        asconf.expid, section.lower(), BasicConfig)
+                        asconf.expid, section, BasicConfig)
                 elif platform_type == 'ps':
                     remote_platform = PsPlatform(
-                        asconf.expid, section.lower(), BasicConfig)
+                        asconf.expid, section, BasicConfig)
                 elif platform_type == 'lsf':
                     remote_platform = LsfPlatform(
-                        asconf.expid, section.lower(), BasicConfig)
+                        asconf.expid, section, BasicConfig)
                 elif platform_type == 'ecaccess':
                     remote_platform = EcPlatform(
-                        asconf.expid, section.lower(), BasicConfig, platform_version)
+                        asconf.expid, section, BasicConfig, platform_version)
                 elif platform_type == 'slurm':
                     remote_platform = SlurmPlatform(
-                        asconf.expid, section.lower(), BasicConfig)
+                        asconf.expid, section, BasicConfig)
                 else:
                     raise Exception(
                         "Queue type not specified on platform {0}".format(section))

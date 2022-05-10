@@ -664,7 +664,7 @@ class AutosubmitConfig(object):
         """
         parser_data = self._platforms_parser.data["PLATFORMS"]
         main_platform_found = False
-        if self.hpcarch.lower() == "local":
+        if self.hpcarch == "LOCAL":
             main_platform_found = True
         elif self.ignore_undefined_platforms:
             main_platform_found = True
@@ -972,9 +972,9 @@ class AutosubmitConfig(object):
             else:
                 job_list_by_section[job.section].append(job)
             try:
-                job.platform = submitter.platforms[job.platform_name.lower()]
+                job.platform = submitter.platforms[job.platform_name]
             except:
-                job.platform = submitter.platforms["local"]
+                job.platform = submitter.platforms["LOCAL"]
 
         for section in list(job_list_by_section.keys()):
             job_list_by_section[section][0].update_parameters(
@@ -1500,6 +1500,14 @@ class AutosubmitConfig(object):
         """
         return self.get_section(['config', 'DELAY_RETRY_TIME'], -1)
 
+    def get_notifications(self):
+        """
+        Returns if the user has enabled the notifications from autosubmit's config file
+
+        :return: if notifications
+        :rtype: string
+        """
+        return self.get_section(['MAIL', 'NOTIFICATIONS'], False)
 
     def get_notifications_crash(self):
         """
