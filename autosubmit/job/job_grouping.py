@@ -218,7 +218,7 @@ class JobGrouping(object):
                             group_name = date2str(date, self.date_format)
                     else:
                         groups.append(group_name)
-            elif job.member is None:
+            elif job.member is None :
                 synchronized = True
                 if self.group_by == 'date':
                     groups.append(date2str(job.date, self.date_format))

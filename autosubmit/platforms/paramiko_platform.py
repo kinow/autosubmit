@@ -402,7 +402,7 @@ class ParamikoPlatform(Platform):
         :return: job id for the submitted job
         :rtype: int
         """
-        if job is None:
+        if job is None or not job:
             x11 = False
         else:
             x11 = job.x11
@@ -718,7 +718,7 @@ class ParamikoPlatform(Platform):
                 chan = self.transport.open_session()
                 if x11:
                     display = os.getenv('DISPLAY')
-                    if display is None:
+                    if display is None or not display:
                         display = "localhost:0"
                     self.local_x11_display = xlib_connect.get_display(display)
                     chan.request_x11(handler=self.x11_handler)
@@ -917,7 +917,7 @@ class ParamikoPlatform(Platform):
         #Log.debug('Output {0}', self._ssh_output)
 
         #Log.debug('Output {0}', self._ssh_output)
-        if self._ssh_output is None:
+        if self._ssh_output is None or not self._ssh_output:
             self._ssh_output = ""
         return self._ssh_output
 

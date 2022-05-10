@@ -350,7 +350,7 @@ class SlurmPlatform(ParamikoPlatform):
             export = ""
         else:
             export += " ; "
-        if job is None:
+        if job is None or not job:
             x11 = False
         else:
             x11 = job.x11

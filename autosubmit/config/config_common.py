@@ -48,7 +48,7 @@ class AutosubmitConfig(object):
         self.expid = expid
         self.basic_config = basic_config
         self.parser_factory = parser_factory
-        self.experiment_data = None
+        self.experiment_data = {}
 
         self._conf_parser = None
         self._conf_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("autosubmit_" + expid + ".yml")
@@ -146,7 +146,7 @@ class AutosubmitConfig(object):
          :return: string
          :rtype: string
          """
-        return self.get_section([wrapper_section,'EXPORT'], None)
+        return self.get_section([wrapper_section,'EXPORT'], "")
 
     def get_full_config_as_json(self):
         """
@@ -190,7 +190,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self.get_section([section, 'EXPORT'], None)
+        return self.get_section([section, 'EXPORT'], "")
 
     def get_x11(self, section):
         """
@@ -202,7 +202,7 @@ class AutosubmitConfig(object):
         """
         return self.get_section([section, 'X11'], False)
 
-    def get_section(self, section, d_value=None, must_exists = False ):
+    def get_section(self, section, d_value="", must_exists = False ):
         """
         Gets any section if it exists within the dictionary, else returns None or error if must exists.
         :param section:
@@ -218,7 +218,7 @@ class AutosubmitConfig(object):
         section_str = str(section[0])
         for sect in section[1:]:
             section_str += "." + str(sect)
-        current_level=self.experiment_data.get(section[0],None)
+        current_level=self.experiment_data.get(section[0],"")
         for param in section[1:]:
             if current_level:
                 if type(current_level) is dict:
@@ -246,7 +246,7 @@ class AutosubmitConfig(object):
         :return: wallclock increase per chunk
         :rtype: str
         """
-        return self.get_section([section, 'WCHUNKINC'], None)
+        return self.get_section([section, 'WCHUNKINC'], "")
 
     def get_synchronize(self, section):
         """
@@ -256,7 +256,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self.get_section([section, 'SYNCHRONIZE'], None)
+        return self.get_section([section, 'SYNCHRONIZE'], "")
 
     def get_processors(self, section):
         """
@@ -307,7 +307,7 @@ class AutosubmitConfig(object):
         :return: memory needed
         :rtype: str
         """
-        return str(self.get_section([section, 'MEMORY'], None))
+        return str(self.get_section([section, 'MEMORY'], ""))
 
     def get_memory_per_task(self, section):
         """
@@ -317,7 +317,7 @@ class AutosubmitConfig(object):
         :return: memory per task needed
         :rtype: str
         """
-        return str(self.get_section([section, 'MEMORY_PER_TASK'], None))
+        return str(self.get_section([section, 'MEMORY_PER_TASK'], ""))
 
     def get_migrate_user_to(self, section):
         """
@@ -326,7 +326,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self.get_section([section, 'USER_TO'], None)
+        return self.get_section([section, 'USER_TO'], "")
 
     def get_migrate_duplicate(self, section):
         """
@@ -344,7 +344,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self.get_section([section, 'USER'], None)
+        return self.get_section([section, 'USER'], "")
 
     def get_current_host(self, section):
         """
@@ -353,7 +353,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self.get_section([section, 'HOST'], None)
+        return self.get_section([section, 'HOST'], "")
 
     def get_current_project(self, section):
         """
@@ -362,7 +362,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self.get_section([section, 'PROJECT'], None)
+        return self.get_section([section, 'PROJECT'], "")
 
     def set_new_user(self, section, new_user):
         """
@@ -430,7 +430,7 @@ class AutosubmitConfig(object):
         :return: migrate project to
         :rtype: str
         """
-        return self.get_section([section, 'PROJECT_TO'], None)
+        return self.get_section([section, 'PROJECT_TO'], "")
 
     def get_migrate_host_to(self, section):
         """
@@ -439,7 +439,7 @@ class AutosubmitConfig(object):
         :return: host_to
         :rtype: str
         """
-        return self.get_section([section, 'HOST_TO'], None)
+        return self.get_section([section, 'HOST_TO'], "")
 
     def set_new_project(self, section, new_project):
         """
@@ -478,7 +478,7 @@ class AutosubmitConfig(object):
         :return: custom directives needed
         :rtype: str
         """
-        return str(self.get_section([section, 'CUSTOM_DIRECTIVES'], None))
+        return str(self.get_section([section, 'CUSTOM_DIRECTIVES'],""))
 
     def show_messages(self):
 
@@ -535,11 +535,13 @@ class AutosubmitConfig(object):
             else:
                 unified_config[key] = new_dict[key]
         return unified_config
+
     def unify_conf(self, running_time= False):
         self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
         self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
         self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
         self._platforms_parser.data = self.deep_normalize(self._platforms_parser.data)
+        self.experiment_data = dict()
         self.experiment_data = self.deep_update(self._conf_parser.data,self._exp_parser.data)
         self.experiment_data = self.deep_update(self.experiment_data,self._jobs_parser.data)
         self.experiment_data = self.deep_update(self.experiment_data,self._platforms_parser.data)
@@ -549,6 +551,7 @@ class AutosubmitConfig(object):
         for c_parser in self._custom_parser:
             c_parser.data = self.deep_normalize(c_parser.data)
             self.experiment_data = self.deep_update(self.experiment_data,c_parser.data)
+
 
     def check_mandatory_conf_files(self):
         self.check_expdef_conf()
@@ -607,46 +610,41 @@ class AutosubmitConfig(object):
         :return: True if everything is correct, False if it founds any error
         :rtype: bool
         """
-        if not self._conf_parser.check_exists('config', 'AUTOSUBMIT_VERSION'):
+        parser_data = self._conf_parser.data
+        if parser_data["CONFIG"].get('AUTOSUBMIT_VERSION',-1.1) == -1.1:
             self.wrong_config["Autosubmit"] += [['config',
                                                  "AUTOSUBMIT_VERSION parameter not found"]]
-        if not self._conf_parser.check_exists('config', 'MAXWAITINGJOBS')[1] == type(int):
+        if parser_data["CONFIG"].get('MAXWAITINGJOBS',-1) == -1:
             self.wrong_config["Autosubmit"] += [['config',
                                                  "MAXWAITINGJOBS parameter not found or non-integer"]]
-        if not self._conf_parser.check_exists('config', 'TOTALJOBS')[1] == type(int):
+        if parser_data["CONFIG"].get('TOTALJOBS',-1) == -1:
             self.wrong_config["Autosubmit"] += [['config',
                                                  "TOTALJOBS parameter not found or non-integer"]]
-        if not self._conf_parser.check_exists('config', 'SAFETYSLEEPTIME')[1] == type(int):
+        if parser_data["CONFIG"].get('SAFETYSLEEPTIME',-1) == -1:
             self.set_safetysleeptime(10)
-            # self.wrong_config["Autosubmit"] += [['config',
-            #                                     "SAFETYSLEEPTIME parameter not found or non-integer"]]
-        if not self._conf_parser.check_exists('config', 'RETRIALS')[1] == type(int):
+        if type(parser_data["CONFIG"].get('RETRIALS',0)) != int:
             self.wrong_config["Autosubmit"] += [['config',
                                                  "RETRIALS parameter not found or non-integer"]]
-        if not self._conf_parser.check_exists('mail', 'NOTIFICATIONS')[1] == type(bool):
-            self.wrong_config["Autosubmit"] += [['mail',
-                                                 "NOTIFICATIONS parameter not found or non-boolean"]]
-        if self._conf_parser.check_is_choice('storage', 'TYPE', False, ['pkl', 'db']):
+
+        if parser_data["STORAGE"].get('TYPE',"pkl") not in ['pkl', 'db']:
             self.wrong_config["Autosubmit"] += [['storage',
                                                  "TYPE parameter not found"]]
 
-        wrappers_info=self.get_wrapper()
-        #TODO
+        wrappers_info = parser_data.get("WRAPPERS","")
         if wrappers_info:
             #Check global configuration
             multi_wrappers = list()
             for wrapper_key, val in wrappers_info.items():
                 if isinstance(val, collections.Mapping):
-                    multi_wrappers.append(["wrappers"]+wrapper_key)
+                    multi_wrappers.append(["WRAPPERS"]+wrapper_key)
             if len(multi_wrappers) > 0:
                 for wrapper in multi_wrappers:
                     self.check_wrapper_conf(wrapper)
             else:
-                self.check_wrapper_conf(["wrappers"])
-
-
-        if self.get_notifications() is True:
-            for mail in self.data["NOTIFICATIONS"]:
+                self.check_wrapper_conf(["WRAPPERS"])
+        if parser_data["MAIL"].get("NOTIFICATIONS", False):
+            mails = parser_data["MAIL"].get("TO","").split(" ",',') if type(parser_data["MAIL"].get("TO","")) == str else parser_data["MAIL"].get("TO",[])
+            for mail in mails:
                 if not self.is_valid_mail_address(mail):
                     self.wrong_config["Autosubmit"] += [['mail',
                                                          "invalid e-mail"]]
@@ -664,34 +662,32 @@ class AutosubmitConfig(object):
         """
         Checks experiment's queues configuration file.
         """
+        parser_data = self._platforms_parser.data["PLATFORMS"]
         main_platform_found = False
         if self.hpcarch.lower() == "local":
             main_platform_found = True
         elif self.ignore_undefined_platforms:
             main_platform_found = True
-        for section in self._platforms_parser.data:
-            section_data = self._platforms_parser.data[section]
+        for section in parser_data:
+            section_data = parser_data[section]
             if section == self.hpcarch:
                 main_platform_found = True
-                platform_type = section_data.get('TYPE', None)
-                if not platform_type and type(platform_type) is not str:
+                platform_type = section_data.get('TYPE', "")
+                if not platform_type:
                     self.wrong_config["Platform"] += [[section,"Mandatory TYPE parameter not found"]]
                 else:
                     platform_type = platform_type.lower()
                 if platform_type != 'ps':
-                    if not section_data.get('PROJECT', None):
+                    if not section_data.get('PROJECT', ""):
                         self.wrong_config["Platform"] += [[section,"Mandatory PROJECT parameter not found"]]
-                    if not section_data.get('USER',None):
+                    if not section_data.get('USER',""):
                         self.wrong_config["Platform"] += [[section,
                                                            "Mandatory USER parameter not found"]]
-            if not section_data.get('HOST',None):
+            if not section_data.get('HOST',""):
                 self.wrong_config["Platform"] += [[section,"Mandatory HOST parameter not found"]]
-            if not section_data.get('SCRATCH_DIR',None):
+            if not section_data.get('SCRATCH_DIR',""):
                 self.wrong_config["Platform"] += [[section,
                                                    "Mandatory SCRATCH_DIR parameter not found"]]
-            if not type(section_data.get('ADD_PROJECT_TO_HOST',None)) == type(bool):
-                self.wrong_config["Platform"] += [
-                    [section, "Mandatory ADD_PROJECT_TO_HOST parameter not found or non-boolean"]]
         if not main_platform_found:
             self.wrong_config["Expdef"] += [["Default","Main platform is not defined! check if [HPCARCH = {0}] has any typo".format(self.hpcarch)]]
         if "Platform" not in self.wrong_config:
@@ -710,17 +706,18 @@ class AutosubmitConfig(object):
         parser = self._jobs_parser
         platforms = self._platforms_parser.data
         for section in parser.data["JOBS"]:
-            if not parser.check_exists(section, 'FILE'):
+            section_data=parser.data["JOBS"][section]
+            section_file_path = section_data.get('FILE',"")
+            if not section_file_path:
                 self.wrong_config["Jobs"] += [[section,
                                                "Mandatory FILE parameter not found"]]
             else:
-                section_file_path = parser.check_exists(section, 'FILE')
                 try:
                     if self.ignore_file_path:
                         if not os.path.exists(os.path.join(self.get_project_dir(), section_file_path)):
-                            check_value = parser.check_exists(section, 'CHECK')
-                            if check_value:
-                                if check_value.lower() in "on_submission":
+                            check_value = str(section_data.get('CHECK',True)).lower()
+                            if check_value != "false":
+                                if check_value not in "on_submission":
                                     self.wrong_config["Jobs"] += [
                                         [section, "FILE {0} doesn't exist and check parameter is not set on_submission value".format(section_file_path)]]
                             else:
@@ -728,16 +725,12 @@ class AutosubmitConfig(object):
                                     os.path.join(self.get_project_dir(), section_file_path))]]
                 except BaseException:
                     pass  # tests conflict quick-patch
-            if not parser.check_exists(section, 'RERUN_ONLY')[1] == type(bool):
-                self.wrong_config["Jobs"] += [[section,
-                                               "Mandatory RERUN_ONLY parameter not found or non-bool"]]
-            if not parser.check_is_choice(section, 'PLATFORM', False, platforms):
-                self.wrong_config["Jobs"] += [
-                    [section, "PLATFORM parameter is invalid, this platform is not configured"]]
 
-            dependencies = str(parser.check_exists(section, 'DEPENDENCIES')[0])
-            if not dependencies:
-                for dependency in dependencies.split(' '):
+            dependencies = section_data.get('DEPENDENCIES','')
+            if dependencies:
+                if type(dependencies) is str:
+                    dependencies = dependencies.split(' ')
+                for dependency in dependencies:
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     elif '+' in dependency:
@@ -751,8 +744,8 @@ class AutosubmitConfig(object):
                     if dependency not in parser.data.keys():
                         self.warn_config["Jobs"].append(
                             [section, "Dependency parameter is invalid, job {0} is not configured".format(dependency)])
-            rerun_dependencies = str(parser.check_exists(section, 'RERUN_DEPENDENCIES')[0])
-            if not rerun_dependencies:
+            rerun_dependencies = section_data.get('RERUN_DEPENDENCIES',"")
+            if rerun_dependencies:
                 for dependency in rerun_dependencies.split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
@@ -761,8 +754,8 @@ class AutosubmitConfig(object):
                     if dependency not in parser.data.keys():
                         self.warn_config["Jobs"] += [
                             [section, "RERUN_DEPENDENCIES parameter is invalid, job {0} is not configured".format(dependency)]]
-
-            if not parser.check_is_choice(section, 'RUNNING', False, ['once', 'date', 'member', 'chunk']):
+            running_type = section_data.get('RUNNING', "")
+            if running_type not in ['once', 'date', 'member', 'chunk']:
                 self.wrong_config["Jobs"] += [[section,
                                                "Mandatory RUNNING parameter is invalid"]]
         if "Jobs" not in self.wrong_config:
@@ -779,45 +772,45 @@ class AutosubmitConfig(object):
         :rtype: bool
         """
         parser = self._exp_parser.data
-        if not parser['DEFAULT'].get('EXPID',None):
+        if not parser['DEFAULT'].get('EXPID',""):
             self.wrong_config["Expdef"] += [['DEFAULT',"Mandatory DEFAULT.EXPID parameter is invalid"]]
 
-        self.hpcarch = parser['DEFAULT'].get('HPCARCH',None)
+        self.hpcarch = parser['DEFAULT'].get('HPCARCH',"")
         if not self.hpcarch:
             self.wrong_config["Expdef"] += [['DEFAULT',"Mandatory DEFAULT.HPCARCH parameter is invalid"]]
-        if not parser['EXPERIMENT'].get('DATELIST',None):
+        if not parser['EXPERIMENT'].get('DATELIST',""):
             self.wrong_config["Expdef"] += [['DEFAULT', "Mandatory EXPERIMENT.DATELIST parameter is invalid"]]
-        if not parser['EXPERIMENT'].get('MEMBERS',None):
+        if not parser['EXPERIMENT'].get('MEMBERS',""):
             self.wrong_config["Expdef"] += [['DEFAULT',"Mandatory EXPERIMENT.MEMBERS parameter is invalid"]]
-        if not parser['EXPERIMENT'].get('CHUNKSIZEUNIT',None) and parser['EXPERIMENT'].get('CHUNKSIZEUNIT',None).lower() not in ['year', 'month', 'day', 'hour']:
+        if parser['EXPERIMENT'].get('CHUNKSIZEUNIT',"").lower() not in ['year', 'month', 'day', 'hour']:
             self.wrong_config["Expdef"] += [['experiment',"Mandatory EXPERIMENT.CHUNKSIZEUNIT choice is invalid"]]
-        if type(parser['EXPERIMENT'].get('CHUNKSIZE',None)) not in [int]:
+        if type(parser['EXPERIMENT'].get('CHUNKSIZE',"")) not in [int]:
             self.wrong_config["Expdef"] += [['experiment',"Mandatory EXPERIMENT.CHUNKSIZE is not an integer"]]
-        if type(parser['EXPERIMENT'].get('NUMCHUNKS',None)) not in [int]:
+        if type(parser['EXPERIMENT'].get('NUMCHUNKS',"")) not in [int]:
             self.wrong_config["Expdef"] += [['experiment',"Mandatory EXPERIMENT.NUMCHUNKS is not an integer"]]
-        if not parser['EXPERIMENT'].get('CALENDAR',None) and parser['EXPERIMENT'].get('CALENDAR',None).lower() not in ['standard','noleap']:
+        if parser['EXPERIMENT'].get('CALENDAR',"").lower() not in ['standard','noleap']:
             self.wrong_config["Expdef"] += [['experiment', "Mandatory EXPERIMENT.CALENDAR choice is invalid"]]
-        project_type = parser['PROJECT'].get('PROJECT_TYPE',None)
-        if not project_type and project_type.lower() not in ['none', 'git', 'svn', 'local']:
+        project_type = parser['PROJECT'].get('PROJECT_TYPE',"")
+        if project_type.lower() not in ['none', 'git', 'svn', 'local']:
             self.wrong_config["PROJECT"] += [['PROJECT_TYPE', "Mandatory PROJECT_TYPE choice is invalid"]]
         else:
             if project_type == 'git':
-                if not parser['GIT'].get('PROJECT_ORIGIN',None):
+                if not parser['GIT'].get('PROJECT_ORIGIN',""):
                     self.wrong_config["Expdef"] += [['git',
                                                      "PROJECT_ORIGIN parameter is invalid"]]
-                if not parser['GIT'].get('PROJECT_BRANCH',None):
+                if not parser['GIT'].get('PROJECT_BRANCH',""):
                     self.wrong_config["Expdef"] += [['git',
                                                      "PROJECT_BRANCH parameter is invalid"]]
 
             elif project_type == 'svn':
-                if not parser['SVN'].get('PROJECT_URL',None):
+                if not parser['SVN'].get('PROJECT_URL',""):
                     self.wrong_config["Expdef"] += [['svn',
                                                      "PROJECT_URL parameter is invalid"]]
-                if not parser['SVN'].get('PROJECT_REVISION',None):
+                if not parser['SVN'].get('PROJECT_REVISION',""):
                     self.wrong_config["Expdef"] += [['svn',
                                                      "PROJECT_REVISION parameter is invalid"]]
             elif project_type == 'local':
-                if not parser['LOCAL'].get('PROJECT_PATH',None):
+                if not parser['LOCAL'].get('PROJECT_PATH',""):
                     self.wrong_config["Expdef"] += [['local',
                                                      "PROJECT_PATH parameter is invalid"]]
             elif project_type == 'none':  # debug propouses
@@ -848,7 +841,7 @@ class AutosubmitConfig(object):
                                            "FILE_PROJECT_CONF parameter is invalid"]]
             return False
 
-    def check_wrapper_conf(self,wrapper_section_name="wrapper"):
+    def check_wrapper_conf(self,wrapper_section_name="WRAPPER"):
         if not self.is_valid_jobs_in_wrapper(wrapper_section_name):
             self.wrong_config["Wrapper"] += [[wrapper_section_name,
                                               "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"]]
@@ -972,7 +965,7 @@ class AutosubmitConfig(object):
         job_list_by_section = defaultdict()
         parameters = defaultdict()
         for job in job_list.get_job_list():
-            if job.platform_name is None:
+            if not job.platform_name:
                 job.platform_name = self.hpcarch
             if job.section not in list(job_list_by_section.keys()):
                 job_list_by_section[job.section] = [job]
@@ -1048,7 +1041,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
 
-        return self.get_section(['experiment', 'TWO_STEP_START'], None)
+        return self.get_section(['experiment', 'TWO_STEP_START'], "")
 
     def get_rerun_jobs(self):
         """
@@ -1058,7 +1051,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
 
-        return self.get_section(['rerun', 'RERUN_JOBLIST'], None)
+        return self.get_section(['rerun', 'RERUN_JOBLIST'], "")
 
     def get_file_project_conf(self):
         """
@@ -1076,7 +1069,7 @@ class AutosubmitConfig(object):
         :return: path to project config file
         :rtype: str
         """
-        return self.get_section(['project_files', 'FILE_JOBS_CONF'], None)
+        return self.get_section(['project_files', 'FILE_JOBS_CONF'], "")
 
     def get_git_project_origin(self):
         """
@@ -1085,7 +1078,7 @@ class AutosubmitConfig(object):
         :return: git origin
         :rtype: str
         """
-        return self.get_section(['git', 'PROJECT_ORIGIN'], None)
+        return self.get_section(['git', 'PROJECT_ORIGIN'], "")
 
     def get_git_project_branch(self):
         """
@@ -1103,7 +1096,7 @@ class AutosubmitConfig(object):
         :return: git commit
         :rtype: str
         """
-        return self.get_section(['git', 'PROJECT_COMMIT'], None)
+        return self.get_section(['git', 'PROJECT_COMMIT'], "")
 
     def get_git_remote_project_root(self):
         """
@@ -1112,7 +1105,7 @@ class AutosubmitConfig(object):
         :return: git commit
         :rtype: str
         """
-        return self.get_section(['git', 'REMOTE_CLONE_ROOT'], None)
+        return self.get_section(['git', 'REMOTE_CLONE_ROOT'], "")
 
     def get_submodules_list(self):
         """
@@ -1312,7 +1305,7 @@ class AutosubmitConfig(object):
         """
         member_list = list()
         string = self.get_section(['experiment', 'MEMBERS']) if run_only == False else self.get_section(
-            ['experiment', 'RUN_ONLY_MEMBERS'], None)
+            ['experiment', 'RUN_ONLY_MEMBERS'], "")
         if not string:
             return member_list
         elif not string.startswith("["):
@@ -1373,7 +1366,7 @@ class AutosubmitConfig(object):
         :return: main platforms
         :rtype: str
         """
-        return self.get_section(['experiment', 'HPCARCH'])
+        return self.get_section(['experiment', 'HPCARCH'],d_value="LOCAL")
 
     def set_platform(self, hpc):
         """
@@ -1407,7 +1400,7 @@ class AutosubmitConfig(object):
         :return: version
         :rtype: str
         """
-        return self.get_section(['config', 'AUTOSUBMIT_VERSION'], None)
+        return self.get_section(['config', 'AUTOSUBMIT_VERSION'], "")
 
     def get_total_jobs(self):
         """
@@ -1416,7 +1409,7 @@ class AutosubmitConfig(object):
         :return: max number of running jobs
         :rtype: int
         """
-        return int(self._conf_parser.get('config', 'TOTALJOBS'))
+        return self.get_section(['config', 'TOTALJOBS'],-1)
 
     def get_output_type(self):
         """
@@ -1433,7 +1426,7 @@ class AutosubmitConfig(object):
 
         :rtype: str
         """
-        return self.get_section(['config', 'MAX_WALLCLOCK'], None)
+        return self.get_section(['config', 'MAX_WALLCLOCK'], "")
 
     def get_disable_recovery_threads(self, section):
         """
@@ -1449,7 +1442,7 @@ class AutosubmitConfig(object):
 
         :rtype: str
         """
-        return  self.get_section(['config', 'MAX_PROCESSORS'], None)
+        return self.get_section(['config', 'MAX_PROCESSORS'], -1)
 
     def get_max_waiting_jobs(self):
         """
@@ -1458,7 +1451,7 @@ class AutosubmitConfig(object):
         :return: main platforms
         :rtype: int
         """
-        return int(self._conf_parser.get('config', 'MAXWAITINGJOBS'))
+        return self.get_section(['config', 'MAXWAITINGJOBS'],-1)
 
     def get_default_job_type(self):
         """
@@ -1507,14 +1500,6 @@ class AutosubmitConfig(object):
         """
         return self.get_section(['config', 'DELAY_RETRY_TIME'], -1)
 
-    def get_notifications(self):
-        """
-        Returns if the user has enabled the notifications from autosubmit's config file
-
-        :return: if notifications
-        :rtype: string
-        """
-        return self._conf_parser.check_exists('config', 'MAXWAITINGJOBS')
 
     def get_notifications_crash(self):
         """
@@ -1541,7 +1526,7 @@ class AutosubmitConfig(object):
         :rtype: string
         """
 
-        return self.get_section(["wrappers"],None)
+        return self.get_section(["wrappers"],"")
     def get_wrapper_type(self, wrapper_section=""):
         """
         Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, MULTI NONE) the user has configured in the autosubmit's config
@@ -1550,7 +1535,7 @@ class AutosubmitConfig(object):
         :rtype: string
         """
 
-        return self.get_section([wrapper_section, 'TYPE'],None)
+        return self.get_section([wrapper_section, 'TYPE'],"")
 
 
     def get_wrapper_retrials(self, wrapper_section=""):
@@ -1579,7 +1564,7 @@ class AutosubmitConfig(object):
         :return: expression (or none)
         :rtype: string
         """
-        return self.get_section([wrapper_section, 'JOBS_IN_WRAPPER'], None)
+        return self.get_section([wrapper_section, 'JOBS_IN_WRAPPER'], "")
 
     def get_extensible_wallclock(self, wrapper_section=""):
         """
@@ -1598,7 +1583,7 @@ class AutosubmitConfig(object):
         :return: expression (or none)
         :rtype: string
         """
-        return self.get_section(['config', 'X11_JOBS'], None)
+        return self.get_section(['config', 'X11_JOBS'], False)
 
     def get_wrapper_queue(self, wrapper_section=""):
         """
@@ -1607,7 +1592,7 @@ class AutosubmitConfig(object):
         :return: expression (or none)
         :rtype: string
         """
-        return self.get_section([wrapper_section, 'QUEUE'], None)
+        return self.get_section([wrapper_section, 'QUEUE'], "")
 
     def get_min_wrapped_jobs(self, wrapper_section=""):
         """
@@ -1690,7 +1675,7 @@ class AutosubmitConfig(object):
          :return: machinefiles function to use
          :rtype: string
          """
-        return self.get_section([wrapper_section, 'MACHINEFILES'], None)
+        return self.get_section([wrapper_section, 'MACHINEFILES'], "")
     def get_export(self, section):
         """
         Gets command line for being submitted with
@@ -1699,7 +1684,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self.get_section([section, 'EXPORT'], None)
+        return self.get_section([section, 'EXPORT'], "")
 
     def get_jobs_sections(self):
         """
@@ -1726,7 +1711,7 @@ class AutosubmitConfig(object):
         :return: mail address
         :rtype: [str]
         """
-        return  self.get_section(['mail', 'TO'], None)
+        return  self.get_section(['mail', 'TO'], "")
 
     def get_communications_library(self):
         """

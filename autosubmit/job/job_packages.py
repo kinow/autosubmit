@@ -150,7 +150,7 @@ class JobPackageBase(object):
         try:
             if len(self.jobs) < thread_number:
                 for job in self.jobs:
-                    if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
+                    if job.check == Job.CHECK_ON_SUBMISSION.lower():
                         if only_generate:
                             exit=True
                             break
@@ -221,8 +221,8 @@ class JobPackageSimple(JobPackageBase):
         for job in self.jobs:
             self.platform.send_file(self._job_scripts[job.name])
 
-    def _do_submission(self, job_scripts=None, hold=False):
-        if job_scripts is None:
+    def _do_submission(self, job_scripts="", hold=False):
+        if len(job_scripts) == 0:
             job_scripts = self._job_scripts
         for job in self.jobs:
             #CLEANS PREVIOUS RUN ON LOCAL
@@ -235,7 +235,7 @@ class JobPackageSimple(JobPackageBase):
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
             job.id = self.platform.submit_job(job, job_scripts[job.name], hold=hold, export = self.export)
-            if job.id is None:
+            if job.id is None or not job.id:
                 continue
             Log.info("{0} submitted", job.name)
             job.status = Status.SUBMITTED            
@@ -262,7 +262,7 @@ class JobPackageSimpleWrapped(JobPackageSimple):
             self.platform.send_file(self._job_wrapped_scripts[job.name])
 
     def _do_submission(self, job_scripts=None, hold=False):
-        if job_scripts is None:
+        if job_scripts is None or not job_scripts:
             job_scripts = self._job_wrapped_scripts
         super(JobPackageSimpleWrapped, self)._do_submission(job_scripts, hold=hold)
 
@@ -322,7 +322,7 @@ class JobPackageArray(JobPackageBase):
 
         package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
-        if package_id is None:
+        if package_id is None or not package_id:
             return
 
         for i in range(0, len(self.jobs)):
@@ -468,7 +468,7 @@ class JobPackageThread(JobPackageBase):
 
         package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
-        if package_id is None:
+        if package_id is None or not package_id:
             return
 
         for i in range(0, len(self.jobs) ):
@@ -546,7 +546,7 @@ class JobPackageThreadWrapped(JobPackageThread):
 
         package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
-        if package_id is None:
+        if package_id is None or not package_id:
             raise Exception('Submission failed')
 
         for i in range(0, len(self.jobs)):

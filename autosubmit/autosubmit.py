@@ -122,12 +122,16 @@ def signal_handler_create(signal_received, frame):
     raise AutosubmitCritical(
         'Autosubmit has been closed in an unexpected way. Killed or control + c.', 7010)
 
-
 class Autosubmit:
     """
     Interface class for autosubmit.
     """
-
+    def __init__(self):
+        self._experiment_data = dict()
+    @property
+    def experiment_data(self):
+        """Get the current voltage."""
+        return self.experiment_data
     sys.setrecursionlimit(500000)
     # Get the version number from the relevant file. If not, from autosubmit package
     script_dir = os.path.abspath(os.path.dirname(__file__))
@@ -1355,9 +1359,9 @@ class Autosubmit:
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         platforms_to_test = set()
         for job in job_list.get_job_list():
-            if job.platform_name is None:
+            if not job.platform_name:
                 job.platform_name = hpcarch
-            job.platform = submitter.platforms[job.platform_name.lower()]
+            job.platform = submitter.platforms[job.platform_name]
             platforms_to_test.add(job.platform)
 
         job_list.check_scripts(as_conf)
@@ -1407,6 +1411,9 @@ class Autosubmit:
                                              "Or with the -v parameter: autosubmit run {2} -v ".format(as_conf.get_version(), Autosubmit.autosubmit_version, expid), 7067)
         except AutosubmitCritical:
             raise
+
+        except AutosubmitError as e:
+            raise AutosubmitCritical(e.message,e.code,e.trace)
 
         except BaseException as e:
             raise AutosubmitCritical("Failure during the loading of the experiment configuration, check file paths",7014,str(e))
@@ -1467,11 +1474,10 @@ class Autosubmit:
                     Log.debug("Checking experiment templates...")
                     platforms_to_test = set()
                     for job in job_list.get_job_list():
-                        if job.platform_name is None:
+                        if job.platform_name is None or job.platform_name == "":
                             job.platform_name = hpcarch
                         # noinspection PyTypeChecker
-                        job.platform = submitter.platforms[job.platform_name.lower(
-                        )]
+                        job.platform = submitter.platforms[job.platform_name.upper()]
                         # noinspection PyTypeChecker
                         if job.status not in (Status.COMPLETED, Status.SUSPENDED):
                             platforms_to_test.add(job.platform)
@@ -1817,14 +1823,14 @@ class Autosubmit:
                                     expid, as_conf, notransitive=notransitive)
                                 platforms_to_test = set()
                                 for job in job_list.get_job_list():
-                                    if job.platform_name is None:
+                                    if job.platform_name is None or job.platform_name == "":
                                         job.platform_name = hpcarch
                                     job.platform = submitter.platforms[job.platform_name.lower()]
                                     platforms_to_test.add(job.platform)
                                 #Recover job_list while keeping job.fail_count
                                 failed_names = {}
                                 for job in job_list.get_job_list():
-                                    if job.platform_name is None:
+                                    if job.platform_name is None or job.platform_name == "":
                                         job.platform_name = hpcarch
                                     job.platform = submitter.platforms[job.platform_name.lower()]
                                     platforms_to_test.add(job.platform)
@@ -1833,7 +1839,7 @@ class Autosubmit:
                                 for job in job_list.get_job_list():
                                     if job.name in list(failed_names.keys()):
                                         job.fail_count = failed_names[job.name]
-                                    if job.platform_name is None:
+                                    if job.platform_name is None or job.platform_name == "":
                                         job.platform_name = hpcarch
                                     job.platform = submitter.platforms[job.platform_name.lower()]
                                 Log.info("Recovering parameters...")

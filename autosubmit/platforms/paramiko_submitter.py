@@ -72,19 +72,19 @@ class ParamikoSubmitter(Submitter):
         :return: platforms used by the experiment
         :rtype: dict
         """
-
+        exp_data = asconf.experiment_data
         platforms_used = list()
         hpcarch = asconf.get_platform()
         platforms_used.append(hpcarch)
 
         # Traverse jobs defined in jobs_.conf and add platforms found if not already included
-        job_parser = asconf.jobs_parser
-        for job in job_parser.sections():
-            hpc = job_parser.get_option(job, 'PLATFORM', hpcarch).lower()
+        jobs_data = exp_data['JOBS']
+        for job in jobs_data:
+            hpc = jobs_data[job].get('PLATFORM', hpcarch).lower()
             if hpc not in platforms_used:
                 platforms_used.append(hpc)
 
-        parser = asconf.platforms_parser
+        platform_data = exp_data['PLATFORMS']
         # Declare platforms dictionary, key: Platform Name, Value: Platform Object
         platforms = dict()
 
@@ -102,18 +102,17 @@ class ParamikoSubmitter(Submitter):
             BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
         local_platform.host = 'localhost'
         # Add object to entry in dictionary
-        platforms['local'] = local_platform
         platforms['LOCAL'] = local_platform
 
         # parser is the platforms parser that represents platforms_.conf
         # Traverse sections []
-        for section in parser.sections():
+        for section in platform_data:
             # Consider only those included in the list of jobs
-            if section.lower() not in platforms_used:
+            if section not in platforms_used:
                 continue
 
-            platform_type = parser.get_option(section, 'TYPE', '').lower()
-            platform_version = parser.get_option(section, 'VERSION', '')
+            platform_type = platform_data[section].get('TYPE', '').lower()
+            platform_version = platform_data[section].get('VERSION', '')
             try:
                 if platform_type == 'pbs':
                     remote_platform = PBSPlatform(
@@ -145,61 +144,42 @@ class ParamikoSubmitter(Submitter):
             remote_platform._version = platform_version
 
             # Concatenating host + project and adding to the object
-            if parser.get_option(section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
-                host = '{0}-{1}'.format(parser.get_option(section, 'HOST', None),
-                                        parser.get_option(section, 'PROJECT', None))
+            if platform_data[section].get('ADD_PROJECT_TO_HOST', False):
+                host = '{0}-{1}'.format(platform_data[section].get('HOST', ""),
+                                        platform_data[section].get('PROJECT', ""))
             else:
-                host = parser.get_option(section, 'HOST', None)
+                host = platform_data[section].get('HOST', "")
 
             remote_platform.host = host
             # Retrieve more configurations settings and save them in the object
-            remote_platform.max_wallclock = parser.get_option(section, 'MAX_WALLCLOCK',
-                                                              asconf.get_max_wallclock())
-            remote_platform.max_processors = parser.get_option(section, 'MAX_PROCESSORS',
-                                                               asconf.get_max_processors())
-            remote_platform.max_waiting_jobs = int(parser.get_option(section, 'MAX_WAITING_JOBS',
-                                                                     asconf.get_max_waiting_jobs()))
-            remote_platform.total_jobs = int(parser.get_option(section, 'TOTAL_JOBS',
-                                                               asconf.get_total_jobs()))
-            remote_platform.hyperthreading = parser.get_option(section, 'HYPERTHREADING',
-                                                               'false').lower()
-            remote_platform.project = parser.get_option(
-                section, 'PROJECT', None)
-            remote_platform.budget = parser.get_option(
-                section, 'BUDGET', remote_platform.project)
-            remote_platform.reservation = parser.get_option(
-                section, 'RESERVATION', '')
-            remote_platform.exclusivity = parser.get_option(
-                section, 'EXCLUSIVITY', '').lower()
-            remote_platform.user = parser.get_option(section, 'USER', None)
-            remote_platform.scratch = parser.get_option(
-                section, 'SCRATCH_DIR', None)
-            remote_platform.temp_dir = parser.get_option(
-                section, 'TEMP_DIR', None)
-            remote_platform._default_queue = parser.get_option(
-                section, 'QUEUE', None)
-            remote_platform._serial_queue = parser.get_option(
-                section, 'SERIAL_QUEUE', None)
-            remote_platform.processors_per_node = parser.get_option(section, 'PROCESSORS_PER_NODE',
-                                                                    None)
-            remote_platform.custom_directives = parser.get_option(section, 'CUSTOM_DIRECTIVES',
-                                                                  None)
+            remote_platform.max_wallclock = platform_data[section].get('MAX_WALLCLOCK',"2:00:00")
+            remote_platform.max_processors = platform_data[section].get('MAX_PROCESSORS',-1)
+            remote_platform.max_waiting_jobs = platform_data[section].get('MAX_WAITING_JOBS',-1)
+            remote_platform.total_jobs = platform_data[section].get('TOTAL_JOBS',-1)
+            remote_platform.hyperthreading = platform_data[section].get('HYPERTHREADING',False)
+            remote_platform.project = platform_data[section].get('PROJECT',"")
+            remote_platform.budget = platform_data[section].get('BUDGET', "")
+            remote_platform.reservation = platform_data[section].get('RESERVATION', "")
+            remote_platform.exclusivity = platform_data[section].get('EXCLUSIVITY', "")
+            remote_platform.user = platform_data[section].get('USER', "")
+            remote_platform.scratch = platform_data[section].get('SCRATCH_DIR', "")
+            remote_platform.temp_dir = platform_data[section].get('TEMP_DIR', "")
+            remote_platform._default_queue = platform_data[section].get('QUEUE', "")
+            remote_platform._serial_queue = platform_data[section].get('SERIAL_QUEUE', "")
+            remote_platform.processors_per_node = platform_data[section].get('PROCESSORS_PER_NODE',-1)
+            remote_platform.custom_directives = platform_data[section].get('CUSTOM_DIRECTIVES',"")
             Log.debug("Custom directives from platform.conf: {0}".format(
                 remote_platform.custom_directives))
-            remote_platform.scratch_free_space = parser.get_option(section, 'SCRATCH_FREE_SPACE',
-                                                                   None)
+            remote_platform.scratch_free_space = platform_data[section].get('SCRATCH_FREE_SPACE',False)
             remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,
                                                     remote_platform.user, remote_platform.expid)
             # Executes update_cmds() from corresponding Platform Object
             remote_platform.update_cmds()
             # Save platform into result dictionary
-            platforms[section.lower()] = remote_platform
+            platforms[section] = remote_platform
 
-        for section in parser.sections():
-            # if this section is included in platforms
-            if parser.has_option(section, 'SERIAL_PLATFORM'):
-                platforms[section.lower()].serial_platform = platforms[parser.get_option(section,
-                                                                                         'SERIAL_PLATFORM',
-                                                                                         None).lower()]
+
+            platforms[section].serial_platform = platform_data[section].get('SERIAL_PLATFORM',"")
+
 
         self.platforms = platforms

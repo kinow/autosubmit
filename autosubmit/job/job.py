@@ -917,18 +917,18 @@ class Job(object):
         if hasattr(self, 'retrials'):
             parameters['RETRIALS'] = self.retrials
         if hasattr(self, 'delay_retrials'):
-            parameters['delay_retrials'] = self.delay_retrials
+            parameters['DELAY_RETRIALS'] = self.delay_retrials
         if self.date is not None:
-            if self.chunk is None:
+            if self.chunk is None or not self.chunk:
                 chunk = 1
             else:
                 chunk = self.chunk
 
             parameters['CHUNK'] = chunk
-            total_chunk = int(parameters['NUMCHUNKS'])
-            chunk_length = int(parameters['CHUNKSIZE'])
-            chunk_unit = parameters['CHUNKSIZEUNIT'].lower()
-            cal = parameters['CALENDAR'].lower()
+            total_chunk = int(parameters.get('EXPERIMENT.NUMCHUNKS'))
+            chunk_length = int(parameters['EXPERIMENT.CHUNKSIZE'])
+            chunk_unit = parameters['EXPERIMENT.CHUNKSIZEUNIT'].lower()
+            cal = parameters['EXPERIMENT.CALENDAR'].lower()
             chunk_start = chunk_start_date(
                 self.date, chunk, chunk_length, chunk_unit, cal)
             chunk_end = chunk_end_date(
@@ -1031,7 +1031,7 @@ class Job(object):
         parameters['DEPENDENCIES'] = as_conf.get_dependencies(self.section)
         self.dependencies = parameters['DEPENDENCIES']
 
-        if self.export != "none":
+        if self.export:
             variables = re.findall('%(?<!%%)\w+%(?!%%)', self.export)
             if len(variables) > 0:
                 variables = [variable[1:-1] for variable in variables]

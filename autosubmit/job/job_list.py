@@ -317,9 +317,9 @@ class JobList(object):
 
             dependency_running_type = parameters[section].get('RUNNING', 'once').lower()
             delay = int(parameters[section].get('DELAY', -1))
-            select_chunks_opt = parameters[job_section].get( 'SELECT_CHUNKS', None)
+            select_chunks_opt = parameters[job_section].get( 'SELECT_CHUNKS', "")
             selected_chunks = []
-            if select_chunks_opt is not None:
+            if select_chunks_opt:
                 if '*' in select_chunks_opt:
                     sections_chunks = select_chunks_opt.split(' ')
                     for section_chunk in sections_chunks:
@@ -331,9 +331,9 @@ class JobList(object):
                             selected_chunks.append(auxiliar_relation_list)
                 else:
                     raise AutosubmitCritical("Wrong syntax for select_chunks. The correct Syntax is:Dependency_KEY*[#chunk_number,#chunk_number...] Dependency_Key...",7011)
-            select_member_opt = parameters[job_section].get('SELECT_MEMBERS', None)
+            select_member_opt = parameters[job_section].get('SELECT_MEMBERS', "")
             selected_member = []
-            if select_member_opt is not None:
+            if select_member_opt:
                 if '*' in select_member_opt:
                     sections_members = select_member_opt.split(' ')
                     for section_member in sections_members:
@@ -570,16 +570,17 @@ class JobList(object):
 
 
         sections_running_type_map = dict()
-        if "&" in wrapper_jobs:
-            char = "&"
-        else:
-            char = " "
-        wrapper_jobs_reverse = wrapper_jobs.split(char)
-        for section in wrapper_jobs_reverse:
-            # RUNNING = once, as default. This value comes from jobs_.yml
-            sections_running_type_map[section] = self._dic_jobs._get_option(section, "RUNNING", 'once')
+        if wrapper_jobs:
+            if "&" in wrapper_jobs:
+                char = "&"
+            else:
+                char = " "
+            wrapper_jobs_reverse = wrapper_jobs.split(char)
+            for section in wrapper_jobs_reverse:
+                # RUNNING = once, as default. This value comes from jobs_.yml
+                sections_running_type_map[section] = self._dic_jobs._get_option(section, "RUNNING", 'once')
 
-        # Select only relevant jobs, those belonging to the sections defined in the wrapper
+            # Select only relevant jobs, those belonging to the sections defined in the wrapper
 
         sections_to_filter = ""
         for section in sections_running_type_map:
@@ -597,6 +598,9 @@ class JobList(object):
                 sorted_jobs_list = [job for job in filtered_jobs_fake_date_member if job.name.split("_")[1] == str_date and
                                           job.name.split("_")[2] == member]
 
+                #There can be no jobs for this member when select chunk/member is enabled
+                if not sorted_jobs_list:
+                    continue
                 previous_job = sorted_jobs_list[0]
 
                 # get RUNNING for this section
@@ -1845,11 +1849,11 @@ class JobList(object):
                 Log.info("{} of {} checked".format(count, len(self._job_list)))
 
             show_logs = job.check_warnings
-            if job.check.lower() == 'on_submission':
+            if job.check == 'on_submission':
                 Log.info(
                     'Template {0} will be checked in running time'.format(job.section))
                 continue
-            elif job.check.lower() != 'true':
+            elif not job.check:
                 Log.info(
                     'Template {0} will not be checked'.format(job.section))
                 continue
