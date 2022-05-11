@@ -556,8 +556,7 @@ class AutosubmitConfig(object):
             self.experiment_data = self.deep_update(self.experiment_data,c_parser.data)
         self.deep_read_loops(self.experiment_data)
         self.parse_data_loops(self.experiment_data,self.data_loops)
-        self.data_loops = list(set(self.data_loops))
-        pass
+
 
     def parse_data_loops(self,exp_data,data_loops):
         section_data = list()
@@ -583,6 +582,7 @@ class AutosubmitConfig(object):
             new_sections = dict()
             norm_val = for_value[0].strip("[] ").upper()
             #Todo multiple variables
+            #TODO dependencies keyword is an special case
             #Delete old key
             loops.pop()
             # Delete old data
@@ -622,6 +622,7 @@ class AutosubmitConfig(object):
             self.experiment_data.update(new_exp_data)
             exp_data = self.experiment_data
             pass
+        self.data_loops = []
 
 
     def deep_read_loops(self,data,for_keys=[]):

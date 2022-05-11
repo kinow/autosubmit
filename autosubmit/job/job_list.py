@@ -314,7 +314,8 @@ class JobList(object):
                 splits = JobList._calculate_splits_dependencies(
                     section, splits_section)
                 section = section_name
-
+            if parameters.get(section,None) is None:
+                raise AutosubmitCritical("Section:{0} doesn't exists.".format(section),7014)
             dependency_running_type = parameters[section].get('RUNNING', 'once').lower()
             delay = int(parameters[section].get('DELAY', -1))
             select_chunks_opt = parameters[job_section].get( 'SELECT_CHUNKS', "")
