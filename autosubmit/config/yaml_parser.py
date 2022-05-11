@@ -15,113 +15,11 @@ class YAMLParser(YAML):
     def __init__(self):
         self.data = []
         super(YAMLParser, self).__init__(typ="safe")
-    # def get_section(self, section, d_value=None, must_exists = False ):
-    #     """
-    #     Gets any section if it exists within the dictionary, else returns None or error if must exists.
-    #     :param section:
-    #     :type list
-    #     :param must_exists:
-    #     :type bool
-    #     :param d_value:
-    #     :type str
-    #     :return:
-    #     """
-    #     section = [s.upper() for s in section]
-    #     # For text redeability
-    #     section_str = str(section[0])
-    #     for sect in section[1:]:
-    #         section_str += "." + str(sect)
-    #     current_level=self.experiment_data.get(section[0],None)
-    #     for param in section[1:]:
-    #         if current_level:
-    #             if type(current_level) is dict:
-    #                 current_level = current_level.get(param,d_value)
-    #             else:
-    #                 return None
-    #     if not current_level and must_exists:
-    #         return None
-    #     if not current_level or current_level == "":
-    #         return d_value
-    #     else:
-    #         return current_level
-    # def check_exists(self,section="",option= "",conf_file="",typ=""):
-    #     """
-    #     Checks if an option exists, and returns value it if exists. Otherwise it returns false
-    #
-    #     :param conf_file: file that contains the option
-    #     :type section: str
-    #     :param section: section that contains the option
-    #     :type section: str
-    #     :param option: option to check
-    #     :type option: str
-    #     :return: True if option exists, False otherwise
-    #     :rtype: value or False and type
-    #     """
-    #     if conf_file == "":
-    #         if section in self.data:
-    #             if option == "":
-    #                 return self.data[section],type(self.data[section])
-    #             elif option in self.data[section]:
-    #                 return self.data[section][option],type(self.data[section][option])
-    #             else:
-    #                 return False,None
-    #         else:
-    #             return False,None
-    #     else:
-    #         if section in self.data[conf_file]:
-    #             if option == "":
-    #                 return self.data[conf_file][section]
-    #             elif option in self.data[conf_file][section]:
-    #                 return self.data[conf_file][section][option],type(self.data[conf_file][section][option])
-    #             else:
-    #                 return False,None
-    #         else:
-    #             return False,None
-    # def check_is_choice(self, section="", option="", must_exist=True, choices=[],conf_file= ""):
-    #     """
-    #     Checks if an option has the expected value and returns it. Otherwise returns False
-    #
-    #     :param conf_file: file that contains the option
-    #     :type section: str
-    #     :param section: section that contains the option
-    #     :type section: str
-    #     :param option: option to check
-    #     :type option: str
-    #     :return: True if option exists, False otherwise
-    #     :rtype: value,type or False,type
-    #     """
-    #     if conf_file == "":
-    #         if section in self.data:
-    #             if option == "":
-    #                 if self.data[section] in choices:
-    #                     return self.data[section]
-    #                 else:
-    #                     if must_exist:
-    #                         return False
-    #                     else:
-    #                         return True
-    #             elif option in self.data[section]:
-    #                 if self.data[section][option] in choices:
-    #                     return self.data[section][option]
-    #                 else:
-    #                     if must_exist:
-    #                         return False
-    #                     else:
-    #                         return True
-    #             else:
-    #                 return False
-    #         else:
-    #             return False
-    #     else:
-    #         if section in self.data[conf_file]:
-    #             if option == "":
-    #                 return self.data[conf_file][section]
-    #             elif option in self.data[conf_file][section]:
-    #                 return self.data[conf_file][section][option]
-    #             else:
-    #                 return False
-    #         else:
-    #             return False
+
+
+
+
+
 # class job(YAML.YAMLObject):
 #
 #     yaml_tag = u'!job'

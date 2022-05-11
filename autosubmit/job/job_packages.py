@@ -341,7 +341,7 @@ class JobPackageThread(JobPackageBase):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="wrapper", wrapper_info= {}):
+    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="WRAPPERS", wrapper_info= {}):
         super(JobPackageThread, self).__init__(jobs)
         if len(wrapper_info) > 0 :
             self.wrapper_type = wrapper_info[0][wrapper_section]
@@ -485,7 +485,7 @@ class JobPackageThreadWrapped(JobPackageThread):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="wrapper"):
+    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="WRAPPERS"):
         super(JobPackageThreadWrapped, self).__init__(jobs,configuration)
         self._job_scripts = {}
         self._job_dependency = dependency
@@ -561,7 +561,7 @@ class JobPackageVertical(JobPackageThread):
     :type jobs:
     :param: dependency:
     """
-    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="wrapper", wrapper_info = {}):
+    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="WRAPPERS", wrapper_info = {}):
         super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section, wrapper_info = wrapper_info)
         for job in jobs:
             if job.processors > self._num_processors:
@@ -623,7 +623,7 @@ class JobPackageHorizontal(JobPackageThread):
     Class to manage a horizontal thread-based package of jobs to be submitted by autosubmit
     """
 
-    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="wrapper"):
+    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="WRAPPERS"):
         super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources,configuration=configuration,wrapper_section=wrapper_section)
         self.method = method
 
@@ -652,7 +652,7 @@ class JobPackageHybrid(JobPackageThread):
         Class to manage a hybrid (horizontal and vertical) thread-based package of jobs to be submitted by autosubmit
         """
 
-    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict(),method="ASThread",configuration=None,wrapper_section="wrapper"):
+    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict(),method="ASThread",configuration=None,wrapper_section="WRAPPERS"):
         all_jobs = [item for sublist in jobs for item in sublist] #flatten list
         super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources,method,configuration=configuration,wrapper_section=wrapper_section)
         self.jobs_lists = jobs

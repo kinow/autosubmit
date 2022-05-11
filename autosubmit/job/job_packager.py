@@ -42,7 +42,7 @@ class JobPackager(object):
     """
 
     def __init__(self, as_config, platform, jobs_list, hold=False):
-        self.current_wrapper_section = "wrapper"
+        self.current_wrapper_section = "WRAPPERS"
         self._as_config = as_config
         self._platform = platform
         self._jobs_list = jobs_list
@@ -81,11 +81,11 @@ class JobPackager(object):
         self.max_jobs = min(self._max_wait_jobs_to_submit,
                             self._max_jobs_to_submit)
 
-        self.wrapper_type["wrapper"] = self._as_config.get_wrapper_type()
-        self.wrapper_policy["wrapper"] = self._as_config.get_wrapper_policy()
-        self.wrapper_method["wrapper"] = self._as_config.get_wrapper_method().lower()
-        self.jobs_in_wrapper["wrapper"] = self._as_config.get_wrapper_jobs()
-        self.extensible_wallclock["wrapper"] = self._as_config.get_extensible_wallclock()
+        self.wrapper_type["WRAPPERS"] = self._as_config.get_wrapper_type()
+        self.wrapper_policy["WRAPPERS"] = self._as_config.get_wrapper_policy()
+        self.wrapper_method["WRAPPERS"] = self._as_config.get_wrapper_method().lower()
+        self.jobs_in_wrapper["WRAPPERS"] = self._as_config.get_wrapper_jobs()
+        self.extensible_wallclock["WRAPPERS"] = self._as_config.get_extensible_wallclock()
         if self._as_config.get_wrapper_type() == "multi":
             for wrapper_section in self._as_config.get_wrapper_multi():
                 self.wrapper_type[wrapper_section] = self._as_config.get_wrapper_type(wrapper_section)

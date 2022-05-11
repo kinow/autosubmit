@@ -1351,7 +1351,7 @@ class Autosubmit:
         if as_conf.get_wrapper_type() == "multi":
             for wrapper_section in as_conf.get_wrapper_multi():
                 wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
-        wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs("wrapper")
+        wrapper_jobs["WRAPPERS"] = as_conf.get_wrapper_jobs("WRAPPERS")
         Log.warning("Aux Job_list was generated successfully")
         submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
@@ -4149,7 +4149,7 @@ class Autosubmit:
                     if as_conf.get_wrapper_type() == "multi":
                         for wrapper_section in as_conf.get_wrapper_multi():
                             wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
-                    wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs("wrapper")
+                    wrapper_jobs["WRAPPERS"] = as_conf.get_wrapper_jobs("WRAPPERS")
 
                     job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
@@ -5353,7 +5353,7 @@ class Autosubmit:
                 date_format = 'M'
         #TODO
         wrapper_jobs = dict()
-        # wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs()
+        # wrapper_jobs["WRAPPERS"] = as_conf.get_wrapper_jobs()
         # if as_conf.get_wrapper_type() == "multi":
         #     for wrapper_section in as_conf.get_wrapper_multi():
         #         wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)

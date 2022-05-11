@@ -49,7 +49,7 @@ class AutosubmitConfig(object):
         self.basic_config = basic_config
         self.parser_factory = parser_factory
         self.experiment_data = {}
-
+        self.data_loops = list()
         self._conf_parser = None
         self._conf_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("autosubmit_" + expid + ".yml")
         self._exp_parser = None
@@ -536,7 +536,10 @@ class AutosubmitConfig(object):
                 unified_config[key] = new_dict[key]
         return unified_config
 
-    def unify_conf(self, running_time= False):
+    def unify_conf(self):
+        '''
+        Unifies all configuration files into a single dictionary. Custom files will be able to override the default configuration.
+        '''
         self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
         self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
         self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
@@ -551,9 +554,92 @@ class AutosubmitConfig(object):
         for c_parser in self._custom_parser:
             c_parser.data = self.deep_normalize(c_parser.data)
             self.experiment_data = self.deep_update(self.experiment_data,c_parser.data)
+        self.deep_read_loops(self.experiment_data)
+        self.parse_data_loops(self.experiment_data,self.data_loops)
+        self.data_loops = list(set(self.data_loops))
+        pass
+
+    def parse_data_loops(self,exp_data,data_loops):
+        section_data = list()
+        for loops in data_loops:
+            #Extract section affected
+            current_data = exp_data.pop(loops[0])
+            section_data.append(current_data)
+
+            #Extract nested-section if any
+            for section in loops[1:]:
+
+                current_data = current_data.pop(section)
+                section_data.append(current_data)
+
+
+            for_value = section_data[-1].pop("FOR").lower().split("in")
+            values = for_value[1].strip(" []").split(',')
+            section_name_base = loops[-1]
+
+            #for i in (0,len(section_data)-1):
+            #   exp_data = section_data[0]
+
+            new_sections = dict()
+            norm_val = for_value[0].strip("[] ").upper()
+            #Todo multiple variables
+            #Delete old key
+            loops.pop()
+            # Delete old data
+            section_data.pop()
+            new_sections = dict()
+            sections_new_data = []
+            for s_val in values:
+               sect = section_name_base + "_" + s_val
+               new_data = dict()
+               for key,val in current_data.items():
+                   if val.upper() == norm_val:
+                       new_data[key] = s_val
+                   else:
+                       new_data[key] = val
+
+               new_sections[sect] = new_data
+
+            #Reconstruct dict with new data
+
+
+            # Last level must contain the new info
+            last_data = section_data.pop(-1)
+            last_level = loops.pop(-1)
+            for new_sect_key,new_sect_val in new_sections.items():
+                last_data[new_sect_key] = new_sect_val
+            next_section = dict()
+            next_section[last_level] = last_data
+            new_exp_data = next_section
+            #back_tracking
+            while len(loops) > 0:
+                level_name = loops.pop(-1)
+                level_data = section_data.pop(-1)
+                level_data.update(new_exp_data)
+                new_exp_data[level_name] = level_data
+            else:
+                new_exp_data = next_section
+            self.experiment_data.update(new_exp_data)
+            exp_data = self.experiment_data
+            pass
+
+
+    def deep_read_loops(self,data,for_keys=[]):
+        """
+        Update a nested dictionary or similar mapping.
+        Modify ``source`` in place.
+        """
+        for key, val in data.items():
+            if key == "FOR":
+                self.data_loops.append(for_keys)
+            elif isinstance(val, collections.Mapping):
+                self.deep_read_loops(data.get(key, {}),for_keys+[key])
+
 
 
     def check_mandatory_conf_files(self):
+        self.unify_conf()
+        print("end unify")
         self.check_expdef_conf()
         self.check_platforms_conf()
         self.check_jobs_conf()
@@ -841,22 +927,22 @@ class AutosubmitConfig(object):
                                            "FILE_PROJECT_CONF parameter is invalid"]]
             return False
 
-    def check_wrapper_conf(self,wrapper_section_name="WRAPPER"):
+    def check_wrapper_conf(self,wrapper_section_name="WRAPPERS"):
         if not self.is_valid_jobs_in_wrapper(wrapper_section_name):
-            self.wrong_config["Wrapper"] += [[wrapper_section_name,
+            self.wrong_config["WRAPPERS"] += [[wrapper_section_name,
                                               "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"]]
         if 'horizontal' in self.get_wrapper_type(wrapper_section_name):
             if not self._platforms_parser.check_exists(self.get_platform(), 'PROCESSORS_PER_NODE'):
-                self.wrong_config["Wrapper"] += [
+                self.wrong_config["WRAPPERS"] += [
                     [wrapper_section_name, "PROCESSORS_PER_NODE no exist in the horizontal-wrapper platform"]]
             if not self._platforms_parser.check_exists(self.get_platform(), 'MAX_PROCESSORS'):
-                self.wrong_config["Wrapper"] += [[wrapper_section_name,
+                self.wrong_config["WRAPPERS"] += [[wrapper_section_name,
                                                   "MAX_PROCESSORS no exist in the horizontal-wrapper platform"]]
         if 'vertical' in self.get_wrapper_type(wrapper_section_name):
             if not self._platforms_parser.check_exists(self.get_platform(), 'MAX_WALLCLOCK'):
-                self.wrong_config["Wrapper"] += [[wrapper_section_name,
+                self.wrong_config["WRAPPERS"] += [[wrapper_section_name,
                                                   "MAX_WALLCLOCK no exist in the vertical-wrapper platform"]]
-        if "Wrapper" not in self.wrong_config:
+        if "WRAPPERS" not in self.wrong_config:
             Log.result('wrappers OK')
             return True
 
@@ -1649,7 +1735,7 @@ class AutosubmitConfig(object):
          """
         return int(self.get_section(wrapper_section_name, 'MIN_WRAPPED_V', 1))
 
-    def get_min_wrapped_jobs_horizontal(self, wrapper_section_name="wrapper"):
+    def get_min_wrapped_jobs_horizontal(self, wrapper_section_name="WRAPPERS"):
         """
          Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
 
@@ -1754,8 +1840,8 @@ class AutosubmitConfig(object):
         storage_type = self.get_storage_type()
         return storage_type in ['pkl', 'db']
 
-    def is_valid_jobs_in_wrapper(self,wrapper_section="wrapper"):
-        expression = self.get_wrapper_jobs(wrapper_section="wrapper")
+    def is_valid_jobs_in_wrapper(self,wrapper_section="WRAPPERS"):
+        expression = self.get_wrapper_jobs(wrapper_section="WRAPPERS")
         if expression != 'None':
             parser = self._jobs_parser
             sections = parser.sections()
