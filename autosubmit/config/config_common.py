@@ -33,6 +33,7 @@ from autosubmit.config.basicConfig import BasicConfig
 from collections import defaultdict
 import collections
 import pathlib
+import copy
 from pathlib import Path
 
 class AutosubmitConfig(object):
@@ -564,54 +565,45 @@ class AutosubmitConfig(object):
             #Extract section affected
             current_data = exp_data.pop(loops[0])
             section_data.append(current_data)
-
             #Extract nested-section if any
             for section in loops[1:]:
-
                 current_data = current_data.pop(section)
                 section_data.append(current_data)
 
-
-            for_value = section_data[-1].pop("FOR").lower().split("in")
-            values = for_value[1].strip(" []").split(',')
-            section_name_base = loops[-1]
-
-            #for i in (0,len(section_data)-1):
-            #   exp_data = section_data[0]
-
-            new_sections = dict()
-            norm_val = for_value[0].strip("[] ").upper()
-            #Todo multiple variables
-            #TODO dependencies keyword is an special case
+            section_basename = loops[-1]
+            for_sections = section_data[-1].pop("FOR")
             #Delete old key
             loops.pop()
             # Delete old data
             section_data.pop()
             new_sections = dict()
-            sections_new_data = []
-            for s_val in values:
-               sect = section_name_base + "_" + s_val
-               new_data = dict()
-               for key,val in current_data.items():
-                   if val.upper() == norm_val:
-                       new_data[key] = s_val
-                   else:
-                       new_data[key] = val
+            section_ending_name = for_sections.get("NAME",[])
+            for_sections.pop("NAME")
+            n_sections_to_create = len(for_sections[list(for_sections)[0]])
+            if len(section_ending_name) == 0:
+                for i in range(0,n_sections_to_create):
+                    section_ending_name.append(str(i))
+            full_name = []
+            new_data = dict()
 
-               new_sections[sect] = new_data
-
-            #Reconstruct dict with new data
-
+            for i in range(0,n_sections_to_create):
+                full_name.append(section_basename + "_" + str(section_ending_name[i]))
+                new_data[full_name[i]] = copy.deepcopy(current_data)
 
             # Last level must contain the new info
             last_data = section_data.pop(-1)
             last_level = loops.pop(-1)
-            for new_sect_key,new_sect_val in new_sections.items():
-                last_data[new_sect_key] = new_sect_val
+            #Fill new camps
+
+            for i in range(0, n_sections_to_create):
+                for key,val_list in for_sections.items():
+                    new_data[full_name[i]][key] = val_list[i]
+            #update last dict level
+            last_data.update(new_data)
+            # backtracking
             next_section = dict()
             next_section[last_level] = last_data
             new_exp_data = next_section
-            #back_tracking
             while len(loops) > 0:
                 level_name = loops.pop(-1)
                 level_data = section_data.pop(-1)
