@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import collections
 from log.log import Log, AutosubmitCritical, AutosubmitError
 from autosubmit.job.job_common import Status, Type
 from bscearth.utils.date import sum_str_hours
@@ -81,18 +81,15 @@ class JobPackager(object):
         self.max_jobs = min(self._max_wait_jobs_to_submit,
                             self._max_jobs_to_submit)
 
-        self.wrapper_type["WRAPPERS"] = self._as_config.get_wrapper_type()
-        self.wrapper_policy["WRAPPERS"] = self._as_config.get_wrapper_policy()
-        self.wrapper_method["WRAPPERS"] = self._as_config.get_wrapper_method().lower()
-        self.jobs_in_wrapper["WRAPPERS"] = self._as_config.get_wrapper_jobs()
-        self.extensible_wallclock["WRAPPERS"] = self._as_config.get_extensible_wallclock()
-        if self._as_config.get_wrapper_type() == "multi":
-            for wrapper_section in self._as_config.get_wrapper_multi():
-                self.wrapper_type[wrapper_section] = self._as_config.get_wrapper_type(wrapper_section)
-                self.wrapper_policy[wrapper_section] = self._as_config.get_wrapper_policy(wrapper_section)
-                self.wrapper_method[wrapper_section] = self._as_config.get_wrapper_method(wrapper_section).lower()
-                self.jobs_in_wrapper[wrapper_section] = self._as_config.get_wrapper_jobs(wrapper_section)
-                self.extensible_wallclock[wrapper_section] = int(self._as_config.get_extensible_wallclock(wrapper_section))
+
+        #todo add default values
+        for wrapper_section,wrapper_data in self._as_config.experiment_data["WRAPPERS"].items():
+            if isinstance(wrapper_data,collections.Mapping):
+                self.wrapper_type[wrapper_section] = self._as_config.get_wrapper_type(wrapper_data)
+                self.wrapper_policy[wrapper_section] = self._as_config.get_wrapper_policy(wrapper_data)
+                self.wrapper_method[wrapper_section] = self._as_config.get_wrapper_method(wrapper_data).lower()
+                self.jobs_in_wrapper[wrapper_section] = self._as_config.get_wrapper_jobs(wrapper_data).upper()
+                self.extensible_wallclock[wrapper_section] = int(self._as_config.get_extensible_wallclock(wrapper_data))
         self.wrapper_info = [self.wrapper_type,self.wrapper_policy,self.wrapper_method,self.jobs_in_wrapper,self.extensible_wallclock] # to pass to job_packages
 
 
@@ -249,28 +246,23 @@ class JobPackager(object):
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.yml value (Looks first in [wrapper] section)
                 wrapper_limits = dict()
                 wrapper_limits["max_by_section"] = dict()
-                wrapper_limits["max"] = self._as_config.get_max_wrapped_jobs(self.current_wrapper_section)
-                wrapper_limits["max_v"] = self._as_config.get_max_wrapped_jobs_vertical(self.current_wrapper_section)
-                wrapper_limits["max_h"] = self._as_config.get_max_wrapped_jobs_horizontal(self.current_wrapper_section)
+                wrapper_limits["max"] = self._as_config.get_max_wrapped_jobs(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
+                wrapper_limits["max_v"] = self._as_config.get_max_wrapped_jobs_vertical(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
+                wrapper_limits["max_h"] = self._as_config.get_max_wrapped_jobs_horizontal(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
                 if wrapper_limits["max"] < wrapper_limits["max_v"] * wrapper_limits["max_h"]:
                     wrapper_limits["max"] = wrapper_limits["max_v"] * wrapper_limits["max_h"]
+                dependencies_keys = self._as_config.jobs_data[section].get('DEPENDENCIES', "")
                 if '&' not in section:
-                    if self._as_config.jobs_parser.has_option(section, 'DEPENDENCIES'):
-                        dependencies_keys = self._as_config.jobs_parser.get(
-                            section, "DEPENDENCIES").split()
-                    else:
-                        dependencies_keys = []
+                    dependencies_keys = dependencies_keys.split()
                     wrapper_limits["max_by_section"][section] = wrapper_limits["max"]
                 else:
                     multiple_sections = section.split('&')
                     dependencies_keys = []
                     for sectionN in multiple_sections:
-                        if self._as_config.jobs_parser.has_option(sectionN, 'DEPENDENCIES'):
-                            dependencies_keys += self._as_config.jobs_parser.get(
-                                sectionN, "DEPENDENCIES").split()
-                        if self._as_config.jobs_parser.has_option(sectionN, 'MAX_WRAPPED'):
-                            wrapper_limits["max_by_section"][sectionN] = int(self._as_config.jobs_parser.get(
-                                sectionN, "MAX_WRAPPED"))
+                        if self._as_config.jobs_data[sectionN].get('DEPENDENCIES',"") != "":
+                            dependencies_keys += self._as_config.jobs_data.get("DEPENDENCIES").split()
+                        if self._as_config.jobs_data[sectionN].get('MAX_WRAPPED',None) is not None:
+                            wrapper_limits["max_by_section"][sectionN] = int(self._as_config.jobs_data[sectionN].get("MAX_WRAPPED"))
                         else:
                             wrapper_limits["max_by_section"][sectionN] = wrapper_limits["max"]
                 hard_limit_wrapper =  wrapper_limits["max"]
@@ -281,12 +273,12 @@ class JobPackager(object):
                             number = int(k_divided[1].strip(" "))
                             if number < wrapper_limits["max"]:
                                 hard_limit_wrapper = number
-                wrapper_limits["min"] = min(self._as_config.jobs_parser.get_option(
-                    section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs(self.current_wrapper_section)), hard_limit_wrapper)
+                wrapper_limits["min"] = min(self._as_config.jobs_data[section].get(
+                    "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])), hard_limit_wrapper)
                 if len(self._jobs_list.jobs_to_run_first) > 0:# Allows to prepare an experiment with TWO_STEP_START  and strict policy
                     min_wrapped_jobs = 2
-                wrapper_limits["min_v"] = self._as_config.get_min_wrapped_jobs_vertical(self.current_wrapper_section)
-                wrapper_limits["min_h"] = self._as_config.get_min_wrapped_jobs_horizontal(self.current_wrapper_section)
+                wrapper_limits["min_v"] = self._as_config.get_min_wrapped_jobs_vertical(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
+                wrapper_limits["min_h"] = self._as_config.get_min_wrapped_jobs_horizontal(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
                 wrapper_limits["max"] = hard_limit_wrapper
                 if wrapper_limits["min"] < wrapper_limits["min_v"] * wrapper_limits["min_h"]:
                     wrapper_limits["min"] = max(wrapper_limits["min_v"],wrapper_limits["min_h"])
@@ -380,7 +372,8 @@ class JobPackager(object):
                                 deadlock = True
                                 if deadlock: # Remaining jobs if chunk is the last one
                                     for job in p.jobs:
-                                        if job.running =="chunk" and job.chunk == int(job.parameters["NUMCHUNKS"]):
+                                        #todo
+                                        if job.running =="chunk" and job.chunk == int(job.parameters["EXPERIMENT.NUMCHUNKS"]):
                                             deadlock = False
                                             break
                                 if not deadlock: # Submit package if deadlock has been liberated

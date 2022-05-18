@@ -40,10 +40,12 @@ class DicJobs:
     :type date_format: str
     :param default_retrials: default retrials for ech job
     :type default_retrials: int
-
+    :param as_conf: All configuration info
+    :type default_retrials: config_common
+default retrials for ech job
     """
 
-    def __init__(self, jobs_list, date_list, member_list, chunk_list, date_format, default_retrials,jobs_data):
+    def __init__(self, jobs_list, date_list, member_list, chunk_list, date_format, default_retrials,jobs_data,as_conf=""):
         self._date_list = date_list
         self._jobs_list = jobs_list
         self._member_list = member_list
@@ -52,8 +54,11 @@ class DicJobs:
         self._date_format = date_format
         self.default_retrials = default_retrials
         self._dic = dict()
+        self._as_conf = as_conf
 
-
+    @property
+    def as_conf(self):
+        return self._as_conf
     def parse_relation(self, section,member=True, unparsed_option=[],called_from=""):
         """
         function to parse a list of chunks or members to be compressible for autosubmit member_list or chunk_list.
@@ -152,11 +157,11 @@ class DicJobs:
         elif running == 'date':
             self._create_jobs_startdate(section, priority, frequency, default_job_type, jobs_data,splits)
         elif running == 'member':
-            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits,self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", []),"EXCLUDED_MEMBERS"))
+            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits,self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", ""),"EXCLUDED_MEMBERS"))
         elif running == 'chunk':
             synchronize = parameters[section].get("SYNCHRONIZE", "")
             delay = parameters[section].get("DELAY", -1)
-            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data,excluded_chunks=self.parse_relation(section,False,parameters[section].get( "EXCLUDED_CHUNKS", None),"EXCLUDED_CHUNKS"),excluded_members=self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", []),"EXCLUDED_MEMBERS"))
+            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data,excluded_chunks=self.parse_relation(section,False,parameters[section].get( "EXCLUDED_CHUNKS", None),"EXCLUDED_CHUNKS"),excluded_members=self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", ""),"EXCLUDED_MEMBERS"))
 
         pass
 

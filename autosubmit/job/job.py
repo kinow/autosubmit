@@ -837,8 +837,8 @@ class Job(object):
             platform_name = copy.deepcopy(self.platform_name)
             local_logs = copy.deepcopy(self.local_logs)
             remote_logs = copy.deepcopy(self.remote_logs)
-            as_conf = AutosubmitConfig(
-                expid, BasicConfig, YAMLParserFactory())
+            #TODO as_conf should be accesible already, no need to declare it again.
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.reload()
             if as_conf.get_disable_recovery_threads(self.platform.name) == "true":
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)

@@ -69,7 +69,7 @@ class JobList(object):
 
     """
 
-    def __init__(self, expid, config, parser_factory, job_list_persistence):
+    def __init__(self, expid, config, parser_factory, job_list_persistence,as_conf):
         self._persistence_path = os.path.join(
             config.LOCAL_ROOT_DIR, expid, "pkl")
         self._update_file = "updated_list_" + expid + ".txt"
@@ -79,6 +79,7 @@ class JobList(object):
         self._base_job_list = list()
         self._expid = expid
         self._config = config
+        self.experiment_data = as_conf.experiment_data
         self._parser_factory = parser_factory
         self._stat_val = Status()
         self._parameters = []
@@ -117,6 +118,10 @@ class JobList(object):
         :rtype: networkx graph
         """
         return self._graph
+
+    @property
+    def jobs_data(self):
+        return self.experiment_data["JOBS"]
 
     @graph.setter
     def graph(self, value):
@@ -158,7 +163,7 @@ class JobList(object):
                 self._ordered_jobs_by_date_member[wrapper_section] = {}
         pass
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True,jobs_data={}):
+                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True,jobs_data={},as_conf=""):
         """
         Creates all jobs needed for the current workflow
 
@@ -192,7 +197,7 @@ class JobList(object):
         self._chunk_list = chunk_list
 
 
-        dic_jobs = DicJobs(self,date_list, member_list,chunk_list, date_format, default_retrials,jobs_data)
+        dic_jobs = DicJobs(self,date_list, member_list,chunk_list, date_format, default_retrials,jobs_data,as_conf)
         self._dic_jobs = dic_jobs
         priority = 0
         if show_log:
@@ -244,7 +249,6 @@ class JobList(object):
                     if jobc in self._job_list:
                         job.children.add(jobc)
 
-        # Perhaps this should be done by default independent of the wrapper_type supplied
         try:
             for wrapper_section in wrapper_jobs:
                 if wrapper_jobs[wrapper_section] != 'None' and wrapper_jobs[wrapper_section] is not None:
@@ -579,7 +583,10 @@ class JobList(object):
             wrapper_jobs_reverse = wrapper_jobs.split(char)
             for section in wrapper_jobs_reverse:
                 # RUNNING = once, as default. This value comes from jobs_.yml
-                sections_running_type_map[section] = self._dic_jobs._get_option(section, "RUNNING", 'once')
+                try:
+                    sections_running_type_map[section] = self.jobs_data[section].get("RUNNING", 'once')
+                except BaseException as e:
+                    raise AutosubmitCritical("Key {0} doesn't exists.".format(section),7014,e.message)
 
             # Select only relevant jobs, those belonging to the sections defined in the wrapper
 
@@ -1088,7 +1095,7 @@ class JobList(object):
         :return: ready jobs
         :rtype: list
         """
-        ready = [job for job in self._job_list if (platform is None or job.platform.name == platform.name) and
+        ready = [job for job in self._job_list if ( platform is None or platform == "" or job.platform.name == platform.name )  and
                  job.status == Status.READY and job.hold is hold]
 
         if wrapper:

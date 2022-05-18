@@ -179,7 +179,7 @@ class JobData(object):
 
     @platform.setter
     def platform(self, platform):
-        self._platform = platform if platform and len(platform) > 0 else "NA"
+        self._platform = platform if platform and len(platform) > 0 else ""
 
     @energy.setter
     def energy(self, energy):

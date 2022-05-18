@@ -153,9 +153,9 @@ class ParamikoSubmitter(Submitter):
             remote_platform.host = host
             # Retrieve more configurations settings and save them in the object
             remote_platform.max_wallclock = platform_data[section].get('MAX_WALLCLOCK',"2:00:00")
-            remote_platform.max_processors = platform_data[section].get('MAX_PROCESSORS',-1)
-            remote_platform.max_waiting_jobs = platform_data[section].get('MAX_WAITING_JOBS',-1)
-            remote_platform.total_jobs = platform_data[section].get('TOTAL_JOBS',-1)
+            remote_platform.max_processors = platform_data[section].get('MAX_PROCESSORS',asconf.get_max_processors())
+            remote_platform.max_waiting_jobs = platform_data[section].get('MAX_WAITING_JOBS',asconf.get_max_waiting_jobs())
+            remote_platform.total_jobs = platform_data[section].get('TOTAL_JOBS',asconf.get_total_jobs())
             remote_platform.hyperthreading = platform_data[section].get('HYPERTHREADING',False)
             remote_platform.project = platform_data[section].get('PROJECT',"")
             remote_platform.budget = platform_data[section].get('BUDGET', "")
@@ -166,7 +166,7 @@ class ParamikoSubmitter(Submitter):
             remote_platform.temp_dir = platform_data[section].get('TEMP_DIR', "")
             remote_platform._default_queue = platform_data[section].get('QUEUE', "")
             remote_platform._serial_queue = platform_data[section].get('SERIAL_QUEUE', "")
-            remote_platform.processors_per_node = platform_data[section].get('PROCESSORS_PER_NODE',-1)
+            remote_platform.processors_per_node = platform_data[section].get('PROCESSORS_PER_NODE',0)
             remote_platform.custom_directives = platform_data[section].get('CUSTOM_DIRECTIVES',"")
             Log.debug("Custom directives from platform.conf: {0}".format(
                 remote_platform.custom_directives))
@@ -178,8 +178,9 @@ class ParamikoSubmitter(Submitter):
             # Save platform into result dictionary
             platforms[section] = remote_platform
 
-
-            platforms[section].serial_platform = platform_data[section].get('SERIAL_PLATFORM',"")
+            serial = platform_data[section].get('SERIAL_PLATFORM',None)
+            if serial is not None:
+                platforms[section].serial_platform = serial.upper()
 
 
         self.platforms = platforms

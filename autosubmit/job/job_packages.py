@@ -368,14 +368,14 @@ class JobPackageThread(JobPackageBase):
         self.inner_retrials = 0
         if configuration is not None:
             self.inner_retrials = configuration.get_retrials()
-            self.export = configuration.get_wrapper_export(self.current_wrapper_section)
+            self.export = configuration.get_wrapper_export(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
             if self.export != "none" and self.export != "None":
                 for job in self.jobs:
                     if job.export != "none" and job.export != "None":
                         self.export == job.export
                         break
-            if configuration.get_wrapper_queue(self.current_wrapper_section) != 'None':
-                self.queue = configuration.get_wrapper_queue(self.current_wrapper_section)
+            if configuration.get_wrapper_queue(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section]) != 'None':
+                self.queue = configuration.get_wrapper_queue(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
             else:
                 self.queue = jobs[0].queue
         else:

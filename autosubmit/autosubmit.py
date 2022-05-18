@@ -1348,10 +1348,8 @@ class Autosubmit:
             if date.minute > 1:
                 date_format = 'M'
         wrapper_jobs = dict()
-        if as_conf.get_wrapper_type() == "multi":
-            for wrapper_section in as_conf.get_wrapper_multi():
-                wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
-        wrapper_jobs["WRAPPERS"] = as_conf.get_wrapper_jobs("WRAPPERS")
+        for wrapper_section,wrapper_data in as_conf.experiment_data["WRAPPERS"].items():
+            wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_data)
         Log.warning("Aux Job_list was generated successfully")
         submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
@@ -1359,10 +1357,11 @@ class Autosubmit:
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         platforms_to_test = set()
         for job in job_list.get_job_list():
-            if not job.platform_name:
+            if job.platform_name == "" or job.platform_name is None:
                 job.platform_name = hpcarch
             job.platform = submitter.platforms[job.platform_name]
-            platforms_to_test.add(job.platform)
+            if job.platform is not None and job.platform != "":
+                platforms_to_test.add(job.platform)
 
         job_list.check_scripts(as_conf)
 
@@ -4133,7 +4132,7 @@ class Autosubmit:
 
                     Log.info("\nCreating the jobs list...")
                     job_list = JobList(expid, BasicConfig, YAMLParserFactory(),
-                                       Autosubmit._get_job_list_persistence(expid, as_conf))
+                                       Autosubmit._get_job_list_persistence(expid, as_conf),as_conf)
                     prev_job_list = Autosubmit.load_job_list(
                         expid, as_conf, notransitive=notransitive)
 
@@ -4146,10 +4145,9 @@ class Autosubmit:
                         if date.minute > 1:
                             date_format = 'M'
                     wrapper_jobs = dict()
-                    if as_conf.get_wrapper_type() == "multi":
-                        for wrapper_section in as_conf.get_wrapper_multi():
-                            wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
-                    wrapper_jobs["WRAPPERS"] = as_conf.get_wrapper_jobs("WRAPPERS")
+
+                    for wrapper_name,wrapper_parameters in as_conf.get_wrappers().items():
+                        wrapper_jobs[wrapper_name] = as_conf.get_wrapper_jobs(wrapper_parameters)
 
                     job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
@@ -5340,7 +5338,7 @@ class Autosubmit:
         rerun = as_conf.get_rerun()
 
         job_list = JobList(expid, BasicConfig, YAMLParserFactory(),
-                           Autosubmit._get_job_list_persistence(expid, as_conf))
+                           Autosubmit._get_job_list_persistence(expid, as_conf),as_conf)
         run_only_members = as_conf.get_member_list(run_only=True)
         date_list = as_conf.get_date_list()
         date_format = ''
@@ -5362,7 +5360,7 @@ class Autosubmit:
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.experiment_data, date_format, as_conf.get_retrials(),
                           as_conf.get_default_job_type(), as_conf.get_wrapper_type(), wrapper_jobs,
-                          new=False, notransitive=notransitive, run_only_members=run_only_members,jobs_data=as_conf.experiment_data)
+                          new=False, notransitive=notransitive, run_only_members=run_only_members,jobs_data=as_conf.experiment_data,as_conf=as_conf)
         if rerun == "true":
             rerun_jobs  = as_conf.get_rerun_jobs()
             job_list.rerun(rerun_jobs,monitor=monitor)

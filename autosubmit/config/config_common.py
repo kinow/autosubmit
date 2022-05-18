@@ -32,8 +32,10 @@ from log.log import Log, AutosubmitError, AutosubmitCritical
 from autosubmit.config.basicConfig import BasicConfig
 from collections import defaultdict
 import collections
+import datetime
 import pathlib
 import copy
+from datetime import datetime, timedelta
 from pathlib import Path
 
 class AutosubmitConfig(object):
@@ -53,25 +55,36 @@ class AutosubmitConfig(object):
         self.data_loops = list()
         self._conf_parser = None
         self._conf_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("autosubmit_" + expid + ".yml")
+        self._conf_parser_file_modtime = None
         self._exp_parser = None
         self._exp_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("expdef_" + expid + ".yml")
+        self._exp_parser_file_modtime = None
+
         self._platforms_parser = None
         self._platforms_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("platforms_" + expid + ".yml")
+        self._platforms_parser_file_modtime = None
+
         self._jobs_parser = None
         self._jobs_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("jobs_" + expid + ".yml")
+        self._jobs_parser_file_modtime = None
         self._proj_parser = None
         self._proj_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("proj_" + expid +".yml")
+        self._proj_parser_file_modtime = None
+        default_conf_path =  Path(self.basic_config.LOCAL_ROOT_DIR) / expid
         custom_folder_path = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf"
         self._custom_parser_files = []
+        self._custom_parser_files_modtime = []
+
         #TODO look for all files
         for f in custom_folder_path.rglob("*.yml"):
             if not f == self._proj_parser_file and not f.samefile(self._jobs_parser_file) and not f.samefile(self._platforms_parser_file) and not f.samefile(self._exp_parser_file) and not f.samefile(self._conf_parser_file):
                 self._custom_parser_files.append(f)
+                self._custom_parser_files_modtime.append(None)
 
         self.ignore_file_path = False
         self.wrong_config = defaultdict(list)
         self.warn_config = defaultdict(list)
-
+        #todo threads are loading all parameters
     @property
     def jobs_parser(self):
         return self._jobs_parser
@@ -111,6 +124,19 @@ class AutosubmitConfig(object):
     #    :rtype: str
     #    """
     #    return self._experiment_data
+
+    @property
+    def unified_data(self):
+        return self.experiment_data
+
+    @property
+    def jobs_data(self):
+        return self.experiment_data["JOBS"]
+
+    @property
+    def platforms_data(self):
+        return self.experiment_data["PLATFORMS"]
+
     @property
     def project_file(self):
         """
@@ -140,14 +166,14 @@ class AutosubmitConfig(object):
         return self._jobs_parser_file
 
 
-    def get_wrapper_export(self, wrapper_section=""):
+    def get_wrapper_export(self, wrapper={}):
         """
          Returns modules variable from wrapper
 
          :return: string
          :rtype: string
          """
-        return self.get_section([wrapper_section,'EXPORT'], "")
+        return wrapper.get('EXPORT', self.experiment_data["WRAPPERS"].get("EXPORT",""))
 
     def get_full_config_as_json(self):
         """
@@ -552,11 +578,17 @@ class AutosubmitConfig(object):
         if self._proj_parser_file.exists():
             self._proj_parser.data = self.deep_normalize(self._proj_parser.data)
             self.experiment_data = self.deep_update(self.experiment_data,self._proj_parser.data)
-        for c_parser in self._custom_parser:
-            c_parser.data = self.deep_normalize(c_parser.data)
-            self.experiment_data = self.deep_update(self.experiment_data,c_parser.data)
+        #Parse loops in original config
+        #Check if there is "FOR" clausure (Recursive search)
         self.deep_read_loops(self.experiment_data)
         self.parse_data_loops(self.experiment_data,self.data_loops)
+        if len(self._custom_parser) > 0:
+            for c_parser in self._custom_parser:
+                c_parser.data = self.deep_normalize(c_parser.data)
+                self.experiment_data = self.deep_update(self.experiment_data,c_parser.data)
+            #Parser loops in custom config
+            self.deep_read_loops(self.experiment_data)
+            self.parse_data_loops(self.experiment_data, self.data_loops)
 
 
     def parse_data_loops(self,exp_data,data_loops):
@@ -709,20 +741,11 @@ class AutosubmitConfig(object):
             self.wrong_config["Autosubmit"] += [['storage',
                                                  "TYPE parameter not found"]]
 
-        wrappers_info = parser_data.get("WRAPPERS","")
+        wrappers_info = parser_data.get("WRAPPERS",{})
         if wrappers_info:
-            #Check global configuration
-            multi_wrappers = list()
-            for wrapper_key, val in wrappers_info.items():
-                if isinstance(val, collections.Mapping):
-                    multi_wrappers.append(["WRAPPERS"]+wrapper_key)
-            if len(multi_wrappers) > 0:
-                for wrapper in multi_wrappers:
-                    self.check_wrapper_conf(wrapper)
-            else:
-                self.check_wrapper_conf(["WRAPPERS"])
+            self.check_wrapper_conf(wrappers_info)
         if parser_data["MAIL"].get("NOTIFICATIONS", False):
-            mails = parser_data["MAIL"].get("TO","").split(" ",',') if type(parser_data["MAIL"].get("TO","")) == str else parser_data["MAIL"].get("TO",[])
+            mails = parser_data["MAIL"].get("TO","").split(" ",',')
             for mail in mails:
                 if not self.is_valid_mail_address(mail):
                     self.wrong_config["Autosubmit"] += [['mail',
@@ -854,7 +877,7 @@ class AutosubmitConfig(object):
         if not parser['DEFAULT'].get('EXPID',""):
             self.wrong_config["Expdef"] += [['DEFAULT',"Mandatory DEFAULT.EXPID parameter is invalid"]]
 
-        self.hpcarch = parser['DEFAULT'].get('HPCARCH',"")
+        self.hpcarch = parser['DEFAULT'].get('HPCARCH',"").upper()
         if not self.hpcarch:
             self.wrong_config["Expdef"] += [['DEFAULT',"Mandatory DEFAULT.HPCARCH parameter is invalid"]]
         if not parser['EXPERIMENT'].get('DATELIST',""):
@@ -920,56 +943,84 @@ class AutosubmitConfig(object):
                                            "FILE_PROJECT_CONF parameter is invalid"]]
             return False
 
-    def check_wrapper_conf(self,wrapper_section_name="WRAPPERS"):
-        if not self.is_valid_jobs_in_wrapper(wrapper_section_name):
-            self.wrong_config["WRAPPERS"] += [[wrapper_section_name,
-                                              "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"]]
-        if 'horizontal' in self.get_wrapper_type(wrapper_section_name):
-            if not self._platforms_parser.check_exists(self.get_platform(), 'PROCESSORS_PER_NODE'):
-                self.wrong_config["WRAPPERS"] += [
-                    [wrapper_section_name, "PROCESSORS_PER_NODE no exist in the horizontal-wrapper platform"]]
-            if not self._platforms_parser.check_exists(self.get_platform(), 'MAX_PROCESSORS'):
-                self.wrong_config["WRAPPERS"] += [[wrapper_section_name,
-                                                  "MAX_PROCESSORS no exist in the horizontal-wrapper platform"]]
-        if 'vertical' in self.get_wrapper_type(wrapper_section_name):
-            if not self._platforms_parser.check_exists(self.get_platform(), 'MAX_WALLCLOCK'):
-                self.wrong_config["WRAPPERS"] += [[wrapper_section_name,
-                                                  "MAX_WALLCLOCK no exist in the vertical-wrapper platform"]]
-        if "WRAPPERS" not in self.wrong_config:
-            Log.result('wrappers OK')
-            return True
+    def check_wrapper_conf(self,wrappers=dict()):
+        for wrapper_name,wrapper_values in wrappers.items():
+            if not self.is_valid_jobs_in_wrapper(wrapper_values):
+                self.wrong_config["WRAPPERS"] += [[wrapper_name,
+                                                  "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"]]
+            if 'horizontal' in self.get_wrapper_type(wrapper_values):
 
+                if not self.experiment_data["PLATFORMS"][self.get_platform()].get('PROCESSORS_PER_NODE',""):
+                    self.wrong_config["WRAPPERS"] += [
+                        [wrapper_name, "PROCESSORS_PER_NODE no exist in the horizontal-wrapper platform"]]
+                if not self.experiment_data["PLATFORMS"][self.get_platform()].get('MAX_PROCESSORS',""):
+                    self.wrong_config["WRAPPERS"] += [[wrapper_name,
+                                                      "MAX_PROCESSORS no exist in the horizontal-wrapper platform"]]
+            if 'vertical' in self.get_wrapper_type(wrapper_values):
+                if not self.experiment_data["PLATFORMS"][self.get_platform()].get('MAX_WALLCLOCK',""):
+                    self.wrong_config["WRAPPERS"] += [[wrapper_name,
+                                                      "MAX_WALLCLOCK no exist in the vertical-wrapper platform"]]
+            if "WRAPPERS" not in self.wrong_config:
+                Log.result('wrappers OK')
+                return True
+    #TODO SUFIX
+    def file_modified(self,file,prev_mod_time):
+        '''
+        Function to check if a file has been modified.
+        :param file: path
+        :return: bool,new_time
+        '''
+        modified = False
+        file_mod_time = datetime.fromtimestamp(file.lstat().st_mtime)  # This is a datetime.datetime object!
+
+        max_delay = timedelta(seconds=1)
+
+        if prev_mod_time is None or prev_mod_time - file_mod_time > max_delay:
+            modified = True
+        else:
+            modified = False
+        return modified,file_mod_time
     def reload(self):
         """
         Creates parser objects for configuration files
         """
-        try:
-            self._conf_parser = AutosubmitConfig.get_parser(
-                self.parser_factory, self._conf_parser_file)
-            self._platforms_parser = AutosubmitConfig.get_parser(
-                self.parser_factory, self._platforms_parser_file)
-            self._jobs_parser = AutosubmitConfig.get_parser(
-                self.parser_factory, self._jobs_parser_file)
-            self._exp_parser = AutosubmitConfig.get_parser(
-                self.parser_factory, self._exp_parser_file)
-            self._custom_parser = []
-            for custom_file in self._custom_parser_files:
-                self._custom_parser.append(AutosubmitConfig.get_parser(
-                self.parser_factory, custom_file))
-        except IOError as e:
-            raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
-        except Exception as e:
-            raise AutosubmitCritical(
-                "{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(str(e)), 7014)
-        try:
-            if not self._proj_parser_file:
-                self._proj_parser = None
-            else:
-                self._proj_parser = AutosubmitConfig.get_parser(
-                    self.parser_factory, self._proj_parser_file)
-        except IOError as e:
-            raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
-        self.unify_conf()
+        #TODO Reload only if there are changes in files.
+        #Todo unify original config in a similar fashion than the custom one
+        # Ugly way nowadays
+        # TODO in fact, there is no need to have names, just make two dicts, one prioritary and another custom
+        any_file_changed = False
+        for config_file in range(0,len(self._custom_parser_files)):
+            modified,self._custom_parser_files_modtime[config_file] = self.file_modified(self._custom_parser_files[config_file],self._custom_parser_files_modtime[config_file])
+            if modified:
+                any_file_changed = True
+        if any_file_changed:
+            try:
+                self._conf_parser = AutosubmitConfig.get_parser(
+                    self.parser_factory, self._conf_parser_file)
+                self._platforms_parser = AutosubmitConfig.get_parser(
+                    self.parser_factory, self._platforms_parser_file)
+                self._jobs_parser = AutosubmitConfig.get_parser(
+                    self.parser_factory, self._jobs_parser_file)
+                self._exp_parser = AutosubmitConfig.get_parser(
+                    self.parser_factory, self._exp_parser_file)
+                self._custom_parser = []
+                for custom_file in self._custom_parser_files:
+                    self._custom_parser.append(AutosubmitConfig.get_parser(
+                    self.parser_factory, custom_file))
+            except IOError as e:
+                raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
+            except Exception as e:
+                raise AutosubmitCritical(
+                    "{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(str(e)), 7014)
+            try:
+                if not self._proj_parser_file:
+                    self._proj_parser = None
+                else:
+                    self._proj_parser = AutosubmitConfig.get_parser(
+                        self.parser_factory, self._proj_parser_file)
+            except IOError as e:
+                raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
+            self.unify_conf()
     def deep_get_long_key(self,section_data,long_key):
         parameters_dict = dict()
         for key, val in section_data.items():
@@ -1193,7 +1244,7 @@ class AutosubmitConfig(object):
         :return: submodules to load
         :rtype: list
         """
-        return self.get_section(['git', 'PROJECT_SUBMODULES'], [])
+        return self.get_section(['git', 'PROJECT_SUBMODULES'], "")
 
     def get_fetch_single_branch(self):
         """
@@ -1302,7 +1353,7 @@ class AutosubmitConfig(object):
         :rtype: list
         """
         date_list = list()
-        date_value = self.get_section(['experiment', 'DATELIST'],[20220401])
+        date_value = str(self.get_section(['experiment', 'DATELIST'],"20220401"))
         # Allows to use the old format for define a list.
         if type(date_value) is not list:
             if not date_value.startswith("["):
@@ -1445,7 +1496,7 @@ class AutosubmitConfig(object):
         :return: main platforms
         :rtype: str
         """
-        return self.get_section(['experiment', 'HPCARCH'],d_value="LOCAL")
+        return self.experiment_data['DEFAULT']['HPCARCH'].upper()
 
     def set_platform(self, hpc):
         """
@@ -1605,16 +1656,7 @@ class AutosubmitConfig(object):
         """
         return self.get_section(['config', 'PRESUBMISSION'], False)
 
-    def get_wrapper(self):
-        """
-        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, MULTI NONE) the user has configured in the autosubmit's config
-
-        :return: wrapper (or none)
-        :rtype: string
-        """
-
-        return self.get_section(["wrappers"],"")
-    def get_wrapper_type(self, wrapper_section=""):
+    def get_wrapper_type(self, wrapper={}):
         """
         Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, MULTI NONE) the user has configured in the autosubmit's config
 
@@ -1622,10 +1664,10 @@ class AutosubmitConfig(object):
         :rtype: string
         """
 
-        return self.get_section([wrapper_section, 'TYPE'],"")
+        return wrapper.get('TYPE',self.experiment_data["WRAPPERS"].get("TYPE",""))
 
 
-    def get_wrapper_retrials(self, wrapper_section=""):
+    def get_wrapper_retrials(self, wrapper={}):
         """
         Returns max number of retrials for job from autosubmit's config file
 
@@ -1633,27 +1675,36 @@ class AutosubmitConfig(object):
         :rtype: int
         """
         #todo
-        return self.get_section([wrapper_section,'INNER_RETRIALS'], 0)
+        return wrapper.get('INNER_RETRIALS', self.experiment_data["WRAPPERS"].get("INNER_RETRIALS",0))
 
-    def get_wrapper_policy(self, wrapper_section=""):
+    def get_wrapper_policy(self, wrapper={}):
         """
         Returns what kind of policy (flexible, strict, mixed ) the user has configured in the autosubmit's config
 
         :return: wrapper type (or none)
         :rtype: string
         """
-        return self.get_section([wrapper_section, 'POLICY'], 'flexible')
+        return wrapper.get( 'POLICY', self.experiment_data["WRAPPERS"].get("POLICY",'flexible'))
 
-    def get_wrapper_jobs(self, wrapper_section=""):
+    def get_wrappers(self):
         """
         Returns the jobs that should be wrapped, configured in the autosubmit's config
 
         :return: expression (or none)
         :rtype: string
         """
-        return self.get_section([wrapper_section, 'JOBS_IN_WRAPPER'], "")
+        return self.experiment_data.get("WRAPPERS", "")
 
-    def get_extensible_wallclock(self, wrapper_section=""):
+    def get_wrapper_jobs(self, wrapper={}):
+        """
+        Returns the jobs that should be wrapped, configured in the autosubmit's config
+
+        :return: expression (or none)
+        :rtype: string
+        """
+        return wrapper.get('JOBS_IN_WRAPPER', self.experiment_data["WRAPPERS"].get("JOBS_IN_WRAPPER",""))
+
+    def get_extensible_wallclock(self, wrapper={}):
         """
         Gets extend_wallclock for the given wrapper
         :param section: job type
@@ -1661,7 +1712,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return int(self.get_section([wrapper_section, 'EXTEND_WALLCLOCK'], 0))
+        return int(wrapper.get('EXTEND_WALLCLOCK', 0))
 
     def get_x11_jobs(self):
         """
@@ -1672,97 +1723,97 @@ class AutosubmitConfig(object):
         """
         return self.get_section(['config', 'X11_JOBS'], False)
 
-    def get_wrapper_queue(self, wrapper_section=""):
+    def get_wrapper_queue(self, wrapper={}):
         """
         Returns the wrapper queue if not defined, will be the one of the first job wrapped
 
         :return: expression (or none)
         :rtype: string
         """
-        return self.get_section([wrapper_section, 'QUEUE'], "")
+        return wrapper.get( 'QUEUE', self.experiment_data["WRAPPERS"].get("QUEUE",""))
 
-    def get_min_wrapped_jobs(self, wrapper_section=""):
+    def get_min_wrapped_jobs(self, wrapper={}):
         """
-         Returns the minim number of jobs that can be wrapped together as configured in autosubmit's config file
+         Returns the minium number of jobs that can be wrapped together as configured in autosubmit's config file
 
         :return: minim number of jobs (or total jobs)
         :rtype: int
         """
-        return self.get_section([wrapper_section, 'MIN_WRAPPED'], 2)
+        return wrapper.get('MIN_WRAPPED', 2)
 
-    def get_max_wrapped_jobs(self, wrapper_section=""):
+    def get_max_wrapped_jobs(self, wrapper={}):
         """
          Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
 
          :return: maximum number of jobs (or total jobs)
          :rtype: int
          """
-        return self.get_section([wrapper_section, 'MAX_WRAPPED'], self.get_total_jobs())
+        return wrapper.get( 'MAX_WRAPPED', self.get_total_jobs())
 
-    def get_max_wrapped_jobs_vertical(self, wrapper_section=""):
+    def get_max_wrapped_jobs_vertical(self, wrapper={}):
         """
          Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
 
          :return: maximum number of jobs (or total jobs)
          :rtype: int
          """
-        max_wrapped = self.get_max_wrapped_jobs(wrapper_section)
-        return self.get_section([wrapper_section, 'MAX_WRAPPED_V'], max_wrapped)
+        max_wrapped = self.get_max_wrapped_jobs(wrapper)
+        return int(wrapper.get('MAX_WRAPPED_V', max_wrapped))
 
-    def get_max_wrapped_jobs_horizontal(self, wrapper_section=""):
+    def get_max_wrapped_jobs_horizontal(self, wrapper={}):
         """
          Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
 
          :return: maximum number of jobs (or total jobs)
          :rtype: int
          """
-        max_wrapped = self.get_max_wrapped_jobs(wrapper_section)
-        return self.get_section(wrapper_section, 'MAX_WRAPPED_H', max_wrapped)
+        max_wrapped = self.get_max_wrapped_jobs(wrapper)
+        return int(self.get_section('MAX_WRAPPED_H', max_wrapped))
 
-    def get_min_wrapped_jobs_vertical(self, wrapper_section=""):
+    def get_min_wrapped_jobs_vertical(self, wrapper={}):
         """
          Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
 
          :return: maximum number of jobs (or total jobs)
          :rtype: int
          """
-        return int(self.get_section(wrapper_section_name, 'MIN_WRAPPED_V', 1))
+        return int(self.get_section('MIN_WRAPPED_V', 1))
 
-    def get_min_wrapped_jobs_horizontal(self, wrapper_section_name="WRAPPERS"):
+    def get_min_wrapped_jobs_horizontal(self, wrapper={}):
         """
          Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
 
          :return: maximum number of jobs (or total jobs)
          :rtype: int
          """
-        return int(self.get_section(wrapper_section_name, 'MIN_WRAPPED_H', 1))
+        return int(wrapper.get('MIN_WRAPPED_H', 1))
 
-    def get_wrapper_method(self, wrapper_section=""):
+    def get_wrapper_method(self, wrapper={}):
         """
          Returns the method of make the wrapper
 
          :return: method
          :rtype: string
          """
-        return self.get_section([wrapper_section, 'METHOD'], 'ASThread')
+        return wrapper.get('METHOD', self.experiment_data["WRAPPERS"].get("METHOD",'ASThread'))
 
-    def get_wrapper_check_time(self, wrapper_section=""):
+    def get_wrapper_check_time(self, wrapper={}):
         """
          Returns time to check the status of jobs in the wrapper
 
          :return: wrapper check time
          :rtype: int
          """
-        return int(self.get_section([wrapper_section, 'CHECK_TIME_WRAPPER'], self.get_safetysleeptime()))
+        return int(wrapper.get('CHECK_TIME_WRAPPER', self.experiment_data["WRAPPERS"].get("CHECK_TIME_WRAPPER",self.get_safetysleeptime())))
 
-    def get_wrapper_machinefiles(self, wrapper_section=""):
+    def get_wrapper_machinefiles(self, wrapper={}):
         """
          Returns the strategy for creating the machinefiles in wrapper jobs
 
          :return: machinefiles function to use
          :rtype: string
          """
-        return self.get_section([wrapper_section, 'MACHINEFILES'], "")
+        return wrapper.get('MACHINEFILES', self.experiment_data["WRAPPERS"].get("MACHINEFILES",""))
     def get_export(self, section):
         """
         Gets command line for being submitted with
@@ -1833,17 +1884,16 @@ class AutosubmitConfig(object):
         storage_type = self.get_storage_type()
         return storage_type in ['pkl', 'db']
 
-    def is_valid_jobs_in_wrapper(self,wrapper_section="WRAPPERS"):
-        expression = self.get_wrapper_jobs(wrapper_section="WRAPPERS")
-        if expression != 'None':
-            parser = self._jobs_parser
-            sections = parser.sections()
+    def is_valid_jobs_in_wrapper(self,wrapper={}):
+        expression = self.get_wrapper_jobs(wrapper)
+        jobs_data = self.experiment_data.get("JOBS",{}).keys()
+        if expression is not None and expression != "":
             for section in expression.split(" "):
                 if "&" in section:
                     for inner_section in section.split("&"):
-                        if inner_section not in sections:
+                        if inner_section not in jobs_data:
                             return False
-                elif section not in sections:
+                elif section not in jobs_data:
                     return False
         return True
 
