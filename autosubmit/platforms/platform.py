@@ -384,7 +384,9 @@ class Platform(object):
         :rtype: int
         """
         raise NotImplementedError
-
+    def check_Alljobs(self, job_list, as_conf, retries=5):
+        for job,job_prev_status in job_list:
+            self.check_job()
     def check_job(self, jobid, default_status=Status.COMPLETED, retries=5):
         """
         Checks job running status

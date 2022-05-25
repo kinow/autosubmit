@@ -86,7 +86,6 @@ class LocalPlatform(ParamikoPlatform):
         else:
             export += " ; "
         return self.get_call(job_script, job, export=export)
-
     def get_checkjob_cmd(self, job_id):
         return self.get_pscall(job_id)
 
@@ -97,6 +96,9 @@ class LocalPlatform(ParamikoPlatform):
     def restore_connection(self):
         self.connected = True
 
+    def check_Alljobs(self, job_list, as_conf, retries=5):
+        for job,prev_job_status in job_list:
+            self.check_job(job)
     def send_command(self, command,ignore_log=False, x11 = False):
         try:
             output = subprocess.check_output(command.encode(locale.getlocale()[1]), shell=True)

@@ -83,3 +83,7 @@ class PsPlatform(ParamikoPlatform):
 
     def get_checkjob_cmd(self, job_id):
         return self.get_pscall(job_id)
+
+    def check_Alljobs(self, job_list, as_conf, retries=5):
+        for job in job_list:
+            self.check_job(job)

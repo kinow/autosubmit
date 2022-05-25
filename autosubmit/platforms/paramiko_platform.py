@@ -506,7 +506,7 @@ class ParamikoPlatform(Platform):
                 return False
         return True
 
-    def check_Alljobs(self, job_list, job_list_cmd, remote_logs, retries=5):
+    def check_Alljobs(self, job_list, as_conf, retries=5):
         """
         Checks jobs running status
 
@@ -518,6 +518,10 @@ class ParamikoPlatform(Platform):
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
+        remote_logs = as_conf.get_copy_remote_logs()
+        job_list_cmd = ""
+        for job,job_prev_status in job_list:
+            job_list_cmd = str(job.id)+","
         if job_list_cmd[-1] == ",":
             job_list_cmd=job_list_cmd[:-1]
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
@@ -537,7 +541,7 @@ class ParamikoPlatform(Platform):
             Log.debug('Successful check job command')
             in_queue_jobs = []
             list_queue_jobid = ""
-            for job in job_list:
+            for job,job_prev_status in job_list:
                 job_id = job.id
                 job_status = self.parse_Alljobs_output(job_list_status, job_id)
                 while len(job_status) <= 0 and retries >= 0:
@@ -1060,7 +1064,7 @@ class ParamikoPlatform(Platform):
             path = os.path.join(self.scratch, self.project, self.user, "permission_checker_azxbyc")
             try:
                 self._ftpChannel.rmdir(path)
-            except:
+            except IOError:
                 pass
             self._ftpChannel.mkdir(path)
             self._ftpChannel.rmdir(path)

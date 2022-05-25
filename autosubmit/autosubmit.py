@@ -1378,6 +1378,68 @@ class Autosubmit:
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
             job_list.update_list(as_conf, False)
 
+
+    @staticmethod
+    def terminate(all_threads):
+        # Closing threads on Ctrl+C
+        Log.info(
+            "Looking for active threads before closing Autosubmit. Ending the program before these threads finish may result in unexpected behavior. This procedure will last until all threads have finished or the program has waited for more than 30 seconds.")
+        timeout = 0
+        active_threads = True
+        while active_threads and timeout <= 60:
+            active_threads = False
+            for thread in all_threads:
+                if "JOB_" in thread.name:
+                    if thread.is_alive():
+                        active_threads = True
+                        Log.info("{0} is still retrieving outputs, time remaining is {1} seconds.".format(
+                            thread.name, 60 - timeout))
+                        break
+            if active_threads:
+                sleep(10)
+                timeout += 10
+    @staticmethod
+    def manage_wrapper_job(as_conf,job_list,platform,wrapper_id,save = False):
+        check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
+        Log.debug('WRAPPER CHECK TIME = {0}'.format(
+            check_wrapper_jobs_sleeptime))
+        # Setting prev_status as an easy way to check status change for inner jobs
+        wrapper_job = job_list.job_package_map[wrapper_id]
+        if as_conf.get_notifications():
+            for inner_job in wrapper_job.job_list:
+                inner_job.prev_status = inner_job.status
+        check_wrapper = True
+        if wrapper_job.status == Status.RUNNING:
+            check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now(
+            ) - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
+        if check_wrapper:
+            Log.debug('Checking Wrapper {0}'.format(str(wrapper_id)))
+            wrapper_job.checked_time = datetime.datetime.now()
+            platform.check_job(wrapper_job)
+            try:
+                if wrapper_job.status != wrapper_job.new_status:
+                    Log.info('Wrapper job ' + wrapper_job.name + ' changed from ' + str(
+                        Status.VALUE_TO_KEY[wrapper_job.status]) + ' to status ' + str(
+                        Status.VALUE_TO_KEY[wrapper_job.new_status]))
+                    save = True
+            except:
+                raise AutosubmitCritical(
+                    "Wrapper is in Unknown Status couldn't get wrapper parameters", 7050)
+
+            # New status will be saved and inner_jobs will be checked.
+            wrapper_job.check_status(
+                wrapper_job.new_status)
+            # Erase from packages if the wrapper failed to be queued ( Hold Admin bug )
+            if wrapper_job.status == Status.WAITING:
+                for inner_job in wrapper_job.job_list:
+                    inner_job.packed = False
+                job_list.job_package_map.pop(
+                    wrapper_id, None)
+                job_list.packages_dict.pop(
+                    wrapper_id, None)
+            save = True
+            return wrapper_job,save
+
     @staticmethod
     def run_experiment(expid, notransitive=False, update_version=False, start_time=None, start_after=None, run_members=None):
         """
@@ -1611,28 +1673,12 @@ class Autosubmit:
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
+
                 while job_list.get_active():
                     #Log.info("FD: {0}".format(log.fd_show.fd_table_status_str()))
                     try:
                         if Autosubmit.exit:
-                            # Closing threads on Ctrl+C
-                            Log.info(
-                                "Looking for active threads before closing Autosubmit. Ending the program before these threads finish may result in unexpected behavior. This procedure will last until all threads have finished or the program has waited for more than 30 seconds.")
-                            timeout = 0
-                            active_threads = True
-                            all_threads = threading.enumerate()
-                            while active_threads and timeout <= 60:
-                                active_threads = False
-                                for thread in all_threads:
-                                    if "JOB_" in thread.name:
-                                        if thread.is_alive():
-                                            active_threads = True
-                                            Log.info("{0} is still retrieving outputs, time remaining is {1} seconds.".format(
-                                                thread.name, 60 - timeout))
-                                            break
-                                if active_threads:
-                                    sleep(10)
-                                    timeout += 10
+                            Autosubmit.terminate(threading.enumerate())
                             return 0
                         # reload parameters changes
                         Log.debug("Reloading parameters...")
@@ -1652,59 +1698,26 @@ class Autosubmit:
                         check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
                         Log.debug("Sleep: {0}", safetysleeptime)
                         Log.debug("Number of retrials: {0}", default_retrials)
-                        Log.debug('WRAPPER CHECK TIME = {0}'.format(
-                            check_wrapper_jobs_sleeptime))
+
                         if save:  # previous iteration
                             job_list.backup_save()
                         save = False
                         slurm = []
                         job_changes_tracker = {}  # to easily keep track of changes per iteration
+                        Log.debug("End of checking")
+                        # End Check Current jobs
+                        # jobs_to_check are no wrapped jobs.
+                        jobs_to_check = dict()
+                        # Check Wrappers and add non-wrapped jobs to be checked later.
                         for platform in platforms_to_test:
-                            list_jobid = ""
-                            completed_joblist = []
-                            list_prevStatus = []
                             queuing_jobs = job_list.get_in_queue_grouped_id(platform)
                             Log.debug('Checking jobs for platform={0}'.format(platform.name))
                             for job_id, job in queuing_jobs.items():
                                 # Check Wrappers one-by-one
                                 if job_list.job_package_map and job_id in job_list.job_package_map:
-                                    wrapper_job = job_list.job_package_map[job_id]
-                                    # Setting prev_status as an easy way to check status change for inner jobs
-                                    if as_conf.get_notifications() == 'true':
-                                        for inner_job in wrapper_job.job_list:
-                                            inner_job.prev_status = inner_job.status
-                                    check_wrapper = True
-                                    if wrapper_job.status == Status.RUNNING:
-                                        check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now(
-                                        ) - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
-                                    if check_wrapper:
-                                        Log.debug('Checking Wrapper {0}'.format(str(job_id)))
-                                        wrapper_job.checked_time = datetime.datetime.now()
-                                        platform.check_job(wrapper_job)
-                                        try:
-                                            if wrapper_job.status != wrapper_job.new_status:
-                                                Log.info('Wrapper job ' + wrapper_job.name + ' changed from ' + str(
-                                                    Status.VALUE_TO_KEY[wrapper_job.status]) + ' to status ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
-                                                save = True
-                                        except:
-                                            raise AutosubmitCritical(
-                                                "Wrapper is in Unknown Status couldn't get wrapper parameters", 7050)
-
-                                        # New status will be saved and inner_jobs will be checked.
-                                        wrapper_job.check_status(
-                                            wrapper_job.new_status)
-                                        # Erase from packages if the wrapper failed to be queued ( Hold Admin bug )
-                                        if wrapper_job.status == Status.WAITING:
-                                            for inner_job in wrapper_job.job_list:
-                                                inner_job.packed = False
-                                            job_list.job_package_map.pop(
-                                                job_id, None)
-                                            job_list.packages_dict.pop(
-                                                job_id, None)
-                                        save = True
-
+                                    wrapper_job,save = Autosubmit.manage_wrapper_job(as_conf,job_list,platform,job_id)
                                     # Notifications e-mail
-                                    if as_conf.get_notifications() == 'true':
+                                    if as_conf.get_notifications():
                                         for inner_job in wrapper_job.job_list:
                                             if inner_job.prev_status != inner_job.status:
                                                 if Status.VALUE_TO_KEY[inner_job.status] in inner_job.notify_on:
@@ -1712,72 +1725,57 @@ class Autosubmit:
                                                                                   Status.VALUE_TO_KEY[inner_job.prev_status],
                                                                                   Status.VALUE_TO_KEY[inner_job.status],
                                                                                   as_conf.get_mails_to())
-                                    # Detect and store changes
+                                    # Detect and store changes for the GUI
                                     job_changes_tracker = {job.name: (
                                         job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
-                                else:  # Prepare jobs, if slurm check all active jobs at once.
-                                    # TODO: All of this should be a function, put in slurm_platform file, paramiko and ecmwf check_jobs to clean the code
-                                    job = job[0]
-                                    prev_status = job.status
+                                else:  # Adds to a list all running jobs to be checked.
                                     if job.status == Status.FAILED:
                                         continue
+                                    job_prev_status = job.status
                                     # If exist key has been pressed and previous status was running, do not check
-                                    if not (Autosubmit.exit is True and prev_status == Status.RUNNING):
-                                        if platform.type == "slurm":  # List for add all jobs that will be checked
-                                            # Do not check if Autosubmit exit is True and the previous status was running.
-                                            # if not (Autosubmit.exit == True and prev_status == Status.RUNNING):
-                                            list_jobid += str(job_id) + ','
-                                            list_prevStatus.append(prev_status)
-                                            completed_joblist.append(job)
-                                        else:  # If they're not from slurm platform check one-by-one TODO: Implement ecwmf future platform and mnX, abstract this part
-                                            platform.check_job(job)
+                                    if not (Autosubmit.exit is True and job_prev_status == Status.RUNNING):
+                                        if platform.name in jobs_to_check:
+                                            jobs_to_check[platform.name].append(job, job_prev_status)
+                                        else:
+                                            jobs_to_check[platform.name] = [(job, job_prev_status)]
+                                        #if platform.type == "slurm":  # List for add all jobs that will be checked
+                                        #    list_jobid += str(job_id) + ','
+                                        #    list_prevStatus.append(job_prev_status)
+                                        #    completed_joblist.append(job)
+                                        #else:  # If they're not from slurm platform check one-by-one TODO: Implement ecwmf future platform and mnX, abstract this part
+                                        #    platform.check_job(job)
                                             #Log.info("FD 4 check job: {0}".format(log.fd_show.fd_table_status_str()))
-                                            if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
+                                        #    if job_prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                                 # Keeping track of changes
-                                                job_changes_tracker[job.name] = (
-                                                    prev_status, job.status)
-                                                if as_conf.get_notifications() == 'true':
-                                                    if Status.VALUE_TO_KEY[job.status] in job.notify_on:
-                                                        Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                                      Status.VALUE_TO_KEY[prev_status],
-                                                                                      Status.VALUE_TO_KEY[job.status],
-                                                                                      as_conf.get_mails_to())
-                                        save = True
-
-                            # IF there are jobs in an slurm platform, prepare the check them at once
-                            if platform.type == "slurm" and list_jobid != "":
-                                slurm.append(
-                                    [platform, list_jobid, list_prevStatus, completed_joblist])
-                        # Check slurm single jobs, the other platforms has already been checked.
-                        for platform_jobs in slurm:
-                            platform = platform_jobs[0]
-                            jobs_to_check = platform_jobs[1]
-                            Log.debug("Checking all jobs at once")
-                            platform.check_Alljobs(
-                                platform_jobs[3], jobs_to_check, as_conf.get_copy_remote_logs())
-                            #Log.info("FD slurm jobs: {0}".format(log.fd_show.fd_table_status_str()))
-
-                            for j_Indx in range(0, len(platform_jobs[3])):
-                                prev_status = platform_jobs[2][j_Indx]
-                                job = platform_jobs[3][j_Indx]
-                                if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
+                                                #job_changes_tracker[job.name] = (job_prev_status, job.status)
+                                                #if as_conf.get_notifications():
+                                                #    if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                                                #        Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                #                                      Status.VALUE_TO_KEY[job_prev_status],
+                                                #                                      Status.VALUE_TO_KEY[job.status],
+                                                #                                      as_conf.get_mails_to())
+                                        #save = True
+                        for platform in platforms_to_test:
+                            platform_jobs = jobs_to_check[platform.name]
+                            #not all platforms are doing this check simultaneosly
+                            if len(platform_jobs) == 0:
+                                continue
+                            platform.check_Alljobs(jobs_to_check[platform.name], as_conf)
+                            # mail notification
+                            for job,job_prev_status in platform_jobs:
+                                if job_prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                     # Keeping track of changes
-                                    job_changes_tracker[job.name] = (prev_status, job.status)
+                                    job_changes_tracker[job.name] = (job_prev_status, job.status)
                                     if as_conf.get_notifications() == 'true':
                                         if Status.VALUE_TO_KEY[job.status] in job.notify_on:
                                             Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                          Status.VALUE_TO_KEY[prev_status],
+                                                                          Status.VALUE_TO_KEY[job_prev_status],
                                                                           Status.VALUE_TO_KEY[job.status],
                                                                           as_conf.get_mails_to())
                                 save = True
-                        Log.debug("End of checking")
-                        # End Check Current jobs
                         save2 = job_list.update_list(
                             as_conf, submitter=submitter)
-                        #Log.info("FD update list: {0}".format(log.fd_show.fd_table_status_str()))
-
                         job_list.save()
-                        #Log.info("FD save list: {0}".format(log.fd_show.fd_table_status_str()))
                         if len(job_list.get_ready()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=False)

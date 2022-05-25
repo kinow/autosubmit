@@ -1316,6 +1316,9 @@ class JobList(object):
             if job.id not in jobs_by_id:
                 jobs_by_id[job.id] = list()
             jobs_by_id[job.id].append(job)
+        for job_id in jobs_by_id.keys():
+            if len(jobs_by_id[job_id]) == 1:
+                jobs_by_id[job_id] = jobs_by_id[job_id][0]
         return jobs_by_id
 
     def get_in_ready_grouped_id(self, platform):
