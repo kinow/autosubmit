@@ -521,14 +521,14 @@ class ParamikoPlatform(Platform):
         remote_logs = as_conf.get_copy_remote_logs()
         job_list_cmd = ""
         for job,job_prev_status in job_list:
-            job_list_cmd = str(job.id)+","
+            job_list_cmd += str(job.id)+","
         if job_list_cmd[-1] == ",":
             job_list_cmd=job_list_cmd[:-1]
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
         sleep_time = 5
         sleep(sleep_time)
         self.send_command(cmd)
-        while not self._check_jobid_in_queue(self.get_ssh_output(), job_list_cmd) and retries > 0:
+        while not self._check_jobid_in_queue(self.get_ssh_output(), job_list_cmd) and retries >= 0:
             self.send_command(cmd)
             Log.debug('Retrying check job command: {0}', cmd)
             Log.debug('retries left {0}', retries)
@@ -1064,7 +1064,7 @@ class ParamikoPlatform(Platform):
             path = os.path.join(self.scratch, self.project, self.user, "permission_checker_azxbyc")
             try:
                 self._ftpChannel.rmdir(path)
-            except IOError:
+            except IOError as e:
                 pass
             self._ftpChannel.mkdir(path)
             self._ftpChannel.rmdir(path)

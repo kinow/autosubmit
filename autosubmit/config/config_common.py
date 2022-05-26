@@ -314,7 +314,7 @@ class AutosubmitConfig(object):
         :return: tasks (processes) per host
         :rtype: str
         """
-        return str(self.get_section([section, 'TASKS'], 0))
+        return str(self.get_section([section, 'TASKS'], ""))
 
     def get_scratch_free_space(self, section):
         """
@@ -324,7 +324,7 @@ class AutosubmitConfig(object):
         :return: percentage of scratch free space needed
         :rtype: int
         """
-        return int(self.get_section([section, 'SCRATCH_FREE_SPACE'], 0))
+        return int(self.get_section([section, 'SCRATCH_FREE_SPACE'], ""))
 
     def get_memory(self, section):
         """
@@ -745,8 +745,16 @@ class AutosubmitConfig(object):
         if wrappers_info:
             self.check_wrapper_conf(wrappers_info)
         if parser_data["MAIL"].get("NOTIFICATIONS", False):
-            mails = parser_data["MAIL"].get("TO","").split(" ",',')
-            for mail in mails:
+            mails = parser_data["MAIL"].get("TO", "")
+            if type(mails) == list:
+                pass
+            elif "," in mails:
+                mails = mails.split(',')
+            else:
+                mails = mails.split(' ')
+            self.experiment_data["MAIL"]["TO"] = mails
+
+            for mail in self.experiment_data["MAIL"]["TO"]:
                 if not self.is_valid_mail_address(mail):
                     self.wrong_config["Autosubmit"] += [['mail',
                                                          "invalid e-mail"]]
@@ -1926,8 +1934,8 @@ class AutosubmitConfig(object):
         if file_path.match("*proj*"):
             if file_path.exists():
                 parser.data = parser.load(file_path)
-            else:
-                Log.warning( "{0} was not found. Some variables might be missing. If your experiment does not need a proj file, you can ignore this message.", file_path)
+            #else:
+                #Log.warning( "{0} was not found. Some variables might be missing. If your experiment does not need a proj file, you can ignore this message.", file_path)
         else:
             # This block may rise an exception but all its callers handle it
             try:

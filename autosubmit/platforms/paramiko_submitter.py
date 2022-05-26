@@ -166,7 +166,7 @@ class ParamikoSubmitter(Submitter):
             remote_platform.temp_dir = platform_data[section].get('TEMP_DIR', "")
             remote_platform._default_queue = platform_data[section].get('QUEUE', "")
             remote_platform._serial_queue = platform_data[section].get('SERIAL_QUEUE', "")
-            remote_platform.processors_per_node = platform_data[section].get('PROCESSORS_PER_NODE',0)
+            remote_platform.processors_per_node = platform_data[section].get('PROCESSORS_PER_NODE',"")
             remote_platform.custom_directives = platform_data[section].get('CUSTOM_DIRECTIVES',"")
             Log.debug("Custom directives from platform.conf: {0}".format(
                 remote_platform.custom_directives))

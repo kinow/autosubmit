@@ -53,7 +53,7 @@ class Pbs10Header(object):
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #PBS -N %JOBNAME%
@@ -67,7 +67,7 @@ class Pbs10Header(object):
 
     PARALLEL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #PBS -N %JOBNAME%

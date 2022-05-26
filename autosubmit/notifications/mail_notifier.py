@@ -36,7 +36,7 @@ class MailNotifier:
             try:
                 self._send_mail(self.config.MAIL_FROM, mail, message)
             except BaseException as e:
-                Log.printlog('An error occurred while sending a mail for warn about remote_platform', 6011)
+                Log.printlog('An error has occurred while sending a mail for warn about remote_platform', 6011)
     def notify_status_change(self, exp_id, job_name, prev_status, status, mail_to):
         message_text = self._generate_message_text(exp_id, job_name, prev_status, status)
         message = MIMEText(message_text)
@@ -47,7 +47,7 @@ class MailNotifier:
             try:
                 self._send_mail(self.config.MAIL_FROM, mail, message)
             except BaseException as e:
-                Log.printlog('An error occurred while sending a mail for the job {0}'.format(job_name), 6011)
+                Log.printlog('An error has occurred while sending a mail for the job {0}'.format(job_name), 6011)
 
     def _send_mail(self, mail_from, mail_to, message):
         server = smtplib.SMTP(self.config.SMTP_SERVER)

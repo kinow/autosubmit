@@ -19,6 +19,7 @@
 import threading
 import traceback
 import requests
+import collections
 
 from .statistics import utils
 
@@ -1724,7 +1725,7 @@ class Autosubmit:
                                                     Notifier.notify_status_change(MailNotifier(BasicConfig), expid, inner_job.name,
                                                                                   Status.VALUE_TO_KEY[inner_job.prev_status],
                                                                                   Status.VALUE_TO_KEY[inner_job.status],
-                                                                                  as_conf.get_mails_to())
+                                                                                  as_conf.experiment_data["MAIL"]["TO"])
                                     # Detect and store changes for the GUI
                                     job_changes_tracker = {job.name: (
                                         job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
@@ -1735,7 +1736,7 @@ class Autosubmit:
                                     # If exist key has been pressed and previous status was running, do not check
                                     if not (Autosubmit.exit is True and job_prev_status == Status.RUNNING):
                                         if platform.name in jobs_to_check:
-                                            jobs_to_check[platform.name].append(job, job_prev_status)
+                                            jobs_to_check[platform.name].append((job, job_prev_status))
                                         else:
                                             jobs_to_check[platform.name] = [(job, job_prev_status)]
                                         #if platform.type == "slurm":  # List for add all jobs that will be checked
@@ -1756,22 +1757,22 @@ class Autosubmit:
                                                 #                                      as_conf.get_mails_to())
                                         #save = True
                         for platform in platforms_to_test:
-                            platform_jobs = jobs_to_check[platform.name]
+                            platform_jobs = jobs_to_check.get(platform.name,[])
                             #not all platforms are doing this check simultaneosly
                             if len(platform_jobs) == 0:
                                 continue
                             platform.check_Alljobs(jobs_to_check[platform.name], as_conf)
                             # mail notification
                             for job,job_prev_status in platform_jobs:
-                                if job_prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
+                                if job_prev_status != job.update_status(as_conf.get_copy_remote_logs()):
                                     # Keeping track of changes
                                     job_changes_tracker[job.name] = (job_prev_status, job.status)
-                                    if as_conf.get_notifications() == 'true':
+                                    if as_conf.get_notifications():
                                         if Status.VALUE_TO_KEY[job.status] in job.notify_on:
                                             Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
                                                                           Status.VALUE_TO_KEY[job_prev_status],
                                                                           Status.VALUE_TO_KEY[job.status],
-                                                                          as_conf.get_mails_to())
+                                                                          as_conf.experiment_data["MAIL"]["TO"])
                                 save = True
                         save2 = job_list.update_list(
                             as_conf, submitter=submitter)
@@ -1960,7 +1961,7 @@ class Autosubmit:
                     active_threads = False
                     for thread in all_threads:
                         if "JOB_" in thread.name:
-                            if thread.isAlive():
+                            if thread.is_alive():
                                 active_threads = True
                                 Log.info("{0} is still retrieving outputs, time remaining is {1} seconds.".format(
                                     thread.name, 180 - timeout))
@@ -2131,7 +2132,7 @@ class Autosubmit:
                             jobs_id = platform.submit_Script(hold=hold)
                         except AutosubmitError as e:
                             jobs_id = None
-                            if e.message.lower().find("bad parameters") != -1 or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1:
+                            if e.message.lower().find("bad parameters") != -1 or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1 or e.message.lower().find(" memory") != -1:
                                 error_msg = ""
                                 for package_tmp in valid_packages_to_submit:
                                     for job_tmp in package_tmp.jobs:
@@ -5347,12 +5348,10 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
-        #TODO
         wrapper_jobs = dict()
-        # wrapper_jobs["WRAPPERS"] = as_conf.get_wrapper_jobs()
-        # if as_conf.get_wrapper_type() == "multi":
-        #     for wrapper_section in as_conf.get_wrapper_multi():
-        #         wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
+        for wrapper_section,wrapper_data in as_conf.experiment_data["WRAPPERS"].items():
+            if isinstance(wrapper_data,collections.Mapping):
+                wrapper_jobs[wrapper_section] = wrapper_data.get("JOBS_IN_WRAPPER","")
 
 
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),

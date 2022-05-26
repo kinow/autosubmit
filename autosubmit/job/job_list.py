@@ -251,7 +251,7 @@ class JobList(object):
 
         try:
             for wrapper_section in wrapper_jobs:
-                if wrapper_jobs[wrapper_section] != 'None' and wrapper_jobs[wrapper_section] is not None:
+                if wrapper_jobs[wrapper_section] is not None and len(wrapper_jobs[wrapper_section]) > 0:
                     self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
                 else:
                     self._ordered_jobs_by_date_member[wrapper_section] = {}

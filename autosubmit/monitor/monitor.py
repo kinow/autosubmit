@@ -494,7 +494,7 @@ class Monitor:
     def get_general_stats(expid):
         # type: (str) -> List[str]
         """
-        Returns all the options in the sections of the %expid%_GENERAL_STATS
+        Returns all the options in the sections of the %DEFAULT.EXPID%_GENERAL_STATS
 
         :param expid: experiment's identifier  
         :type expid: str  

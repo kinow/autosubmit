@@ -149,13 +149,13 @@ class LsfHeader(object):
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #%QUEUE_DIRECTIVE%
             #BSUB -J %JOBNAME%
-            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
+            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
+            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
             %EXCLUSIVITY_DIRECTIVE%
@@ -166,13 +166,13 @@ class LsfHeader(object):
 
     PARALLEL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #%QUEUE_DIRECTIVE%
             #BSUB -J %JOBNAME%
-            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
+            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
+            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
             %TASKS_PER_NODE_DIRECTIVE%

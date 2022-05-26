@@ -51,12 +51,12 @@ class PsHeader(object):
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             """)
 
     PARALLEL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             """)

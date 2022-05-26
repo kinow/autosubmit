@@ -56,13 +56,13 @@ class SgeHeader(object):
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #$ -S /bin/sh
             #$ -N %JOBNAME%
-            #$ -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
-            #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
+            #$ -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/
+            #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/
             #$ -V
             #$ -l h_rt=%WALLCLOCK%:00
             #$ -l s_rt=%WALLCLOCK%:00
@@ -74,13 +74,13 @@ class SgeHeader(object):
 
     PARALLEL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #$ -S /bin/sh
             #$ -N %JOBNAME%
-            #$ -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
-            #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
+            #$ -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/
+            #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/
             #$ -V
             #$ -l h_rt=%WALLCLOCK%:00
             #$ -l s_rt=%WALLCLOCK%:00

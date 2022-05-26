@@ -98,7 +98,7 @@ class Job(object):
         self.section = None # type: str
         self.wallclock = None # type: str
         self.wchunkinc = None
-        self.tasks = '0' 
+        self.tasks = '1'
         self.threads = '1'
         self.processors = '1'
         self.memory = ''
@@ -971,29 +971,30 @@ class Job(object):
                 parameters['Chunk_LAST'] = 'FALSE'
 
         job_platform = self._platform
-        self.processors = as_conf.get_processors(self.section)
-        self.threads = as_conf.get_threads(self.section)
-        self.tasks = as_conf.get_tasks(self.section)
-        if self.tasks == '0' and job_platform.processors_per_node:
-            self.tasks = job_platform.processors_per_node
-        self.memory = as_conf.get_memory(self.section)
-        self.memory_per_task = as_conf.get_memory_per_task(self.section)
-        self.wallclock = as_conf.get_wallclock(self.section)
-        self.wchunkinc = as_conf.get_wchunkinc(self.section)
+        self.processors = as_conf.jobs_data[self.section].get("PROCESSORS","1")
+        self.threads = as_conf.jobs_data[self.section].get("THREADS","1")
+        self.tasks = as_conf.jobs_data[self.section].get("TASKS","1")
+        if int(self.tasks) > 1 and job_platform.processors_per_node is not None and job_platform.processors_per_node != "":
+            if int(job_platform.processors_per_node) > 0:
+                self.tasks = job_platform.processors_per_node
+        self.memory = as_conf.jobs_data[self.section].get("MEMORY","")
+        self.memory_per_task = as_conf.jobs_data[self.section].get("MEMORY_PER_TASK","")
+        self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK","02:00")
+        self.wchunkinc = as_conf.jobs_data[self.section].get("WCHUNKINC","")
         # Increasing according to chunk
         self.wallclock = increase_wallclock_by_chunk(
             self.wallclock, self.wchunkinc, chunk)
-        self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
+        self.scratch_free_space = as_conf.jobs_data[self.section].get("SCRATCH_FREE_SPACE","")
         if self.scratch_free_space == 0:
             self.scratch_free_space = job_platform.scratch_free_space
-        self.custom_directives = as_conf.get_custom_directives(self.section)
+        self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","")
         if self.custom_directives != '':
             self.custom_directives = json.loads(
-                as_conf.get_custom_directives(self.section))
-            if job_platform.custom_directives:
+                as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES",""))
+            if job_platform.custom_directives != "":
                 self.custom_directives = self.custom_directives + \
                     json.loads(job_platform.custom_directives)
-        elif job_platform.custom_directives:
+        elif job_platform.custom_directives is not None and job_platform.custom_directives != "":
             self.custom_directives = json.loads(job_platform.custom_directives)
         elif self.custom_directives == '':
             self.custom_directives = []
@@ -1029,7 +1030,7 @@ class Job(object):
 
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['WRAPPER'] = as_conf.get_wrapper_type()
-        parameters['DEPENDENCIES'] = as_conf.get_dependencies(self.section)
+        parameters['DEPENDENCIES'] = as_conf.jobs_data[self.section].get("DEPENDENCIES","")
         self.dependencies = parameters['DEPENDENCIES']
 
         if self.export:

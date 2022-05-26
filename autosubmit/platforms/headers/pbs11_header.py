@@ -53,7 +53,7 @@ class Pbs11Header(object):
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################
-            #                         %TASKTYPE% %EXPID% EXPERIMENT
+            #                         %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #!/bin/sh --login
@@ -61,8 +61,8 @@ class Pbs11Header(object):
             #PBS -l mppwidth=%NUMPROC%
             #PBS -l mppnppn=%NUMTASK%
             #PBS -l walltime=%WALLCLOCK%
-            #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
-            #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
+            #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%
+            #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%
             %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
@@ -70,7 +70,7 @@ class Pbs11Header(object):
 
     PARALLEL = textwrap.dedent("""\
             ###############################################################################
-            #                         %TASKTYPE% %EXPID% EXPERIMENT
+            #                         %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #!/bin/sh --login
@@ -78,8 +78,8 @@ class Pbs11Header(object):
             #PBS -l mppwidth=%NUMPROC%
             #PBS -l mppnppn=%NUMTASK%
             #PBS -l walltime=%WALLCLOCK%
-            #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
-            #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
+            #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%
+            #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%
             %CUSTOM_DIRECTIVES%
             #
             ###############################################################################

@@ -479,19 +479,21 @@ default retrials for ech job
         job.queue = parameters[section].get( "QUEUE", "")
         job.check = parameters[section].get( "CHECK", True)
         job.export = parameters[section].get( "EXPORT", "")
-        job.processors = parameters[section].get( "PROCESSORS", 1)
-        job.threads = parameters[section].get( "THREADS", 1)
-        job.tasks = parameters[section].get( "TASKS", 0)
+        job.processors = parameters[section].get( "PROCESSORS", "")
+        job.threads = parameters[section].get( "THREADS", "")
+        job.tasks = parameters[section].get( "TASKS", "")
         job.memory = parameters[section].get("MEMORY", "")
         job.memory_per_task = parameters[section].get("MEMORY_PER_TASK", "")
         job.wallclock = parameters[section].get("WALLCLOCK", "2:00:00")
-        job.retrials = parameters[section].get( 'RETRIALS', -1)
+        job.retrials = parameters[section].get( 'RETRIALS', 0)
         job.delay_retrials = parameters[section].get( 'DELAY_RETRY_TIME', -1)
         if job.retrials == -1:
             job.retrials = None
         notify_on = parameters[section].get("NOTIFY_ON",None)
         if type(notify_on) == str:
             job.notify_on = [x.upper() for x in notify_on.split(' ')]
+        else:
+            job.notify_on = ""
         job.synchronize = parameters[section].get( "SYNCHRONIZE", "")
         job.check_warnings = parameters[section].get("SHOW_CHECK_WARNINGS", False)
         job.running = parameters[section].get( 'RUNNING', 'once')

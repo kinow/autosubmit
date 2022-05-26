@@ -122,7 +122,7 @@ class SlurmHeader(object):
 
     SERIAL = textwrap.dedent("""\
 ###############################################################################
-#                   %TASKTYPE% %EXPID% EXPERIMENT
+#                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
 ###############################################################################
 #
 #%QUEUE_DIRECTIVE%
@@ -134,8 +134,8 @@ class SlurmHeader(object):
 #SBATCH -n %NUMPROC%
 #SBATCH -t %WALLCLOCK%:00
 #SBATCH -J %JOBNAME%
-#SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-#SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
+#SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
+#SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
 %CUSTOM_DIRECTIVES%
 #%X11%
 #
@@ -144,7 +144,7 @@ class SlurmHeader(object):
 
     PARALLEL = textwrap.dedent("""\
 ###############################################################################
-#                   %TASKTYPE% %EXPID% EXPERIMENT
+#                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
 ###############################################################################
 #
 #%QUEUE_DIRECTIVE%
@@ -156,8 +156,8 @@ class SlurmHeader(object):
 #SBATCH -n %NUMPROC%
 #SBATCH -t %WALLCLOCK%:00
 #SBATCH -J %JOBNAME%
-#SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-#SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
+#SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
+#SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
 %CUSTOM_DIRECTIVES%
 #%X11%
 #

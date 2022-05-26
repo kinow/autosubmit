@@ -50,7 +50,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     :type experiment_id: str  
     :param job_list: list of jobs (filtered)  
     :type job_list: list of Job objects  
-    :param general_stats: list of sections and options in the %expid%_GENERAL_STATS file  
+    :param general_stats: list of sections and options in the %DEFAULT.EXPID%_GENERAL_STATS file
     :type general_stats: list of tuples  
     :param output_file: path to the output file  
     :type output_file: str  

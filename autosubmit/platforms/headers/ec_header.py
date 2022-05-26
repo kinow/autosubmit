@@ -54,15 +54,15 @@ class EcHeader(object):
     # noinspection PyPep8
     SERIAL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #@ shell            = /usr/bin/ksh
             #@ class            = ns
             #@ job_type         = serial
             #@ job_name         = %JOBNAME%
-            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
+            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/$(job_name).$(jobid).out
+            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/$(job_name).$(jobid).err
             #@ notification     = error
             #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
             #@ wall_clock_limit = %WALLCLOCK%:00
@@ -75,15 +75,15 @@ class EcHeader(object):
     # noinspection PyPep8
     PARALLEL = textwrap.dedent("""\
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
             ###############################################################################
             #
             #@ shell            = /usr/bin/ksh
             #@ class            = np
             #@ job_type         = parallel
             #@ job_name         = %JOBNAME%
-            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
+            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/$(job_name).$(jobid).out
+            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/$(job_name).$(jobid).err
             #@ notification     = error
             #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
             #@ ec_smt           = no
