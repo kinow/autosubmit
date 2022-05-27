@@ -1,11 +1,12 @@
 from unittest import TestCase
 from autosubmit.config.config_common import AutosubmitConfig
-from bscearth.utils.config_parser import ConfigParserFactory, ConfigParser
+from autosubmit.config.yaml_parser import YAMLParserFactory, YAMLParser
 from mock import Mock
 from mock import patch
 from mock import mock_open
 import os
 import sys
+from pathlib import Path
 from datetime import datetime
 
 # compatibility with both versions (2 & 3)
@@ -25,24 +26,24 @@ class TestAutosubmitConfig(TestCase):
     option = 'any-option'
 
     def setUp(self):
-        self.config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+        self.config = AutosubmitConfig(self.any_expid, FakeBasicConfig, YAMLParserFactory())
         self.config.reload()
 
     def test_get_parser(self):
         # arrange
-        file_path = 'dummy/file/path'
+        file_path = Path('dummy/file/path')
 
-        parser_mock = Mock(spec=ConfigParser)
+        parser_mock = Mock(spec=YAMLParser)
         parser_mock.read = Mock()
 
-        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock = Mock(spec=YAMLParserFactory)
         factory_mock.create_parser = Mock(return_value=parser_mock)
 
         # act
         returned_parser = AutosubmitConfig.get_parser(factory_mock, file_path)
 
         # assert
-        self.assertTrue(isinstance(returned_parser, ConfigParser))
+        self.assertTrue(isinstance(returned_parser, YAMLParser))
         factory_mock.create_parser.assert_called_with()
         parser_mock.read.assert_called_with(file_path)
 
