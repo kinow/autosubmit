@@ -2,7 +2,7 @@ from unittest import TestCase
 from mock import Mock
 from autosubmit.job.job_list import JobList
 from bscearth.utils.date import parse_date, date2str
-from bscearth.utils.config_parser import ConfigParserFactory
+from autosubmit.config.yaml_parser import YAMLParserFactory
 from autosubmit.job.job_list_persistence import JobListPersistenceDb
 from autosubmit.job.job_common import Status
 from random import randrange
@@ -15,8 +15,13 @@ class TestJobGrouping(TestCase):
 
     def setUp(self):
         self.experiment_id = 'random-id'
-        self.job_list = JobList(self.experiment_id, FakeBasicConfig, ConfigParserFactory(),
-                                JobListPersistenceDb('.', '.'))
+        self.as_conf = Mock()
+        self.as_conf.experiment_data = dict()
+        self.as_conf.experiment_data["JOBS"] = dict()
+        self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
+        self.as_conf.experiment_data["PLATFORMS"] = dict()
+        self.job_list = JobList(self.experiment_id, FakeBasicConfig, YAMLParserFactory(),
+                                JobListPersistenceDb('.', '.'),self.as_conf)
         self.parser_mock = Mock(spec='SafeConfigParser')
 
         # Basic workflow with SETUP, INI, SIM, POST, CLEAN

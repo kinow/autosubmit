@@ -564,7 +564,7 @@ class JobPackageVertical(JobPackageThread):
     def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="WRAPPERS", wrapper_info = {}):
         super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section, wrapper_info = wrapper_info)
         for job in jobs:
-            if job.processors > int(self._num_processors):
+            if int(job.processors) > int(self._num_processors):
                 self._num_processors = job.processors
                 self._threads = job.threads
 

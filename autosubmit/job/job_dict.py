@@ -45,7 +45,7 @@ class DicJobs:
 default retrials for ech job
     """
 
-    def __init__(self, jobs_list, date_list, member_list, chunk_list, date_format, default_retrials,jobs_data,as_conf=""):
+    def __init__(self, jobs_list, date_list, member_list, chunk_list, date_format, default_retrials,jobs_data,as_conf):
         self._date_list = date_list
         self._jobs_list = jobs_list
         self._member_list = member_list
@@ -148,7 +148,8 @@ default retrials for ech job
         :param priority: priority for the jobs
         :type priority: int
         """
-        parameters = self._jobs_data["JOBS"]
+        parameters = self.as_conf.jobs_data
+
         splits = parameters[section].get("SPLITS", -1)
         running = parameters[section].get('RUNNING',"once").lower()
         frequency = parameters[section].get("FREQUENCY", 1)
@@ -383,7 +384,7 @@ default retrials for ech job
             else:
                 for d in self._date_list:
                     self._get_date(jobs, dic, d, member, chunk)
-        if len(jobs) > 0 and isinstance(jobs[0], Iterable):
+        if len(jobs) > 1 and isinstance(jobs[0], Iterable):
             try:
                 jobs_flattened = [job for jobs_to_flatten in jobs for job in jobs_to_flatten]
                 jobs = jobs_flattened
@@ -427,7 +428,7 @@ default retrials for ech job
         return jobs
 
     def build_job(self, section, priority, date, member, chunk, default_job_type, jobs_data=dict(), split=-1):
-        parameters = self._jobs_data["JOBS"]
+        parameters = self.as_conf.jobs_data
         name = self._jobs_list.expid
         if date is not None:
             name += "_" + date2str(date, self._date_format)

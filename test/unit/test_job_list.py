@@ -4,19 +4,24 @@ from unittest import TestCase
 import os
 from mock import Mock
 
-from bscearth.utils.config_parser import ConfigParserFactory
+from autosubmit.config.yaml_parser import YAMLParserFactory
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_common import Type
 from autosubmit.job.job_list_persistence import JobListPersistenceDb
-
+from pathlib import Path
 
 class TestJobList(TestCase):
     def setUp(self):
         self.experiment_id = 'random-id'
-        self.job_list = JobList(self.experiment_id, FakeBasicConfig, ConfigParserFactory(),
-                                JobListPersistenceDb('.', '.'))
+        self.as_conf = Mock()
+        self.as_conf.experiment_data = dict()
+        self.as_conf.experiment_data["JOBS"] = dict()
+        self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
+        self.as_conf.experiment_data["PLATFORMS"] = dict()
+        self.job_list = JobList(self.experiment_id, FakeBasicConfig, YAMLParserFactory(),
+                                JobListPersistenceDb('.', '.'),self.as_conf)
 
         # creating jobs for self list
         self.completed_job = self._createDummyJobWithStatus(Status.COMPLETED)
@@ -203,11 +208,11 @@ class TestJobList(TestCase):
         parser_mock = Mock()
         parser_mock.read = Mock()
 
-        factory = ConfigParserFactory()
+        factory = YAMLParserFactory()
         factory.create_parser = Mock(return_value=parser_mock)
 
         job_list = JobList(self.experiment_id, FakeBasicConfig,
-                           factory, JobListPersistenceDb('.', '.'))
+                           factory, JobListPersistenceDb('.', '.'),self.as_conf)
         job_list._create_jobs = Mock()
         job_list._add_dependencies = Mock()
         job_list.update_genealogy = Mock()
@@ -230,12 +235,10 @@ class TestJobList(TestCase):
         self.assertEqual(job_list._date_list, date_list)
         self.assertEqual(job_list._member_list, member_list)
         self.assertEqual(job_list._chunk_list, list(range(1, num_chunks + 1)))
-        parser_mock.read.assert_called_once_with(os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.experiment_id,
-                                                              'conf', "jobs_" + self.experiment_id + ".conf"))
+
         cj_args, cj_kwargs = job_list._create_jobs.call_args
-        self.assertEqual(parser_mock, cj_args[1])
         self.assertEqual(0, cj_args[2])
-        job_list._add_dependencies.assert_called_once_with(date_list, member_list, chunk_list, cj_args[0], parser_mock,
+        job_list._add_dependencies.assert_called_once_with(date_list, member_list, chunk_list, cj_args[0],
                                                            graph_mock)
         # Adding flag update structure
         job_list.update_genealogy.assert_called_once_with(
@@ -247,12 +250,12 @@ class TestJobList(TestCase):
         # arrange
         dic_mock = Mock()
         dic_mock.read_section = Mock()
+        dic_mock._jobs_data = dict()
+        dic_mock._jobs_data["JOBS"] = {'fake-section-1':{},'fake-section-2':{}}
+        self.job_list.as_conf.jobs_data = {'fake-section-1': {} , 'fake-section-2': {}}
 
-        parser_mock = Mock()
-        parser_mock.sections = Mock(return_value=['fake-section-1',
-                                                  'fake-section-2'])
         # act
-        JobList._create_jobs(dic_mock, parser_mock, 0, Type.BASH)
+        JobList._create_jobs(dic_mock, 0, Type.BASH,jobs_data=dict())
 
         # arrange
         dic_mock.read_section.assert_any_call(

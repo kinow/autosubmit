@@ -79,6 +79,7 @@ class JobList(object):
         self._base_job_list = list()
         self._expid = expid
         self._config = config
+        self.as_conf = as_conf
         self.experiment_data = as_conf.experiment_data
         self._parser_factory = parser_factory
         self._stat_val = Status()
@@ -152,8 +153,8 @@ class JobList(object):
         chunk_list = list(range(chunk_ini, num_chunks + 1))
 
         jobs_parser = self._get_jobs_parser()
-        dic_jobs = DicJobs(self, jobs_parser, date_list, member_list,
-                           chunk_list, date_format, default_retrials)
+        dic_jobs = DicJobs(self, date_list, member_list,
+                           chunk_list, date_format, default_retrials,jobs_data={},as_conf=self.as_conf)
         self._dic_jobs = dic_jobs
         # Perhaps this should be done by default independent of the wrapper_type supplied
         for wrapper_section in wrapper_jobs:
@@ -222,7 +223,6 @@ class JobList(object):
         if show_log:
             Log.info("Adding dependencies...")
         self._add_dependencies(date_list, member_list,chunk_list, dic_jobs, self.graph)
-
         if show_log:
             Log.info("Removing redundant dependencies...")
         self.update_genealogy(
@@ -545,10 +545,9 @@ class JobList(object):
             parent = parents[i] if isinstance(parents, list) else parents
             graph.add_edge(parent.name, job.name)
             pass
-
     @staticmethod
     def _create_jobs(dic_jobs, priority, default_job_type, jobs_data=dict()):
-        for section in dic_jobs._jobs_data["JOBS"].keys():
+        for section in dic_jobs._jobs_data.get("JOBS",{}).keys():
             Log.debug("Creating {0} jobs".format(section))
             dic_jobs.read_section(section, priority, default_job_type, jobs_data)
             priority += 1

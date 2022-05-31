@@ -23,9 +23,15 @@ class TestJob(TestCase):
         self.job_name = 'random-name'
         self.job_id = 999
         self.job_priority = 0
-
+        self.as_conf = Mock()
+        self.as_conf.experiment_data = dict()
+        self.as_conf.experiment_data["JOBS"] = dict()
+        self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
+        self.as_conf.experiment_data["PLATFORMS"] = dict()
         self.job = Job(self.job_name, self.job_id, Status.WAITING, self.job_priority)
         self.job.processors = 2
+        self.as_conf.load_project_parameters = Mock(return_value=dict())
+
 
     def test_when_the_job_has_more_than_one_processor_returns_the_parallel_platform(self):
         platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig)
@@ -88,6 +94,8 @@ class TestJob(TestCase):
         dummy_platform = Platform('whatever', 'parallel', FakeBasicConfig)
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.queue = parallel_queue
+        dummy_platform.processors_per_node = "1"
+        #dummy_platform.hyperthreading = "false"
 
         self.job._platform = dummy_platform
         self.job.processors = '1'
@@ -175,8 +183,8 @@ class TestJob(TestCase):
             self.job.create_script(config)
         # assert
         update_content_mock.assert_called_with(config)
-        open_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 'w')
-        write_mock.write.assert_called_with('some-content: 999, 777, 666 % %')
+        open_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 'wb')
+        write_mock.write.assert_called_with(b'some-content: 999, 777, 666 % %')
         chmod_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 0o755)
 
     def test_that_check_script_returns_false_when_there_is_an_unbound_template_variable(self):
@@ -250,16 +258,26 @@ class TestJob(TestCase):
         # This test (and feature) was implemented in order to avoid
         # false positives on the checking process with auto-ecearth3
         # Arrange
-        as_conf = Mock()
-        as_conf.get_processors = Mock(return_value=80)
-        as_conf.get_threads = Mock(return_value=1)
-        as_conf.get_tasks = Mock(return_value=16)
-        as_conf.get_memory = Mock(return_value=80)
-        as_conf.get_wallclock = Mock(return_value='00:30')
-        as_conf.get_member_list = Mock(return_value=[])
-        as_conf.get_custom_directives = Mock(return_value='["whatever"]')
-        as_conf.load_project_parameters = Mock(return_value=dict())
+        section = "random-section"
+        self.job.section = "random-section"
         self.job.parameters['PROJECT_TYPE'] = "none"
+        processors = 80
+        threads = 1
+        tasks = 16
+        memory = 80
+        wallclock = "00:30"
+        self.as_conf.get_member_list = Mock(return_value = [])
+        custom_directives = '["whatever"]'
+        options = {
+            'PROCESSORS': processors,
+            'THREADS': threads,
+            'TASKS': tasks,
+            'MEMORY': memory,
+            'WALLCLOCK': wallclock,
+            'CUSTOM_DIRECTIVES': custom_directives
+        }
+        self.as_conf.jobs_data[section] = options
+
         dummy_serial_platform = Mock()
         dummy_serial_platform.name = 'serial'
         dummy_platform = Mock()
@@ -269,7 +287,7 @@ class TestJob(TestCase):
         self.job._platform = dummy_platform
 
         # Act
-        parameters = self.job.update_parameters(as_conf, dict())
+        parameters = self.job.update_parameters(self.as_conf, dict())
         # Assert
         self.assertTrue('d' in parameters)
         self.assertTrue('d_' in parameters)

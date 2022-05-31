@@ -117,6 +117,7 @@ class Job(object):
         self.long_name = name
         self.date_format = ''
         self.type = Type.BASH
+        self.hyperthreading = 'false'
         self.scratch_free_space = None
         self.custom_directives = []
         self.undefined_variables = None
@@ -553,7 +554,8 @@ class Job(object):
                     if already_completed:
                         break
                     already_completed = True
-                retrial_dates = [parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y for y in retrial_fields]
+                retrial_dates = map(lambda y: parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y,
+                                    retrial_fields)
                 # Inserting list [submit, start, finish] of datetimes at the beginning of the list. Restores ordering.
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
@@ -951,12 +953,19 @@ class Job(object):
             parameters['Chunk_START_DAY'] = str(chunk_start.day).zfill(2)
             parameters['Chunk_START_HOUR'] = str(chunk_start.hour).zfill(2)
 
+            parameters['Chunk_SECOND_TO_LAST_DATE'] = date2str(
+                chunk_end_1, self.date_format)
+            parameters['Chunk_SECOND_TO_LAST_YEAR'] = str(chunk_end_1.year)
+            parameters['Chunk_SECOND_TO_LAST_MONTH'] = str(chunk_end_1.month).zfill(2)
+            parameters['Chunk_SECOND_TO_LAST_DAY'] = str(chunk_end_1.day).zfill(2)
+            parameters['Chunk_SECOND_TO_LAST_HOUR'] = str(chunk_end_1.hour).zfill(2)
+
             parameters['Chunk_END_DATE'] = date2str(
                 chunk_end_1, self.date_format)
-            parameters['Chunk_END_YEAR'] = str(chunk_end_1.year)
-            parameters['Chunk_END_MONTH'] = str(chunk_end_1.month).zfill(2)
-            parameters['Chunk_END_DAY'] = str(chunk_end_1.day).zfill(2)
-            parameters['Chunk_END_HOUR'] = str(chunk_end_1.hour).zfill(2)
+            parameters['Chunk_END_YEAR'] = str(chunk_end.year)
+            parameters['Chunk_END_MONTH'] = str(chunk_end.month).zfill(2)
+            parameters['Chunk_END_DAY'] = str(chunk_end.day).zfill(2)
+            parameters['Chunk_END_HOUR'] = str(chunk_end.hour).zfill(2)
 
             parameters['PREV'] = str(subs_dates(self.date, chunk_start, cal))
 
@@ -974,9 +983,11 @@ class Job(object):
         self.processors = as_conf.jobs_data[self.section].get("PROCESSORS","1")
         self.threads = as_conf.jobs_data[self.section].get("THREADS","1")
         self.tasks = as_conf.jobs_data[self.section].get("TASKS","1")
-        if int(self.tasks) > 1 and job_platform.processors_per_node is not None and job_platform.processors_per_node != "":
-            if int(job_platform.processors_per_node) > 0:
-                self.tasks = job_platform.processors_per_node
+        self.hyperthreading = as_conf.jobs_data[self.section].get("HYPERTHREADING","none")
+        if self.hyperthreading == 'none':
+            self.hyperthreading = job_platform.hyperthreading.lower()
+        if int(self.tasks) <= 1 and job_platform.processors_per_node > 1 :
+            self.tasks = job_platform.processors_per_node
         self.memory = as_conf.jobs_data[self.section].get("MEMORY","")
         self.memory_per_task = as_conf.jobs_data[self.section].get("MEMORY_PER_TASK","")
         self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK","02:00")

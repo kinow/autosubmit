@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from mock import Mock
 import math
-from bscearth.utils.config_parser import ConfigParserFactory
+from autosubmit.config.yaml_parser import YAMLParserFactory
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.job.job_dict import DicJobs
@@ -14,8 +14,13 @@ from autosubmit.job.job_list_persistence import JobListPersistenceDb
 class TestDicJobs(TestCase):
     def setUp(self):
         self.experiment_id = 'random-id'
-        self.job_list = JobList(self.experiment_id, FakeBasicConfig, ConfigParserFactory(),
-                                JobListPersistenceDb('.', '.'))
+        self.as_conf = Mock()
+        self.as_conf.experiment_data = dict()
+        self.as_conf.experiment_data["JOBS"] = dict()
+        self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
+        self.as_conf.experiment_data["PLATFORMS"] = dict()
+        self.job_list = JobList(self.experiment_id, FakeBasicConfig, YAMLParserFactory(),
+                                JobListPersistenceDb('.', '.'),self.as_conf)
         self.parser_mock = Mock(spec='SafeConfigParser')
         self.date_list = ['fake-date1', 'fake-date2']
         self.member_list = ['fake-member1', 'fake-member2']
@@ -23,8 +28,8 @@ class TestDicJobs(TestCase):
         self.chunk_list = list(range(1, self.num_chunks + 1))
         self.date_format = 'H'
         self.default_retrials = 999
-        self.dictionary = DicJobs(self.job_list, self.parser_mock, self.date_list, self.member_list, self.chunk_list,
-                                  self.date_format, self.default_retrials)
+        self.dictionary = DicJobs(self.job_list,self.date_list, self.member_list, self.chunk_list,
+                                  self.date_format, self.default_retrials,self.as_conf.jobs_data,self.as_conf)
 
     def test_read_section_running_once_create_jobs_once(self):
         # arrange
@@ -32,9 +37,16 @@ class TestDicJobs(TestCase):
         priority = 999
         frequency = 123
         splits = -1
-        self.parser_mock.has_option = Mock(return_value=True)
-        self.parser_mock.get = Mock(return_value='once')
-        self.dictionary.get_option = Mock(return_value=-1)
+        running= "once"
+        options = {
+            'FREQUENCY': frequency,
+            'PRIORITY': priority,
+            'SPLITS': splits,
+            'EXCLUDED_LIST_C': [],
+            'EXCLUDED_LIST_M': [],
+            'RUNNING': running
+        }
+        self.as_conf.jobs_data[section] = options
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -51,15 +63,23 @@ class TestDicJobs(TestCase):
 
     def test_read_section_running_date_create_jobs_startdate(self):
         # arrange
+
         section = 'fake-section'
         priority = 999
         frequency = 123
         splits = -1
-        self.parser_mock.has_option = Mock(return_value=True)
-        self.parser_mock.get = Mock(return_value='date')
-        #self.dictionary.get_option = Mock(return_value=frequency)
-        self.dictionary.get_option = Mock(side_effect=[splits,frequency ])
-        #self.dictionary.get_option = Mock(return_value=splits)
+        running = "date"
+        synchronize = "date"
+        options = {
+            'FREQUENCY': frequency,
+            'PRIORITY': priority,
+            'SYNCHRONIZE': synchronize,
+            'SPLITS': splits,
+            'EXCLUDED_LIST_C': [],
+            'EXCLUDED_LIST_M': [],
+            'RUNNING': running
+        }
+        self.as_conf.jobs_data[section] = options
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -81,9 +101,16 @@ class TestDicJobs(TestCase):
         frequency = 123
         splits = 0
         excluded_list_m = []
-        self.parser_mock.has_option = Mock(return_value=True)
-        self.parser_mock.get = Mock(return_value='member')
-        self.dictionary.get_option = Mock(side_effect=[splits,frequency,excluded_list_m])
+        running = "member"
+        options = {
+            'FREQUENCY': frequency,
+            'PRIORITY': priority,
+            'SPLITS': splits,
+            'EXCLUDED_LIST_C': [],
+            'EXCLUDED_LIST_M': [],
+            'RUNNING': running
+        }
+        self.as_conf.jobs_data[section] = options
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -101,29 +128,31 @@ class TestDicJobs(TestCase):
     def test_read_section_running_chunk_create_jobs_chunk(self):
         # arrange
         section = 'fake-section'
-        priority = 999
-        frequency = 123
-        synchronize = 'date'
-        delay = -1
-        splits = 0
-        excluded_list_c = []
-        excluded_list_m = []
-        self.parser_mock.has_option = Mock(return_value=True)
-        self.parser_mock.get = Mock(return_value='chunk')
-        self.dictionary.get_option = Mock(side_effect=[splits,frequency, synchronize, delay,excluded_list_c,excluded_list_m])
+        options = {
+            'FREQUENCY': 123,
+            'PRIORITY': 999,
+            'DELAY': -1,
+            'SYNCHRONIZE': 'date',
+            'SPLITS': 0,
+            'EXCLUDED_LIST_C': [],
+            'EXCLUDED_LIST_M': [],
+            'RUNNING': "chunk"
+        }
+
+        self.as_conf.jobs_data[section] = options
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
         self.dictionary._create_jobs_chunk = Mock()
 
         # act
-        self.dictionary.read_section(section, priority, Type.BASH)
+        self.dictionary.read_section(section, options["PRIORITY"], Type.BASH)
 
         # assert
         self.dictionary._create_jobs_once.assert_not_called()
         self.dictionary._create_jobs_startdate.assert_not_called()
         self.dictionary._create_jobs_member.assert_not_called()
-        self.dictionary._create_jobs_chunk.assert_called_once_with(section, priority, frequency, Type.BASH, synchronize, delay, splits, {},excluded_chunks=[],excluded_members=[])
+        self.dictionary._create_jobs_chunk.assert_called_once_with(section, options["PRIORITY"], options["FREQUENCY"], Type.BASH, options["SYNCHRONIZE"], options["DELAY"], options["SPLITS"], {},excluded_chunks=[],excluded_members=[])
 
     def test_dic_creates_right_jobs_by_startdate(self):
         # arrange
@@ -287,7 +316,8 @@ class TestDicJobs(TestCase):
         self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
 
     def test_create_job_creates_a_job_with_right_parameters(self):
-        section = ''
+
+        section = 'test'
         priority = 99
         date = datetime(2016, 1, 1)
         member = 'fc0'
@@ -308,17 +338,16 @@ class TestDicJobs(TestCase):
             'SYNCHRONIZE': None,
             'RERUN_ONLY': 'True',
         }
-        self.parser_mock.has_option = lambda _, option: option in options
-        self.parser_mock.get = lambda _, option: options[option]
+        self.as_conf.jobs_data[section] = options
         job_list_mock = Mock()
         job_list_mock.append = Mock()
         self.dictionary._jobs_list.get_job_list = Mock(return_value=job_list_mock)
 
         # act
-        created_job = self.dictionary.build_job(section, priority, date, member, chunk, 'bash')
+        created_job = self.dictionary.build_job(section, priority, date, member, chunk, 'bash',self.as_conf.experiment_data)
 
         # assert
-        self.assertEqual('random-id_2016010100_fc0_ch0_', created_job.name)
+        self.assertEqual('random-id_2016010100_fc0_ch0_test', created_job.name)
         self.assertEqual(Status.WAITING, created_job.status)
         self.assertEqual(priority, created_job.priority)
         self.assertEqual(section, created_job.section)
@@ -331,7 +360,7 @@ class TestDicJobs(TestCase):
         self.assertTrue(created_job.wait)
         self.assertTrue(created_job.rerun_only)
         self.assertEqual(Type.BASH, created_job.type)
-        self.assertEqual(None, created_job.executable)
+        self.assertEqual("", created_job.executable)
         self.assertEqual(options['PLATFORM'], created_job.platform_name)
         self.assertEqual(options['FILE'], created_job.file)
         self.assertEqual(options['QUEUE'], created_job.queue)
@@ -341,25 +370,8 @@ class TestDicJobs(TestCase):
         self.assertEqual(options['TASKS'], created_job.tasks)
         self.assertEqual(options['MEMORY'], created_job.memory)
         self.assertEqual(options['WALLCLOCK'], created_job.wallclock)
-        self.assertIsNone(created_job.retrials)
+        self.assertEqual(0,created_job.retrials)
         job_list_mock.append.assert_called_once_with(created_job)
-
-    def test_get_option_returns_the_right_option_otherwise_the_default(self):
-        # arrange
-        section = 'any-section'
-        option = 'any-option'
-        default = 'any-default'
-
-        self.parser_mock.has_option = Mock(side_effect=[True, False])
-        self.parser_mock.get = Mock(return_value=option)
-
-        # act
-        returned_option = self.dictionary.get_option(section, option, default)
-        returned_default = self.dictionary.get_option(section, option, default)
-
-        # assert
-        self.assertEqual(option, returned_option)
-        self.assertEqual(default, returned_default)
 
     def test_get_member_returns_the_jobs_if_no_member(self):
         # arrange

@@ -6,7 +6,7 @@ from autosubmit.job.job import Job
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_utils import Dependency
-from bscearth.utils.config_parser import ConfigParserFactory
+from autosubmit.config.yaml_parser import YAMLParserFactory
 from autosubmit.job.job_list_persistence import JobListPersistenceDb
 from autosubmit.job.job_common import Status
 from random import randrange
@@ -152,26 +152,40 @@ class TestWrappers(TestCase):
         self.experiment_id = 'random-id'
         self.config = FakeBasicConfig
         self._platform = Mock()
-        self.job_list = JobList(self.experiment_id, self.config, ConfigParserFactory(),
-                                JobListPersistenceDb('.', '.'))
+        self.as_conf = Mock()
+        self.as_conf.experiment_data = dict()
+        self.as_conf.experiment_data["JOBS"] = dict()
+        self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
+
+        self.as_conf.experiment_data["PLATFORMS"] = dict()
+        self.as_conf.experiment_data["WRAPPERS"] = dict()
+        self.job_list = JobList(self.experiment_id, self.config, YAMLParserFactory(),
+                                JobListPersistenceDb('.', '.'),self.as_conf)
         self.parser_mock = Mock(spec='SafeConfigParser')
 
         self._platform.max_waiting_jobs = 100
         self._platform.total_jobs = 100
         self.config.get_wrapper_type = Mock(return_value='vertical')
-        self.config.get_wrapper_export = Mock(return_value='none')
-        self.config.get_wrapper_crossdate = Mock(return_value=False)
-        self.config.get_remote_dependencies = Mock(return_value=False)
+        self.config.get_wrapper_export = Mock(return_value='')
         self.config.get_wrapper_jobs = Mock(return_value='None')
         self.config.get_wrapper_method = Mock(return_value='ASThread')
         self.config.get_wrapper_queue = Mock(return_value='debug')
         self.config.get_wrapper_policy = Mock(return_value='flexible')
         self.config.get_extensible_wallclock = Mock(return_value=0)
         self.config.get_retrials = Mock(return_value=0)
-        self.config.get = Mock(return_value='flexible')
-        #self.snippet = Mock(return_value='flexible')
+        options = {
+            'TYPE': "vertical",
+            'JOBS_IN_WRAPPER': "None",
+            'EXPORT': "none",
+            'METHOD': "ASThread",
+            'QUEUE': "debug",
+            'POLICY': "flexible",
+            'RETRIALS': 0,
+            'EXTEND_WALLCLOCK': 0
+        }
+        self.as_conf.experiment_data["WRAPPERS"]["WRAPPERS"] = options
         self.job_packager = JobPackager(
-            self.config, self._platform, self.job_list)
+            self.as_conf, self._platform, self.job_list)
         self.job_list._ordered_jobs_by_date_member["WRAPPERS"] = dict()
 
     ### ONE SECTION WRAPPER ###
@@ -180,7 +194,8 @@ class TestWrappers(TestCase):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -261,6 +276,8 @@ class TestWrappers(TestCase):
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -339,7 +356,8 @@ class TestWrappers(TestCase):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -409,7 +427,8 @@ class TestWrappers(TestCase):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -479,7 +498,8 @@ class TestWrappers(TestCase):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -547,7 +567,8 @@ class TestWrappers(TestCase):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -628,7 +649,8 @@ class TestWrappers(TestCase):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -709,7 +731,8 @@ class TestWrappers(TestCase):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -798,7 +821,8 @@ class TestWrappers(TestCase):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -874,7 +898,8 @@ class TestWrappers(TestCase):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -953,7 +978,8 @@ class TestWrappers(TestCase):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -1050,7 +1076,8 @@ class TestWrappers(TestCase):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['basic']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['basic'], date_list, member_list, chunk_list)
 
@@ -1099,7 +1126,8 @@ class TestWrappers(TestCase):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['running_date']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['running_date'], date_list, member_list, chunk_list)
 
@@ -1168,7 +1196,8 @@ class TestWrappers(TestCase):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['running_once']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['running_once'], date_list, member_list, chunk_list)
 
@@ -1235,7 +1264,8 @@ class TestWrappers(TestCase):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['synchronize_date']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['synchronize_date'], date_list, member_list, chunk_list)
 
@@ -1306,7 +1336,8 @@ class TestWrappers(TestCase):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
-
+        for section,s_value in self.workflows['synchronize_member']['sections'].items():
+            self.as_conf.jobs_data[section] = s_value
         self._createDummyJobs(
             self.workflows['synchronize_member'], date_list, member_list, chunk_list)
 
@@ -1429,7 +1460,7 @@ class TestWrappers(TestCase):
         self.job_list._chunk_list = chunk_list
 
         self.job_list._dic_jobs = DicJobs(
-            self.job_list, self.parser_mock, date_list, member_list, chunk_list, "", 0)
+            self.job_list, date_list, member_list, chunk_list, "", 0,jobs_data={},as_conf=self.as_conf)
         self._manage_dependencies(sections_dict)
 
     def _manage_dependencies(self, sections_dict):

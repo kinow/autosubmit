@@ -89,7 +89,7 @@ class JobPackager(object):
                 self.wrapper_policy[wrapper_section] = self._as_config.get_wrapper_policy(wrapper_data)
                 self.wrapper_method[wrapper_section] = self._as_config.get_wrapper_method(wrapper_data).lower()
                 self.jobs_in_wrapper[wrapper_section] = self._as_config.get_wrapper_jobs(wrapper_data).upper()
-                self.extensible_wallclock[wrapper_section] = int(self._as_config.get_extensible_wallclock(wrapper_data))
+                self.extensible_wallclock[wrapper_section] = self._as_config.get_extensible_wallclock(wrapper_data)
         self.wrapper_info = [self.wrapper_type,self.wrapper_policy,self.wrapper_method,self.jobs_in_wrapper,self.extensible_wallclock] # to pass to job_packages
 
 
