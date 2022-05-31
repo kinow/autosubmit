@@ -485,7 +485,7 @@ default retrials for ech job
         job.tasks = parameters[section].get( "TASKS", "")
         job.memory = parameters[section].get("MEMORY", "")
         job.memory_per_task = parameters[section].get("MEMORY_PER_TASK", "")
-        job.wallclock = parameters[section].get("WALLCLOCK", "2:00:00")
+        job.wallclock = parameters[section].get("WALLCLOCK", "2:00")
         job.retrials = parameters[section].get( 'RETRIALS', 0)
         job.delay_retrials = parameters[section].get( 'DELAY_RETRY_TIME', -1)
         if job.retrials == -1:

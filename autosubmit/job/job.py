@@ -323,6 +323,8 @@ class Job(object):
         """
         if ':' in self.processors:
             return reduce(lambda x, y: int(x) + int(y), self.processors.split(':'))
+        elif self.processors == "":
+            return 1
         return int(self.processors)
 
     @property

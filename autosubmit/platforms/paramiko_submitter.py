@@ -152,7 +152,7 @@ class ParamikoSubmitter(Submitter):
 
             remote_platform.host = host
             # Retrieve more configurations settings and save them in the object
-            remote_platform.max_wallclock = platform_data[section].get('MAX_WALLCLOCK',"2:00:00")
+            remote_platform.max_wallclock = platform_data[section].get('MAX_WALLCLOCK',"2:00")
             remote_platform.max_processors = platform_data[section].get('MAX_PROCESSORS',asconf.get_max_processors())
             remote_platform.max_waiting_jobs = platform_data[section].get('MAX_WAITING_JOBS',asconf.get_max_waiting_jobs())
             remote_platform.total_jobs = platform_data[section].get('TOTAL_JOBS',asconf.get_total_jobs())
