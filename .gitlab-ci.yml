@@ -24,10 +24,12 @@ test_python3:
     - git submodule sync --recursive
     - git submodule update --init --recursive
     - conda env update -f environment.yml -n autosubmit3 python=3
+    - pwd
+    - ls
     - source activate autosubmit3
-    - python3 -m 'nose' --exclude=regression --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml test
+    - python3 -m 'nose' --exclude=regression  test
 
-
+#--with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml
 # report_codacy:
 #   stage: report
 #   script:
