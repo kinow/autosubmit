@@ -255,7 +255,7 @@ class TestJob(TestCase):
         as_conf.get_threads = Mock(return_value=1)
         as_conf.get_tasks = Mock(return_value=16)
         as_conf.get_memory = Mock(return_value=80)
-        as_conf.get_wallclock = Mock(return_value='00:30')
+        as_conf.get_wallclock = Mock(return_value=None)
         as_conf.get_member_list = Mock(return_value=[])
         as_conf.get_custom_directives = Mock(return_value='["whatever"]')
         as_conf.load_project_parameters = Mock(return_value=dict())
