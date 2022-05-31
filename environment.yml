@@ -6,6 +6,7 @@ dependencies:
 - nose
 - nose-cov
 - paramiko
+- graphviz
 - pydotplus
 - python-dateutil
 - pyparsing
@@ -18,5 +19,6 @@ dependencies:
 
 - pip:
   - bscearth.utils
-  - Xlib 
+  - Xlib
+  - ruamel.yaml
 
