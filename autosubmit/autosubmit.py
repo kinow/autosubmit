@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 

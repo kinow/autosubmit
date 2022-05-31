@@ -37,4 +37,5 @@ dependencies:
   - ruamel.yaml
   - pythondialog
   - pytest
+  - nose
 
