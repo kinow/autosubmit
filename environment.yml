@@ -38,4 +38,5 @@ dependencies:
   - pythondialog
   - pytest
   - nose
+  - coverage
 

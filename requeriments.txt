@@ -19,3 +19,4 @@ ruamel.yaml
 pythondialog
 pytest
 nose
+coverage
