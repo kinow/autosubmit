@@ -543,7 +543,7 @@ class AutosubmitConfig(object):
         normalized_data =  dict()
         for key, val in data.items():
             normalized_data[key.upper()] = val
-            if isinstance(val, collections.Mapping):
+            if isinstance(val, collections.abc.Mapping ):
                 normalized_value = self.deep_normalize(data.get(key, {}))
                 normalized_data[key.upper()] = normalized_value
         return normalized_data
@@ -554,7 +554,7 @@ class AutosubmitConfig(object):
         Modify ``source`` in place.
         """
         for key, val in new_dict.items():
-            if isinstance(val, collections.Mapping):
+            if isinstance(val, collections.abc.Mapping ):
                 tmp = self.deep_update(unified_config.get(key, {}), val)
                 unified_config[key] = tmp
             elif isinstance(val, list):
@@ -657,7 +657,7 @@ class AutosubmitConfig(object):
         for key, val in data.items():
             if key == "FOR":
                 self.data_loops.append(for_keys)
-            elif isinstance(val, collections.Mapping):
+            elif isinstance(val, collections.abc.Mapping ):
                 self.deep_read_loops(data.get(key, {}),for_keys+[key])
 
 
@@ -1032,7 +1032,7 @@ class AutosubmitConfig(object):
     def deep_get_long_key(self,section_data,long_key):
         parameters_dict = dict()
         for key, val in section_data.items():
-            if isinstance(val, collections.Mapping):
+            if isinstance(val, collections.abc.Mapping ):
                 parameters_dict.update(self.deep_get_long_key(section_data.get(key, {}),long_key+"."+key))
             else:
                 parameters_dict[long_key+"."+key] = val

@@ -5350,7 +5350,7 @@ class Autosubmit:
                 date_format = 'M'
         wrapper_jobs = dict()
         for wrapper_section,wrapper_data in as_conf.experiment_data["WRAPPERS"].items():
-            if isinstance(wrapper_data,collections.Mapping):
+            if isinstance(wrapper_data,collections.abc.Mapping ):
                 wrapper_jobs[wrapper_section] = wrapper_data.get("JOBS_IN_WRAPPER","")
 
 
