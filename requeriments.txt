@@ -2,7 +2,7 @@ argparse>=1.2,<2
 python-dateutil>2
 matplotlib
 numpy
-pydotplus>=2
+py3dotplus>=2
 pyparsing>=2.0.1
 paramiko==1.15
 mock>=1.3.0
