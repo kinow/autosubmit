@@ -7,7 +7,6 @@ dependencies:
 - nose-cov
 - paramiko
 - graphviz
-- pydotplus
 - python-dateutil
 - pyparsing
 - numpy
@@ -17,8 +16,25 @@ dependencies:
 - portalocker
 - networkx
 
+
 - pip:
-  - bscearth.utils
-  - Xlib
+  - argparse>=1.4.0
+  - python-dateutil>=2.8.2
+  - matplotlib>=3.5.1
+  - numpy>=1.22.2
+  - py3dotplus>=1.1.0
+  - pyparsing>=3.0.7
+  - paramiko>=2.9.2
+  - mock>=4.0.3
+  - portalocker>=2.3.2
+  - networkx>=2.6.3
+  - typing>=3.7.4.3
+  - requests>=2.27.1
+  - bscearth.utils>=0.5.2
+  - cryptography>=36.0.1
+  - setuptools>=60.8.2
+  - xlib>=0.21
   - ruamel.yaml
+  - pythondialog
+  - pytest
 
