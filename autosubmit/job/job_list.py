@@ -17,14 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import locale
-
-try:
-    # noinspection PyCompatibility
-    from configparser import SafeConfigParser
-except ImportError:
-    # noinspection PyCompatibility
-    from configparser import SafeConfigParser
-import json
 import re
 import os
 import pickle
@@ -79,7 +71,6 @@ class JobList(object):
         self._base_job_list = list()
         self._expid = expid
         self._config = config
-        self.as_conf = as_conf
         self.experiment_data = as_conf.experiment_data
         self._parser_factory = parser_factory
         self._stat_val = Status()
@@ -154,7 +145,7 @@ class JobList(object):
 
         jobs_parser = self._get_jobs_parser()
         dic_jobs = DicJobs(self, date_list, member_list,
-                           chunk_list, date_format, default_retrials,jobs_data={},as_conf=self.as_conf)
+                           chunk_list, date_format, default_retrials,jobs_data={},experiment_data=self.experiment_data)
         self._dic_jobs = dic_jobs
         # Perhaps this should be done by default independent of the wrapper_type supplied
         for wrapper_section in wrapper_jobs:
@@ -198,7 +189,7 @@ class JobList(object):
         self._chunk_list = chunk_list
 
 
-        dic_jobs = DicJobs(self,date_list, member_list,chunk_list, date_format, default_retrials,jobs_data,as_conf)
+        dic_jobs = DicJobs(self,date_list, member_list,chunk_list, date_format, default_retrials,jobs_data,experiment_data=self.experiment_data)
         self._dic_jobs = dic_jobs
         priority = 0
         if show_log:
@@ -599,8 +590,8 @@ class JobList(object):
             str_date = self._get_date(date)
             for member in self._member_list:
                 # Filter list of fake jobs according to date and member, result not sorted at this point
-                sorted_jobs_list = filter(lambda job: job.name.split("_")[1] == str_date and
-                                          job.name.split("_")[2] == member, filtered_jobs_fake_date_member)
+                sorted_jobs_list = list(filter(lambda job: job.name.split("_")[1] == str_date and
+                                          job.name.split("_")[2] == member, filtered_jobs_fake_date_member))
                 #sorted_jobs_list = [job for job in filtered_jobs_fake_date_member if job.name.split("_")[1] == str_date and
                 #                          job.name.split("_")[2] == member]
 

@@ -1460,7 +1460,7 @@ class TestWrappers(TestCase):
         self.job_list._chunk_list = chunk_list
 
         self.job_list._dic_jobs = DicJobs(
-            self.job_list, date_list, member_list, chunk_list, "", 0,jobs_data={},as_conf=self.as_conf)
+            self.job_list, date_list, member_list, chunk_list, "", 0,jobs_data={},experiment_data=self.as_conf.experiment_data)
         self._manage_dependencies(sections_dict)
 
     def _manage_dependencies(self, sections_dict):

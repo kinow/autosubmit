@@ -354,7 +354,7 @@ class JobPackager(object):
                             deadlock = True
                             if deadlock: # Remaining jobs if chunk is the last one
                                 for job in p.jobs:
-                                    if job.running == "chunk" and job.chunk == int(job.parameters["NUMCHUNKS"]):
+                                    if job.running == "chunk" and job.chunk == int(job.parameters["EXPERIMENT.NUMCHUNKS"]):
                                         deadlock = False
                                         break
                             if not deadlock: # Submit package if deadlock has been liberated

@@ -275,15 +275,6 @@ class AutosubmitConfig(object):
         """
         return self.get_section([section, 'WCHUNKINC'], "")
 
-    def get_hyperthreading(self, section):
-        """
-        Gets hyperthreading status
-        :param section: job type
-        :type section: str
-        :return: true/false/none
-        :rtype: str
-        """
-        return self._jobs_parser.get_option(section, 'HYPERTHREADING', 'None')
     def get_synchronize(self, section):
         """
         Gets wallclock for the given job type
@@ -967,7 +958,7 @@ class AutosubmitConfig(object):
                                                   "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"]]
             if 'horizontal' in self.get_wrapper_type(wrapper_values):
 
-                if not self.experiment_data["PLATFORMS"][self.get_platform()].get('PROCESSORS_PER_NODE',""):
+                if not self.experiment_data["PLATFORMS"][self.get_platform()].get('PROCESSORS_PER_NODE',"1"):
                     self.wrong_config["WRAPPERS"] += [
                         [wrapper_name, "PROCESSORS_PER_NODE no exist in the horizontal-wrapper platform"]]
                 if not self.experiment_data["PLATFORMS"][self.get_platform()].get('MAX_PROCESSORS',""):
@@ -1547,7 +1538,7 @@ class AutosubmitConfig(object):
         :return: version
         :rtype: str
         """
-        return self.get_section(['config', 'AUTOSUBMIT_VERSION'], "")
+        return str(self.get_section(['config', 'AUTOSUBMIT_VERSION'], ""))
 
     def get_total_jobs(self):
         """

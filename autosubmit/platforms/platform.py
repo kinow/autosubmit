@@ -26,7 +26,7 @@ class Platform(object):
         self._serial_platform = None
         self._serial_queue = None
         self._default_queue = None
-        self.processors_per_node = None
+        self.processors_per_node = "1"
         self.scratch_free_space = None
         self.custom_directives = None
         self.host = ''
@@ -42,10 +42,10 @@ class Platform(object):
         self.service = None
         self.scheduler = None
         self.directory = None
-        self.hyperthreading = 'false'
-        self.max_wallclock = ''
-        self.total_jobs = None
-        self.max_processors = None
+        self.hyperthreading = False
+        self.max_wallclock = '2:00'
+        self.total_jobs = "20"
+        self.max_processors = "480"
         self._allow_arrays = False
         self._allow_wrappers = False
         self._allow_python_jobs = True

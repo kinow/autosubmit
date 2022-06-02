@@ -46,7 +46,11 @@ class TestDicJobs(TestCase):
             'EXCLUDED_LIST_M': [],
             'RUNNING': running
         }
-        self.as_conf.jobs_data[section] = options
+
+
+        self.job_list.jobs_data[section] = options
+        self.dictionary.experiment_data = dict()
+        self.dictionary.experiment_data["JOBS"] = self.job_list.jobs_data
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -79,7 +83,9 @@ class TestDicJobs(TestCase):
             'EXCLUDED_LIST_M': [],
             'RUNNING': running
         }
-        self.as_conf.jobs_data[section] = options
+        self.job_list.jobs_data[section] = options
+        self.dictionary.experiment_data = dict()
+        self.dictionary.experiment_data["JOBS"] = self.job_list.jobs_data
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -110,7 +116,10 @@ class TestDicJobs(TestCase):
             'EXCLUDED_LIST_M': [],
             'RUNNING': running
         }
-        self.as_conf.jobs_data[section] = options
+
+        self.job_list.jobs_data[section] = options
+        self.dictionary.experiment_data = dict()
+        self.dictionary.experiment_data["JOBS"] = self.job_list.jobs_data
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -139,7 +148,9 @@ class TestDicJobs(TestCase):
             'RUNNING': "chunk"
         }
 
-        self.as_conf.jobs_data[section] = options
+        self.job_list.jobs_data[section] = options
+        self.dictionary.experiment_data = dict()
+        self.dictionary.experiment_data["JOBS"] = self.job_list.jobs_data
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -338,7 +349,9 @@ class TestDicJobs(TestCase):
             'SYNCHRONIZE': None,
             'RERUN_ONLY': 'True',
         }
-        self.as_conf.jobs_data[section] = options
+        self.job_list.jobs_data[section] = options
+        self.dictionary.experiment_data = dict()
+        self.dictionary.experiment_data["JOBS"] = self.job_list.jobs_data
         job_list_mock = Mock()
         job_list_mock.append = Mock()
         self.dictionary._jobs_list.get_job_list = Mock(return_value=job_list_mock)

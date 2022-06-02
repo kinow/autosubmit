@@ -710,7 +710,7 @@ class Autosubmit:
             if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and host not in BasicConfig.ALLOWED_HOSTS[args.command]:
                 raise AutosubmitCritical(message, 7004)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.reload()
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
@@ -4206,7 +4206,7 @@ class Autosubmit:
                     job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
                                       as_conf.get_default_job_type(),
-                                      as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive, update_structure=True, run_only_members=run_only_members,jobs_data= as_conf.experiment_data)
+                                      as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive, update_structure=True, run_only_members=run_only_members,jobs_data= as_conf.experiment_data,as_conf=as_conf)
 
                     if rerun == "true":
                         job_list.rerun(as_conf.get_rerun_jobs())

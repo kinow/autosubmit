@@ -117,7 +117,7 @@ class Job(object):
         self.long_name = name
         self.date_format = ''
         self.type = Type.BASH
-        self.hyperthreading = 'false'
+        self.hyperthreading = "none"
         self.scratch_free_space = None
         self.custom_directives = []
         self.undefined_variables = None
@@ -987,8 +987,8 @@ class Job(object):
         self.tasks = as_conf.jobs_data[self.section].get("TASKS","1")
         self.hyperthreading = as_conf.jobs_data[self.section].get("HYPERTHREADING","none")
         if self.hyperthreading == 'none':
-            self.hyperthreading = job_platform.hyperthreading.lower()
-        if int(self.tasks) <= 1 and job_platform.processors_per_node > 1 :
+            self.hyperthreading = job_platform.hyperthreading
+        if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 :
             self.tasks = job_platform.processors_per_node
         self.memory = as_conf.jobs_data[self.section].get("MEMORY","")
         self.memory_per_task = as_conf.jobs_data[self.section].get("MEMORY_PER_TASK","")
@@ -1047,20 +1047,18 @@ class Job(object):
         parameters['PROJDIR'] = as_conf.get_project_dir()
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['WRAPPER'] = as_conf.get_wrapper_type()
-        #todo
         parameters['DEPENDENCIES'] = as_conf.jobs_data[self.section].get("DEPENDENCIES","")
         parameters['WRAPPER' + "_POLICY"] = as_conf.get_wrapper_policy()
         parameters['WRAPPER' + "_METHOD"] = as_conf.get_wrapper_method().lower()
         parameters['WRAPPER' + "_JOBS"] = as_conf.get_wrapper_jobs()
-        parameters['WRAPPER' + "_EXTENSIBLE"] = int(as_conf.get_extensible_wallclock())
-        if parameters['WRAPPER'] == "multi":
-            for wrapper_section in as_conf.get_wrapper_multi():
-                parameters[wrapper_section.upper()] = as_conf.get_wrapper_type(wrapper_section)
-                parameters[wrapper_section.upper()+"_POLICY"] = as_conf.get_wrapper_policy(wrapper_section)
-                parameters[wrapper_section.upper()+"_METHOD"] = as_conf.get_wrapper_method(wrapper_section).lower()
-                parameters[wrapper_section.upper()+"_JOBS"] = as_conf.get_wrapper_jobs(wrapper_section)
-                parameters[wrapper_section.upper()+"_EXTENSIBLE"] = int(as_conf.get_extensible_wallclock(wrapper_section))
-        parameters['DEPENDENCIES'] = as_conf.get_dependencies(self.section)
+        parameters['WRAPPER' + "_EXTENSIBLE"] = as_conf.get_extensible_wallclock()
+
+        for wrapper_section,wrapper_val in as_conf.experiment_data.get("WRAPPERS",{}).items():
+            parameters[wrapper_section] = as_conf.get_wrapper_type(wrapper_section)
+            parameters[wrapper_section+"_POLICY"] = as_conf.get_wrapper_policy(wrapper_section)
+            parameters[wrapper_section+"_METHOD"] = as_conf.get_wrapper_method(wrapper_section).lower()
+            parameters[wrapper_section+"_JOBS"] = as_conf.get_wrapper_jobs(wrapper_section)
+            parameters[wrapper_section+"_EXTENSIBLE"] = int(as_conf.get_extensible_wallclock(wrapper_section))
         self.dependencies = parameters['DEPENDENCIES']
 
         if self.export:

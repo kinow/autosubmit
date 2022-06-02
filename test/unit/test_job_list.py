@@ -252,7 +252,7 @@ class TestJobList(TestCase):
         dic_mock.read_section = Mock()
         dic_mock._jobs_data = dict()
         dic_mock._jobs_data["JOBS"] = {'fake-section-1':{},'fake-section-2':{}}
-        self.job_list.as_conf.jobs_data = {'fake-section-1': {} , 'fake-section-2': {}}
+        self.job_list.experiment_data["JOBS"] = {'fake-section-1': {} , 'fake-section-2': {}}
 
         # act
         JobList._create_jobs(dic_mock, 0, Type.BASH,jobs_data=dict())

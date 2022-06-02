@@ -45,7 +45,7 @@ class DicJobs:
 default retrials for ech job
     """
 
-    def __init__(self, jobs_list, date_list, member_list, chunk_list, date_format, default_retrials,jobs_data,as_conf):
+    def __init__(self, jobs_list, date_list, member_list, chunk_list, date_format, default_retrials,jobs_data,experiment_data):
         self._date_list = date_list
         self._jobs_list = jobs_list
         self._member_list = member_list
@@ -54,11 +54,9 @@ default retrials for ech job
         self._date_format = date_format
         self.default_retrials = default_retrials
         self._dic = dict()
-        self._as_conf = as_conf
+        self.experiment_data = experiment_data
 
-    @property
-    def as_conf(self):
-        return self._as_conf
+
     def parse_relation(self, section,member=True, unparsed_option=[],called_from=""):
         """
         function to parse a list of chunks or members to be compressible for autosubmit member_list or chunk_list.
@@ -148,7 +146,7 @@ default retrials for ech job
         :param priority: priority for the jobs
         :type priority: int
         """
-        parameters = self.as_conf.jobs_data
+        parameters = self.experiment_data["JOBS"]
 
         splits = parameters[section].get("SPLITS", -1)
         running = parameters[section].get('RUNNING',"once").lower()
@@ -428,7 +426,7 @@ default retrials for ech job
         return jobs
 
     def build_job(self, section, priority, date, member, chunk, default_job_type, jobs_data=dict(), split=-1):
-        parameters = self.as_conf.jobs_data
+        parameters = self.experiment_data["JOBS"]
         name = self._jobs_list.expid
         if date is not None:
             name += "_" + date2str(date, self._date_format)
