@@ -1054,11 +1054,11 @@ class Job(object):
         parameters['WRAPPER' + "_EXTENSIBLE"] = as_conf.get_extensible_wallclock()
 
         for wrapper_section,wrapper_val in as_conf.experiment_data.get("WRAPPERS",{}).items():
-            parameters[wrapper_section] = as_conf.get_wrapper_type(wrapper_section)
-            parameters[wrapper_section+"_POLICY"] = as_conf.get_wrapper_policy(wrapper_section)
-            parameters[wrapper_section+"_METHOD"] = as_conf.get_wrapper_method(wrapper_section).lower()
-            parameters[wrapper_section+"_JOBS"] = as_conf.get_wrapper_jobs(wrapper_section)
-            parameters[wrapper_section+"_EXTENSIBLE"] = int(as_conf.get_extensible_wallclock(wrapper_section))
+            parameters[wrapper_section] = as_conf.get_wrapper_type(as_conf.experiment_data["WRAPPERS"].get(wrapper_section))
+            parameters[wrapper_section+"_POLICY"] = as_conf.get_wrapper_policy(as_conf.experiment_data["WRAPPERS"].get(wrapper_section))
+            parameters[wrapper_section+"_METHOD"] = as_conf.get_wrapper_method(as_conf.experiment_data["WRAPPERS"].get(wrapper_section)).lower()
+            parameters[wrapper_section+"_JOBS"] = as_conf.get_wrapper_jobs(as_conf.experiment_data["WRAPPERS"].get(wrapper_section))
+            parameters[wrapper_section+"_EXTENSIBLE"] = int(as_conf.get_extensible_wallclock(as_conf.experiment_data["WRAPPERS"].get(wrapper_section)))
         self.dependencies = parameters['DEPENDENCIES']
 
         if self.export:
