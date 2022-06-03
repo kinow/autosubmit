@@ -1405,6 +1405,7 @@ class JobList(object):
         """
         Persists the job list
         """
+
         try:
             job_list = None
             if self.run_members is not None:

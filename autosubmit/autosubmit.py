@@ -1377,6 +1377,7 @@ class Autosubmit:
         """
         Log.warning("Generating the auxiliar job_list used for the -CW flag.")
         job_list._job_list = jobs_filtered
+        job_list._persistence_file = job_list._persistence_file + "_cw_flag"
         parameters = as_conf.load_parameters()
         date_list = as_conf.get_date_list()
         if len(date_list) != len(set(date_list)):
@@ -2060,6 +2061,7 @@ class Autosubmit:
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False, only_wrappers=False, hold=False):
+
         # type: (AutosubmitConfig, JobList, Set[Platform], JobPackagePersistence, bool, bool, bool) -> bool
         """
         Gets READY jobs and send them to the platforms if there is available space on the queues
@@ -2184,6 +2186,7 @@ class Autosubmit:
                                 else:
                                     error_message+="\ncheck that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
                                             error_msg[:-1], platform.name)
+                                raise AutosubmitCritical(error_message,7014,e.trace)
                         except IOError as e:
                             raise AutosubmitError(
                                 "IO issues ", 6016, e.message)
@@ -4238,7 +4241,7 @@ class Autosubmit:
                             groups_dict = job_grouping.group_jobs()
                         # WRAPPERS
 
-                        if as_conf.get_wrapper_type() != 'none' and check_wrappers:
+                        if len(as_conf.experiment_data.get("WRAPPERS",{})) > 0 and check_wrappers:
                             as_conf.check_conf_files(True)
                             packages_persistence = JobPackagePersistence(
                                 os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)

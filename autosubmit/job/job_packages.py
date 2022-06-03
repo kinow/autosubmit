@@ -357,7 +357,7 @@ class JobPackageThread(JobPackageBase):
         self._job_dependency = dependency
         self._common_script = None
         self._wallclock = '00:00'
-        self._num_processors = '0'
+        self._num_processors = '1'
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
         self.current_wrapper_section = wrapper_section
@@ -560,9 +560,9 @@ class JobPackageVertical(JobPackageThread):
     def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="WRAPPERS", wrapper_info = {}):
         super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section, wrapper_info = wrapper_info)
         for job in jobs:
-            if int(job.processors) > int(self._num_processors):
+            if int(job.processors) >= int(self._num_processors):
                 self._num_processors = job.processors
-                self._threads = job.threads
+            self._threads = job.threads
 
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
