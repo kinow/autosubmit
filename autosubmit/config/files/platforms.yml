@@ -1,7 +1,7 @@
 Platforms:
   MaReNoStRuM4:
     TYPE: slurm
-    HOST: bsc
+    HOST: mn1.bsc.es
     PROJECT: bsc32
     USER: bsc32070
     QUEUE: debug
@@ -15,8 +15,8 @@ Platforms:
     PROJECT: bsc32
     USER: bsc32070
     SCRATCH_DIR: /gpfs/scratch
-    ADD_PROJECT_TO_HOST: 'False'
-    TEST_SUITE: 'False'
+    ADD_PROJECT_TO_HOST: False
+    TEST_SUITE: False
 
   transfer_node:
     TYPE: ps

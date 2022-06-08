@@ -39,7 +39,7 @@ from bscearth.utils.date import date2str
 from .config.yaml_parser import YAMLParserFactory
 from .monitor.monitor import Monitor
 from .database.db_common import get_autosubmit_version, check_experiment_exists
-from .database.db_common import delete_experiment, update_experiment_descrip_version
+from .database.db_common import delete_experiment, update_experiment_descrip_version, get_experiment_descrip
 from .database.db_structure import get_structure
 from .experiment.experiment_common import copy_experiment
 from .experiment.experiment_common import new_experiment
@@ -711,7 +711,7 @@ class Autosubmit:
                 raise AutosubmitCritical(message, 7004)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            as_conf.reload()
+            as_conf.reload(first_load = True)
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
@@ -1505,7 +1505,7 @@ class Autosubmit:
             host = platform.node()
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
 
-            as_conf.check_conf_files(True)
+            as_conf.check_conf_files(True,True)
 
 
         except BaseException as e:
@@ -1839,7 +1839,7 @@ class Autosubmit:
                             sleep(15)
                             Log.info("Waiting 15 seconds before continue")
                             try:
-                                as_conf.reload()
+                                as_conf.reload(first_load=True)
                                 Log.info("Recovering job_list...")
                                 job_list = Autosubmit.load_job_list(
                                     expid, as_conf, notransitive=notransitive)
@@ -3347,12 +3347,14 @@ class Autosubmit:
             if len(submitter.platforms) == 0:
                 return False
             hpc = as_conf.get_platform()
+            description = get_experiment_descrip(experiment_id)
 
             Log.result("Owner: {0}", user)
             Log.result("Created: {0}", created)
             Log.result("Model: {0}", model)
             Log.result("Branch: {0}", branch)
             Log.result("HPC: {0}", hpc)
+            Log.result("Description: {0}",description[0][0])
         except BaseException as e:
             raise AutosubmitCritical("Couldn't get the details of this experiment. Contact with Autosubmit Developers through GitHub",7001,str(e))
         return user, created, model, branch, hpc
@@ -3755,7 +3757,7 @@ class Autosubmit:
         try:
             Autosubmit._check_ownership(expid,raise_error=True)
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            as_conf.reload()
+            #as_conf.reload(first_load=True)
             as_conf.check_conf_files()
         except (AutosubmitError,AutosubmitCritical):
             raise
@@ -3785,7 +3787,7 @@ class Autosubmit:
         Autosubmit._check_ownership(expid,raise_error=True)
 
         as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-        as_conf.reload()
+        as_conf.reload(first_load=True)
         as_conf.check_expdef_conf()
 
         Log.info("Changing {0} experiment version from {1} to  {2}",
@@ -5084,18 +5086,18 @@ class Autosubmit:
             content = open(as_conf.experiment_file).read()
 
             # Experiment
-            content = content.replace(re.search('^DATELIST =.*', content, re.MULTILINE).group(0),
-                                      "DATELIST = 20000101")
-            content = content.replace(re.search('^MEMBERS =.*', content, re.MULTILINE).group(0),
-                                      "MEMBERS = fc0")
-            content = content.replace(re.search('^CHUNKSIZE =.*', content, re.MULTILINE).group(0),
-                                      "CHUNKSIZE = 4")
-            content = content.replace(re.search('^NUMCHUNKS =.*', content, re.MULTILINE).group(0),
-                                      "NUMCHUNKS = 1")
-            content = content.replace(re.search('^PROJECT_TYPE =.*', content, re.MULTILINE).group(0),
-                                      "PROJECT_TYPE = none")
+            content = content.replace(re.search('DATELIST: .*', content, re.MULTILINE).group(0),
+                                      "DATELIST: 20000101")
+            content = content.replace(re.search('MEMBERS: .*', content, re.MULTILINE).group(0),
+                                      "MEMBERS: fc0")
+            content = content.replace(re.search('CHUNKSIZE: .*', content, re.MULTILINE).group(0),
+                                      "CHUNKSIZE: 4")
+            content = content.replace(re.search('NUMCHUNKS: .*', content, re.MULTILINE).group(0),
+                                      "NUMCHUNKS: 1")
+            content = content.replace(re.search('PROJECT_TYPE: .*', content, re.MULTILINE).group(0),
+                                      "PROJECT_TYPE: 'none'")
 
-            open(as_conf.experiment_file, 'wb').write(content)
+            open(as_conf.experiment_file, 'w').write(content)
 
     @staticmethod
     def _get_status(s):
@@ -5367,26 +5369,26 @@ class Autosubmit:
                 chunks = 1
 
         # Experiment
-        content = content.replace(re.search('^EXPID =.*', content, re.MULTILINE).group(0),
-                                  "EXPID = " + testid)
+        content = content.replace(re.search('EXPID:.*', content, re.MULTILINE).group(0),
+                                  "EXPID: " + testid)
         if start_date is not None:
-            content = content.replace(re.search('^DATELIST =.*', content, re.MULTILINE).group(0),
-                                      "DATELIST = " + start_date)
+            content = content.replace(re.search('DATELIST:.*', content, re.MULTILINE).group(0),
+                                      "DATELIST: " + start_date)
         if member is not None:
-            content = content.replace(re.search('^MEMBERS =.*', content, re.MULTILINE).group(0),
-                                      "MEMBERS = " + member)
+            content = content.replace(re.search('MEMBERS:.*', content, re.MULTILINE).group(0),
+                                      "MEMBERS: " + member)
         if chunks is not None:
             # noinspection PyTypeChecker
-            content = content.replace(re.search('^NUMCHUNKS =.*', content, re.MULTILINE).group(0),
-                                      "NUMCHUNKS = " + chunks)
+            content = content.replace(re.search('NUMCHUNKS:.*', content, re.MULTILINE).group(0),
+                                      "NUMCHUNKS: " + chunks)
         if hpc is not None:
-            content = content.replace(re.search('^HPCARCH =.*', content, re.MULTILINE).group(0),
-                                      "HPCARCH = " + hpc)
+            content = content.replace(re.search('HPCARCH:.*', content, re.MULTILINE).group(0),
+                                      "HPCARCH: " + hpc)
         if branch is not None:
-            content = content.replace(re.search('^PROJECT_BRANCH =.*', content, re.MULTILINE).group(0),
-                                      "PROJECT_BRANCH = " + branch)
-            content = content.replace(re.search('^PROJECT_REVISION =.*', content, re.MULTILINE).group(0),
-                                      "PROJECT_REVISION = " + branch)
+            content = content.replace(re.search('PROJECT_BRANCH:.*', content, re.MULTILINE).group(0),
+                                      "PROJECT_BRANCH: " + branch)
+            content = content.replace(re.search('PROJECT_REVISION:.*', content, re.MULTILINE).group(0),
+                                      "PROJECT_REVISION: " + branch)
 
         open(as_conf.experiment_file, 'wb').write(content)
 

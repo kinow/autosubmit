@@ -151,7 +151,7 @@ def save_experiment(name, description, version):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except queue.Empty:
+    except BaseException:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Your experiment {1} couldn't be stored in the database.".format(TIMEOUT, name))
     finally:
@@ -175,7 +175,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except queue.Empty:
+    except BaseException:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Check if experiment {1} exists failed to complete.".format(TIMEOUT, name))
     finally:
@@ -201,7 +201,7 @@ def update_experiment_descrip_version(name, description=None, version=None):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except queue.Empty:
+    except BaseException:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Update experiment {1} version failed to complete.".format(TIMEOUT, name))
     finally:
@@ -223,7 +223,7 @@ def get_autosubmit_version(expid):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except queue.Empty:
+    except BaseException:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Get experiment {1} version failed to complete.".format(TIMEOUT, expid))
     finally:
@@ -247,7 +247,7 @@ def last_name_used(test=False, operational=False):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except queue.Empty:
+    except BaseException:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Get last named used failed to complete.".format(TIMEOUT))
     finally:
@@ -269,7 +269,7 @@ def delete_experiment(experiment_id):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except queue.Empty:
+    except BaseException:
         raise AutosubmitCritical(
             "The database process exceeded the timeout limit {0}s. Delete experiment {1} failed to complete.".format(TIMEOUT, experiment_id))
     finally:
@@ -341,6 +341,22 @@ def _check_experiment_exists(name, error_on_inexistence=True):
                 'The experiment name "{0}" does not exist yet!!!'.format(name), 7005)
         return False
     return True
+
+def get_experiment_descrip(expid):
+    if not check_db():
+        return False
+    try:
+        (conn, cursor) = open_conn()
+    except DbException as e:
+        raise AutosubmitCritical(
+            "Could not establish a connection to the database.", 7001, str(e))
+    conn.isolation_level = None
+
+    # Changing default unicode
+    conn.text_factory = str
+    # get values
+    cursor.execute("select description from experiment where name='{0}'".format(expid))
+    return [row for row in cursor]
 
 
 def _update_experiment_descrip_version(name, description=None, version=None):

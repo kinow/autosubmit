@@ -1837,7 +1837,7 @@ class JobList(object):
         :param as_conf: experiment configuration
         :type as_conf: AutosubmitConfig
         """
-        as_conf.reload()
+        as_conf.reload(first_load=True)
         out = True
         for job in self._job_list:
             show_logs = job.check_warnings

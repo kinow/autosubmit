@@ -620,7 +620,7 @@ class Job(object):
         sleep(5)
         try:
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            as_conf.reload()
+            as_conf.reload(first_load=True)
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
             platform = submitter.platforms[platform_name]
@@ -843,7 +843,7 @@ class Job(object):
             remote_logs = copy.deepcopy(self.remote_logs)
             #TODO as_conf should be accesible already, no need to declare it again.
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            as_conf.reload()
+            as_conf.reload(first_load=True)
             if as_conf.get_disable_recovery_threads(self.platform.name) == "true":
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
             else:

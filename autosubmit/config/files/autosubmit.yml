@@ -10,7 +10,7 @@ wrappers:
     JOBS_IN_WRAPPER: "SIM"
 mail:
   NOTIFICATIONS: False
-  TO: daniel.beltran@bsc.es
+  TO:
 storage:
   TYPE: "pkl"
   COPY_REMOTE_LOGS: True

@@ -415,11 +415,11 @@ class AutosubmitConfig(object):
         if mod:
             old_user = self.get_current_user(section)
             contentToMod = contentToMod.replace(re.search(
-                r'[^#]\bUSER\b =.*', contentToMod).group(0)[1:], "USER = " + new_user)
+                'USER:.*', contentToMod).group(0)[1:], "USER: " + new_user)
             contentToMod = contentToMod.replace(re.search(
-                r'[^#]\bUSER_TO\b =.*', contentToMod).group(0)[1:], "USER_TO = " + old_user)
-        open(self._platforms_parser_file, 'wb').write(content)
-        open(self._platforms_parser_file, 'ab').write(contentToMod)
+                'USER_TO:.*', contentToMod).group(0)[1:], "USER_TO: " + old_user)
+        open(self._platforms_parser_file, 'w').write(content)
+        open(self._platforms_parser_file, 'a').write(contentToMod)
 
     def set_new_host(self, section, new_host):
         """
@@ -444,11 +444,11 @@ class AutosubmitConfig(object):
         if mod:
             old_host = self.get_current_host(section)
             contentToMod = contentToMod.replace(re.search(
-                r'[^#]\bHOST\b =.*', contentToMod).group(0)[1:], "HOST = " + new_host)
+                'HOST:.*', contentToMod).group(0)[1:], "HOST: " + new_host)
             contentToMod = contentToMod.replace(re.search(
-                r'[^#]\bHOST_TO\b =.*', contentToMod).group(0)[1:], "HOST_TO = " + old_host)
-        open(self._platforms_parser_file, 'wb').write(content)
-        open(self._platforms_parser_file, 'ab').write(contentToMod)
+                'HOST_TO:.*', contentToMod).group(0)[1:], "HOST_TO: " + old_host)
+        open(self._platforms_parser_file, 'w').write(content)
+        open(self._platforms_parser_file, 'a').write(contentToMod)
 
     def get_migrate_project_to(self, section):
         """
@@ -491,11 +491,11 @@ class AutosubmitConfig(object):
         if mod:
             old_project = self.get_current_project(section)
             contentToMod = contentToMod.replace(re.search(
-                r"[^#]\bPROJECT\b =.*", contentToMod).group(0)[1:], "PROJECT = " + new_project)
+                "PROJECT:.*", contentToMod).group(0)[1:], "PROJECT: " + new_project)
             contentToMod = contentToMod.replace(re.search(
-                r"[^#]\bPROJECT_TO\b =.*", contentToMod).group(0)[1:], "PROJECT_TO = " + old_project)
-        open(self._platforms_parser_file, 'wb').write(content)
-        open(self._platforms_parser_file, 'ab').write(contentToMod)
+                "PROJECT_TO:.*", contentToMod).group(0)[1:], "PROJECT_TO: " + old_project)
+        open(self._platforms_parser_file, 'w').write(content)
+        open(self._platforms_parser_file, 'a').write(contentToMod)
 
     def get_custom_directives(self, section):
         """
@@ -670,7 +670,7 @@ class AutosubmitConfig(object):
         self.check_jobs_conf()
         self.check_autosubmit_conf()
 
-    def check_conf_files(self, running_time=False):
+    def check_conf_files(self, running_time=False,first_load=True):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
         required options. Prints results in log
@@ -684,7 +684,7 @@ class AutosubmitConfig(object):
         self.ignore_undefined_platforms = running_time
 
         try:
-            self.reload()
+            self.reload(first_load)
         except IOError as e:
             raise AutosubmitError(
                 "I/O Issues con config files", 6016, e.message)
@@ -988,7 +988,7 @@ class AutosubmitConfig(object):
         else:
             modified = False
         return modified,file_mod_time
-    def reload(self):
+    def reload(self,first_load=False):
         """
         Creates parser objects for configuration files
         """
@@ -1001,7 +1001,7 @@ class AutosubmitConfig(object):
             modified,self._custom_parser_files_modtime[config_file] = self.file_modified(self._custom_parser_files[config_file],self._custom_parser_files_modtime[config_file])
             if modified:
                 any_file_changed = True
-        if any_file_changed:
+        if any_file_changed or first_load:
             try:
                 self._conf_parser = AutosubmitConfig.get_parser(
                     self.parser_factory, self._conf_parser_file)
@@ -1150,16 +1150,16 @@ class AutosubmitConfig(object):
         """
         # Experiment conf
         content = open(self._exp_parser_file).read()
-        if re.search('EXPID =.*', content):
+        if re.search('EXPID:.*', content):
             content = content.replace(
-                re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        open(self._exp_parser_file, 'wb').write(content)
+                re.search('EXPID:.*', content).group(0), "EXPID: " + exp_id)
+        open(self._exp_parser_file, 'w').write(content)
 
         content = open(self._conf_parser_file).read()
-        if re.search('EXPID =.*', content):
+        if re.search('EXPID:.*', content):
             content = content.replace(
-                re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        open(self._conf_parser_file, 'wb').write(content)
+                re.search('EXPID:.*', content).group(0), "EXPID: " + exp_id)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_project_type(self):
         """
@@ -1315,12 +1315,12 @@ class AutosubmitConfig(object):
 
         # register changes
         content = open(self._exp_parser_file).read()
-        if re.search('PROJECT_BRANCH =.*', content):
-            content = content.replace(re.search('PROJECT_BRANCH =.*', content).group(0),
-                                      "PROJECT_BRANCH = " + project_branch)
-        if re.search('PROJECT_COMMIT =.*', content):
-            content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
-                                      "PROJECT_COMMIT = " + project_sha)
+        if re.search('PROJECT_BRANCH:.*', content):
+            content = content.replace(re.search('PROJECT_BRANCH:.*', content).group(0),
+                                      "PROJECT_BRANCH: " + project_branch)
+        if re.search('PROJECT_COMMIT:.*', content):
+            content = content.replace(re.search('PROJECT_COMMIT:.*', content).group(0),
+                                      "PROJECT_COMMIT: " + project_sha)
         open(self._exp_parser_file, 'wb').write(content)
         Log.debug(
             "Project commit SHA succesfully registered to the configuration file.")
@@ -1514,10 +1514,10 @@ class AutosubmitConfig(object):
         :type: str
         """
         content = open(self._exp_parser_file).read()
-        if re.search('HPCARCH =.*', content):
+        if re.search('HPCARCH:.*', content):
             content = content.replace(
-                re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
-        open(self._exp_parser_file, 'wb').write(content)
+                re.search('HPCARCH:.*', content).group(0), "HPCARCH: " + hpc)
+        open(self._exp_parser_file, 'w').write(content)
 
     def set_version(self, autosubmit_version):
         """
@@ -1526,10 +1526,10 @@ class AutosubmitConfig(object):
         :param autosubmit_version: autosubmit's version
         :type autosubmit_version: str
         """
-        content = open(self._conf_parser_file, 'rb').read()
-        if re.search(rb'AUTOSUBMIT_VERSION =.*', content):
-            content = content.replace(re.search(rb'AUTOSUBMIT_VERSION =.*', content).group(0),str.encode("AUTOSUBMIT_VERSION = " + autosubmit_version,locale.getlocale()[1]))
-        open(self._conf_parser_file, 'wb').write(content)
+        content = open(self._conf_parser_file, 'r').read()
+        if re.search('AUTOSUBMIT_VERSION:.*', content):
+            content = content.replace(re.search('AUTOSUBMIT_VERSION:.*', content).group(0),"AUTOSUBMIT_VERSION: 4.0" )
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_version(self):
         """

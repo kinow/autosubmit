@@ -111,7 +111,7 @@ class StatisticsSnippetBash:
             # Autosubmit header
             ###################
             locale_to_set=$(locale -a | grep ^C.)
-            if [ -z "$var" ] ; then
+            if [ -z "$locale_to_set" ] ; then
                 # locale installed...
                 export LC_ALL=$locale_to_set
             else
