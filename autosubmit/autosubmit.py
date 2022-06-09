@@ -22,12 +22,12 @@ import collections
 
 from .statistics import utils
 
-try:
+#try:
     # noinspection PyCompatibility
-    from configparser import SafeConfigParser
-except ImportError:
+#    from configparser import SafeConfigParser
+#except ImportError:
     # noinspection PyCompatibility
-    from configparser import SafeConfigParser
+#    from configparser import SafeConfigParser
 from .job.job_packager import JobPackager
 from .job.job_exceptions import WrongTemplateException
 from .platforms.paramiko_submitter import ParamikoSubmitter
@@ -35,7 +35,7 @@ from .platforms.platform import Platform
 from .notifications.notifier import Notifier
 from .notifications.mail_notifier import MailNotifier
 from bscearth.utils.date import date2str
-
+from pathlib import Path
 from .config.yaml_parser import YAMLParserFactory
 from .monitor.monitor import Monitor
 from .database.db_common import get_autosubmit_version, check_experiment_exists
@@ -1055,7 +1055,6 @@ class Autosubmit:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.replace(
                                     copy_id, exp_id)
-                                print(new_filename[-4:])
                                 if new_filename[-4:] == "conf":
                                    new_filename = new_filename[:-4]+"yml"
 
@@ -3814,17 +3813,66 @@ class Autosubmit:
         else:
             Log.critical("Update failed.")
         return True
+    #fastlook
+    @staticmethod
+    def update_old_script(root_dir,template_path,as_conf):
+        # Do a backup and tries to update
+        warn = ""
+        if template_path.exists():
+            backup_path = root_dir / Path(template_path.name + "_AS_v3_backup")
+            if not backup_path.exists():
+                shutil.copyfile(template_path, backup_path)
+            template_content = open(template_path).read()
+            # Look for %_%
+            variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
+            variables = [variable[1:-1].upper() for variable in variables]
+
+            results = {}
+            sustituted = ""
+            # Change format
+            for old_format_key in variables:
+                for key in as_conf.load_parameters().keys():
+                    key_affix = key.split(".")[-1]
+                    if key_affix == old_format_key:
+                        if old_format_key not in results:
+                            results[old_format_key] = set()
+
+                        results[old_format_key].add(key)
+            for key, new_key in results.items():
+                if len(new_key) > 1:
+                    warn += "{0} couldn't translate to {1} since it contains multiple values\n".format(key, new_key)
+                else:
+                    sustituted += "{0} translated to {1}\n".format(key, new_key)
+                    template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(new_key).upper(), template_content)
+            # write_it
+            return warn,sustituted
     @staticmethod
     def update_proj_scripts(expid):
         Log.info("Checking if experiment exists...")
         try:
             # Check that the user is the owner and the configuration is well configured
             Autosubmit._check_ownership(expid,raise_error=True)
+            folder = Path(BasicConfig.LOCAL_ROOT_DIR) / expid / "conf"
+            factory = YAMLParserFactory()
+            # update scripts to yml format
+            for f in folder.rglob("*.yml"):
+                # Tries to convert an invalid yml to correct one
+                try:
+                    parser = factory.create_parser()
+                    parser.load(f)
+                except BaseException as e:
+                    AutosubmitConfig.ini_to_yaml(f)
+            # Converts all ini into yaml
+            for f in folder.rglob("*.conf"):
+                if not (Path(f.stem) / ".yml").exists():
+                    AutosubmitConfig.ini_to_yaml(f)
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
+
             # Load current variables
             as_conf.check_conf_files()
             # Load current parameters ( this doesn't read job parameters)
             parameters = as_conf.load_parameters()
+
         except (AutosubmitError,AutosubmitCritical):
             raise
 
@@ -3837,13 +3885,22 @@ class Autosubmit:
         # Find all %_% variables
         # Detect if they need and update
         Log.info("Find proj files")
-        result = update_experiment_descrip_version(
-            expid, description=new_description)
-        if result:
-            Log.info("Update completed successfully.")
-        else:
-            Log.critical("Update failed.")
-        return True
+        root_dir = Path(as_conf.get_project_dir())
+        template_path = Path()
+        warn = ""
+        sustituted = ""
+        for section,value in as_conf.jobs_data.items():
+            template_path = root_dir / Path(value.get("FILE",""))
+            w,s = Autosubmit.update_old_script(root_dir,template_path,as_conf)
+            if w != "":
+                warn += "Warnings for: {0}\n{1}\n".format(template_path.name,w)
+            if s != "":
+                sustituted +="Variables changed for: {0}\n{1}\n".format(template_path.name,s)
+        Log.printlog(sustituted)
+        Log.printlog(warn)
+
+
+
 
     @staticmethod
     def pkl_fix(expid):

@@ -737,8 +737,8 @@ class AutosubmitConfig(object):
         if parser_data["CONFIG"].get('SAFETYSLEEPTIME',-1) == -1:
             self.set_safetysleeptime(10)
         if type(parser_data["CONFIG"].get('RETRIALS',0)) != int:
-            self.wrong_config["Autosubmit"] += [['config',
-                                                 "RETRIALS parameter not found or non-integer"]]
+            parser_data["CONFIG"]['RETRIALS'] = int(parser_data["CONFIG"].get('RETRIALS',0))
+
 
         if parser_data.get("STORAGE",None) is None:
             parser_data["STORAGE"] = {}
@@ -841,7 +841,7 @@ class AutosubmitConfig(object):
                 except BaseException:
                     pass  # tests conflict quick-patch
 
-            dependencies = section_data.get('DEPENDENCIES','')
+            dependencies = section_data.get('DEPENDENCIES','').upper()
             if dependencies:
                 if type(dependencies) is str:
                     dependencies = dependencies.split(' ')
@@ -856,17 +856,17 @@ class AutosubmitConfig(object):
                         dependency = dependency.split('?')[0]
                     if '[' in dependency:
                         dependency = dependency[:dependency.find('[')]
-                    if dependency not in parser.data.keys():
+                    if dependency not in parser.data["JOBS"].keys():
                         self.warn_config["Jobs"].append(
                             [section, "Dependency parameter is invalid, job {0} is not configured".format(dependency)])
-            rerun_dependencies = section_data.get('RERUN_DEPENDENCIES',"")
+            rerun_dependencies = section_data.get('RERUN_DEPENDENCIES',"").upper()
             if rerun_dependencies:
                 for dependency in rerun_dependencies.split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     if '[' in dependency:
                         dependency = dependency[:dependency.find('[')]
-                    if dependency not in parser.data.keys():
+                    if dependency not in parser.data["JOBS"].keys():
                         self.warn_config["Jobs"] += [
                             [section, "RERUN_DEPENDENCIES parameter is invalid, job {0} is not configured".format(dependency)]]
             running_type = section_data.get('RUNNING', "")
@@ -899,10 +899,14 @@ class AutosubmitConfig(object):
             self.wrong_config["Expdef"] += [['DEFAULT',"Mandatory EXPERIMENT.MEMBERS parameter is invalid"]]
         if parser['EXPERIMENT'].get('CHUNKSIZEUNIT',"").lower() not in ['year', 'month', 'day', 'hour']:
             self.wrong_config["Expdef"] += [['experiment',"Mandatory EXPERIMENT.CHUNKSIZEUNIT choice is invalid"]]
-        if type(parser['EXPERIMENT'].get('CHUNKSIZE',"")) not in [int]:
-            self.wrong_config["Expdef"] += [['experiment',"Mandatory EXPERIMENT.CHUNKSIZE is not an integer"]]
-        if type(parser['EXPERIMENT'].get('NUMCHUNKS',"")) not in [int]:
-            self.wrong_config["Expdef"] += [['experiment',"Mandatory EXPERIMENT.NUMCHUNKS is not an integer"]]
+        if type(parser['EXPERIMENT'].get('CHUNKSIZE',"-1")) not in [int]:
+            if parser['EXPERIMENT']['CHUNKSIZE'] == "-1":
+                self.wrong_config["Expdef"] += [['experiment', "Mandatory EXPERIMENT.CHUNKSIZE is not defined"]]
+            parser['EXPERIMENT']['CHUNKSIZE'] = int(parser['EXPERIMENT']['CHUNKSIZE'])
+        if type(parser['EXPERIMENT'].get('NUMCHUNKS',"-1")) not in [int]:
+            if parser['EXPERIMENT']['NUMCHUNKS'] == "-1":
+                self.wrong_config["Expdef"] += [['experiment', "Mandatory EXPERIMENT.NUMCHUNKS is not defined"]]
+            parser['EXPERIMENT']['NUMCHUNKS'] = int(parser['EXPERIMENT']['NUMCHUNKS'])
         if parser['EXPERIMENT'].get('CALENDAR',"").lower() not in ['standard','noleap']:
             self.wrong_config["Expdef"] += [['experiment', "Mandatory EXPERIMENT.CALENDAR choice is invalid"]]
         project_type = parser['PROJECT'].get('PROJECT_TYPE',"")
