@@ -23,6 +23,8 @@ Module containing functions to manage autosubmit's database.
 import os
 import sqlite3
 import multiprocessing
+import sys
+
 import queue
 
 from log.log import Log, AutosubmitCritical, AutosubmitError
@@ -247,9 +249,9 @@ def last_name_used(test=False, operational=False):
 
     try:
         result = queue.get(True, TIMEOUT)
-    except BaseException:
+    except BaseException as e:
         raise AutosubmitCritical(
-            "The database process exceeded the timeout limit {0}s. Get last named used failed to complete.".format(TIMEOUT))
+            "The database process exceeded the timeout limit {0}s. Get last named used failed to complete.".format(TIMEOUT),7000,str(e))
     finally:
         proc.terminate()
     return result
@@ -437,6 +439,14 @@ def _get_autosubmit_version(expid):
     return row[0]
 
 
+
+
+
+
+
+
+
+
 def _last_name_used(test=False, operational=False):
     """
     Gets last experiment identifier used
@@ -481,8 +491,10 @@ def _last_name_used(test=False, operational=False):
 
     # If starts by number (during 3.0 beta some jobs starting with numbers where created), returns empty.
     try:
-        int(row[0][0])
-        return 'empty'
+        if row[0][0].isnumeric():
+            return 'empty'
+        else:
+            return row[0]
     except ValueError:
         return row[0]
 

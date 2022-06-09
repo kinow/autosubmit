@@ -578,6 +578,10 @@ class Autosubmit:
                                    help='Untar an uncompressed tar')
             subparser.add_argument('-v', '--update_version', action='store_true',
                                    default=False, help='Update experiment version')
+            # update proj files
+            subparser = subparsers.add_parser('updateproj', description='Updates autosubmit 3 proj files to autosubmit 4')
+            subparser.add_argument('expid', help='experiment identifier')
+
             # Readme
             subparsers.add_parser('readme', description='show readme')
 
@@ -656,6 +660,8 @@ class Autosubmit:
             return Autosubmit.refresh(args.expid, args.model_conf, args.jobs_conf)
         elif args.command == 'updateversion':
             return Autosubmit.update_version(args.expid)
+        elif args.command == 'updateproj':
+            return Autosubmit.update_proj_scripts(args.expid)
         elif args.command == 'archive':
             return Autosubmit.archive(args.expid, noclean=args.noclean, uncompress=args.uncompress)
         elif args.command == 'unarchive':
@@ -1004,17 +1010,24 @@ class Autosubmit:
                 if os.path.exists(root_folder):
                     # List of allowed files from conf
                     conf_copy_filter_folder = []
+                    conf_copy_filter_old_format_folder = []
                     conf_copy_filter = ["autosubmit_" + str(copy_id) + ".yml",
                                         "expdef_" + str(copy_id) + ".yml",
                                         "jobs_" + str(copy_id) + ".yml",
                                         "platforms_" + str(copy_id) + ".yml",
-                                        "proj_" + str(copy_id) + ".yml"]
+                                        "proj_" + str(copy_id) + ".yml",
+                                        "autosubmit_" + str(copy_id) + ".conf",
+                                        "expdef_" + str(copy_id) + ".conf",
+                                        "jobs_" + str(copy_id) + ".conf",
+                                        "platforms_" + str(copy_id) + ".conf",
+                                        "proj_" + str(copy_id) + ".conf"]
                     if root_folder != os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id):
                         conf_copy_filter_folder = ["autosubmit.yml",
                                                    "expdef.yml",
                                                    "jobs.yml",
                                                    "platforms.yml",
                                                    "proj.yml"]
+
                         exp_id = new_experiment(
                             description, Autosubmit.autosubmit_version, test, operational)
                     else:
@@ -1042,6 +1055,10 @@ class Autosubmit:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.replace(
                                     copy_id, exp_id)
+                                print(new_filename[-4:])
+                                if new_filename[-4:] == "conf":
+                                   new_filename = new_filename[:-4]+"yml"
+
                                 # Using readlines for replacement handling
                                 content = open(os.path.join(
                                     conf_copy_id, filename), 'r').readlines()
@@ -1051,13 +1068,18 @@ class Autosubmit:
                                     content = open(
                                         BasicConfig.CUSTOM_PLATFORMS_PATH, 'rb').readlines()
                                 # Setting email notifications to false
-                                if filename == str("autosubmit_" + str(copy_id) + ".yml"):
+                                if filename.startswith("autosubmit") and filename.endswith("conf"):
                                     content = ["NOTIFICATIONS = False\n" if line.startswith(
                                         ("NOTIFICATIONS =", "notifications =")) else line for line in content]
+                                elif filename.startswith("autosubmit") and filename.endswith("yml"):
+                                    content = ["NOTIFICATIONS: False\n" if "NOTIFICATIONS" in line else line for line in content]
                                 # Putting content together before writing
                                 sep = ""
                                 open(os.path.join(dir_exp_id, "conf",
-                                                  new_filename), 'wb').write(sep.join(content))
+                                                  new_filename), 'w').write(sep.join(content))
+                                if filename.endswith("conf"):
+                                    AutosubmitConfig.ini_to_yaml(os.path.join(os.path.join(dir_exp_id,"conf"),new_filename))
+
                         if filename in conf_copy_filter_folder:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.split(
@@ -1769,23 +1791,6 @@ class Autosubmit:
                                             jobs_to_check[platform.name].append((job, job_prev_status))
                                         else:
                                             jobs_to_check[platform.name] = [(job, job_prev_status)]
-                                        #if platform.type == "slurm":  # List for add all jobs that will be checked
-                                        #    list_jobid += str(job_id) + ','
-                                        #    list_prevStatus.append(job_prev_status)
-                                        #    completed_joblist.append(job)
-                                        #else:  # If they're not from slurm platform check one-by-one TODO: Implement ecwmf future platform and mnX, abstract this part
-                                        #    platform.check_job(job)
-                                            #Log.info("FD 4 check job: {0}".format(log.fd_show.fd_table_status_str()))
-                                        #    if job_prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
-                                                # Keeping track of changes
-                                                #job_changes_tracker[job.name] = (job_prev_status, job.status)
-                                                #if as_conf.get_notifications():
-                                                #    if Status.VALUE_TO_KEY[job.status] in job.notify_on:
-                                                #        Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                #                                      Status.VALUE_TO_KEY[job_prev_status],
-                                                #                                      Status.VALUE_TO_KEY[job.status],
-                                                #                                      as_conf.get_mails_to())
-                                        #save = True
                         for platform in platforms_to_test:
                             platform_jobs = jobs_to_check.get(platform.name,[])
                             #not all platforms are doing this check simultaneosly
@@ -3809,6 +3814,36 @@ class Autosubmit:
         else:
             Log.critical("Update failed.")
         return True
+    @staticmethod
+    def update_proj_scripts(expid):
+        Log.info("Checking if experiment exists...")
+        try:
+            # Check that the user is the owner and the configuration is well configured
+            Autosubmit._check_ownership(expid,raise_error=True)
+            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
+            # Load current variables
+            as_conf.check_conf_files()
+            # Load current parameters ( this doesn't read job parameters)
+            parameters = as_conf.load_parameters()
+        except (AutosubmitError,AutosubmitCritical):
+            raise
+
+        # Check if user has a proj dir with data.
+
+        # Do a backup
+
+        # Update proj
+        # Find templates files
+        # Find all %_% variables
+        # Detect if they need and update
+        Log.info("Find proj files")
+        result = update_experiment_descrip_version(
+            expid, description=new_description)
+        if result:
+            Log.info("Update completed successfully.")
+        else:
+            Log.critical("Update failed.")
+        return True
 
     @staticmethod
     def pkl_fix(expid):
@@ -5409,7 +5444,7 @@ class Autosubmit:
             if date.minute > 1:
                 date_format = 'M'
         wrapper_jobs = dict()
-        for wrapper_section,wrapper_data in as_conf.experiment_data["WRAPPERS"].items():
+        for wrapper_section,wrapper_data in as_conf.experiment_data.get("WRAPPERS",{}).items():
             if isinstance(wrapper_data,collections.abc.Mapping ):
                 wrapper_jobs[wrapper_section] = wrapper_data.get("JOBS_IN_WRAPPER","")
 

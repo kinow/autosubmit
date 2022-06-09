@@ -245,7 +245,7 @@ class JobPackager(object):
                 wrapper_limits["max_h"] = self._as_config.get_max_wrapped_jobs_horizontal(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
                 if wrapper_limits["max"] < wrapper_limits["max_v"] * wrapper_limits["max_h"]:
                     wrapper_limits["max"] = wrapper_limits["max_v"] * wrapper_limits["max_h"]
-                dependencies_keys = self._as_config.jobs_data[section].get('DEPENDENCIES', "")
+                dependencies_keys = self._as_config.jobs_data[section].get('DEPENDENCIES', "").upper()
                 if '&' not in section:
                     dependencies_keys = dependencies_keys.split()
                     wrapper_limits["max_by_section"][section] = wrapper_limits["max"]

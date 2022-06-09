@@ -23,6 +23,9 @@ import re
 import subprocess
 import traceback
 import json
+import ruamel.yaml as yaml
+import collections
+from configobj import ConfigObj
 
 from pyparsing import nestedExpr
 
@@ -737,6 +740,8 @@ class AutosubmitConfig(object):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "RETRIALS parameter not found or non-integer"]]
 
+        if parser_data.get("STORAGE",None) is None:
+            parser_data["STORAGE"] = {}
         if parser_data["STORAGE"].get('TYPE',"pkl") not in ['pkl', 'db']:
             self.wrong_config["Autosubmit"] += [['storage',
                                                  "TYPE parameter not found"]]
@@ -1396,7 +1401,7 @@ class AutosubmitConfig(object):
         :return: number of chunks
         :rtype: int
         """
-        return self.get_section(['experiment', 'NUMCHUNKS'])
+        return int(self.get_section(['experiment', 'NUMCHUNKS']))
 
     def get_chunk_ini(self, default=1):
         """
@@ -1647,6 +1652,44 @@ class AutosubmitConfig(object):
         """
         return self.get_section(['MAIL', 'NOTIFICATIONS'], False)
 
+    # based on https://github.com/cbirajdar/properties-to-yaml-converter/blob/master/properties_to_yaml.py
+    @staticmethod
+    def ini_to_yaml(ini_file):
+        # Based on http://stackoverflow.com/a/3233356
+        def update_dict(original_dict, updated_dict):
+            for k, v in updated_dict.items():
+                if isinstance(v, collections.Mapping):
+                    r = update_dict(original_dict.get(k, {}), v)
+                    original_dict[k] = r
+                else:
+                    original_dict[k] = updated_dict[k]
+            return original_dict
+
+        # Read the file name from command line argument
+        input_file = ini_file
+        # Read key=value property configs in python dictionary
+        config_dict = ConfigObj(input_file,stringify=True,list_values=False,interpolation=False)
+        # Store the result in yaml_dict
+        yaml_dict = {}
+
+        for key, value in config_dict.items():
+            config_keys = key.split(".")
+
+            for config_key in reversed(config_keys):
+                value = {config_key: value}
+
+            yaml_dict = update_dict(yaml_dict, value)
+
+        final_dict = {}
+        if input_file.find("platform") != -1:
+            final_dict["PLATFORMS"] = yaml_dict
+        elif input_file.find("job") != -1:
+            final_dict["JOBS"] = yaml_dict
+        else:
+            final_dict = yaml_dict
+            # Write resultant dictionary to the yaml file
+        yaml_file = open(input_file, 'w')
+        yaml.dump(final_dict, yaml_file, Dumper=yaml.RoundTripDumper)
     def get_notifications_crash(self):
         """
         Returns if the user has enabled the notifications from autosubmit's config file
@@ -1671,8 +1714,10 @@ class AutosubmitConfig(object):
         :return: wrapper type (or none)
         :rtype: string
         """
-
-        return wrapper.get('TYPE',self.experiment_data["WRAPPERS"].get("TYPE",""))
+        if len(wrapper) > 0 :
+            return wrapper.get('TYPE',self.experiment_data["WRAPPERS"].get("TYPE",""))
+        else:
+            return None
 
 
     def get_wrapper_retrials(self, wrapper={}):
@@ -1698,10 +1743,10 @@ class AutosubmitConfig(object):
         """
         Returns the jobs that should be wrapped, configured in the autosubmit's config
 
-        :return: expression (or none)
-        :rtype: string
+        :return: expression
+        :rtype: dict
         """
-        return self.experiment_data.get("WRAPPERS", "")
+        return self.experiment_data.get("WRAPPERS", {})
 
     def get_wrapper_jobs(self, wrapper={}):
         """
@@ -1906,7 +1951,7 @@ class AutosubmitConfig(object):
         return True
 
     def is_valid_git_repository(self):
-        origin_exists = self._exp_parser.check_exists('git', 'PROJECT_ORIGIN')
+        origin_exists = self.experiment_data["GIT"].get('PROJECT_ORIGIN',"")
         branch = self.get_git_project_branch()
         commit = self.get_git_project_commit()
         return origin_exists and (branch is not None or commit is not None)

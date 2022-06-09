@@ -257,7 +257,7 @@ class JobList(object):
             if not (job_section, option):
                 continue
 
-            dependencies_keys = jobs_data[job_section].get(option,"")
+            dependencies_keys = jobs_data[job_section].get(option,"").upper()
             if type(dependencies_keys) is str:
                 dependencies_keys = dependencies_keys.split()
             dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs, job_section)
@@ -1940,7 +1940,7 @@ class JobList(object):
             Log.debug(
                 "Reading rerun dependencies for {0} jobs".format(job_section))
             if jobs_parser.has_option(job_section, 'DEPENDENCIES'):
-                dependencies_keys = jobs_parser.get(job_section, "DEPENDENCIES").split()
+                dependencies_keys = jobs_parser.get(job_section, "DEPENDENCIES").upper().split()
                 dependencies = JobList._manage_dependencies(dependencies_keys, self._dic_jobs, job_section)
                 for job in self.get_jobs_by_section(job_section):
                     for key in dependencies_keys:

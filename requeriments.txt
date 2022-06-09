@@ -1,3 +1,4 @@
+configobj>=5.0.6
 argparse>=1.4.0
 python-dateutil>=2.8.2
 matplotlib>=3.5.1
