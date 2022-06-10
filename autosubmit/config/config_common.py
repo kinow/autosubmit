@@ -1282,8 +1282,6 @@ class AutosubmitConfig(object):
         try:
             value = self.get_section(['project', 'PROJECT_DESTINATION'])
             if not value:
-                return ""
-            else:
                 if self.get_project_type().lower() == "local":
                     value = os.path.split(self.get_local_project_path())[1]
                 elif self.get_project_type().lower() == "svn":

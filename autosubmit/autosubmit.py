@@ -3818,17 +3818,18 @@ class Autosubmit:
     def update_old_script(root_dir,template_path,as_conf):
         # Do a backup and tries to update
         warn = ""
+        sustituted = ""
+        Log.info("Checking {0}".format(template_path))
         if template_path.exists():
             backup_path = root_dir / Path(template_path.name + "_AS_v3_backup")
             if not backup_path.exists():
+                Log.info("Backup stored at {0}".format(backup_path))
                 shutil.copyfile(template_path, backup_path)
             template_content = open(template_path).read()
             # Look for %_%
             variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
             variables = [variable[1:-1].upper() for variable in variables]
-
             results = {}
-            sustituted = ""
             # Change format
             for old_format_key in variables:
                 for key in as_conf.load_parameters().keys():
@@ -3837,17 +3838,31 @@ class Autosubmit:
                         if old_format_key not in results:
                             results[old_format_key] = set()
 
-                        results[old_format_key].add(key)
+                        results[old_format_key].add("%"+key.strip("'")+"%")
             for key, new_key in results.items():
                 if len(new_key) > 1:
                     warn += "{0} couldn't translate to {1} since it contains multiple values\n".format(key, new_key)
                 else:
+                    new_key = new_key.pop().upper()
                     sustituted += "{0} translated to {1}\n".format(key, new_key)
-                    template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(new_key).upper(), template_content)
+                    template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', new_key, template_content)
+
             # write_it
-            return warn,sustituted
+            open(template_path,"w").write(template_content)
+        if warn == "" and sustituted == "":
+            Log.result("Completed check for {0}.\nNo %_% variables found.".format(template_path))
+        else:
+            Log.result("Completed check for {0}".format(template_path))
+
+        return warn,sustituted
     @staticmethod
     def update_proj_scripts(expid):
+        def get_files(root_dir,extensions):
+            all_files = []
+            for ext in extensions:
+                all_files.extend(root_dir.rglob(ext))
+            return all_files
+
         Log.info("Checking if experiment exists...")
         try:
             # Check that the user is the owner and the configuration is well configured
@@ -3863,6 +3878,7 @@ class Autosubmit:
                 except BaseException as e:
                     AutosubmitConfig.ini_to_yaml(f)
             # Converts all ini into yaml
+            Log.info("Converting all .conf files into .yml.")
             for f in folder.rglob("*.conf"):
                 if not (Path(f.stem) / ".yml").exists():
                     AutosubmitConfig.ini_to_yaml(f)
@@ -3875,31 +3891,42 @@ class Autosubmit:
 
         except (AutosubmitError,AutosubmitCritical):
             raise
-
-        # Check if user has a proj dir with data.
-
-        # Do a backup
-
-        # Update proj
-        # Find templates files
-        # Find all %_% variables
-        # Detect if they need and update
-        Log.info("Find proj files")
-        root_dir = Path(as_conf.get_project_dir())
+        #Update configuration files
         template_path = Path()
         warn = ""
         sustituted = ""
-        for section,value in as_conf.jobs_data.items():
-            template_path = root_dir / Path(value.get("FILE",""))
+        root_dir = Path(as_conf.basic_config.LOCAL_ROOT_DIR) / expid / "conf"
+        Log.info("Looking for %_% variables inside conf files")
+        for f in get_files(root_dir,('*.yml','*.yaml','*.conf')):
+            template_path = root_dir / Path(f).name
             w,s = Autosubmit.update_old_script(root_dir,template_path,as_conf)
             if w != "":
                 warn += "Warnings for: {0}\n{1}\n".format(template_path.name,w)
             if s != "":
                 sustituted +="Variables changed for: {0}\n{1}\n".format(template_path.name,s)
-        Log.printlog(sustituted)
-        Log.printlog(warn)
-
-
+        if sustituted == "" and warn == "":
+            pass
+        else:
+            Log.result(sustituted)
+            Log.result(warn)
+        # Update templates
+        root_dir = Path(as_conf.get_project_dir())
+        template_path = Path()
+        warn = ""
+        sustituted = ""
+        Log.info("Looking for %_% variables inside templates")
+        for section,value in as_conf.jobs_data.items():
+            template_path = root_dir / Path(value.get("FILE",""))
+            w,s = Autosubmit.update_old_script(template_path.parent,template_path,as_conf)
+            if w != "":
+                warn += "Warnings for: {0}\n{1}\n".format(template_path.name,w)
+            if s != "":
+                sustituted +="Variables changed for: {0}\n{1}\n".format(template_path.name,s)
+        if sustituted == "" and warn == "":
+            pass
+        else:
+            Log.result(sustituted)
+            Log.result(warn)
 
 
     @staticmethod
