@@ -44,7 +44,7 @@ class Platform(object):
         self.directory = None
         self.hyperthreading = False
         self.max_wallclock = '2:00'
-        self.total_jobs = "20"
+        self.total_jobs = 20
         self.max_processors = "480"
         self._allow_arrays = False
         self._allow_wrappers = False

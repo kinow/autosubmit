@@ -1417,7 +1417,7 @@ class Autosubmit:
             if date.minute > 1:
                 date_format = 'M'
         wrapper_jobs = dict()
-        for wrapper_section,wrapper_data in as_conf.experiment_data["WRAPPERS"].items():
+        for wrapper_section,wrapper_data in as_conf.experiment_data.get("WRAPPERS",{}).items():
             wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_data)
         Log.warning("Aux Job_list was generated successfully")
         submitter = Autosubmit._get_submitter(as_conf)

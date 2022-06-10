@@ -144,9 +144,18 @@ class ParamikoSubmitter(Submitter):
             remote_platform._version = platform_version
 
             # Concatenating host + project and adding to the object
-            if platform_data[section].get('ADD_PROJECT_TO_HOST', False):
-                host = '{0}-{1}'.format(platform_data[section].get('HOST', ""),
-                                        platform_data[section].get('PROJECT', ""))
+            add_project_to_host = platform_data[section].get('ADD_PROJECT_TO_HOST', False)
+            if str(add_project_to_host).lower() != "false":
+                host = '{0}'.format(platform_data[section].get('HOST', ""))
+                if host.find(",") == -1:
+                    host = '{0}-{1}'.format(host,platform_data[section].get('PROJECT', ""))
+                else:
+                    host_list = host.split(",")
+                    host_aux = ""
+                    for ip in host_list:
+                        host_aux += '{0}-{1},'.format(ip,platform_data[section].get('PROJECT', ""))
+                    host = host_aux[:-1]
+
             else:
                 host = platform_data[section].get('HOST', "")
 

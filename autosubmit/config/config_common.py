@@ -549,6 +549,7 @@ class AutosubmitConfig(object):
             if isinstance(val, collections.abc.Mapping ):
                 normalized_value = self.deep_normalize(data.get(key, {}))
                 normalized_data[key.upper()] = normalized_value
+
         return normalized_data
 
     def deep_update(self,unified_config, new_dict):
@@ -581,9 +582,9 @@ class AutosubmitConfig(object):
         if self._proj_parser_file.exists():
             self._proj_parser.data = self.deep_normalize(self._proj_parser.data)
             self.experiment_data = self.deep_update(self.experiment_data,self._proj_parser.data)
-        #Parse loops in original config
         #Check if there is "FOR" clausure (Recursive search)
         self.deep_read_loops(self.experiment_data)
+        #Parse loops in original config
         self.parse_data_loops(self.experiment_data,self.data_loops)
         if len(self._custom_parser) > 0:
             for c_parser in self._custom_parser:
@@ -658,10 +659,26 @@ class AutosubmitConfig(object):
         Modify ``source`` in place.
         """
         for key, val in data.items():
+            # Placeholders variables
+            if not isinstance(val, collections.abc.Mapping):
+                max_deep = 10
+                while re.findall('%(?<!%%)\w+%(?!%%)', str(val)) and max_deep > 0:
+                    sections = val.strip("%")
+                    if sections.find(".") > -1:
+                        sections = val.split(".")
+                    else:
+                        sections = [sections]
+                    for section in sections:
+                        data = self.experiment_data.get(section.strip('%'),{})
+                    if not isinstance(data, collections.abc.Mapping):
+                        val = re.sub('%(?<!%%)' + val + '%(?!%%)', str(data), val)
+                    max_deep = max_deep - 1
+            # For loops
             if key == "FOR":
                 self.data_loops.append(for_keys)
             elif isinstance(val, collections.abc.Mapping ):
                 self.deep_read_loops(data.get(key, {}),for_keys+[key])
+
 
 
 
@@ -736,6 +753,8 @@ class AutosubmitConfig(object):
                                                  "TOTALJOBS parameter not found or non-integer"]]
         if parser_data["CONFIG"].get('SAFETYSLEEPTIME',-1) == -1:
             self.set_safetysleeptime(10)
+        else:
+            self.set_safetysleeptime(int(parser_data["CONFIG"].get('SAFETYSLEEPTIME',10)))
         if type(parser_data["CONFIG"].get('RETRIALS',0)) != int:
             parser_data["CONFIG"]['RETRIALS'] = int(parser_data["CONFIG"].get('RETRIALS',0))
 
@@ -1035,6 +1054,7 @@ class AutosubmitConfig(object):
                 else:
                     self._proj_parser = AutosubmitConfig.get_parser(
                         self.parser_factory, self._proj_parser_file)
+
             except IOError as e:
                 raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
             self.unify_conf()
@@ -1133,23 +1153,6 @@ class AutosubmitConfig(object):
                                section_param] = job_list_by_section[section][0].parameters[section_param]
         return parameters
 
-    def load_project_parameters(self):
-        """
-        Loads parameters from model config file
-
-        :return: dictionary containing tuples [parameter_name, parameter_value]
-        :rtype: dict
-        """
-        projdef = []
-        for section in self._proj_parser.sections():
-            projdef += self._proj_parser.items(section)
-
-        parameters = dict()
-        for item in projdef:
-            parameters[item[0]] = item[1]
-
-        return parameters
-
     def set_expid(self, exp_id):
         """
         Set experiment identifier in autosubmit and experiment config files
@@ -1177,7 +1180,7 @@ class AutosubmitConfig(object):
         :return: project type
         :rtype: str
         """
-        return self.get_section(["project", "project_type"],must_exists=False)
+        return self.get_section(["project", "project_type"],must_exists=False).lower()
 
 
     def get_parse_two_step_start(self):
@@ -1554,7 +1557,7 @@ class AutosubmitConfig(object):
         :return: max number of running jobs
         :rtype: int
         """
-        return self.get_section(['config', 'TOTALJOBS'],-1)
+        return int(self.get_section(['config', 'TOTALJOBS'],-1))
 
     def get_output_type(self):
         """
@@ -1596,7 +1599,7 @@ class AutosubmitConfig(object):
         :return: main platforms
         :rtype: int
         """
-        return self.get_section(['config', 'MAXWAITINGJOBS'],-1)
+        return int(self.get_section(['config', 'MAXWAITINGJOBS'],-1))
 
     def get_default_job_type(self):
         """
@@ -1614,7 +1617,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return self.get_section(['config', 'SAFETYSLEEPTIME'], 10)
+        return int(self.get_section(['config', 'SAFETYSLEEPTIME'], 10))
 
     def set_safetysleeptime(self, sleep_time):
         """
@@ -1750,13 +1753,15 @@ class AutosubmitConfig(object):
         """
         return self.experiment_data.get("WRAPPERS", {})
 
-    def get_wrapper_jobs(self, wrapper={}):
+    def get_wrapper_jobs(self, wrapper=None):
         """
         Returns the jobs that should be wrapped, configured in the autosubmit's config
 
         :return: expression (or none)
         :rtype: string
         """
+        if wrapper is None:
+            return ""
         return wrapper.get('JOBS_IN_WRAPPER', self.experiment_data["WRAPPERS"].get("JOBS_IN_WRAPPER",""))
 
     def get_extensible_wallclock(self, wrapper={}):

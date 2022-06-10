@@ -473,7 +473,7 @@ default retrials for ech job
         elif job_type == 'r':
             job.type = Type.R
         job.executable = parameters[section].get( "EXECUTABLE", "")
-        job.platform_name = parameters[section].get( "PLATFORM", "")
+        job.platform_name = parameters[section].get( "PLATFORM", "").upper()
         job.file = parameters[section].get( "FILE", "")
         job.queue = parameters[section].get( "QUEUE", "")
         job.check = parameters[section].get( "CHECK", True)

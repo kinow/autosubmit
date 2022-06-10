@@ -1046,14 +1046,16 @@ class Job(object):
             BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
-        parameters['WRAPPER'] = as_conf.get_wrapper_type()
         parameters['DEPENDENCIES'] = as_conf.jobs_data[self.section].get("DEPENDENCIES","")
-        parameters['WRAPPER' + "_POLICY"] = as_conf.get_wrapper_policy()
-        parameters['WRAPPER' + "_METHOD"] = as_conf.get_wrapper_method().lower()
-        parameters['WRAPPER' + "_JOBS"] = as_conf.get_wrapper_jobs()
-        parameters['WRAPPER' + "_EXTENSIBLE"] = as_conf.get_extensible_wallclock()
+        wrappers = as_conf.experiment_data.get("WRAPPERS",{})
+        if len(wrappers) > 0:
+            parameters['WRAPPER'] = as_conf.get_wrapper_type()
+            parameters['WRAPPER' + "_POLICY"] = as_conf.get_wrapper_policy()
+            parameters['WRAPPER' + "_METHOD"] = as_conf.get_wrapper_method().lower()
+            parameters['WRAPPER' + "_JOBS"] = as_conf.get_wrapper_jobs()
+            parameters['WRAPPER' + "_EXTENSIBLE"] = as_conf.get_extensible_wallclock()
 
-        for wrapper_section,wrapper_val in as_conf.experiment_data.get("WRAPPERS",{}).items():
+        for wrapper_section,wrapper_val in wrappers.items():
             parameters[wrapper_section] = as_conf.get_wrapper_type(as_conf.experiment_data["WRAPPERS"].get(wrapper_section))
             parameters[wrapper_section+"_POLICY"] = as_conf.get_wrapper_policy(as_conf.experiment_data["WRAPPERS"].get(wrapper_section))
             parameters[wrapper_section+"_METHOD"] = as_conf.get_wrapper_method(as_conf.experiment_data["WRAPPERS"].get(wrapper_section)).lower()
@@ -1076,31 +1078,7 @@ class Job(object):
                             "PARAMETER export: Variable: {0} doesn't exist".format(str(e)))
 
             parameters['EXPORT'] = self.export
-        #PROJECT VARIABLES:
-        parameters['PROJECT_TYPE'] = as_conf.get_project_type().lower()
-        if as_conf._proj_parser is not None and parameters['PROJECT_TYPE'] != "none":
-            # Load project parameters
-            proj_param = as_conf.load_project_parameters()
-            variables_to_modify = []
-            deep_level = 1
-            max_deep_level = 10
-            for key, value in proj_param.items():
-                if type(proj_param[key]) is str:
-                    look_non_sub_variables = re.findall('%(?<!%%)\w+%(?!%%)', proj_param[key])
-                    if len(look_non_sub_variables) > 0:
-                        variables_to_modify.append(key)
-            while len(variables_to_modify) > 0 and deep_level < max_deep_level:
-                for key, value in parameters.items():
-                    for var in variables_to_modify:
-                        proj_param[var] = re.sub('%(?<!%%)' + key + '%(?!%%)', str(value), proj_param[var])
-                deep_level = deep_level + 1
-                variables_to_modify = []
-                for key, value in proj_param.items():
-                    if type(proj_param[key]) is str:
-                        look_non_sub_variables = re.findall('%(?<!%%)\w+%(?!%%)', proj_param[key])
-                        if len(look_non_sub_variables) > 0:
-                            variables_to_modify.append(key)
-            parameters.update(proj_param)
+        parameters['PROJECT_TYPE'] = as_conf.get_project_type()
         self.parameters = parameters
 
         return parameters
@@ -1118,7 +1096,7 @@ class Job(object):
         try:  # issue in tests with project_type variable while using threads
             if as_conf.get_project_type().lower() != "none":
                 template_file = open(os.path.join(
-                    as_conf.get_project_dir(), self.file), 'rb')
+                    as_conf.get_project_dir(), self.file), 'r')
                 template = ''
                 if as_conf.get_remote_dependencies():
                     if self.type == Type.BASH:

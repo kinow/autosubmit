@@ -83,7 +83,7 @@ class JobPackager(object):
 
 
         #todo add default values
-        for wrapper_section,wrapper_data in self._as_config.experiment_data["WRAPPERS"].items():
+        for wrapper_section,wrapper_data in self._as_config.experiment_data.get("WRAPPERS",{}).items():
             if isinstance(wrapper_data,collections.abc.Mapping ):
                 self.wrapper_type[wrapper_section] = self._as_config.get_wrapper_type(wrapper_data)
                 self.wrapper_policy[wrapper_section] = self._as_config.get_wrapper_policy(wrapper_data)
