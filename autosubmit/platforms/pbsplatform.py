@@ -82,7 +82,7 @@ class PBSPlatform(ParamikoPlatform):
         return self.remote_log_dir
 
     def check_Alljobs(self, job_list, as_conf, retries=5):
-        for job in job_list:
+        for job,prev_status in job_list:
             self.check_job(job)
 
     def get_mkdir_cmd(self):

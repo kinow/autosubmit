@@ -90,7 +90,7 @@ class EcPlatform(ParamikoPlatform):
         return self.mkdir_cmd
 
     def check_Alljobs(self, job_list, as_conf, retries=5):
-        for job in job_list:
+        for job,prev_status in job_list:
             self.check_job(job)
 
     def parse_job_output(self, output):

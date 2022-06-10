@@ -1857,13 +1857,15 @@ class AutosubmitConfig(object):
          """
         return wrapper.get('METHOD', self.experiment_data["WRAPPERS"].get("METHOD",'ASThread'))
 
-    def get_wrapper_check_time(self, wrapper={}):
+    def get_wrapper_check_time(self, wrapper=None):
         """
          Returns time to check the status of jobs in the wrapper
 
          :return: wrapper check time
          :rtype: int
          """
+        if wrapper is None:
+            return 10
         return int(wrapper.get('CHECK_TIME_WRAPPER', self.experiment_data["WRAPPERS"].get("CHECK_TIME_WRAPPER",self.get_safetysleeptime())))
 
     def get_wrapper_machinefiles(self, wrapper={}):

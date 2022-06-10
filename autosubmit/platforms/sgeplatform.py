@@ -72,7 +72,7 @@ class SgePlatform(ParamikoPlatform):
         return output
 
     def check_Alljobs(self, job_list, as_conf, retries=5):
-        for job in job_list:
+        for job,prev_status in job_list:
             self.check_job(job)
 
     def get_submitted_job_id(self, output, x11 = False):

@@ -85,5 +85,5 @@ class PsPlatform(ParamikoPlatform):
         return self.get_pscall(job_id)
 
     def check_Alljobs(self, job_list, as_conf, retries=5):
-        for job in job_list:
+        for job,prev_status in job_list:
             self.check_job(job)

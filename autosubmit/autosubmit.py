@@ -1787,17 +1787,18 @@ class Autosubmit:
                                     # If exist key has been pressed and previous status was running, do not check
                                     if not (Autosubmit.exit is True and job_prev_status == Status.RUNNING):
                                         if platform.name in jobs_to_check:
-                                            jobs_to_check[platform.name].append((job, job_prev_status))
+                                            jobs_to_check[platform.name].append([job, job_prev_status])
                                         else:
-                                            jobs_to_check[platform.name] = [(job, job_prev_status)]
+                                            jobs_to_check[platform.name] = [[job, job_prev_status]]
                         for platform in platforms_to_test:
                             platform_jobs = jobs_to_check.get(platform.name,[])
+
                             #not all platforms are doing this check simultaneosly
                             if len(platform_jobs) == 0:
                                 continue
-                            platform.check_Alljobs(jobs_to_check[platform.name], as_conf)
+                            platform.check_Alljobs(platform_jobs, as_conf)
                             # mail notification
-                            for job,job_prev_status in platform_jobs:
+                            for job,job_prev_status in jobs_to_check[platform.name]:
                                 if job_prev_status != job.update_status(as_conf.get_copy_remote_logs()):
                                     # Keeping track of changes
                                     job_changes_tracker[job.name] = (job_prev_status, job.status)
