@@ -27,6 +27,7 @@ import ruamel.yaml as yaml
 import collections
 from configobj import ConfigObj
 
+
 from pyparsing import nestedExpr
 
 from bscearth.utils.date import parse_date
@@ -87,6 +88,7 @@ class AutosubmitConfig(object):
         self.ignore_file_path = False
         self.wrong_config = defaultdict(list)
         self.warn_config = defaultdict(list)
+        self.dynamic_variables = list()
         #todo threads are loading all parameters
     @property
     def jobs_parser(self):
@@ -593,7 +595,7 @@ class AutosubmitConfig(object):
             #Parser loops in custom config
             self.deep_read_loops(self.experiment_data)
             self.parse_data_loops(self.experiment_data, self.data_loops)
-
+        self.dynamic_variables = list(set(self.dynamic_variables))
 
     def parse_data_loops(self,exp_data,data_loops):
         section_data = list()
@@ -651,40 +653,60 @@ class AutosubmitConfig(object):
             exp_data = self.experiment_data
             pass
         self.data_loops = []
+    def get_placeholders(self,val,key):
 
+        aux_name = val.split("/")
+        full_name = []
+        for aux in aux_name:
+            full_name.extend(aux.split(" "))
+        placeholders = []
+        for posible_placeholder in full_name:
+            if "%" in posible_placeholder or key:
+                placeholders.append(posible_placeholder.strip("%"))
+        return placeholders
 
-    def deep_read_loops(self,data,for_keys=[]):
+    def sustitute_placeholder_variables(self,key,val,parameters):
+        substituted = False
+        data = parameters
+        placeholders=self.get_placeholders(val, False)
+        new_placeholders = False
+        for section in placeholders:
+            get_data = data.get(section, {})
+            if not isinstance(get_data, collections.abc.Mapping):
+                put_data = parameters.get(key, None)
+                if put_data is not None:
+                    if "%" in str(get_data):
+                        new_placeholders = True
+                    parameters[key] = re.sub('%(?<!%%)' + section + '%(?!%%)', str(get_data), parameters[key])
+                    substituted = True
+
+                else:
+                    substituted = False
+        if new_placeholders:
+            self.dynamic_variables.append((key,parameters[key]))
+
+        return substituted,parameters
+    def deep_read_loops(self,data,for_keys=[],long_key=""):
         """
         Update a nested dictionary or similar mapping.
         Modify ``source`` in place.
         """
         for key, val in data.items():
             # Placeholders variables
-            if not isinstance(val, collections.abc.Mapping):
-                max_deep = 10
-                while re.findall('%(?<!%%)\w+%(?!%%)', str(val)) and max_deep > 0:
-                    sections = val.strip("%")
-                    if sections.find(".") > -1:
-                        sections = val.split(".")
-                    else:
-                        sections = [sections]
-                    for section in sections:
-                        data = self.experiment_data.get(section.strip('%'),{})
-                    if not isinstance(data, collections.abc.Mapping):
-                        val = re.sub('%(?<!%%)' + val + '%(?!%%)', str(data), val)
-                    max_deep = max_deep - 1
-            # For loops
+            if not isinstance(val, collections.abc.Mapping) and "%" in str(val):
+                self.dynamic_variables.append((long_key+key, val))
             if key == "FOR":
                 self.data_loops.append(for_keys)
             elif isinstance(val, collections.abc.Mapping ):
-                self.deep_read_loops(data.get(key, {}),for_keys+[key])
+                self.deep_read_loops(data.get(key, {}),for_keys+[key],long_key=key+".")
+
+
 
 
 
 
     def check_mandatory_conf_files(self):
         self.unify_conf()
-        print("end unify")
         self.check_expdef_conf()
         self.check_platforms_conf()
         self.check_jobs_conf()

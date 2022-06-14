@@ -1079,6 +1079,21 @@ class Job(object):
 
             parameters['EXPORT'] = self.export
         parameters['PROJECT_TYPE'] = as_conf.get_project_type()
+        substituted = False
+        max_deep = 25
+        dynamic_variables = []
+        backup_variables = as_conf.dynamic_variables
+        while len(as_conf.dynamic_variables) > 0 and max_deep > 0:
+            dynamic_variables = []
+            for dynamic_var in as_conf.dynamic_variables:
+                substituted,new_param = as_conf.sustitute_placeholder_variables(dynamic_var[0],dynamic_var[1],parameters)
+                if not substituted:
+                    dynamic_variables.append(dynamic_var)
+                else:
+                    parameters= new_param
+            as_conf.dynamic_variables = dynamic_variables
+            max_deep = max_deep - 1
+        as_conf.dynamic_variables = backup_variables
         self.parameters = parameters
 
         return parameters
