@@ -3926,10 +3926,9 @@ class Autosubmit:
                 warn += "Warnings for: {0}\n{1}\n".format(template_path.name,w)
             if s != "":
                 sustituted +="Variables changed for: {0}\n{1}\n".format(template_path.name,s)
-        if sustituted == "" and warn == "":
-            pass
-        else:
-            Log.printlog(sustituted,Log.RESULT)
+        if sustituted != "":
+            Log.printlog(sustituted, Log.RESULT)
+        if warn != "":
             Log.printlog(warn,Log.ERROR)
 
 
