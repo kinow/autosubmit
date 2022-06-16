@@ -6,7 +6,7 @@ computing clusters, HPC platforms and supercomputers remotely via ssh.
 Get involved or contact us:
 
     Autosubmit GitLab:	        https://earth.bsc.es/gitlab/es/autosubmit
-    Autosubmit Mailing List:	autosubmit@bsc.es
+    Autosubmit Support:	        support-autosubmit@bsc.es
     
 How to cite Autosubmit:
 
