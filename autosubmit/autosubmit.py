@@ -691,7 +691,7 @@ class Autosubmit:
         Log.set_console_level(console_level)
         expid_less = ["expid", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]
-        global_log_command = ["delete", "archive"]
+        global_log_command = ["delete", "archive","updateproj"]
         if "offer" in args:
             if args.offer:
                 global_log_command.append("migrate")  # offer
@@ -1524,14 +1524,10 @@ class Autosubmit:
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             import platform
             host = platform.node()
-            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-
-            as_conf.check_conf_files(True,True)
-
-
         except BaseException as e:
             raise AutosubmitCritical("Failure during the loading of the experiment configuration, check file paths",7014,str(e))
-
+        as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
+        as_conf.check_conf_files(True,True)
         try:
             # Handling starting time
             AutosubmitHelper.handle_start_time(start_time)
@@ -3281,16 +3277,16 @@ class Autosubmit:
                     template_content = template_file.read()
                     for key, value in exp_parameters.items():
                         template_content = re.sub(
-                            '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
+                            '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content,flags=re.I)
                     # Performance metrics
                     if performance_metrics is not None:
                         for key in performance_metrics:
                             template_content = re.sub(
-                                '%(?<!%%)' + key + '%(?!%%)', str(performance_metrics[key]), template_content)
+                                '%(?<!%%)' + key + '%(?!%%)', str(performance_metrics[key]), template_content,flags=re.I)
                     template_content = template_content.replace("%%", "%")
                     if not placeholders:
                         template_content = re.sub(
-                            r"\%[^% \n\t]+\%", "-", template_content)
+                            r"\%[^% \n\t]+\%", "-", template_content,flags=re.I)
                     report = '{0}_report_{1}.txt'.format(
                         expid, datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
                     open(os.path.join(tmp_path, report),
@@ -3842,14 +3838,21 @@ class Autosubmit:
                         results[old_format_key].add("%"+key.strip("'")+"%")
             for key, new_key in results.items():
                 if len(new_key) > 1:
-                    warn += "{0} couldn't translate to {1} since it contains multiple values\n".format(key, new_key)
+                    if list(new_key)[0].find("JOBS") > -1 or list(new_key)[0].find("PLATFORMS") > -1 :
+                        pass
+                    else:
+                        warn += "{0} couldn't translate to {1} since it contains multiple values\n".format(key, new_key)
                 else:
                     new_key = new_key.pop().upper()
-                    sustituted += "{0} translated to {1}\n".format(key, new_key)
-                    template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', new_key, template_content)
-
+                    sustituted += "{0} translated to {1}\n".format(key.upper(), new_key)
+                    template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', new_key, template_content,flags=re.I)
             # write_it
+            # Delete unused keys from confs
+            if template_path.name.lower().find("autosubmit") > -1:
+                template_content = re.sub('(?m)^( )*(EXPID:)( )*[a-zA-Z0-9]*(\n)*', "", template_content, flags=re.I)
+            # Write final result
             open(template_path,"w").write(template_content)
+
         if warn == "" and sustituted == "":
             Log.result("Completed check for {0}.\nNo %_% variables found.".format(template_path))
         else:
@@ -3875,9 +3878,9 @@ class Autosubmit:
                 # Tries to convert an invalid yml to correct one
                 try:
                     parser = factory.create_parser()
-                    parser.load(f)
+                    parser.load(Path(f))
                 except BaseException as e:
-                    AutosubmitConfig.ini_to_yaml(f)
+                    AutosubmitConfig.ini_to_yaml(Path(f))
             # Converts all ini into yaml
             Log.info("Converting all .conf files into .yml.")
             for f in folder.rglob("*.conf"):
@@ -3926,8 +3929,8 @@ class Autosubmit:
         if sustituted == "" and warn == "":
             pass
         else:
-            Log.result(sustituted)
-            Log.result(warn)
+            Log.printlog(sustituted,Log.RESULT)
+            Log.printlog(warn,Log.ERROR)
 
 
     @staticmethod

@@ -1070,10 +1070,10 @@ class Job(object):
                 for key in variables:
                     try:
                         self.export = re.sub(
-                            '%(?<!%%)' + key + '%(?!%%)', parameters[key], self.export)
+                            '%(?<!%%)' + key + '%(?!%%)', parameters[key], self.export,flags=re.I)
                     except Exception as e:
                         self.export = re.sub(
-                            '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.export)
+                            '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.export,flags=re.I)
                         Log.debug(
                             "PARAMETER export: Variable: {0} doesn't exist".format(str(e)))
 
@@ -1212,11 +1212,11 @@ class Job(object):
         template_content = self.update_content(as_conf)
         for key, value in parameters.items():
             template_content = re.sub(
-                '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
+                '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,flags=re.I)
         if self.undefined_variables:
             for variable in self.undefined_variables:
                 template_content = re.sub(
-                    '%(?<!%%)' + variable + '%(?!%%)', '', template_content)
+                    '%(?<!%%)' + variable + '%(?!%%)', '', template_content,flags=re.I)
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
         self.script_name = '{0}.cmd'.format(self.name)
@@ -1231,11 +1231,11 @@ class Job(object):
         template_content = self.get_wrapped_content(as_conf)
         for key, value in parameters.items():
             template_content = re.sub(
-                '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
+                '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,flags=re.I)
         if self.undefined_variables:
             for variable in self.undefined_variables:
                 template_content = re.sub(
-                    '%(?<!%%)' + variable + '%(?!%%)', '', template_content)
+                    '%(?<!%%)' + variable + '%(?!%%)', '', template_content,flags=re.I)
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
         self.script_name_wrapper = '{0}.{1}.cmd'.format(self.name, wrapper_tag)

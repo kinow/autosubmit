@@ -677,7 +677,7 @@ class AutosubmitConfig(object):
                 if put_data is not None:
                     if "%" in str(get_data):
                         new_placeholders = True
-                    parameters[key] = re.sub('%(?<!%%)' + section + '%(?!%%)', str(get_data), parameters[key])
+                    parameters[key] = re.sub('%(?<!%%)' + section + '%(?!%%)', str(get_data), parameters[key],flags=re.I)
                     substituted = True
 
                 else:
@@ -1286,7 +1286,7 @@ class AutosubmitConfig(object):
         :return: submodules to load
         :rtype: list
         """
-        return self.get_section(['git', 'PROJECT_SUBMODULES'], "")
+        return self.get_section(['git', 'PROJECT_SUBMODULES'], "").split(" ")
 
     def get_fetch_single_branch(self):
         """
@@ -1693,7 +1693,7 @@ class AutosubmitConfig(object):
             return original_dict
 
         # Read the file name from command line argument
-        input_file = ini_file
+        input_file = str(ini_file)
         # Read key=value property configs in python dictionary
         config_dict = ConfigObj(input_file,stringify=True,list_values=False,interpolation=False)
         # Store the result in yaml_dict

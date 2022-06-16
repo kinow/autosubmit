@@ -221,7 +221,7 @@ class AutosubmitGit:
             if git_project_submodules.__len__() <= 0:
                 command_1 += " git submodule update --init --recursive;"
             else:
-                command_1 += " git submodule init;".format(project_destination)
+                command_1 += " git submodule init;"
                 for submodule in git_project_submodules:
                     command_1 += " git submodule update {0};".format(submodule)
             if git_remote_project_path == '':
