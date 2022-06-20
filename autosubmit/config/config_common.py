@@ -1695,7 +1695,7 @@ class AutosubmitConfig(object):
         # Read the file name from command line argument
         input_file = str(ini_file)
         # Read key=value property configs in python dictionary
-        config_dict = ConfigObj(input_file,stringify=True,list_values=False,interpolation=False)
+        config_dict = ConfigObj(input_file,stringify=True,list_values=False,interpolation=False,unrepr=True )
         # Store the result in yaml_dict
         yaml_dict = {}
 
