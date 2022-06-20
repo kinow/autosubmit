@@ -1695,7 +1695,21 @@ class AutosubmitConfig(object):
         # Read the file name from command line argument
         input_file = str(ini_file)
         # Read key=value property configs in python dictionary
-        config_dict = ConfigObj(input_file,stringify=True,list_values=False,interpolation=False,unrepr=True )
+        content = open(input_file,'r').read()
+        regex = r"\=( )*\[[\[\]\'_0-9.ñ\"#A-Za-z \-,]*\]"
+
+        matches = re.finditer(regex, content)
+
+        for matchNum, match in enumerate(matches, start=1):
+            print(match.group())
+            subs_string = "= "+"\""+match.group()[2:]+"\""
+            regex_sub = match.group()
+            content = re.sub(re.escape(regex_sub),subs_string, content)
+
+        open(input_file,'w').write(content)
+        config_dict = ConfigObj(input_file,stringify=True,list_values=False,interpolation=False,unrepr=False )
+
+
         # Store the result in yaml_dict
         yaml_dict = {}
 
