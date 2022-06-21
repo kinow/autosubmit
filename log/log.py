@@ -47,7 +47,7 @@ class LogFormatter:
     """
     __module__ = __name__
     RESULT = '\x1b[32m'
-    WARNING = '\x1b[33m'
+    WARNING = '\x1b[38;5;214m'
     ERROR = '\x1b[31m'
     CRITICAL = '\x1b[1m \x1b[31m'
     DEFAULT = '\x1b[0m\x1b[39m'

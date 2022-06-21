@@ -159,7 +159,7 @@ default retrials for ech job
             self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits,self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", ""),"EXCLUDED_MEMBERS"))
         elif running == 'chunk':
             synchronize = parameters[section].get("SYNCHRONIZE", "")
-            delay = parameters[section].get("DELAY", -1)
+            delay = int(parameters[section].get("DELAY", -1))
             self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data,excluded_chunks=self.parse_relation(section,False,parameters[section].get( "EXCLUDED_CHUNKS", None),"EXCLUDED_CHUNKS"),excluded_members=self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", ""),"EXCLUDED_MEMBERS"))
 
         pass
@@ -455,8 +455,8 @@ default retrials for ech job
         if split > -1:
             job.split = split
 
-        job.frequency = parameters[section].get( "FREQUENCY", 1)
-        job.delay = parameters[section].get( "DELAY", -1)
+        job.frequency = int(parameters[section].get( "FREQUENCY", 1))
+        job.delay = int(parameters[section].get( "DELAY", -1))
         job.wait = parameters[section].get( "WAIT", True)
         job.rerun_only = parameters[section].get( "RERUN_ONLY", False)
         job_type = parameters[section].get( "TYPE", default_job_type).lower()

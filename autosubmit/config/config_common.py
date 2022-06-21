@@ -16,6 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import shutil
+
 from ruamel.yaml import YAML
 import locale
 import os
@@ -1681,7 +1683,7 @@ class AutosubmitConfig(object):
 
     # based on https://github.com/cbirajdar/properties-to-yaml-converter/blob/master/properties_to_yaml.py
     @staticmethod
-    def ini_to_yaml(ini_file):
+    def ini_to_yaml(root_dir,ini_file):
         # Based on http://stackoverflow.com/a/3233356
         def update_dict(original_dict, updated_dict):
             for k, v in updated_dict.items():
@@ -1692,8 +1694,13 @@ class AutosubmitConfig(object):
                     original_dict[k] = updated_dict[k]
             return original_dict
 
+
         # Read the file name from command line argument
         input_file = str(ini_file)
+        backup_path = root_dir / Path(ini_file.name + "_AS_v3_backup")
+        if not backup_path.exists():
+            Log.info("Backup stored at {0}".format(backup_path))
+            shutil.copyfile(ini_file, backup_path)
         # Read key=value property configs in python dictionary
         content = open(input_file,'r').read()
         regex = r"\=( )*\[[\[\]\'_0-9.ñ\"#A-Za-z \-,]*\]"
@@ -1731,6 +1738,7 @@ class AutosubmitConfig(object):
             # Write resultant dictionary to the yaml file
         yaml_file = open(input_file, 'w')
         yaml.dump(final_dict, yaml_file, Dumper=yaml.RoundTripDumper)
+        ini_file.rename(Path(root_dir, ini_file.stem+".yml"))
     def get_notifications_crash(self):
         """
         Returns if the user has enabled the notifications from autosubmit's config file

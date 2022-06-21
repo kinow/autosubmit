@@ -2051,10 +2051,11 @@ class Autosubmit:
                     platform.name, platform.user, platform.project, platform.scratch,platform.host)
                 issues += platform_issues
             if platform_issues == "":
-                Log.result("[{1}] Connection successful to host {0}", platform.host, platform.name)
+
+                Log.printlog("[{1}] Connection successful to host {0}".format( platform.host, platform.name),Log.RESULT)
             else:
                 platform.connected = False
-                Log.result("[{1}] Connection failed to host {0}", platform.host, platform.name)
+                Log.printlog("[{1}] Connection failed to host {0}".format( platform.host, platform.name),Log.WARNING)
         if issues != "":
             platform.connected = False
             raise AutosubmitCritical(
@@ -2149,6 +2150,7 @@ class Autosubmit:
                                 else:
                                     error_message+="\ncheck that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
                                             error_msg[:-1],platform.name)
+
                         except WrongTemplateException as e:
                             raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
                                 e.job_name), 7014, e.message)
@@ -3818,7 +3820,7 @@ class Autosubmit:
         sustituted = ""
         Log.info("Checking {0}".format(template_path))
         if template_path.exists():
-            backup_path = root_dir / Path(template_path.name + "_AS_v3_backup")
+            backup_path = root_dir / Path(template_path.name + "_AS_v3_backup_placeholders")
             if not backup_path.exists():
                 Log.info("Backup stored at {0}".format(backup_path))
                 shutil.copyfile(template_path, backup_path)
@@ -3880,12 +3882,12 @@ class Autosubmit:
                     parser = factory.create_parser()
                     parser.load(Path(f))
                 except BaseException as e:
-                    AutosubmitConfig.ini_to_yaml(Path(f))
+                    AutosubmitConfig.ini_to_yaml(f.parent,Path(f))
             # Converts all ini into yaml
             Log.info("Converting all .conf files into .yml.")
             for f in folder.rglob("*.conf"):
-                if not (Path(f.stem) / ".yml").exists():
-                    AutosubmitConfig.ini_to_yaml(f)
+                if not Path(f.stem +".yml").exists():
+                    AutosubmitConfig.ini_to_yaml(Path(f).parent,Path(f))
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
 
             # Load current variables
