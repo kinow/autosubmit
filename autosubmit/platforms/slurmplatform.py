@@ -377,6 +377,13 @@ class SlurmPlatform(ParamikoPlatform):
     def get_queue_status_cmd(self, job_id):
         return 'squeue -j {0} -o %A,%R'.format(job_id)
 
+    def get_jobid_by_jobname_cmd(self, job_name):
+        return 'squeue -o %A,%.50j -n {0}'.format(job_name)
+
+
+    def cancel_job(self, job_id):
+        return 'scancel {0}'.format(job_id)
+
     def get_job_energy_cmd(self, job_id):
         return 'sacct -n --jobs {0} -o JobId%25,State,NCPUS,NNodes,Submit,Start,End,ConsumedEnergy,MaxRSS%25,AveRSS%25'.format(job_id)
 
