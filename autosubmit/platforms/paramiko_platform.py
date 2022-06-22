@@ -626,6 +626,35 @@ class ParamikoPlatform(Platform):
             raise AutosubmitError("Some Jobs are in Unknown status", 6008)
             # job.new_status=job_status
 
+    def get_jobid_by_jobname(self,job_name,retries=2):
+        """
+        Get job id by job name
+        :param retries: retries
+        :type retries: int
+        :return: job id
+        """
+        #sleep(5)
+        cmd = self.get_jobid_by_jobname_cmd(job_name)
+        self.send_command(cmd)
+        job_id_name = self.get_ssh_output()
+        while len(job_id_name) <= 0 and retries > 0:
+            self.send_command(cmd)
+            job_id_name = self.get_ssh_output()
+            retries -= 1
+            sleep(2)
+        if retries >= 0:
+            #get id last line
+            job_ids_names = job_id_name.split('\n')[1:-1]
+            #get all ids by jobname
+            job_ids = [job_id.split(',')[0] for job_id in job_ids_names]
+        return job_ids
+
+
+
+
+
+
+
     def get_checkjob_cmd(self, job_id):
         """
         Returns command to check job status on remote platforms
@@ -647,6 +676,7 @@ class ParamikoPlatform(Platform):
         :rtype: str
         """
         raise NotImplementedError
+
 
 
     def flush_out(self, session):

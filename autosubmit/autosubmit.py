@@ -2182,6 +2182,12 @@ class Autosubmit:
                         try:
                             jobs_id = platform.submit_Script(hold=hold)
                         except AutosubmitError as e:
+                            jobnames = [job.name for job in valid_packages_to_submit[0].jobs]
+                            for jobname in jobnames:
+                                jobid = platform.get_jobid_by_jobname(jobname)
+                                #cancel bad submitted job if jobid is encountered
+                                for id in jobid:
+                                    platform.cancel_job(id)
                             jobs_id = None
                             platform.connected = False
                             if type(e.trace) is not None:
