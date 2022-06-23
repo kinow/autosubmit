@@ -7,7 +7,7 @@ This tutorial is a starter’s guide to running a dummy experiment with Autosubm
 
 Dummy experiments run workflows with non-expensive empty tasks and therefore are ideal for teaching and testing purposes.
 
-Real experiments instead run workflows with complex tasks. To read information about how to develop parameterizable tasks for Autosubmit workflows, refer to :doc:`develproject`.
+Real experiments instead run workflows with complex tasks. To read information about how to develop parameterizable tasks for Autosubmit workflows, refer to :ref:`Developing a project<develproject>`.
 
 Pre-requisites
 ==============
@@ -486,9 +486,6 @@ Developing a project: Proj configuration
 
 After filling the experiment configuration and create, user can go into ``proj`` which has a copy of the model.
 
-A short reference on how to prepare the experiment project is detailed in the following section of this documentation:
-
-:doc:`project`
 
 The experiment project contains the scripts specified in ``jobs_xxxx.conf`` and a copy of model source code and data specified in ``expdef_xxxx.conf``.
 
@@ -705,11 +702,52 @@ Example:
     # Set timestep (in sec) w.r.t resolution. NUMERIC = 3600 (ORCA1), 3600 (ORCA025)
     PISCES_timestep = 3600
 
+::
+
+Full example of a valid configuration file with a valid script.
+
+Configuration of proj.conf
+
+.. code-block:: ini
+
+    PROJECT_ROOT = /gpfs/scratch/bsc32/bsc32070/a000/automatic_perfomance_profile
+    REFRESH_GIT_REPO = false
+
+Original template: <expid>/proj/template/autosubmit/remote_setup.sh
+
+.. code-block:: bash
+
+    cd %CURRENT_ROOTDIR% # This comes from autosubmit.
+    # Clone repository to the remote for needed files
+    # if exist or force refresh is true
+    if [ ! -d %PROJECT_ROOT% ] || [ %REFRESH_GIT_REPO% == true ];
+    then
+        chmod +w -R %PROJECT_ROOT% || :
+        rm -rf %PROJECT_ROOT% || :
+        git clone (...)
+    fi
+    (...)
+
+Final CMD : <expid>/tmp/<expid>_remote_setup.cmd.
+Outcome when using ``autosubmit run`` or ``autosubmit inspect``
+
+.. code-block:: bash
+
+    cd /gpfs/scratch/bsc32/bsc32070/a000
+    # Clone repository to the remote for needed files
+    # if exist or force refresh is true
+    if [ ! -d /gpfs/scratch/bsc32/bsc32070/a000/automatic_performance_profile ] || [ false == true ];
+    then
+        chmod +w -R /gpfs/scratch/bsc32/bsc32070/a000/automatic_performance_profile || :
+        rm -rf /gpfs/scratch/bsc32/bsc32070/a000/automatic_performance_profile || :
+        git clone (...)
+    fi
+    (...)
 
 Developing a project: Platforms configuration.
 ----------------------------------------------
 
-..code_block:: ini
+.. code-block:: ini
 
     [marenostrum0]
     TYPE = ps
@@ -791,3 +829,52 @@ Developing a project: Platforms configuration.
     PROJECT = Earth
     USER = dbeltran
     SCRATCH_DIR = /esarchive/scratch
+
+.. warning::
+
+    The ``TYPE`` field is mandatory.
+    The ``HOST`` field is mandatory.
+    The ``PROJECT`` field is mandatory.
+    The ``USER`` field is mandatory.
+    The ``SCRATCH_DIR`` field is mandatory.
+    The ``ADD_PROJECT_TO_HOST`` field is mandatory.
+
+.. warning::
+
+    The ``TEST_SUITE`` field is optional.
+    The ``MAX_WALLCLOCK`` field is optional.
+    The ``MAX_PROCESSORS`` field is optional.
+    The ``PROCESSORS_PER_NODE`` field is optional.
+
+.. warning::
+
+    The ``SERIAL_QUEUE`` and ``QUEUE`` field are used for specify a -QOS.
+    For specify a partition, you must use ``CUSTOM_DIRECTIVES``.
+    For specify the memory usage you must use ``MEMORY`` but only in jobs.conf.
+
+The custom directives can be used for multiple parameters at the same time using the follow syntax.
+
+.. code-block:: ini
+
+    [puhti]
+    #Check your partition ( test/small/large])
+    CUSTOM_DIRECTIVES = ["#SBATCH -p test", "#SBATCH --no-requeue", "#SBATCH --usage"]
+    ### Batch job system / queue at HPC
+    TYPE = slurm
+    ### Hostname of the HPC
+    HOST = puhti
+    ### Project name-ID at HPC (WEATHER)
+    PROJECT = project_test
+    ### User name at HPC
+    USER = dbeltran
+    ### Path to the scratch directory for the project at HPC
+    SCRATCH_DIR = /scratch
+    # Should've false already, just in case it is not
+    ADD_PROJECT_TO_HOST = False
+
+    #Check your partition ( test[00:15]/small[72:00]/large[72:00]) max_wallclock
+    MAX_WALLCLOCK = 00:15
+    # [test [80] // small [40] // large [1040]
+    MAX_PROCESSORS = 80
+    # test [40] / small [40] // large [40]
+    PROCESSORS_PER_NODE = 40
