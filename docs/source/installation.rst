@@ -7,9 +7,7 @@ How to install
 
 The Autosubmit code is maintained in *PyPi*, the main source for python packages.
 
-
-
-- Pre-requisites: bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk, python2-dev, graphviz >= 2.41, pip2
+- Pre-requisties: bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk, python2-dev, graphviz >= 2.41, pip2
 
 .. important:: (SYSTEM) Graphviz version must be >= 2.38 except 2.40(not working). You can check the version using dot -v.
 
@@ -18,7 +16,6 @@ The Autosubmit code is maintained in *PyPi*, the main source for python packages
 .. important:: dot -v command should contain "dot",pdf,png,svg,xlib  in device section.
 
 .. important:: The host machine has to be able to access HPC's/Clusters via password-less ssh. Make sure that the ssh key is in PEM format `ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM`.
-
 
 
 To install autosubmit just execute:

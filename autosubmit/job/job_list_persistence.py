@@ -72,7 +72,7 @@ class JobListPersistencePkl(JobListPersistence):
             fd = open(path, 'rb')
             return pickle.load(fd)
         else:
-            #Log.printlog('File {0} does not exist'.format(path),5040)
+            Log.printlog('File {0} does not exist'.format(path),Log.WARNING)
             return list()
 
     def save(self, persistence_path, persistence_file, job_list):
