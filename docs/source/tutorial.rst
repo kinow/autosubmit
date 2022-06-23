@@ -7,7 +7,7 @@ This tutorial is a starter’s guide to running a dummy experiment with Autosubm
 
 Dummy experiments run workflows with non-expensive empty tasks and therefore are ideal for teaching and testing purposes.
 
-Real experiments instead run workflows with complex tasks. To read information about how to develop parameterizable tasks for Autosubmit workflows, refer to :ref:`Developing a project<develproject>`.
+Real experiments instead run workflows with complex tasks. To read information about how to develop parameterizable tasks for Autosubmit workflows, refer to :doc:`develproject`.
 
 Pre-requisites
 ==============
@@ -140,7 +140,7 @@ Configuration summary:
 
 
 Final step: Modify and run
-====================
+==========================
 
  It is time to look into the configuration files of the dummy experiment and modify them with a remote platform to run a workflow with a few  more chunks.
 
@@ -183,8 +183,8 @@ Now open platforms.conf. Note: This will be an example for marenostrum4
 
 .. _develproject:
 
-Developing a project
---------------------
+Developing a project: Short parameter description and quick configuration
+=========================================================================
 
 To configure the experiment, edit ``expdef_cxxx.conf``, ``jobs_cxxx.conf`` and ``platforms_cxxx.conf`` in the ``conf`` folder of the experiment.
 
@@ -269,6 +269,41 @@ Examples:
     FILE_PROJECT_CONF = templates/ecearth3/ecearth3.conf
     # Where is JOBS CONFIGURATION file location relative to project root path
     FILE_JOBS_CONF = templates/common/jobs.conf
+
+::
+
+    vi <experiments_directory>/cxxx/conf/autosubmit_cxxx.conf
+
+.. code-block:: ini
+
+    [config]
+    # Experiment identifier
+    # No need to change
+    EXPID =
+    # No need to change.
+    # Autosubmit version identifier
+    AUTOSUBMIT_VERSION =
+    # Default maximum number of jobs to be waiting in any platform
+    # Default = 3
+    MAXWAITINGJOBS = 3
+    # Default maximum number of jobs to be running at the same time at any platform
+    # Can be set at platform level on the platform_cxxx.conf file
+    # Default = 6
+    TOTALJOBS = 6
+    # Time (seconds) between connections to the HPC queue scheduler to poll already submitted jobs status
+    # Default = 10
+    SAFETYSLEEPTIME = 10
+    # Number of retrials if a job fails. Can ve override at job level
+    # Default = 0
+    RETRIALS = 0
+    ##  Allows to put a delay between retries, of retrials if a job fails. If not specified, it will be static
+    # DELAY_RETRY_TIME = 11
+    # DELAY_RETRY_TIME = +11 # will wait 11,22,33,44...
+    # DELAY_RETRY_TIME = *11 # will wait 11,110,1110,11110...
+    # Default output type for CREATE, MONITOR, SET STATUS, RECOVERY. Available options: pdf, svg, png, ps, txt
+    # Default = pdf
+    OUTPUT = pdf
+    # [wrappers]
 
 ::
 
@@ -433,37 +468,7 @@ Examples:
 
 ::
 
-    vi <experiments_directory>/cxxx/conf/autosubmit_cxxx.conf
 
-.. code-block:: ini
-
-    [config]
-    # Experiment identifier
-    # No need to change
-    EXPID =
-    # No need to change.
-    # Autosubmit version identifier
-    AUTOSUBMIT_VERSION =
-    # Default maximum number of jobs to be waiting in any platform
-    # Default = 3
-    MAXWAITINGJOBS = 3
-    # Default maximum number of jobs to be running at the same time at any platform
-    # Can be set at platform level on the platform_cxxx.conf file
-    # Default = 6
-    TOTALJOBS = 6
-    # Time (seconds) between connections to the HPC queue scheduler to poll already submitted jobs status
-    # Default = 10
-    SAFETYSLEEPTIME = 10
-    # Number of retrials if a job fails. Can ve override at job level
-    # Default = 0
-    RETRIALS = 0
-    ##  Allows to put a delay between retries, of retrials if a job fails. If not specified, it will be static
-    # DELAY_RETRY_TIME = 11
-    # DELAY_RETRY_TIME = +11 # will wait 11,22,33,44...
-    # DELAY_RETRY_TIME = *11 # will wait 11,110,1110,11110...
-    # Default output type for CREATE, MONITOR, SET STATUS, RECOVERY. Available options: pdf, svg, png, ps, txt
-    # Default = pdf
-    OUTPUT = pdf
 
 Then, Autosubmit *create* command uses the ``expdef_cxxx.conf`` and generates the experiment:
 ::
@@ -701,13 +706,88 @@ Example:
     PISCES_timestep = 3600
 
 
-Finally, you can launch Autosubmit *run* in background and with ``nohup`` (continue running although the user who launched the process logs out).
-::
+Developing a project: Platforms configuration.
+----------------------------------------------
 
-    nohup autosubmit run cxxx &
+..code_block:: ini
 
+    [marenostrum0]
+    TYPE = ps
+    HOST = mn0.bsc.es
+    PROJECT = bsc32
+    USER = bsc32070
+    ADD_PROJECT_TO_HOST = false
+    SCRATCH_DIR = /gpfs/scratch
 
-Developing a project: Platforms configuration. ( Queue vs Partition )
---------------------------------------------
+    [marenostrum4]
+    # Queue type. Options: ps, SGE, LSF, SLURM, PBS, eceaccess
+    TYPE = slurm
+    HOST = mn1.bsc.es,mn2.bsc.es,mn3.bsc.es
+    PROJECT = bsc32
+    USER = bsc32070
+    SCRATCH_DIR = /gpfs/scratch
+    ADD_PROJECT_TO_HOST = False
+    # use 72:00 if you are using a PRACE account, 48:00 for the bsc account
+    MAX_WALLCLOCK = 02:00
+    # use 19200 if you are using a PRACE account, 2400 for the bsc account
+    MAX_PROCESSORS = 2400
+    PROCESSORS_PER_NODE = 48
+    #SERIAL_QUEUE = debug
+    #QUEUE = debug
+    CUSTOM_DIRECTIVES = ["#SBATCH -p small", "#SBATCH --no-requeue", "#SBATCH --usage"]
 
-(wip)
+    [marenostrum_archive]
+    TYPE = ps
+    HOST = dt02.bsc.es
+    PROJECT = bsc32
+    USER = bsc32070
+    SCRATCH_DIR = /gpfs/scratch
+    ADD_PROJECT_TO_HOST = False
+    TEST_SUITE = False
+
+    [power9]
+    TYPE = slurm
+    HOST = plogin1.bsc.es
+    PROJECT = bsc32
+    USER = bsc32070
+    SCRATCH_DIR = /gpfs/scratch
+    ADD_PROJECT_TO_HOST = False
+    TEST_SUITE = False
+    SERIAL_QUEUE = debug
+    QUEUE = debug
+
+    [nord3]
+    TYPE = lsf
+    HOST = nord1.bsc.es
+    PROJECT = bsc32
+    USER = bsc32070
+    ADD_PROJECT_TO_HOST = False
+    SCRATCH_DIR = /gpfs/scratch
+    TEST_SUITE = False
+    MAX_WALLCLOCK = 48:00
+    MAX_PROCESSORS = 1024
+    PROCESSORS_PER_NODE = 16
+
+    [transfer_node]
+    TYPE = ps
+    HOST = dt01.bsc.es
+    PROJECT = bsc32
+    USER = bsc32070
+    ADD_PROJECT_TO_HOST = false
+    SCRATCH_DIR = /gpfs/scratch
+
+    [transfer_node_bscearth000]
+    TYPE = ps
+    HOST = bscearth000
+    USER = dbeltran
+    PROJECT = Earth
+    ADD_PROJECT_TO_HOST = false
+    QUEUE = serial
+    SCRATCH_DIR = /esarchive/scratch
+
+    [bscearth000]
+    TYPE = ps
+    HOST = bscearth000
+    PROJECT = Earth
+    USER = dbeltran
+    SCRATCH_DIR = /esarchive/scratch
