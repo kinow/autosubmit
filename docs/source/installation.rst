@@ -121,7 +121,6 @@ Example:
 
     .. code-block:: bash
 
-    test
 
     # Update repositories
     apt update
