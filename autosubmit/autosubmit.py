@@ -812,7 +812,7 @@ class Autosubmit:
         """
         owner,eadmin,currentOwner = Autosubmit._check_ownership(expid_delete)
         if expid_delete == '' or expid_delete is None and not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR,expid_delete)):
-            Log.result("Experiment directory does not exist.")
+            Log.printlog("Experiment directory does not exist.",Log.WARNING)
         else:
             # Deletion workflow continues as usual, a disjunction is included for the case when
             # force is sent, and user is eadmin
