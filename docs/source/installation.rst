@@ -133,7 +133,6 @@ Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
 
     .. code-block:: bash
 
-    test
 
     # Update repositories
     apt update
