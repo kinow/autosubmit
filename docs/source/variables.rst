@@ -45,7 +45,7 @@ This variables are relatives to the current job.
 Platform variables
 ==================
 
-This variables are relative to the platoforms defined on the jobs conf. A full set of the next variables are defined for
+This variables are relative to the platforms defined on the jobs conf. A full set of the next variables are defined for
 each platform defined on the platforms configuration file, substituting {PLATFORM_NAME} for each platform's name. Also, a
 suite of variables is defined for the current platform where {PLATFORM_NAME} is substituted by CURRENT.
 

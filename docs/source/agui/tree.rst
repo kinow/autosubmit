@@ -63,7 +63,7 @@ At the top left you can find the **Filter text** input box. Insert any string an
 Advanced Filter
 ---------------
 
-It is possible to use the keychar ``*`` to separate keywords in the name of the job, in order. For example:
+It is possible to use the key char ``*`` to separate keywords in the name of the job, in order. For example:
 
 - ``1850*fc0*_1_``: List all the jobs that have the string ``1850`` and then at least 1 occurrence of the string ``fc0`` and then at least 1 occurrence of the string ``_1_``. This will effectively list all the jobs for the DATE that starts with ``1850`` for the member ``fc0`` and the chunk ``_1_``.
 - ``000*_5``: List all the jobs that have the string ``000`` followed by at least one occurrence of the string ``_5``. This will effectively list all the jobs that have member ``000`` and chunk number that starts with the digit ``5``.
@@ -71,7 +71,7 @@ It is possible to use the keychar ``*`` to separate keywords in the name of the 
 
 As you might infer, the logic is fairly straightforward: Start your string with the word or part of the word you are looking for, then add ``*`` and the word or part of the word that follows, and so on. The algorithm will split your string by ``*`` and then search for each part in order, once it finds the part in the title of the job, it takes a substring of the job title to not repeat the next search in the same string, it continues looking for the next part in the new reduced string, and so on.
 
-You can extend this funcionality considering that date, member, section, chunk names start with the symbol ``_`` and finish with the same symbol.
+You can extend this functionality considering that date, member, section, chunk names start with the symbol ``_`` and finish with the same symbol.
 
 .. important:: This view is designed to show a structured view of your experiment, if you want a more dependency oriented view that shows better the execution sequence of your jobs, you can refer to :ref:`graphRepresentation`.
 

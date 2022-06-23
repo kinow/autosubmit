@@ -6,7 +6,7 @@ How to change the job status stopping autosubmit
 This procedure allows you to modify the status of your jobs.
 
 .. warning:: Beware that Autosubmit must be stopped to use ``setstatus``.
-    Otherwise a running instance of Autosubmit, at some point, will overwritte any change you may have done.
+    Otherwise a running instance of Autosubmit, at some point, will overwrite any change you may have done.
 
 You must execute:
 ::
@@ -100,7 +100,7 @@ The -t where you must specify the target status of the jobs you want to change t
 
 The second argument has four alternatives, the -fl, -fc, -fs and -ft; with those we can apply a filter for the jobs we want to change:
 
-* The -fl variable recieves a list of jobnames separated by blank spaces: e.g.:
+* The -fl variable receives a list of job names separated by blank spaces: e.g.:
     ::
 
      "cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim"
@@ -177,9 +177,9 @@ if you see that the file name has changed to:
 
     update_list_<expid>_<date>_<time>.txt
 
-.. note:: A running instance of Autosubmit will check the existance of avobe file after checking already submitted jobs.
+.. note:: A running instance of Autosubmit will check the existence of adobe file after checking already submitted jobs.
     It may take some time, depending on the setting ``SAFETYSLEEPTIME``.
 
 
 
-.. warning:: Keep in mind that autosubmit reads the file automatically so it is suggested to create the file in another location like ``/tmp`` or ``/var/tmp`` and then copy/move it to the ``pkl`` folder. Alternativelly you can create the file with a different name an rename it when you have finished.
+.. warning:: Keep in mind that autosubmit reads the file automatically so it is suggested to create the file in another location like ``/tmp`` or ``/var/tmp`` and then copy/move it to the ``pkl`` folder. Alternatively you can create the file with a different name an rename it when you have finished.

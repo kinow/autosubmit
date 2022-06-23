@@ -118,7 +118,7 @@ Consider the following workflow:
    :align: center
    :alt: group chunk
 
-Sychronize jobs
+Synchronize jobs
 
 If there are jobs synchronized between members or dates, then a connection between groups is shown:
 
@@ -178,7 +178,7 @@ If there are chunk jobs that are split, the splits can also be grouped.
    :align: center
    :alt: group split
 
-**Understading the group status**
+**Understanding the group status**
 
 If there are jobs with different status grouped together, the status of the group is determined as follows:
 If there is at least one job that failed, the status of the group will be FAILED. If there are no failures, but if there is at least one job running, the status will be RUNNING.
@@ -187,7 +187,7 @@ The same idea applies following the hierarchy: SUBMITTED, QUEUING, READY, WAITIN
 **Automatic grouping**
 
 For the automatic grouping, the groups are created by collapsing the split->chunk->member->date that share the same status (following this hierarchy).
-The following workflow automatic created the groups 20000101_fc0, since all the jobs for this date and member were completed, 20000101_fc1_3, 20000202_fc0_2, 20000202_fc0_3 and 20000202_fc1, as all the jobs up to the respective group granularities share the same - waiting - status.
+The following workflow automatic created the groups 20000101_fc0, since all the jobs for this date and member were completed, 20000101_fc1_3, 20000202_fc0_2, 20000202_fc0_3 and 20000202_fc1, as all the jobs up to the respective group granularity share the same - waiting - status.
 
 For example:
 
