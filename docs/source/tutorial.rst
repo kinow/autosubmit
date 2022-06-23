@@ -7,7 +7,7 @@ This tutorial is a starter’s guide to running a dummy experiment with Autosubm
 
 Dummy experiments run workflows with non-expensive empty tasks and therefore are ideal for teaching and testing purposes.
 
-Real experiments instead run workflows with complex tasks. To read information about how to develop parameterizable tasks for Autosubmit workflows, refer to [:ref:`Developing a project`] section.
+Real experiments instead run workflows with complex tasks. To read information about how to develop parameterizable tasks for Autosubmit workflows, refer to :ref:`Developing a project<develproject>`.
 
 Pre-requisites
 ==============
@@ -31,11 +31,11 @@ Description of most used commands
     * - **expid**
       - Creates a new experiment and generates a new entry in the database by giving it a serial id composed of 4 letters. In addition, it also creates the folder experiment and the basic folder structure.
     * - **create <expid>**
-      - generates the experiment workflow.
+      - Generates the experiment workflow.
     * - **run <expid>**
-      - runs the experiment workflow.
+      - Euns the experiment workflow.
     * - **monitor <expid>**
-      - shows the experiment workflow structure and status.
+      - Shows the experiment workflow structure and status.
     * - **inspect <expid>**
       - Generates Autosubmit scripts and batch scripts for inspection, by processing the tasks’ templates with the experiment parameters.
     * - **refresh <expid>**
@@ -181,6 +181,7 @@ Now open platforms.conf. Note: This will be an example for marenostrum4
 
 ``autosubmit create <expid>** (without -np)`` will generate the new workflow and ``autosubmit run <expid>`` will run the experiment with the latest changes.
 
+.. _develproject:
 
 Developing a project
 --------------------
