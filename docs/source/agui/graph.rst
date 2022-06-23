@@ -84,7 +84,7 @@ Job Search
 
    Job Search in Graph
 
-On top of the graph you will see an input text box following by the button ``Seach by Job Name``. Insert into that box the string that you want to find and the engine will build an internal list of those jobs whose name coincides with that string. For example ``_LOCAL_`` will show only jobs whose title contain the that string. Buttons ``Previous`` and ``Next`` will appear and next to them the number of jobs that coincide with your search, you can use these buttons to traverse the graph highlighting the nodes included in the resulting internal list.
+On top of the graph you will see an input text box following by the button ``Search by Job Name``. Insert into that box the string that you want to find and the engine will build an internal list of those jobs whose name coincides with that string. For example ``_LOCAL_`` will show only jobs whose title contain the that string. Buttons ``Previous`` and ``Next`` will appear and next to them the number of jobs that coincide with your search, you can use these buttons to traverse the graph highlighting the nodes included in the resulting internal list.
 
 Grouped by Date Member
 ----------------------

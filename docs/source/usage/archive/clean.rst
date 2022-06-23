@@ -27,7 +27,7 @@ Example:
 
     autosubmit clean cxxx -p
 
-* The -pr flag is used to clean our experiment ``proj`` locally in order to save space (it could be particullary big).
+* The -pr flag is used to clean our experiment ``proj`` locally in order to save space (it could be particularly big).
 
 .. caution:: Bear in mind that if you have not synchronized your experiment project folder with the information available on the remote repository (i.e.: commit and push any changes we may have), or in case new files are found, the clean procedure will be failing although you specify the -pr option.
 

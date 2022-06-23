@@ -49,8 +49,8 @@ The allowed format for this feature is the same as the Autosubmit configuration 
 
     [COUPLING]
     LOAD_BALANCE = 0.44
-    RECOMMEDED_PROCS_MODEL_A = 522
-    RECOMMEDED_PROCS_MODEL_B = 418
+    RECOMMENDED_PROCS_MODEL_A = 522
+    RECOMMENDED_PROCS_MODEL_B = 418
 
 The location where user can put this stats is in the file:
 ::

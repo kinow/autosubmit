@@ -55,7 +55,7 @@ For each experiment, you see the following data:
 3. *Experiment Status*: *RUNNING* or *NOT RUNNING*.
 4. *Owner*
 5. *Experiment Description*
-6. *Refresh button*: It will say *Summary* when the detailed data has not been requested. If it says *Summary* and you click on it, it will load datailed data for that experiment, otherwise it will refresh the existing detailed data.
+6. *Refresh button*: It will say *Summary* when the detailed data has not been requested. If it says *Summary* and you click on it, it will load detailed data for that experiment, otherwise it will refresh the existing detailed data.
 7. *More button*: Opens the **Experiment Page**.
 8. *Average Queue Time* for all jobs.
 9. *Average Run Time* for all jobs.

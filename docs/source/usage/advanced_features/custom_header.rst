@@ -15,15 +15,15 @@ In the file:
 
     ## Job name
     # [JOBNAME]
-    ## Script to execute. If not specified, job will be omited from workflow.
+    ## Script to execute. If not specified, job will be omitted from workflow.
     ## Path relative to the project directory
     # FILE =
-    ## Platform to execute the job. If not specificied, defaults to HPCARCH in expedf file.
-    ## LOCAL is always defined and referes to current machine
+    ## Platform to execute the job. If not specified, defaults to HPCARCH in expedf file.
+    ## LOCAL is always defined and refers to current machine
     # PLATFORM =
-    ## Queue to add the job to. If not specificied, uses PLATFORM default.
+    ## Queue to add the job to. If not specified, uses PLATFORM default.
     # QUEUE =
-    ## Defines dependencies from job as a list of parents jobs separed by spaces.
+    ## Defines dependencies from job as a list of parents jobs separated by spaces.
     ## Dependencies to jobs in previous chunk, member o startdate, use -(DISTANCE)
     # DEPENDENCIES = INI SIM-1 CLEAN-2
     ## Define if jobs runs once, once per stardate, once per member or once per chunk. Options: once, date, member, chunk.
@@ -50,7 +50,7 @@ In the file:
     # THREADS = 1
     ## Tasks number to be submitted to the HPC. If not specified, defaults to 1.
     # Tasks = 1
-    ## Enables hyperthreading. If not specified, defaults to false.
+    ## Enables hyper-threading. If not specified, defaults to false.
     # HYPERTHREADING = false
     ## Memory requirements for the job in MB
     # MEMORY = 4096

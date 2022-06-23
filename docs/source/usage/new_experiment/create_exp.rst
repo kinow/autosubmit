@@ -40,7 +40,7 @@ Where the specified path should be complete, as something you would get when exe
 How to create a copy of an experiment
 =====================================
 This option makes a copy of an existing experiment.
-It registrates a new unique identifier and copies all configuration files in the new experiment folder:
+It registers a new unique identifier and copies all configuration files in the new experiment folder:
 ::
 
     autosubmit expid -y COPY -H HPCname -d Description

@@ -13,7 +13,7 @@ To migrate an experiment from one user to another, you need to add two parameter
 .. warning:: The USER_TO must be a different user , in case you want to maintain the same user, put SAME_USER = True.
 
 .. warning:: The temporary directory must be readable by both users (old owner and new owner)
-    Example for a RES account to BSC account the tmp folder must have rwx|rwx|--- permisions.
+    Example for a RES account to BSC account the tmp folder must have rwx|rwx|--- permissions.
     The temporary directory must be in the same filesystem.
 
 User A, To offer the experiment:

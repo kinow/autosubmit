@@ -15,7 +15,7 @@ Simple workflow
 ---------------
 
 The simplest workflow that can be defined it is a sequence of two jobs, with the second one triggering at the end of
-the first. To define it, we define the two jobs and then add a DEPENDECIES attribute on the second job referring to the
+the first. To define it, we define the two jobs and then add a DEPENDENCIES attribute on the second job referring to the
 first one.
 
 It is important to remember when defining workflows that DEPENDENCIES on autosubmit always refer to jobs that should

@@ -26,7 +26,7 @@ This is the minimum job definition and usually is not enough. You usually will n
   the previous "SIM" job to finish, you have to add "DEPENDENCIES = SIM-1".
     * For dependencies that are not mandatory for the normal workflow behaviour, you must add the char '?' at the end of the dependency.
 
-* SELECT_CHUNKS (optional): by default, all sections depend on all jobs the items specified on the DEPENDENCIES parameter. However, with this parameter, you could select the chunks of a specific job section. At the end of this doc, you will find diverse examples of this feature. The syntaxis is as follows:
+* SELECT_CHUNKS (optional): by default, all sections depend on all jobs the items specified on the DEPENDENCIES parameter. However, with this parameter, you could select the chunks of a specific job section. At the end of this doc, you will find diverse examples of this feature. The syntax is as follows:
 
 .. code-block:: ini
 
@@ -66,8 +66,8 @@ To do this use:
 
 * TASKS:  tasks number to be submitted to the HPC. If not specified, defaults to 1.
 
-* HYPERTHREADING: Enables Hyperthreading, this will double the max amount of threads. defaults to false. ( Not avaliable on slurm platforms )
-* QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
+* HYPERTHREADING: Enables Hyper-threading, this will double the max amount of threads. defaults to false. ( Not available on slurm platforms )
+* QUEUE: queue to add the job to. If not specified, uses PLATFORM default.
 
 * RETRIALS: Number of retrials if job fails
 
@@ -99,7 +99,7 @@ There are also other, less used features that you can use:
 
 * EXECUTABLE: Allows to wrap a job for be launched with a set of env variables.
 
-* QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
+* QUEUE: queue to add the job to. If not specified, uses PLATFORM default.
 
 Workflow examples:
 ==================

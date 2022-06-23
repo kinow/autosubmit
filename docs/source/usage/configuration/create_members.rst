@@ -19,7 +19,7 @@ Your experiment is defined and correctly configured, but you want to create it o
 
     [experiment]
     # Supply the list of start dates. Available formats: YYYYMMDD YYYYMMDDhh YYYYMMDDhhmm
-    # Also you can use an abreviated sintax for multiple dates with common parts:
+    # Also you can use an abbreviated syntax for multiple dates with common parts:
     # 200001[01 15] <=> 20000101 20000115
     # DATELIST = 19600101 19650101 19700101
     # DATELIST = 1960[0101 0201 0301]
