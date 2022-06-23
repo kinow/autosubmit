@@ -22,4 +22,4 @@ pytest
 nose
 coverage
 PyNaCl==1.4.0
-
+Pygments
