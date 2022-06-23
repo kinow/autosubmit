@@ -119,7 +119,9 @@ Now you are ready to use Autosubmit !
 Example:
 ::
 
-.. code-block:: ini
+    .. code-block:: bash
+
+    test
 
     # Update repositories
     apt update
