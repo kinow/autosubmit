@@ -22,19 +22,29 @@ Ensure that you have a **password-less** connection to all platforms you want to
 Description of most used commands
 =================================
 
-    **expid**: creates a new experiment and generates a new entry in the database by giving it a serial id composed of 4 letters. In addition, it also creates the folder experiment and the basic folder structure.
+.. list-table::
+    :header-rows: 1
+    :widths: 20 80
 
-    **create <expid>:**  generates the experiment workflow.
+    * - Command
+      - Short description
+    * - **expid**
+      - Creates a new experiment and generates a new entry in the database by giving it a serial id composed of 4 letters. In addition, it also creates the folder experiment and the basic folder structure.
+    * - **create <expid>**
+      - generates the experiment workflow.
+    * - **run <expid>**
+      - runs the experiment workflow.
+    * - **monitor <expid>**
+      - shows the experiment workflow structure and status.
+    * - **inspect <expid>**
+      - Generates Autosubmit scripts and batch scripts for inspection, by processing the tasks’ templates with the experiment parameters.
+    * - **refresh <expid>**
+      - Updates the project directory.
+    * - **recovey <expid>**
+      - Recovers the experiment workflow obtaining the last run complete jobs.
+    * - **setstatus <expid>**
+      - Sets one or multiple jobs status to a given value.
 
-    **monitor <expid>:** shows the experiment workflow structure and status.
-
-    **inspect <expid>**: generates Autosubmit scripts and batch scripts for inspection, by processing the tasks’ templates with the experiment parameters.
-
-    **refresh <expid>**:  updates the project directory.
-
-    **recovery <expid>**:  updates the workflow status with respect to the remote platforms.
-
-    **setstatus <expid>**: allows to change the status of a given job.
 
 Create a new experiment
 =======================
@@ -47,18 +57,25 @@ Create a new experiment
 
 The output of the command will show the expid of the experiment and generate the following directory structure:
 
-    <expid>/conf  -> Config files
+.. list-table::
+    :header-rows: 1
+    :widths: 20 80
 
-    <expid>/pkl     -> Workflow
+    * - Experiment folder
+      - Contains
+    * - conf
+      - Experiment configuration files.
+    * - pkl
+      - Workflow pkl files.
+    * - plot
+      - Visualization output files
+    * - tmp
+      - Logs, templates and misc files.
+    * - proj
+      - User scripts and  project code. (empty)
 
-    <expid>/plot   -> Visualization
 
-    <expid>/tmp   -> Logs,templates
-
-    <expid>/proj   -> User scripts (empty)
-
-
-Then, prompt ```autosubmit create <expid> -np``` and Autosubmit will generate the workflow graph.
+Then, prompt ``autosubmit create <expid> -np`` and Autosubmit will generate the workflow graph.
 
 Run and monitoring:
 ===============
@@ -89,28 +106,34 @@ Configuration summary:
  In the folder ``<expid>/conf`` there are different files that define the actual experiment configuration.
 
 .. list-table::
-   :header-rows: 1
+    :header-rows: 1
     :widths: 20 80
+
     * - File
       - Content
-    * - ```expdef```
-        - It contains the default platform, the one set with -H.
-        - Allows changing the start dates, members and chunks.
-        - Allows changing the experiment project source ( git, local, svn or dummy)
-    * - ```platforms```
-        - It contains the list of platforms to use in the experiment.
-        - This file contains the definitions for managing clusters, fat-nodes and support computers.
-        - This file must be filled-up with the platform(s) configuration(s).
-        - Several platforms can be defined and used in the same experiment.
-    * - ```jobs```
-     - It contains the tasks' definitions in sections. Depending on the parameters, one section can generate multiple similar tasks.
+    * - ``expdef.conf``
+      -
+        * It contains the default platform, the one set with -H.
+        * Allows changing the start dates, members and chunks.
+        * Allows changing the experiment project source ( git, local, svn or dummy)
+    * - ``platforms.conf``
+      -
+        * It contains the list of platforms to use in the experiment.
+        * This file contains the definitions for managing clusters, fat-nodes and support computers.
+        * This file must be filled-up with the platform(s) configuration(s).
+        * Several platforms can be defined and used in the same experiment.
+    * - ``jobs.conf``
+      -
+        - It contains the tasks' definitions in sections. Depending on the parameters, one section can generate multiple similar tasks.
         - This file must be filled-up with the tasks' definitions.
         - Several sections can be defined and used in the same experiment.
-    * - ```autosubmit```
+    * - ``autosubmit.conf``
+      -
         - This file contains the definitions that impact the workflow behavior.
         - It changes workflow behavior with parameters such as job limitations, remote_dependendies and retrials.
         - It extends autosubmit functionalities with parameters such as wrappers and mail notification.
-    * - ```proj```
+    * - ``proj.conf``
+      -
         - This file contains the configuration used by the user scripts.
         - This file is fully customizable for the current experiment. Allows setting user- parameters that will be readable by the autosubmit jobs.
 
@@ -125,18 +148,18 @@ Final step: Modify and run
 
 .. code-block:: INI
 
-[DEFAULT]
-EXPID = a000 #<- don't change
-HPCARCH = local # Change for your new main platform name, ej. marenostrum4
+    [DEFAULT]
+    EXPID = a000 #<- don't change
+    HPCARCH = local # Change for your new main platform name, ej. marenostrum4
 
-# Locate and  change these parameters, per ej. numchunks = 3
-[experiment]
-DATELIST = 20000101
-MEMBERS = fc0
-NUMCHUNKS = 1
-(...)
+    # Locate and  change these parameters, per ej. numchunks = 3
+    [experiment]
+    DATELIST = 20000101
+    MEMBERS = fc0
+    NUMCHUNKS = 1
+    (...)
 
- Now open platforms.conf. Note: This will be an example for marenostrum4
+Now open platforms.conf. Note: This will be an example for marenostrum4
 
 .. code-block:: INI
 
