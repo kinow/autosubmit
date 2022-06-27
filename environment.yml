@@ -15,8 +15,9 @@ dependencies:
 - mock
 - portalocker
 - networkx
-
+- python=2.7
 - pip:
   - bscearth.utils
   - Xlib 
-
+  - requests
+  - typing
