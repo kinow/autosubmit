@@ -12,6 +12,7 @@ Welcome to autosubmit's documentation!
 
    introduction
    tutorial
+   devel_proj
    installation
    usage
    workflows
