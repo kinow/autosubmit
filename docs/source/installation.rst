@@ -122,8 +122,10 @@ From 3.14+ onwards, autosubmit commands can be tailored to run on specific machi
 Now you are ready to use Autosubmit !
 
 
-Example:
-========
+Example
+=======
+
+Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
 
 .. code-block:: bash
 
