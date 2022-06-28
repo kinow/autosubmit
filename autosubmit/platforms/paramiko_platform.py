@@ -205,7 +205,10 @@ class ParamikoPlatform(Platform):
             self.transport = self._ssh.get_transport()
             #self.transport = paramiko.Transport((self._host_config['hostname'], 22))
             #self.transport.connect(username=self.user)
-            self._ftpChannel = self._ssh.open_sftp()
+            window_size = pow(4, 12)  # about ~16MB chunks
+            max_packet_size = pow(4, 12)
+            #self._ftpChannel = self._ssh.open_sftp()
+            self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=window_size,max_packet_size=max_packet_size)
             self.connected = True
         except SSHException as e:
             raise
@@ -725,7 +728,6 @@ class ParamikoPlatform(Platform):
                             del self.channels[fd]
             except:
                 pass
-
 
 
     def exec_command(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3, x11=False):
