@@ -21,14 +21,11 @@
 import os
 import sys
 import traceback
-
-from log.log import Log, AutosubmitCritical , AutosubmitError
-
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
 sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
-
 # noinspection PyUnresolvedReferences
+from log.log import Log, AutosubmitCritical , AutosubmitError
 from autosubmit.autosubmit import Autosubmit
 
 

@@ -1690,7 +1690,6 @@ class Autosubmit:
                     except Exception as e:
                         # This error is important
                         raise AutosubmitCritical("Error while processing historical database.", 7005, str(e))
-
                     try:
                         ExperimentStatus(expid).set_as_running()
                     except Exception as e:
@@ -4461,9 +4460,8 @@ class Autosubmit:
         :rtype: bool
         """
         project_destination = as_conf.get_project_destination()
-        # if project_destination is None:
-        #     raise AutosubmitCritical(
-        #         "Autosubmit couldn't identify the project destination.", 7014)
+        if project_destination is None or len(project_destination) == 0:
+             raise AutosubmitCritical("Autosubmit couldn't identify the project destination.", 7014)
 
         if project_type == "git":
             submitter = Autosubmit._get_submitter(as_conf)
@@ -4509,6 +4507,8 @@ class Autosubmit:
 
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
+            if local_project_path is None or len(local_project_path) == 0:
+                raise AutosubmitCritical("Empty project path! please change this parameter to a valid one.", 7014)
             project_path = os.path.join(
                 BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
             local_destination = os.path.join(project_path, project_destination)
