@@ -116,8 +116,11 @@ Create or modify /etc/autosubmitrc file or ~/.autosubmitrc with the information 
 Now you are ready to use Autosubmit !
 
 
-Example:
-::
+Examples
+========
+
+Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
+------------------------------------------------------------------------------
 
 .. code-block:: ini
 
@@ -156,3 +159,24 @@ Example:
     # Since it was a new install the expid will be a000
     autosubmit create a000 -np
 
+Sequence of instructions to install Autosubmit and its dependencies with conda.
+-------------------------------------------------------------------------------
+
+.. code-block:: bash
+
+    # Download conda
+    wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh./Miniconda3-py39_4.12.0-Linux-x86_64.sh
+    # Launch it
+    ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
+    # Download git
+    apt install git -y -q
+    # Download autosubmit
+    git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v3.14.0
+    cd autosubmit
+    # Create conda environment
+    conda env update -f environment.yml -n autosubmit python=2
+    # Activate env
+    source activate autosubmit
+    # Test autosubmit
+    autosubmit -v
+    # Configure autosubmitrc and install database as indicated in this doc
