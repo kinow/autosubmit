@@ -122,10 +122,11 @@ From 3.14+ onwards, autosubmit commands can be tailored to run on specific machi
 Now you are ready to use Autosubmit !
 
 
-Example
-=======
+Examples
+========
 
 Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
+------------------------------------------------------------------------------
 
 .. code-block:: bash
 
@@ -166,6 +167,7 @@ Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
     autosubmit create a000 -np
 
 Sequence of instructions to install Autosubmit and its dependencies with conda.
+-------------------------------------------------------------------------------
 
 .. code-block:: bash
 
