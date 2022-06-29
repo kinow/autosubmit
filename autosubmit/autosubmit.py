@@ -22,12 +22,7 @@ import collections
 
 from .statistics import utils
 
-#try:
-    # noinspection PyCompatibility
-#    from configparser import SafeConfigParser
-#except ImportError:
-    # noinspection PyCompatibility
-#    from configparser import SafeConfigParser
+
 from .job.job_packager import JobPackager
 from .job.job_exceptions import WrongTemplateException
 from .platforms.paramiko_submitter import ParamikoSubmitter
@@ -37,6 +32,13 @@ from .notifications.mail_notifier import MailNotifier
 from bscearth.utils.date import date2str
 from pathlib import Path
 from .config.yaml_parser import YAMLParserFactory
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from bscearth.utils.config_parser import ConfigParser as SafeConfigParser
+
 from .monitor.monitor import Monitor
 from .database.db_common import get_autosubmit_version, check_experiment_exists
 from .database.db_common import delete_experiment, update_experiment_descrip_version, get_experiment_descrip
@@ -3454,7 +3456,7 @@ class Autosubmit:
             config_file = open(rc_path, 'w')
             Log.info("Writing configuration file...")
             try:
-                parser = SafeConfigParser()
+                parser = ConfigParser()
                 parser.add_section('database')
                 parser.set('database', 'path', database_path)
                 if database_filename is not None:
@@ -3574,7 +3576,7 @@ class Autosubmit:
         d.infobox("Reading configuration file...", width=50, height=5)
         try:
             if os.path.isfile(path):
-                parser = SafeConfigParser()
+                parser = ConfigParser()
                 parser.optionxform = str
                 parser.load(path)
                 if parser.has_option('database', 'path'):
@@ -3693,7 +3695,7 @@ class Autosubmit:
         config_file = open(path, 'w')
         d.infobox("Writing configuration file...", width=50, height=5)
         try:
-            parser = SafeConfigParser()
+            parser = ConfigParser()
             parser.add_section('database')
             parser.set('database', 'path', database_path)
             if database_filename:

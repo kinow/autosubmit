@@ -76,22 +76,28 @@ class AutosubmitConfig(object):
         self._proj_parser = None
         self._proj_parser_file = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf" / ("proj_" + expid +".yml")
         self._proj_parser_file_modtime = None
-        default_conf_path =  Path(self.basic_config.LOCAL_ROOT_DIR) / expid
-        custom_folder_path = Path(self.basic_config.LOCAL_ROOT_DIR) / expid / "conf"
+
+        self._original_parser_files = []
+        self._original_parser_files.append(self._conf_parser_file)
+        self._original_parser_files.append(self._exp_parser_file)
+        self._original_parser_files.append(self._platforms_parser_file)
+        self._original_parser_files.append(self._jobs_parser_file)
+        self._original_parser_files.append(self._proj_parser_file)
+        self._original_parser_files_modtime = []
+        self._original_parser_files_modtime.append(self._conf_parser_file_modtime)
+        self._original_parser_files_modtime.append(self._exp_parser_file_modtime)
+        self._original_parser_files_modtime.append(self._platforms_parser_file_modtime)
+        self._original_parser_files_modtime.append(self._jobs_parser_file_modtime)
+        self._original_parser_files_modtime.append(self._proj_parser_file_modtime)
+
         self._custom_parser_files = []
         self._custom_parser_files_modtime = []
-
-        #TODO look for all files
-        for f in custom_folder_path.rglob("*.yml"):
-            if not f == self._proj_parser_file and not f.samefile(self._jobs_parser_file) and not f.samefile(self._platforms_parser_file) and not f.samefile(self._exp_parser_file) and not f.samefile(self._conf_parser_file):
-                self._custom_parser_files.append(f)
-                self._custom_parser_files_modtime.append(None)
 
         self.ignore_file_path = False
         self.wrong_config = defaultdict(list)
         self.warn_config = defaultdict(list)
         self.dynamic_variables = list()
-        #todo threads are loading all parameters
+        #todo ?? threads are loading all parameters -> reduce memory usage
     @property
     def jobs_parser(self):
         return self._jobs_parser
@@ -1023,7 +1029,6 @@ class AutosubmitConfig(object):
             if "WRAPPERS" not in self.wrong_config:
                 Log.result('wrappers OK')
                 return True
-    #TODO SUFIX
     def file_modified(self,file,prev_mod_time):
         '''
         Function to check if a file has been modified.
@@ -1044,15 +1049,18 @@ class AutosubmitConfig(object):
         """
         Creates parser objects for configuration files
         """
-        #TODO Reload only if there are changes in files.
-        #Todo unify original config in a similar fashion than the custom one
-        # Ugly way nowadays
-        # TODO in fact, there is no need to have names, just make two dicts, one prioritary and another custom
         any_file_changed = False
+        # check if original_files has been edited
+        for config_file in range(0,len(self._original_parser_files)):
+            modified,self._original_parser_files_modtime[config_file] = self.file_modified(self._original_parser_files[config_file],self._original_parser_files_modtime[config_file])
+            if modified:
+                any_file_changed = True
+        # check if custom_files has been edited
         for config_file in range(0,len(self._custom_parser_files)):
             modified,self._custom_parser_files_modtime[config_file] = self.file_modified(self._custom_parser_files[config_file],self._custom_parser_files_modtime[config_file])
             if modified:
                 any_file_changed = True
+
         if any_file_changed or first_load:
             try:
                 self._conf_parser = AutosubmitConfig.get_parser(
@@ -1063,7 +1071,24 @@ class AutosubmitConfig(object):
                     self.parser_factory, self._jobs_parser_file)
                 self._exp_parser = AutosubmitConfig.get_parser(
                     self.parser_factory, self._exp_parser_file)
-                self._custom_parser = []
+                if first_load:
+                    self._custom_parser = []
+                    default_section = self._exp_parser.data.get("DEFAULT",None)
+                    default_path = Path(self.basic_config.LOCAL_ROOT_DIR) / self.expid
+                    if default_section is not None:
+                        custom_folder_path = default_section.get("CUSTOM_CONFIG_DIR",default_path / "conf")
+                        custom_folder_path = Path(re.sub('%(?<!%%)' + "ROOTDIR" + '%(?!%%)', str(default_path), custom_folder_path, flags=re.I))
+                        default_section["CUSTOM_CONFIG_DIR"] = str(custom_folder_path)
+                    self._custom_parser_files = []
+                    self._custom_parser_files_modtime = []
+
+                    for f in custom_folder_path.rglob("*.yml"):
+                        if not f == self._proj_parser_file and not f.samefile(self._jobs_parser_file) and not f.samefile(
+                                self._platforms_parser_file) and not f.samefile(self._exp_parser_file) and not f.samefile(
+                                self._conf_parser_file):
+                            self._custom_parser_files.append(f)
+                            self._custom_parser_files_modtime.append(None)
+
                 for custom_file in self._custom_parser_files:
                     self._custom_parser.append(AutosubmitConfig.get_parser(
                     self.parser_factory, custom_file))
