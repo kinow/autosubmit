@@ -1606,7 +1606,7 @@ class AutosubmitConfig(object):
         :return: max number of running jobs
         :rtype: int
         """
-        return int(self.get_section(['config', 'TOTALJOBS'],-1))
+        return int(self.get_section(['CONFIG', 'TOTALJOBS'],-1))
 
     def get_output_type(self):
         """

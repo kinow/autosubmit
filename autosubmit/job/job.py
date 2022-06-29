@@ -321,7 +321,7 @@ class Job(object):
         Number of processors requested by job.  
         Reduces ':' separated format  if necessary.
         """
-        if ':' in self.processors:
+        if ':' in str(self.processors):
             return reduce(lambda x, y: int(x) + int(y), self.processors.split(':'))
         elif self.processors == "":
             return 1

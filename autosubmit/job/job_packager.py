@@ -240,9 +240,9 @@ class JobPackager(object):
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.yml value (Looks first in [wrapper] section)
                 wrapper_limits = dict()
                 wrapper_limits["max_by_section"] = dict()
-                wrapper_limits["max"] = self._as_config.get_max_wrapped_jobs(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
-                wrapper_limits["max_v"] = self._as_config.get_max_wrapped_jobs_vertical(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
-                wrapper_limits["max_h"] = self._as_config.get_max_wrapped_jobs_horizontal(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
+                wrapper_limits["max"] = int(self._as_config.get_max_wrapped_jobs(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section]))
+                wrapper_limits["max_v"] = int(self._as_config.get_max_wrapped_jobs_vertical(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section]))
+                wrapper_limits["max_h"] = int(self._as_config.get_max_wrapped_jobs_horizontal(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section]))
                 if wrapper_limits["max"] < wrapper_limits["max_v"] * wrapper_limits["max_h"]:
                     wrapper_limits["max"] = wrapper_limits["max_v"] * wrapper_limits["max_h"]
                 dependencies_keys = self._as_config.jobs_data[section].get('DEPENDENCIES', "").upper()
@@ -260,15 +260,16 @@ class JobPackager(object):
                         else:
                             wrapper_limits["max_by_section"][sectionN] = wrapper_limits["max"]
                 hard_limit_wrapper =  wrapper_limits["max"]
-                for k in dependencies_keys:
-                    if "-" in k:
-                        k_divided = k.split("-")
-                        if k_divided[0] not in self.jobs_in_wrapper[self.current_wrapper_section]:
-                            number = int(k_divided[1].strip(" "))
-                            if number < wrapper_limits["max"]:
-                                hard_limit_wrapper = number
+                #if self.wrapper_type[self.current_wrapper_section].lower() == "vertical":
+                #    for k in dependencies_keys:
+                #        if "-" in k:
+                #            k_divided = k.split("-")
+                #            if k_divided[0] not in self.jobs_in_wrapper[self.current_wrapper_section]:
+                #                number = int(k_divided[1].strip(" "))
+                #                if number < wrapper_limits["max"]:
+                #                    hard_limit_wrapper = number
                 wrapper_limits["min"] = min(self._as_config.jobs_data[section].get(
-                    "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])), hard_limit_wrapper)
+                    "MIN_WRAPPED", int(self._as_config.get_min_wrapped_jobs(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section]))), hard_limit_wrapper)
                 if len(self._jobs_list.jobs_to_run_first) > 0:# Allows to prepare an experiment with TWO_STEP_START  and strict policy
                     min_wrapped_jobs = 2
                 wrapper_limits["min_v"] = self._as_config.get_min_wrapped_jobs_vertical(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
@@ -278,7 +279,7 @@ class JobPackager(object):
                     wrapper_limits["min"] = max(wrapper_limits["min_v"],wrapper_limits["min_h"])
 
                 if self.wrapper_type[self.current_wrapper_section] == 'vertical':
-                    built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section], wrapper_limits,wrapper_info=self.wrapper_info)
+                    built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section], wrapper_limits)
                 elif self.wrapper_type[self.current_wrapper_section]  == 'horizontal':
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section], wrapper_limits, section)
                 elif self.wrapper_type[self.current_wrapper_section]  in ['vertical-horizontal', 'horizontal-vertical']:
@@ -524,12 +525,16 @@ class JobPackager(object):
         """
         # .jobs_in_wrapper defined in .yml, see constructor.
         sections_split = set()
+
         for jobs_in_wrapper_section in self.jobs_in_wrapper:
-            sections_split.update(set(self.jobs_in_wrapper[jobs_in_wrapper_section].split()))
+            if "&" in jobs_in_wrapper_section:
+                char = "&"
+            else:
+                char = " "
+            sections_split.update(set(self.jobs_in_wrapper[jobs_in_wrapper_section].split(char)))
         sections_split = list(sections_split)
         jobs_section = dict()
         for job in jobs_list:
-
             # This iterator will always return None if there is no '&' defined in the section name
             section = next(
                 (s for s in sections_split if job.section in s and '&' in s), None)
@@ -557,7 +562,7 @@ class JobPackager(object):
                 jobs_resources = horizontal_packager.components_dict
             jobs_resources['MACHINEFILES'] = machinefile_function
             current_package = JobPackageHorizontal(
-                package_jobs, jobs_resources=jobs_resources, method=self.wrapper_method[self.current_wrapper_section], configuration=self._as_config)
+                package_jobs, jobs_resources=jobs_resources, method=self.wrapper_method[self.current_wrapper_section], configuration=self._as_config, wrapper_section=self.current_wrapper_section)
             packages.append(current_package)
 
         return packages
@@ -597,7 +602,7 @@ class JobPackager(object):
         ## READY JOBS ##
         ## Create the horizontal ##
         horizontal_packager = JobPackagerHorizontal(jobs_list, self._platform.max_processors, wrapper_limits,
-                                                    self.max_jobs, self._platform.processors_per_node)
+                                                    self.max_jobs, self._platform.processors_per_node,self.wrapper_method[self.current_wrapper_section])
 
         if self.wrapper_type[self.current_wrapper_section] == 'vertical-horizontal':
             return self._build_vertical_horizontal_package(horizontal_packager, jobs_resources)
