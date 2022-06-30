@@ -158,9 +158,9 @@ class LocalPlatform(ParamikoPlatform):
         Moves a file on the platform
         :param src: source name
         :type src: str
-        :param dest: destination name
-        :param must_exist: ignore if file exist or not
-        :type dest: str
+        :param: wrapper_failed: if True, the wrapper failed.
+        :type wrapper_failed: bool
+
         """
         file_exist = False
         sleeptime = 5

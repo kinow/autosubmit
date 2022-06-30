@@ -15,17 +15,13 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import sqlite3
 import os
-import traceback
 import textwrap
 import autosubmit.history.utils as HUtils
 from . import database_models as Models
 from autosubmit.history.data_classes.job_data import JobData
 from autosubmit.history.data_classes.experiment_run import ExperimentRun
-from abc import ABCMeta, abstractmethod
 from .database_manager import DatabaseManager, DEFAULT_JOBDATA_DIR
-from datetime import datetime
 
 CURRENT_DB_VERSION = 18
 DB_EXPERIMENT_HEADER_SCHEMA_CHANGES = 14

@@ -39,10 +39,10 @@ def parse_output_number(string_number):
             multiplier = 1000000000.0 # Billion
             number = float(string_number[:-1])
         elif last_letter == "M":
-            multiplier = 1000000.0 # Million
+            multiplier = 1000000.0 # A Million
             number = float(string_number[:-1])
         elif last_letter == "K":
-            multiplier = 1000.0 # Thousand
+            multiplier = 1000.0 # A Thousand
             number = float(string_number[:-1])            
         else:
             number = float(string_number)

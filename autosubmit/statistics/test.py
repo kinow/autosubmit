@@ -1,7 +1,5 @@
 import unittest
-import os
 from autosubmit.statistics.statistics import Statistics
-from autosubmit.monitor.monitor import Monitor
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_utils import SubJobManager, SubJob
 from autosubmit.config.basicConfig import BasicConfig
@@ -12,7 +10,6 @@ from autosubmit.job.job_list import JobList
 # import autosubmit.experiment.common_db_requests as DbRequests
 import autosubmit.database.db_structure as DbStructure
 # from autosubmit.database.db_jobdata import JobDataStructure, ExperimentGraphDrawing
-import statistics
 
 class TestStatistics(unittest.TestCase):
   def setUp(self):

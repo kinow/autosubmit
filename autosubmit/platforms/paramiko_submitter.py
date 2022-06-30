@@ -104,7 +104,7 @@ class ParamikoSubmitter(Submitter):
         # Add object to entry in dictionary
         platforms['LOCAL'] = local_platform
 
-        # parser is the platforms parser that represents platforms_.conf
+        # parser is the platform's parser that represents platforms_.conf
         # Traverse sections []
         for section in platform_data:
             # Consider only those included in the list of jobs

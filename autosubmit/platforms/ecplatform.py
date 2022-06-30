@@ -20,7 +20,7 @@ import locale
 import os
 import subprocess
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
-from log.log import Log,AutosubmitCritical,AutosubmitError
+from log.log import Log,AutosubmitError
 from autosubmit.platforms.headers.ec_header import EcHeader
 from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
 from autosubmit.platforms.headers.slurm_header import SlurmHeader

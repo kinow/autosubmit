@@ -23,7 +23,6 @@ from time import mktime
 from time import time
 from datetime import datetime
 from typing import List, Union
-import traceback
 
 from xml.dom.minidom import parseString
 
@@ -77,8 +76,8 @@ class SlurmPlatform(ParamikoPlatform):
         """
         Sends a Submit file Script, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
 
-        :param job: job object
-        :type job: autosubmit.job.job.Job
+        :param hold: if True, the job will be held
+        :type hold: bool
         :return: job id for  submitted jobs
         :rtype: list(str)
         """
@@ -174,8 +173,6 @@ class SlurmPlatform(ParamikoPlatform):
 
         :param output: The sacct output
         :type output: str
-        :param job_id: Id in SLURM for the job
-        :type job_id: int
         :param packed: true if job belongs to package
         :type packed: bool
         :return: submit, start, finish, joules, ncpus, nnodes, detailed_data
@@ -229,7 +226,7 @@ class SlurmPlatform(ParamikoPlatform):
                 if packed == False:
                     # If it is not wrapper job, take first line as source
                     if status not in ["COMPLETED", "FAILED", "UNKNOWN"]:
-                        # It not completed, then its error and send default data plus output
+                        # It is not completed, then its error and send default data plus output
                         return (0, 0, 0, 0, ncpus, nnodes, detailed_data, False)
                 else:
                     # If it is a wrapped job
@@ -274,7 +271,7 @@ class SlurmPlatform(ParamikoPlatform):
                                     if len(steps) >= 2 and detailed_data.__contains__(steps[-2]):
                                         new_extra_data = detailed_data[steps[-2]]
                                         if "finish" in list(new_extra_data.keys()) and new_extra_data["finish"] != "Unknown":
-                                            # This might result in an job finish < start, need to handle that in the caller function
+                                            # This might result in a job finish < start, need to handle that in the caller function
                                             finish = int(mktime(datetime.strptime(
                                                 new_extra_data["finish"], "%Y-%m-%dT%H:%M:%S").timetuple()))
                                         else:

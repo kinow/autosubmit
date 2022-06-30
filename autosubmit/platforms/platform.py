@@ -194,7 +194,7 @@ class Platform(object):
 
         :param filename: file name
         :type filename: str
-        :return: True if succesful or file does no exists
+        :return: True if successful or file does not exist
         :rtype: bool
         """
         raise NotImplementedError
@@ -217,8 +217,9 @@ class Platform(object):
         Get the given stat files for all retrials
         :param exp_id: experiment id
         :type exp_id: str
-        :param remote_logs: names of the log files
-        :type remote_logs: (str, str)
+        :param job_name: job name
+        :type job_name: str
+
         """
         self.get_files(job_name,False, 'LOG_{0}'.format(exp_id))
 
@@ -378,8 +379,12 @@ class Platform(object):
 
         :param job: job object
         :type job: autosubmit.job.job.Job
-        :param scriptname: job script's name
-        :rtype scriptname: str
+        :param script_name: job script's name
+        :rtype script_name: str
+        :param hold: if True, the job will be submitted in hold state
+        :type hold: bool
+        :param export: export environment variables
+        :type export: str
         :return: job id for the submitted job
         :rtype: int
         """

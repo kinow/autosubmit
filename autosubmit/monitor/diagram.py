@@ -20,8 +20,6 @@
 import traceback
 import numpy as np
 import matplotlib as mtp
-from numpy.core.fromnumeric import trace
-from pkg_resources import normalize_path
 mtp.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -29,7 +27,7 @@ import matplotlib.patches as mpatches
 # from autosubmit.experiment.statistics import ExperimentStats
 from autosubmit.statistics.statistics import Statistics
 from autosubmit.job.job import Job
-from log.log import Log, AutosubmitCritical, AutosubmitError
+from log.log import Log, AutosubmitCritical
 from datetime import datetime
 from typing import Dict, List
 Log.get_logger("Autosubmit")
@@ -47,9 +45,10 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     Creates a bar diagram of the statistics.
 
     :param experiment_id: experiment's identifier  
-    :type experiment_id: str  
-    :param job_list: list of jobs (filtered)  
-    :type job_list: list of Job objects  
+    :type experiment_id: str
+    :param jobs_list: list of jobs
+    :type jobs_list: List[Job]
+
     :param general_stats: list of sections and options in the %DEFAULT.EXPID%_GENERAL_STATS file
     :type general_stats: list of tuples  
     :param output_file: path to the output file  

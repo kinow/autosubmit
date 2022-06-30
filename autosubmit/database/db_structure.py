@@ -18,17 +18,13 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
-import string
-import time
-import pickle
+
 import textwrap
 import traceback
 import sqlite3
-import copy
-from datetime import datetime
+
 from typing import Dict, List
-from log.log import Log, AutosubmitError, AutosubmitCritical
+from log.log import Log
 # from networkx import DiGraph
 
 #DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"

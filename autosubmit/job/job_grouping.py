@@ -58,7 +58,7 @@ class JobGrouping(object):
                 if group not in blacklist:
                     while group in groups_map:
                         group = groups_map[group]
-                    # to remove the jobs belonging to groups that should be expanded
+                    # to remove the jobs belonging to group that should be expanded
                     if group in self.group_status_dict:
                         if job not in final_jobs_group:
                             final_jobs_group[job] = list()

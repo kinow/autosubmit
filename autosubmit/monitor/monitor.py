@@ -18,8 +18,6 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 import os
-import pwd
-from pydoc import Helper
 import time
 from os import path
 from os import chdir
@@ -38,7 +36,7 @@ from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 
-from log.log import Log, AutosubmitError, AutosubmitCritical
+from log.log import Log, AutosubmitCritical
 from autosubmit.config.yaml_parser import YAMLParserFactory
 
 from .diagram import create_bar_diagram
@@ -144,7 +142,7 @@ class Monitor:
         Log.debug('Creating job graph...')
 
         jobs_packages_dict = dict()
-        if packages != None and packages:
+        if packages is not None and packages:
             for (exp_id, package_name, job_name) in packages:
                 jobs_packages_dict[job_name] = package_name
 
@@ -348,7 +346,7 @@ class Monitor:
         except BaseException as e:
             try:
                 message= str(e)
-                message += "\n"+e.value
+                message += "\n"+str(e)
                 if "GraphViz" in message:
                     message= "Graphviz is not installed. Autosubmit need this system package in order to plot the workflow."
             except:

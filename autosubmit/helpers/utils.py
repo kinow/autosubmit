@@ -7,7 +7,7 @@ from typing import Tuple
 
 def check_experiment_ownership(expid, basic_config, raise_error=False, logger=None):
   #Logger variable is not needed, LOG is global thus it will be read if avaliable
-  # type: (str, BasicConfig, bool, Log) -> Tuple[bool, bool, str]
+  ## type: (str, BasicConfig, bool, Log) -> Tuple[bool, bool, str]
   my_user_ID = os.getuid()
   current_owner_ID = 0
   current_owner_name = "NA"

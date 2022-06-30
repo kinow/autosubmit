@@ -14,8 +14,7 @@ from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
 from bscearth.utils.date import date2str
 from log.log import AutosubmitError, AutosubmitCritical, Log
-from paramiko.ssh_exception import (SSHException, BadAuthenticationType,
-                                    ChannelException, ProxyCommandFailure)
+from paramiko.ssh_exception import (SSHException)
 import Xlib.support.connect as xlib_connect
 from threading import Thread
 
@@ -50,6 +49,10 @@ class ParamikoPlatform(Platform):
         self.transport = None
         self.channels = {}
         self.poller = select.poll()
+        self._header = None
+        self._wrapper = None
+        self.remote_log_dir = ""
+        #self.get_job_energy_cmd = ""
         display = os.getenv('DISPLAY')
         if display is None:
             display = "localhost:0"
@@ -58,7 +61,7 @@ class ParamikoPlatform(Platform):
     @property
     def header(self):
         """
-        Header to add to jobs for scheduler configuration
+        Header to add to job for scheduler configuration
 
         :return: header
         :rtype: object
@@ -112,7 +115,7 @@ class ParamikoPlatform(Platform):
         except EOFError as e:
             self.connected = False
             raise AutosubmitError("[{0}] not alive. Host: {1}".format(
-                self.name, self.host), 6002, e.message)
+                self.name, self.host), 6002, str(e))
         except (AutosubmitError,AutosubmitCritical,IOError):
             self.connected = False
             raise
@@ -136,7 +139,7 @@ class ParamikoPlatform(Platform):
                         self.host.split(',')[0]), 6002)
                 else:
                     raise AutosubmitCritical(
-                        "First connection to {0} is failed, check host configuration or try another login node ".format(self.host), 7050,e.message)
+                        "First connection to {0} is failed, check host configuration or try another login node ".format(self.host), 7050,str(e))
             while self.connected is False and retry < retries:
                 try:
                     self.connect(True)
@@ -155,7 +158,7 @@ class ParamikoPlatform(Platform):
             raise
         except Exception as e:
             raise AutosubmitCritical(
-                'Cant connect to this platform due an unknown error', 7050, e.message)
+                'Cant connect to this platform due an unknown error', 7050, str(e))
     
     def threaded(fn):
         def wrapper(*args, **kwargs):
@@ -343,7 +346,7 @@ class ParamikoPlatform(Platform):
 
         :param filename: file name
         :type filename: str
-        :return: True if successful or file does no exists
+        :return: True if successful or file does no exist
         :rtype: bool
         """
 
@@ -431,7 +434,7 @@ class ParamikoPlatform(Platform):
         Checks job energy and return values. Defined in child classes.
 
         Args:
-            job_id (int): Id of Job
+            job_id (int): ID of Job
 
         Returns:
             4-tuple (int, int, int, int): submit time, start time, finish time, energy
@@ -443,11 +446,10 @@ class ParamikoPlatform(Platform):
     def submit_Script(self, hold=False):
         """
         Sends a Submitfile Script, exec in platform and retrieve the Jobs_ID.
-
-        :param job: job object
-        :type job: autosubmit.job.job.Job
-        :return: job id for  submitted jobs
-        :rtype: list(int)
+        :param hold: send job hold
+        :type hold: boolean
+        :return: job id for the submitted job
+        :rtype: int
         """
         raise NotImplementedError
 
@@ -518,14 +520,15 @@ class ParamikoPlatform(Platform):
     def check_Alljobs(self, job_list, as_conf, retries=5):
         """
         Checks jobs running status
-
+        :param job_list: list of jobs
+        :type job_list: list
+        :param as_conf: autosubmit configuration
+        :type as_conf: autosubmit.config.config.Config
         :param retries: retries
-        :param job_id: job id
-        :type job_id: str
-        :param remote_logs: retrieve logs from remote if queue fails
-        :type default_status: bool
-        :return: current job status
-        :rtype: autosubmit.job.job_common.Status
+        :type retries: int
+        :return: list of jobs with their status
+        :rtype: list
+
         """
         remote_logs = as_conf.get_copy_remote_logs()
         job_list_cmd = ""
@@ -671,7 +674,7 @@ class ParamikoPlatform(Platform):
         Returns command to check jobs status on remote platforms
 
         :param jobs_id: id of jobs to check
-        :param job_id: str
+        :param jobs_id: str
         :return: command to check job status
         :rtype: str
         """
@@ -873,8 +876,9 @@ class ParamikoPlatform(Platform):
 
             if not ignore_log:
                 if len(stderr_readlines) > 0:
+                    lines = '\n'.join(stderr_readlines)
                     Log.printlog('Command {0} in {1} warning: {2}'.format(
-                        command, self.host, '\n'.join(stderr_readlines.decode(locale.getlocale()[1]))), 6006)
+                        command, self.host,lines.decode(locale.getlocale()[1])), 6006)
                 else:
                     pass
                     #Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
@@ -894,7 +898,7 @@ class ParamikoPlatform(Platform):
 
     def parse_job_output(self, output):
         """
-        Parses check job command output so it can be interpreted by autosubmit
+        Parses check job command output, so it can be interpreted by autosubmit
 
         :param output: output to parse
         :type output: str
@@ -905,7 +909,7 @@ class ParamikoPlatform(Platform):
 
     def parse_Alljobs_output(self, output, job_id):
         """
-        Parses check jobs command output so it can be interpreted by autosubmit
+        Parses check jobs command output, so it can be interpreted by autosubmit
         :param output: output to parse
         :param job_id: select the job to parse
         :type output: str

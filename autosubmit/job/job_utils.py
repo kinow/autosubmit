@@ -50,12 +50,9 @@ def get_job_package_code(expid, job_name):
     """
     Finds the package code and retrieves it. None if no package.
 
-    :param BasicConfig: Basic configuration 
-    :type BasicConfig: Configuration Object
-    :param expid: Experiment Id
+    :param expid: Experiment ID
     :type expid: String
-    :param current_job_name: Name of job
-    :type current_jobs: string
+
     :return: package code, None if not found
     :rtype: int or None
     """

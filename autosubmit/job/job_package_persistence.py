@@ -24,7 +24,7 @@ class JobPackagePersistence(object):
     """
     Class that handles packages workflow.
 
-    Creates Packages Table, Wrappers Table.
+    Create Packages Table, Wrappers Table.
 
     :param persistence_path: Path to the persistence folder pkl. \n
     :type persistence_path: String \n
@@ -44,8 +44,9 @@ class JobPackagePersistence(object):
     def load(self,wrapper=False):
         """
         Loads package of jobs from a database
-        :param persistence_file: str
-        :param persistence_path: str
+        :param: wrapper: boolean
+        :return: dictionary of jobs per package
+
 
         """
         if not wrapper:
@@ -55,8 +56,6 @@ class JobPackagePersistence(object):
     def reset(self):
         """
         Loads package of jobs from a database
-        :param persistence_file: str
-        :param persistence_path: str
 
         """
         self.db_manager.drop_table(self.WRAPPER_JOB_PACKAGES_TABLE)
@@ -64,9 +63,11 @@ class JobPackagePersistence(object):
     def save(self, package_name, jobs, exp_id,wrapper=False):
         """
         Persists a job list in a database
-        :param packages_dict: dictionary of jobs per package
-        :param persistence_file: str
-        :param persistence_path: str
+        :param package_name: str
+        :param jobs: list of jobs
+        :param exp_id: str
+        :param wrapper: boolean
+
 
         """
         #self._reset_table()

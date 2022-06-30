@@ -20,7 +20,6 @@ import traceback
 import requests
 import collections
 
-from .statistics import utils
 
 
 from .job.job_packager import JobPackager
@@ -116,7 +115,7 @@ def signal_handler(signal_received, frame):
 
 def signal_handler_create(signal_received, frame):
     """
-    Used to handle KeyboardInterrumpt signals while the create method is being executed
+    Used to handle KeyboardInterrupt signals while the create method is being executed
 
     :param signal_received:
     :param frame:
@@ -597,7 +596,7 @@ class Autosubmit:
                 # Version keyword force an exception in parse arg due and os_exit(0) but the program is succesfully finished
                 if "0" in str(e):
                     print(Autosubmit.autosubmit_version)
-                    os._exit(0)
+                    return 0
             raise AutosubmitCritical(
                 "Incorrect arguments for this command", 7011)
 
@@ -1079,7 +1078,7 @@ class Autosubmit:
                                 open(os.path.join(dir_exp_id, "conf",
                                                   new_filename), 'w').write(sep.join(content))
                                 if filename.endswith("conf"):
-                                    AutosubmitConfig.ini_to_yaml(os.path.join(os.path.join(dir_exp_id,"conf"),new_filename))
+                                    AutosubmitConfig.ini_to_yaml(os.path.join(dir_exp_id,"conf"),os.path.join(os.path.join(dir_exp_id,"conf"),new_filename))
 
                         if filename in conf_copy_filter_folder:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
@@ -2574,8 +2573,6 @@ class Autosubmit:
         Clean experiment's directory to save storage space.
         It removes project directory and outdated plots or stats.
 
-        :param create_log_file: if true, creates log file
-        :type create_log_file: bool
         :type plot: bool
         :type project: bool
         :type expid: str
@@ -3175,15 +3172,18 @@ class Autosubmit:
     def report(expid, template_file_path="", show_all_parameters=False, folder_path="", placeholders=False):
         """
         Show report for specified experiment
-        :param expid: experiment identifier:
-        :type str
-        :param template_file_path: template filepath
-        :type str
-        :param show_all_parameters: Write all parameters of the experiment
-        :type bool
-        :param folder_path: Allows to put the report files on another folder
-        :type str
+        :param expid: experiment identifier
+        :type expid: str
+        :param template_file_path: path to template file
+        :type template_file_path: str
+        :param show_all_parameters: show all parameters
+        :type show_all_parameters: bool
+        :param folder_path: path to folder
+        :type folder_path: str
+        :param placeholders: show placeholders
+        :type placeholders: bool
         """
+        #todo
         try:
             exp_parameters = defaultdict()
             performance_metrics = None
@@ -3470,7 +3470,7 @@ class Autosubmit:
             config_file = open(rc_path, 'w')
             Log.info("Writing configuration file...")
             try:
-                parser = ConfigParser()
+                parser = SafeConfigParser()
                 parser.add_section('database')
                 parser.set('database', 'path', database_path)
                 if database_filename is not None:
@@ -3590,7 +3590,7 @@ class Autosubmit:
         d.infobox("Reading configuration file...", width=50, height=5)
         try:
             if os.path.isfile(path):
-                parser = ConfigParser()
+                parser = SafeConfigParser()
                 parser.optionxform = str
                 parser.load(path)
                 if parser.has_option('database', 'path'):
@@ -3709,7 +3709,7 @@ class Autosubmit:
         config_file = open(path, 'w')
         d.infobox("Writing configuration file...", width=50, height=5)
         try:
-            parser = ConfigParser()
+            parser = SafeConfigParser()
             parser.add_section('database')
             parser.set('database', 'path', database_path)
             if database_filename:
@@ -4164,7 +4164,7 @@ class Autosubmit:
                     Log.warning("Experiment folder renamed to: {0}".format(
                         exp_folder + "_to_delete "))
                 except Exception as e:
-                    Autosubmit.unarchive(expid, uncompress=False)
+                    Autosubmit.unarchive(expid, uncompressed=False)
                     raise AutosubmitCritical(
                         "Can not remove or rename experiments folder", 7012, str(e))
 
@@ -4178,8 +4178,9 @@ class Autosubmit:
 
         :param experiment_id: experiment identifier
         :type experiment_id: str
-        :type compress: boolean
-        :type overwrite: boolean
+        :param uncompressed: if True, the tar file is uncompressed
+        :type uncompressed: bool
+
         """
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
@@ -4223,7 +4224,7 @@ class Autosubmit:
             os.remove(archive_path)
         except Exception as e:
             Log.printlog(
-                "Can not remove archived file folder: {0}".format(e.message), 7012)
+                "Can not remove archived file folder: {0}".format(str(e)), 7012)
             Log.result("Experiment {0} unarchived successfully", experiment_id)
             return True
 
@@ -5585,12 +5586,15 @@ class Autosubmit:
 
         :param expid: identifier of the experiment to recover
         :type expid: str
-        :param save: If true, recovery saves changes to the jobs list
-        :type save: bool
-        :param all_jobs: if True, it tries to get completed files for all jobs, not only active.
-        :type all_jobs: bool
-        :param hide: hides plot window
-        :type hide: bool
+        :param job_list: job list to update
+        :type job_list: JobList
+        :param rerun_list: list of jobs to rerun
+        :type rerun_list: list
+        :param as_conf: AutosubmitConfig object
+        :type as_conf: AutosubmitConfig
+        :return:
+
+
         """
 
         hpcarch = as_conf.get_platform()

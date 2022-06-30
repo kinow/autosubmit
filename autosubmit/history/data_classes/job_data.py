@@ -17,11 +17,10 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import collections
-import time
 import autosubmit.history.utils as HUtils
 import autosubmit.history.database_managers.database_models as Models
 from datetime import datetime, timedelta
-from json import dumps, loads
+from json import dumps
 
 class JobData(object):
     """
@@ -123,7 +122,7 @@ class JobData(object):
     @property
     def submit(self):
         """
-        Returns the submit time timestamp as an integer.
+        Returns to submit time timestamp as an integer.
         """
         return int(self._submit)
 
@@ -184,7 +183,7 @@ class JobData(object):
     @energy.setter
     def energy(self, energy):
         """
-        Set the energy value. If it is different than the current energy value, a update flag will be activated.
+        Set the energy value. If it is different from the current energy value, an update flag will be activated.
         """
         if energy > 0:
             if (energy != self._energy):
@@ -210,7 +209,7 @@ class JobData(object):
     @property
     def submit_datetime(self):
         """
-        Return the submit time as a datetime object, None if submit time equal 0.
+        Return to submit time as a datetime object, None if submit time equal 0.
         """
         if self.submit > 0:
             return datetime.fromtimestamp(self.submit)
@@ -237,7 +236,7 @@ class JobData(object):
     @property
     def submit_datetime_str(self):
         """
-        Returns the submit datetime as a string with format %Y-%m-%d-%H:%M:%S
+        Returns to submit datetime as a string with format %Y-%m-%d-%H:%M:%S
         """
         o_datetime = self.submit_datetime()
         if o_datetime:

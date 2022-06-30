@@ -22,7 +22,6 @@ import os
 from shutil import rmtree
 import subprocess
 import shutil
-import zipfile
 #from autosubmit import Autosubmit
 from autosubmit.config.basicConfig import BasicConfig
 from time import time

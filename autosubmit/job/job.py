@@ -29,9 +29,7 @@ import datetime
 import textwrap
 from collections import OrderedDict
 import copy
-import traceback
 
-from autosubmit.config.yaml_parser import YAMLParser
 import locale
 
 from autosubmit.config.config_common import AutosubmitConfig
@@ -40,7 +38,6 @@ from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPy
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.job.job_utils import get_job_package_code
 from autosubmit.config.basicConfig import BasicConfig
-import autosubmit
 from autosubmit.history.experiment_history import ExperimentHistory
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
@@ -73,8 +70,8 @@ class Job(object):
 
     :param name: job's name
     :type name: str
-    :param jobid: job's identifier
-    :type jobid: int
+    :param job_id: job's id
+    :type job_id: int
     :param status: job initial status
     :type status: Status
     :param priority: job's priority
@@ -151,6 +148,7 @@ class Job(object):
         self.level = 0
         self.export = "none"
         self.dependencies = []
+        self.running = "once"
 
     def __getstate__(self):
         odict = self.__dict__
@@ -541,7 +539,7 @@ class Job(object):
         """
         Returns the retrials of a job, including the last COMPLETED run. The selection stops, and does not include, when the previous COMPLETED job is located or the list of registers is exhausted.
 
-        :return: list of list of dates of retrial [submit, start, finish] in datetime format 
+        :return: list of dates of retrial [submit, start, finish] in datetime format
         :rtype: list of list  
         """
         log_name = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
@@ -598,7 +596,7 @@ class Job(object):
                         self._platform, remote_logs, local_logs)
                     remote_logs = copy.deepcopy(local_logs)
                 self._platform.get_logs_files(self.expid, remote_logs)
-                # Update the logs with Autosubmit Job Id Brand
+                # Update the logs with Autosubmit Job ID Brand
                 try:
                     for local_log in local_logs:
                         self._platform.write_jobid(self.id, os.path.join(
@@ -618,6 +616,7 @@ class Job(object):
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0):
         max_logs = 0
         sleep(5)
+        stat_file = self.script_name[:-4] + "_STAT_"
         try:
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.reload(first_load=True)
@@ -631,7 +630,6 @@ class Job(object):
             max_logs = int(as_conf.get_retrials()) - fail_count
             last_log = int(as_conf.get_retrials()) - fail_count
             if self.wrapper_type == "vertical":
-                stat_file = self.script_name[:-4] + "_STAT_"
                 found = False
                 retrials = 0
                 while retrials < 3 and not found:
@@ -652,6 +650,11 @@ class Job(object):
         except Exception as e:
             Log.printlog(
                 "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(str(e), self.name), 6001)
+            try:
+                platform.closeConnection()
+            except:
+                pass
+            return
         out_exist = False
         err_exist = False
         retries = 3
@@ -736,7 +739,7 @@ class Job(object):
                         self.synchronize_logs(platform, remote_logs, local_logs)
                         remote_logs = copy.deepcopy(local_logs)
                         platform.get_logs_files(self.expid, remote_logs)
-                        # Update the logs with Autosubmit Job Id Brand
+                        # Update the logs with Autosubmit Job ID Brand
                         try:
                             for local_log in local_logs:
                                 platform.write_jobid(self.id, os.path.join(
@@ -748,7 +751,7 @@ class Job(object):
                     platform.closeConnection()
                 except BaseException as e:
                     pass
-            return
+
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {1}".format(
                 e.message, self.name), 6001)
@@ -765,7 +768,6 @@ class Job(object):
                 platform.closeConnection()
             except:
                 pass
-
             return
         sleep(5)  # safe wait before end a thread
         try:
@@ -778,10 +780,11 @@ class Job(object):
         """
         Updates job status, checking COMPLETED file if needed
 
-        :param new_status: job status retrieved from the platform
-        :param copy_remote_logs: should copy remote logs when finished?
-        :type: Status
+        :param copy_remote_logs: boolean, if True, copies remote logs to local
+        :param failed_file: boolean, if True, checks if the job failed
+        :return:
         """
+
         previous_status = self.status
         self.prev_status = previous_status
         new_status = self.new_status
@@ -882,7 +885,7 @@ class Job(object):
         """
         Check the presence of *COMPLETED* file.
         Change status to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
-        :param default_status: status to set if job is not completed. By default is FAILED
+        :param default_status: status to set if job is not completed. By default, is FAILED
         :type default_status: Status
         """
         log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
@@ -1169,7 +1172,7 @@ class Job(object):
         return self._get_paramiko_template(snippet, template)
         # else:
         #    raise AutosubmitCritical(
-        #        "Job {0} does not have an correct template// template not found".format(self.name), 7014)
+        #        "Job {0} does not have a correct template// template not found".format(self.name), 7014)
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self._platform
@@ -1198,7 +1201,7 @@ class Job(object):
     @staticmethod
     def is_a_completed_retrial(fields):
         """
-        Returns true only if there 4 fields: submit start finish status, and status equals COMPLETED.
+        Returns true only if there are 4 fields: submit start finish status, and status equals COMPLETED.
         """
         if len(fields) == 4:
             if fields[3] == 'COMPLETED':
@@ -1246,13 +1249,13 @@ class Job(object):
         script_name = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
         self.script_name_wrapper = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
         open(os.path.join(self._tmp_path, script_name),
-             'wb').write(template_content)
+             'w').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
         return script_name
 
     def check_script(self, as_conf, parameters, show_logs=False):
         """
-        Checks if script is well formed
+        Checks if script is well-formed
 
         :param parameters: script parameters
         :type parameters: dict
@@ -1379,7 +1382,7 @@ class Job(object):
             f.write(' ')
             finish_time = None
             final_status = None
-            if end_time > 0:
+            if len(end_time) > 0:
                 # noinspection PyTypeChecker
                 f.write(date2str(datetime.datetime.fromtimestamp(end_time), 'S'))
                 # date2str(datetime.datetime.fromtimestamp(end_time), 'S')
@@ -1411,7 +1414,7 @@ class Job(object):
 
     def write_total_stat_by_retries_fix_newline(self):
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-        f = open(path, 'ab')
+        f = open(path, 'a')
         f.write('\n')
         f.close()
 
@@ -1419,8 +1422,11 @@ class Job(object):
         """
         Writes all data to TOTAL_STATS file
         :param total_stats: data gathered by the wrapper
-        :type completed: str
-        """        
+        :type total_stats: dict
+        :param first_retrial: True if this is the first retry, False otherwise
+        :type first_retrial: bool
+
+        """
         if first_retrial:
             self.write_submit_time(enabled=True)
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
@@ -1530,7 +1536,7 @@ class WrapperJob(Job):
 
     :param name: Name of the Package \n
     :type name: String \n
-    :param job_id: Id of the first Job of the package \n
+    :param job_id: ID of the first Job of the package \n
     :type job_id: Integer \n
     :param status: 'READY' when coming from submit_ready_jobs() \n
     :type status: String \n
@@ -1586,7 +1592,7 @@ class WrapperJob(Job):
 
         Log.debug('Checking inner jobs status')
         if self.status in [Status.HELD, Status.QUEUING]:  # If WRAPPER is QUEUED OR HELD
-            # This will update the inner jobs to QUEUE or HELD (normal behaviour) or WAITING ( if they fails to be held)
+            # This will update the inner jobs to QUEUE or HELD (normal behaviour) or WAITING ( if they fail to be held)
             self._check_inner_jobs_queue(prev_status)
         elif self.status == Status.RUNNING:  # If wrapper is running
             #Log.info("Wrapper {0} is {1}".format(self.name, Status().VALUE_TO_KEY[self.status]))
@@ -1662,7 +1668,7 @@ class WrapperJob(Job):
                     self.name, reason), 6009)
                 # while running jobs?
                 self._check_running_jobs()
-                self.update_failed_jobs(canceled_wrapper=True)
+                self.update_failed_jobs(check_ready_jobs=True)
                 self.cancel_failed_wrapper_job()
 
                 return
@@ -1691,9 +1697,9 @@ class WrapperJob(Job):
             for job in self.job_list:
                 job.hold = self.hold
                 job.status = self.status
-                if self.status == Status.WAITING:
-                    for job in self.job_list:
-                        job.packed = False
+            if self.status == Status.WAITING:
+                for job in self.job_list:
+                    job.packed = False
 
     def _check_inner_job_wallclock(self, job):
         start_time = self.running_jobs_start[job]
@@ -1739,7 +1745,7 @@ class WrapperJob(Job):
             if not os.stat(log_dir):
                 os.mkdir(log_dir)
                 os.chmod(log_dir, 0o770)
-            open(multiple_checker_inner_jobs, 'wb+').write(command)
+            open(multiple_checker_inner_jobs, 'w+').write(command)
             os.chmod(multiple_checker_inner_jobs, 0o770)
             self._platform.send_file(multiple_checker_inner_jobs, False)
             command = os.path.join(

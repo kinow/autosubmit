@@ -27,9 +27,8 @@ class DicJobs:
     Class to create jobs from conf file and to find jobs by start date, member and chunk
 
     :param jobs_list: jobs list to use
-    :type job_list: JobList
-    :param parser: jobs conf file parser
-    :type parser: SafeConfigParser
+    :type jobs_list: Joblist
+
     :param date_list: start dates
     :type date_list: list
     :param member_list: member
@@ -40,9 +39,7 @@ class DicJobs:
     :type date_format: str
     :param default_retrials: default retrials for ech job
     :type default_retrials: int
-    :param as_conf: All configuration info
     :type default_retrials: config_common
-default retrials for ech job
     """
 
     def __init__(self, jobs_list, date_list, member_list, chunk_list, date_format, default_retrials,jobs_data,experiment_data):
@@ -67,7 +64,7 @@ default retrials for ech job
         :type member: bool
         :param unparsed_option: List obtained from configuration files.
         :type unparsed_option: list
-        :param called_from: Parameter used to show a more complete error message if something is not working correctly..
+        :param called_from: Parameter used to show a more complete error message if something is not working correctly…
         :type unparsed_option: str
         """
         parsed_list = []
@@ -141,7 +138,7 @@ default retrials for ech job
         :type default_job_type: str
         :param jobs_data: dictionary containing the plain data from jobs
         :type jobs_data: dict
-        :param section: section to read and it's info
+        :param section: section to read, and it's info
         :type section: tuple(str,dict)
         :param priority: priority for the jobs
         :type priority: int
@@ -506,19 +503,4 @@ default retrials for ech job
 
         return job
 
-    def get_option(self, section, option, default):
-        """
-        Returns value for a given option
-
-        :param section: section name
-        :type section: str
-        :param option: option to return
-        :type option: str
-        :param default: value to return if not defined in configuration file
-        :type default: object
-        """
-        if self._parser.has_option(section, option):
-            return self._parser.get(section, option)
-        else:
-            return default
 

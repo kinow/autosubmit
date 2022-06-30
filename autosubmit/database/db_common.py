@@ -23,11 +23,8 @@ Module containing functions to manage autosubmit's database.
 import os
 import sqlite3
 import multiprocessing
-import sys
 
-import queue
-
-from log.log import Log, AutosubmitCritical, AutosubmitError
+from log.log import Log, AutosubmitCritical
 Log.get_logger("Autosubmit")
 from autosubmit.config.basicConfig import BasicConfig
 
@@ -164,7 +161,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
     """ 
     Checks if exist an experiment with the given name. Anti-lock version.  
 
-    :param error_on_inexistence: if True, adds an error log if experiment does not exists
+    :param error_on_inexistence: if True, adds an error log if experiment does not exist
     :type error_on_inexistence: bool
     :param name: Experiment name
     :type name: str
@@ -314,7 +311,7 @@ def _check_experiment_exists(name, error_on_inexistence=True):
     """
     Checks if exist an experiment with the given name.
 
-    :param error_on_inexistence: if True, adds an error log if experiment does not exists
+    :param error_on_inexistence: if True, adds an error log if experiment does not exist
     :type error_on_inexistence: bool
     :param name: Experiment name
     :type name: str

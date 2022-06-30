@@ -20,7 +20,7 @@ import sqlite3
 import os
 import autosubmit.history.utils as HUtils
 import autosubmit.history.database_managers.database_models as Models
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 DEFAULT_JOBDATA_DIR = os.path.join('/esarchive', 'autosubmit', 'as_metadata', 'data')
 DEFAULT_HISTORICAL_LOGS_DIR = os.path.join('/esarchive', 'autosubmit', 'as_metadata', 'logs')
@@ -62,7 +62,7 @@ class DatabaseManager(metaclass=ABCMeta):
   
   def execute_statement_with_arguments_on_dbfile(self, path, statement, arguments):
     # type : (str, str, Tuple) -> None
-    """ Executes an statement with arguments on a database file specified by path. """
+    """ Executes a statement with arguments on a database file specified by path. """
     conn = self.get_connection(path)
     cursor = conn.cursor()
     cursor.execute(statement, arguments)

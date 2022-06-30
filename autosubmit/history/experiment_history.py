@@ -15,9 +15,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import os
 import traceback
-from autosubmit.history.data_classes import job_data
 import autosubmit.history.database_managers.database_models as Models
 import autosubmit.history.utils as HUtils
 from time import time, sleep

@@ -16,7 +16,6 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import locale
 import re
 import os
 import pickle
@@ -36,8 +35,7 @@ import datetime
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
 from log.log import AutosubmitCritical, AutosubmitError, Log
-from threading import Thread, Lock
-import multiprocessing
+from threading import Thread
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.helpers.data_transfer import JobRow
@@ -253,7 +251,7 @@ class JobList(object):
         jobs_data = dic_jobs._jobs_data["JOBS"]
         for job_section in jobs_data.keys():
             Log.debug("Adding dependencies for {0} jobs".format(job_section))
-            # If does not have dependencies, do nothing
+            # If it does not have dependencies, do nothing
             if not (job_section, option):
                 continue
 
@@ -549,7 +547,7 @@ class JobList(object):
 
         :param wrapper_jobs: User defined job types in autosubmit_,conf [wrapper] section to be wrapped. \n
         :type wrapper_jobs: String \n
-        :return: Sorted Dictionary of Dictionary of List that represents the jobs included in the wrapping process. \n
+        :return: Sorted Dictionary of List that represents the jobs included in the wrapping process. \n
         :rtype: Dictionary Key: date, Value: (Dictionary Key: Member, Value: List of jobs that belong to the date, member, and are ordered by chunk number if it is a chunk job otherwise num_chunks from JOB TYPE (section)
         """
         # Dictionary Key: date, Value: (Dictionary Key: Member, Value: List)
@@ -573,7 +571,7 @@ class JobList(object):
                 try:
                     sections_running_type_map[section] = self.jobs_data[section].get("RUNNING", 'once')
                 except BaseException as e:
-                    raise AutosubmitCritical("Key {0} doesn't exists.".format(section),7014,e.message)
+                    raise AutosubmitCritical("Key {0} doesn't exists.".format(section),7014,str(e))
 
             # Select only relevant jobs, those belonging to the sections defined in the wrapper
 
@@ -617,7 +615,7 @@ class JobList(object):
                             previous_section_running_type = section_running_type
                             section_running_type = sections_running_type_map[job.section]
                     # Test if RUNNING is different between sections, or if we have reached the last item in sorted_jobs_list
-                    if (previous_section_running_type != None and previous_section_running_type != section_running_type) \
+                    if (previous_section_running_type is not None and previous_section_running_type != section_running_type) \
                             or index == len(sorted_jobs_list):
 
                         # Sorting by date, member, chunk number if it is a chunk job otherwise num_chunks from JOB TYPE (section)
@@ -649,7 +647,7 @@ class JobList(object):
         The purpose is that all jobs share the same name structure.
 
         :param filtered_jobs_list: A list of jobs of only those that comply with certain criteria, e.g. those belonging to a user defined job type for wrapping. \n
-        :type filetered_jobs_list: List() of Job Objects \n
+        :type filtered_jobs_list: List() of Job Objects \n
         :return filtered_jobs_fake_date_member: List of fake jobs. \n
         :rtype filtered_jobs_fake_date_member: List of Job Objects \n
         :return fake_original_job_map: Dictionary that maps fake job to original one. \n
@@ -676,7 +674,7 @@ class JobList(object):
                 fake_original_job_map[fake_job] = job
             # running date or synchronize member
             elif job.member is None:
-                # Declare None value as if it were the last items in corresponding list
+                # Declare None values as if it were the last items in corresponding list
                 member = self._member_list[-1]
                 fake_job = copy.deepcopy(job)
                 # Use it to modify name of fake job
@@ -927,11 +925,13 @@ class JobList(object):
     def get_job_names(self,lower_case=False):
         """
         Returns a list of all job names
+        :param: lower_case: if true, returns lower case job names
+        :type: lower_case: bool
 
-        :param platform: job platform
-        :type platform: HPCPlatform
-        :return: all jobs
+
+        :return: all job names
         :rtype: list
+
         """
         if lower_case:
             all_jobs = [job.name.lower() for job in self._job_list]
@@ -1052,8 +1052,6 @@ class JobList(object):
         """
         Returns a dict of logs by jobs_name jobs
 
-        :param platform: job platform
-        :type platform: HPCPlatform
         :return: logs
         :rtype: dict(tuple)
         """
@@ -1065,9 +1063,6 @@ class JobList(object):
     def add_logs(self, logs):
         """
         add logs to the current job_list
-
-        :param platform: job platform
-        :type platform: HPCPlatform
         :return: logs
         :rtype: dict(tuple)
         """
@@ -1150,11 +1145,11 @@ class JobList(object):
     def get_waiting_remote_dependencies(self, platform_type='slurm'.lower()):
         """
         Returns a list of jobs waiting on slurm scheduler
-
-        :param platform: job platform
-        :type platform: HPCPlatform
+        :param platform_type: platform type
+        :type platform_type: str
         :return: waiting jobs
         :rtype: list
+
         """
         waiting_jobs = [job for job in self._job_list if (
             job.platform.type == platform_type and job.status == Status.WAITING)]
@@ -1287,9 +1282,8 @@ class JobList(object):
     def get_jobs_by_section(self, section_list):
         """
         Returns the job that its name matches parameter section
-
-        :parameter name: name to look for
-        :type section: str
+        :parameter section_list: list of sections to look for
+        :type section_list: list
         :return: found job
         :rtype: job
         """
@@ -1363,7 +1357,7 @@ class JobList(object):
     @staticmethod
     def load_file(filename):
         """
-        Recreates an stored joblist from the pickle file
+        Recreates a stored joblist from the pickle file
 
         :param filename: pickle file to load
         :type filename: str
@@ -1383,7 +1377,7 @@ class JobList(object):
 
     def load(self):
         """
-        Recreates an stored job list from the persistence
+        Recreates a stored job list from the persistence
 
         :return: loaded job list object
         :rtype: JobList
@@ -1393,7 +1387,7 @@ class JobList(object):
 
     def backup_load(self):
         """
-        Recreates an stored job list from the persistence
+        Recreates a stored job list from the persistence
 
         :return: loaded job list object
         :rtype: JobList
@@ -1719,7 +1713,7 @@ class JobList(object):
                             for related_job in jobs_to_skip[section]:
                                 if job.chunk < related_job.chunk and job.member == related_job.member and jobdate == date2str(
                                         related_job.date,
-                                        related_job.date_format):  # Check if there is some related job with an higher chunk
+                                        related_job.date_format):  # Check if there is some related job with a higher chunk
                                     try:
                                         if job.status == Status.QUEUING:
                                             job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id),
@@ -1810,7 +1804,7 @@ class JobList(object):
                             job.children.remove(child)
                             child.parents.remove(job)
             if structure_valid == False:
-                # Structure does not exist or it is not be updated, attempt to create it.
+                # Structure does not exist, or it is not be updated, attempt to create it.
                 Log.info("Updating structure persistence...")
                 self.graph = transitive_reduction(self.graph) # add threads for large experiments? todo
                 if self.graph:
@@ -1908,9 +1902,10 @@ class JobList(object):
     def rerun(self, job_list_unparsed, monitor=False):
         """
         Updates job list to rerun the jobs specified by a job list
-
-        :param chunk_list: list of chunks to rerun
-        :type chunk_list: str
+        :param job_list_unparsed: list of jobs to rerun
+        :type job_list_unparsed: list
+        :param monitor: if True, the job list will be monitored
+        :type monitor: bool
         """
         self.parse_jobs_by_filter(job_list_unparsed,two_step_start=False)
         member_list = set()
@@ -2045,10 +2040,18 @@ class JobList(object):
 
         return result
 
-    def _recursion_print(self, job, level, visited, statusChange=None, nocolor=False):
+    def _recursion_print(self, job, level, visited=[], statusChange=None, nocolor=False):
         """
         Returns the list of children in a recursive way
         Traverses the dependency tree
+        :param job: Job object
+        :type job: Job
+        :param level: Level of the tree
+        :type level: int
+        :param visited: List of visited jobs
+        :type visited: list
+        :param statusChange: List of changes in the list, supplied in set status
+        :type statusChange: List of strings
 
         :return: parent + list of children
         :rtype: String
@@ -2098,11 +2101,11 @@ class JobList(object):
 
         :param BasicConfig: Basic configuration 
         :type BasicConfig: Configuration Object
-        :param expid: Experiment Id
+        :param expid: Experiment ID
         :type expid: String
         :param current_jobs: list of names of current jobs
         :type current_jobs: list
-        :return: job to package, package to jobs, package to package_id, package to symbol  
+        :return: job to package, package to job, package to package_id, package to symbol
         :rtype: Dictionary(Job Object, Package), Dictionary(Package, List of Job Objects), Dictionary(String, String), Dictionary(String, String)
         """
         # monitor = Monitor()

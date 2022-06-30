@@ -20,7 +20,7 @@
 import os
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
-from log.log import Log
+from log.log import Log, AutosubmitCritical
 
 from autosubmit.platforms.headers.pbs10_header import Pbs10Header
 from autosubmit.platforms.headers.pbs11_header import Pbs11Header
@@ -49,7 +49,7 @@ class PBSPlatform(ParamikoPlatform):
             self._header = Pbs12Header()
         else:
             Log.error('PBS version {0} not supported'.format(version))
-            raise HPCPlatformException('PBS version {0} not supported'.format(version))
+            raise AutosubmitCritical('PBS version {0} not supported'.format(version))
 
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['F', 'E', 'c', 'C']

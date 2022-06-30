@@ -25,7 +25,6 @@ from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, Jo
 from operator import attrgetter
 from math import ceil
 import operator
-from collections import defaultdict
 from typing import List
 
 
@@ -204,7 +203,7 @@ class JobPackager(object):
         # Sort by 6 first digits of date
         available_sorted = sorted(
             jobs_ready, key=lambda k: k.long_name.split('_')[1][:6])
-        # Sort by Priority, highest first
+        # Sort by Priority, the highest first
         list_of_available = sorted(
             available_sorted, key=lambda k: k.priority, reverse=True)
         num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(
@@ -213,7 +212,7 @@ class JobPackager(object):
         jobs_to_submit_tmp = list_of_available[0:num_jobs_to_submit]
         #jobs_to_submit = [
         #    fresh_job for fresh_job in jobs_to_submit_tmp if fresh_job.fail_count == 0]
-        jobs_to_submit = [ fresh_job for fresh_job in jobs_to_submit_tmp ]
+        jobs_to_submit = [ fresh_job for fresh_job in jobs_to_submit_tmp     ]
         jobs_to_submit_seq = [failed_job for failed_job in jobs_to_submit_tmp if failed_job.fail_count > 0]
         jobs_to_submit_by_section = self._divide_list_by_section(jobs_to_submit)
 
@@ -394,7 +393,7 @@ class JobPackager(object):
                                             if (parent.status == Status.WAITING ) and parent.name != aux_job.name:
                                                 parents_to_check.append(parent)
                                         track.extend(parents_to_check)
-                                        while len(parents_to_check) > 0 and not infinite_deadlock: # We want to look deeper on the tree until all jobs are completed or we find an unresolveable deadlock.
+                                        while len(parents_to_check) > 0 and not infinite_deadlock: # We want to look deeper on the tree until all jobs are completed, or we find an unresolveable deadlock.
                                             aux_job = parents_to_check.pop(0)
                                             for parent in aux_job.parents:
                                                 if parent.name in active_jobs_names:
@@ -525,16 +524,12 @@ class JobPackager(object):
         """
         # .jobs_in_wrapper defined in .yml, see constructor.
         sections_split = set()
-
         for jobs_in_wrapper_section in self.jobs_in_wrapper:
-            if "&" in jobs_in_wrapper_section:
-                char = "&"
-            else:
-                char = " "
-            sections_split.update(set(self.jobs_in_wrapper[jobs_in_wrapper_section].split(char)))
+            sections_split.update(set(self.jobs_in_wrapper[jobs_in_wrapper_section].split()))
         sections_split = list(sections_split)
         jobs_section = dict()
         for job in jobs_list:
+
             # This iterator will always return None if there is no '&' defined in the section name
             section = next(
                 (s for s in sections_split if job.section in s and '&' in s), None)
@@ -729,62 +724,6 @@ class JobPackagerVertical(object):
     def _is_wrappable(self, job):
         pass
 
-
-class JobPackagerVerticalSimple(JobPackagerVertical):
-    """
-    Vertical Packager Class. First statement of the constructor builds JobPackagerVertical.
-
-    :param jobs_list: List of jobs, usually only receives one job. \n
-    :type jobs_list: List() of Job Objects \n
-    :param total_wallclock: Wallclock from Job. \n
-    :type total_wallclock: String \n
-    :param max_jobs: Maximum number of jobs per platform. \n
-    :type max_jobs: Integer \n
-    :param wrapper_limits: Value from jobs_parser, if not found default to an autosubmit_.yml value (Looks first in [wrapper] section). \n
-    :type wrapper_limits: Integer \n
-    :param max_wallclock: Value from Platform. \n
-    :type max_wallclock: Integer
-    """
-
-    def __init__(self, jobs_list, total_wallclock, max_jobs, wrapper_limits, max_wallclock):
-        super(JobPackagerVerticalSimple, self).__init__(
-            jobs_list, total_wallclock, max_jobs, wrapper_limits, max_wallclock)
-
-    def get_wrappable_child(self, job):
-        """
-        Goes through the children jobs of job, tests if wrappable using self._is_wrappable.
-
-        :param job: job to be evaluated. \n
-        :type job: Job Object \n
-        :return: job (children) that is wrappable. \n
-        :rtype: Job Object
-        """
-        for child in job.children:
-            if child.status in [Status.WAITING, Status.READY] and self._is_wrappable(child, job):
-                return child
-            continue
-        return None
-
-    def _is_wrappable(self, job, parent=None):
-        """
-        Determines if a job (children) is wrappable. Basic condition is that the parent should have the same section as the child.
-        Also, test that the parents of the job (children) are COMPLETED.
-
-        :param job: Children Job to be tested. \n
-        :type job: Job Object \n
-        :param parent: Original Job whose children are tested. \n
-        :type parent: Job Object \n
-        :return: True if wrappable, False otherwise. \n
-        :rtype: Boolean
-        """
-        if job.section != parent.section:
-            return False
-        for other_parent in job.parents:
-            # First part, parents should be COMPLETED.
-            # Second part, no cycles.
-            if other_parent.status != Status.COMPLETED and other_parent not in self.jobs_list:
-                return False
-        return True
 
 
 class JobPackagerVerticalMixed(JobPackagerVertical):

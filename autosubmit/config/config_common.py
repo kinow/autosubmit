@@ -18,15 +18,13 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import shutil
 
-from ruamel.yaml import YAML
-import locale
+
 import os
 import re
 import subprocess
 import traceback
 import json
 import ruamel.yaml as yaml
-import collections
 from configobj import ConfigObj
 
 
@@ -39,7 +37,6 @@ from autosubmit.config.basicConfig import BasicConfig
 from collections import defaultdict
 import collections
 import datetime
-import pathlib
 import copy
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -244,14 +241,16 @@ class AutosubmitConfig(object):
 
     def get_section(self, section, d_value="", must_exists = False ):
         """
-        Gets any section if it exists within the dictionary, else returns None or error if must exists.
-        :param section:
-        :type list
-        :param must_exists:
-        :type bool
-        :param d_value:
-        :type str
-        :return:
+        Gets any section if it exists within the dictionary, else returns None or error if must exist.
+        :param section: section to get
+        :type section: list
+        :param d_value: default value to return if section does not exist
+        :type d_value: str
+        :param must_exists: if true, error is raised if section does not exist
+        :type must_exists: bool
+        :return: section value
+        :rtype: str
+
         """
         section = [s.upper() for s in section]
         # For text redeability
@@ -723,7 +722,7 @@ class AutosubmitConfig(object):
     def check_conf_files(self, running_time=False,first_load=True):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
-        required options. Prints results in log
+        required options. Print results in log
 
         :return: True if everything is correct, False if it finds any error
         :rtype: bool
@@ -1119,7 +1118,7 @@ class AutosubmitConfig(object):
         """
         Export all variables of this experiment.
         Resultant format will be Section.{subsections1...subsectionN} = Value.
-        In other words, it plains the dictionary into one level
+        In other words, it plain the dictionary into one level
         """
         parameters_dict =  dict()
         for key in data.keys():
@@ -1151,9 +1150,9 @@ class AutosubmitConfig(object):
         #         parameters = parameters2
         #     return parameters
         # except IOError as e:
-        #     raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.",6000,str(e))
+        #     raise AutosubmitError("Local Platform IO_ERROR, Can't get experiment parameters from files.",6000,str(e))
         # except Exception as e:
-        #     raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.", 6000,str(e))
+        #     raise AutosubmitError("Local Platform IO_ERROR, Can't get experiment parameters from files.", 6000,str(e))
 
     def load_platform_parameters(self):
         """
@@ -1234,7 +1233,7 @@ class AutosubmitConfig(object):
 
     def get_parse_two_step_start(self):
         """
-        Returns two step start jobs
+        Returns two-step start jobs
 
         :return: jobs_list
         :rtype: str
@@ -1654,7 +1653,7 @@ class AutosubmitConfig(object):
         """
         Returns the default job type from experiment's config file
 
-        :return: default type such as bash, python, r..
+        :return: default type such as bash, python, r...
         :rtype: str
         """
         return self.get_section(['project_files', 'JOB_SCRIPTS_TYPE'], 'bash')
@@ -1836,10 +1835,11 @@ class AutosubmitConfig(object):
     def get_extensible_wallclock(self, wrapper={}):
         """
         Gets extend_wallclock for the given wrapper
-        :param section: job type
-        :type section: str
-        :return: wallclock time
-        :rtype: str
+
+        :param wrapper: wrapper
+        :type wrapper: dict
+        :return: extend_wallclock
+        :rtype: int
         """
         return int(wrapper.get('EXTEND_WALLCLOCK', 0))
 
@@ -1957,7 +1957,7 @@ class AutosubmitConfig(object):
 
     def get_jobs_sections(self):
         """
-        Returns the list of sections defined in the jobs config file
+        Returns the list of sections defined in the job's config file
 
         :return: sections
         :rtype: list

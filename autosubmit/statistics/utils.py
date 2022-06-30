@@ -38,8 +38,7 @@ def timedelta2hours(deltatime):
 
 def parse_number_processors(processors_str):
   """ Defaults to 1 in case of error """
-  # type: (str) -> int
-  if ':' in processors_str:  
+  if ':' in processors_str:
     components = processors_str.split(":")
     processors = int(sum(
         [math.ceil(float(x) / 36.0) * 36.0 for x in components]))

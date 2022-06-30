@@ -23,8 +23,6 @@ except ImportError:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
 import os
-import re
-from log.log import Log, AutosubmitError, AutosubmitCritical
 
 
 class BasicConfig:
@@ -166,7 +164,7 @@ class BasicConfig:
     @staticmethod
     def read():
         """
-        Reads configuration from .autosubmitrc files, first from /etc, then for user
+        Reads configuration from .autosubmitrc files, first from /etc., then for user
         directory and last for current path.
         """
         filename = 'autosubmitrc'

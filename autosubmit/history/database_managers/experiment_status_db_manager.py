@@ -18,8 +18,6 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sqlite3
-import traceback
 import textwrap
 import time
 from .database_manager import DatabaseManager, DEFAULT_LOCAL_ROOT_DIR
@@ -37,8 +35,8 @@ class ExperimentStatusDbManager(DatabaseManager):
       self._ecearth_file_path = os.path.join(db_dir_path, main_db_name)
       self._pkl_file_path = os.path.join(local_root_dir_path, self.expid, "pkl", "job_list_{0}.pkl".format(self.expid))
       self._validate_status_database()
-      # self.current_experiment_row = self._get_current_experiment_row(self.expid)
-      # self.current_experiment_status_row =self._get_current_experiment_status_row(self.current_experiment_row.id)
+      self.current_experiment_row = self._get_current_experiment_row(self.expid)
+      self.current_experiment_status_row =self._get_current_experiment_status_row(self.current_experiment_row.id)
 
   def _validate_status_database(self):
       """ Creates experiment_status table if it does not exist """        
