@@ -1382,9 +1382,9 @@ class Job(object):
             f.write(' ')
             finish_time = None
             final_status = None
-            if len(end_time) > 0:
+            if len(str(end_time)) > 0:
                 # noinspection PyTypeChecker
-                f.write(date2str(datetime.datetime.fromtimestamp(end_time), 'S'))
+                f.write(date2str(datetime.datetime.fromtimestamp(float(end_time)), 'S'))
                 # date2str(datetime.datetime.fromtimestamp(end_time), 'S')
                 finish_time = end_time
             else:
