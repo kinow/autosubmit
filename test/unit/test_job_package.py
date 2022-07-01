@@ -43,10 +43,10 @@ class TestJobPackage(TestCase):
     def test_job_package_platform_getter(self):
         self.assertEqual(self.platform, self.job_package.platform)
 
-    @patch('builtins.open', new_callable=mock_open())
+    @patch("builtins.open",MagicMock())
     def test_job_package_submission(self):
         # arrange
-        write_mock = MagicMock().write = MagicMock()
+        MagicMock().write = MagicMock()
 
         for job in self.jobs:
             job._tmp_path = MagicMock()
