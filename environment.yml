@@ -1,4 +1,4 @@
-name: autosubmit
+name: autosubmit3
 channels:
   - conda-forge
 
