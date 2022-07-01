@@ -16,7 +16,6 @@ dependencies:
 - portalocker
 - networkx
 - python=3
--
 - pip:
   - argparse>=1.4.0
   - python-dateutil>=2.8.2
@@ -40,4 +39,5 @@ dependencies:
   - nose
   - coverage
   - requests
+  - configobj
 
