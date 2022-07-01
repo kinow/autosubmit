@@ -1,21 +1,21 @@
 name: autosubmit
 channels:
-- conda-forge
+  - conda-forge
 
 dependencies:
-- nose
-- nose-cov
-- paramiko
-- graphviz
-- python-dateutil
-- pyparsing
-- numpy
-- matplotlib
-- pip
-- mock
-- portalocker
-- networkx
-- python>3
+  - nose
+  - nose-cov
+  - paramiko
+  - graphviz
+  - python-dateutil
+  - pyparsing
+  - numpy
+  - matplotlib
+  - pip
+  - mock
+  - portalocker
+  - networkx
+  - python>3
 
 - pip:
   - argparse>=1.4.0
