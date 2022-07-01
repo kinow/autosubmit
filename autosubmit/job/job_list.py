@@ -560,13 +560,16 @@ class JobList(object):
 
 
         sections_running_type_map = dict()
-        if wrapper_jobs:
-            if "&" in wrapper_jobs:
-                char = "&"
-            else:
-                char = " "
-            wrapper_jobs_reverse = wrapper_jobs.split(char)
-            for section in wrapper_jobs_reverse:
+        if wrapper_jobs is not None and len(wrapper_jobs) > 0:
+            if type(wrapper_jobs) is not list:
+                if "&" in wrapper_jobs:
+                    char = "&"
+                else:
+                    char = " "
+                wrapper_jobs = wrapper_jobs.split(char)
+
+
+            for section in wrapper_jobs:
                 # RUNNING = once, as default. This value comes from jobs_.yml
                 try:
                     sections_running_type_map[section] = self.jobs_data[section].get("RUNNING", 'once')

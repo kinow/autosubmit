@@ -4279,9 +4279,7 @@ class Autosubmit:
         :type hide: bool
         :param output: plot's file format. It can be pdf, png, ps or svg
         :type output: str
-
         """
-
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:

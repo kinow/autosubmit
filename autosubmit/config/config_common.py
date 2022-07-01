@@ -1830,8 +1830,15 @@ class AutosubmitConfig(object):
         """
         if wrapper is None:
             return ""
-        return wrapper.get('JOBS_IN_WRAPPER', self.experiment_data["WRAPPERS"].get("JOBS_IN_WRAPPER",""))
+        aux = wrapper.get('JOBS_IN_WRAPPER', self.experiment_data["WRAPPERS"].get("JOBS_IN_WRAPPER",""))
+        aux = aux.split()
+        aux = [x.split("&") for x in aux]
+        jobs_in_wrapper = []
+        for section_list in aux:
+            for section in section_list:
+                jobs_in_wrapper.append(section)
 
+        return jobs_in_wrapper
     def get_extensible_wallclock(self, wrapper={}):
         """
         Gets extend_wallclock for the given wrapper
@@ -2019,12 +2026,8 @@ class AutosubmitConfig(object):
         expression = self.get_wrapper_jobs(wrapper)
         jobs_data = self.experiment_data.get("JOBS",{}).keys()
         if expression is not None and expression != "":
-            for section in expression.split(" "):
-                if "&" in section:
-                    for inner_section in section.split("&"):
-                        if inner_section not in jobs_data:
-                            return False
-                elif section not in jobs_data:
+            for section in expression:
+                if section not in jobs_data:
                     return False
         return True
 
