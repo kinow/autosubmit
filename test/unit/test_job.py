@@ -278,12 +278,12 @@ class TestJob(TestCase):
         }
         self.as_conf.jobs_data[section] = options
 
-        dummy_serial_platform = Mock()
+        dummy_serial_platform = MagicMock()
         dummy_serial_platform.name = 'serial'
-        dummy_platform = Mock()
+        dummy_platform = MagicMock()
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.custom_directives = '["whatever"]'
-
+        self.as_conf.dynamic_variables = MagicMock()
         self.job._platform = dummy_platform
 
         # Act

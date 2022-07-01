@@ -337,7 +337,7 @@ class TestDicJobs(TestCase):
         options = {
             'FREQUENCY': 123,
             'DELAY': -1,
-            'PLATFORM': 'fake-platform',
+            'PLATFORM': 'FAKE-PLATFORM',
             'FILE': 'fake-fike',
             'QUEUE': 'fake-queue',
             'PROCESSORS': '111',
