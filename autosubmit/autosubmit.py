@@ -4813,7 +4813,7 @@ class Autosubmit:
                                         startingDate['sd'] + \
                                         " does not exist in experiment."
                                 for member in startingDate['ms']:
-                                    if member['m'] not in current_members:
+                                    if member['m'] not in current_members and member['m'].lower() != "any":
                                         fc_filter_is_correct = False
                                         fc_validation_message += "\n\tMember " + \
                                             member['m'] + \
@@ -4821,6 +4821,7 @@ class Autosubmit:
 
                      # Ending validation
                     if fc_filter_is_correct == False:
+                        section_validation_message= fc_validation_message
                         raise AutosubmitCritical(
                             "Error in the supplied input for -fc.", 7011, section_validation_message)
                 # Validating status, if filter_status -fs has been set:
@@ -5059,8 +5060,18 @@ class Autosubmit:
                         data = json.loads(Autosubmit._create_json(fc))
                         for date_json in data['sds']:
                             date = date_json['sd']
+                            if len(str(date)) < 9:
+                                format = "D"
+                            elif len(str(date)) < 11:
+                                format = "H"
+                            elif len(str(date)) < 13:
+                                format = "M"
+                            elif len(str(date)) < 15:
+                                format = "S"
+                            else:
+                                format = "D"
                             jobs_date = [j for j in jobs_filtered if date2str(
-                                j.date) == date]
+                                j.date,format) == date]
 
                             for member_json in date_json['ms']:
                                 member = member_json['m']
