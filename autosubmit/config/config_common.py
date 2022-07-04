@@ -2032,7 +2032,7 @@ class AutosubmitConfig(object):
         return True
 
     def is_valid_git_repository(self):
-        origin_exists = self.experiment_data["GIT"].get('PROJECT_ORIGIN',"")
+        origin_exists = str(self.experiment_data["GIT"].get('PROJECT_ORIGIN',""))
         branch = self.get_git_project_branch()
         commit = self.get_git_project_commit()
         return origin_exists and (branch is not None or commit is not None)

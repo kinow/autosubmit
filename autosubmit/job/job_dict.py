@@ -145,9 +145,9 @@ class DicJobs:
         """
         parameters = self.experiment_data["JOBS"]
 
-        splits = parameters[section].get("SPLITS", -1)
-        running = parameters[section].get('RUNNING',"once").lower()
-        frequency = parameters[section].get("FREQUENCY", 1)
+        splits = int(parameters[section].get("SPLITS", -1))
+        running = str(parameters[section].get('RUNNING',"once")).lower()
+        frequency = int(parameters[section].get("FREQUENCY", 1))
         if running == 'once':
             self._create_jobs_once(section, priority, default_job_type, jobs_data,splits)
         elif running == 'date':
@@ -155,7 +155,7 @@ class DicJobs:
         elif running == 'member':
             self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits,self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", ""),"EXCLUDED_MEMBERS"))
         elif running == 'chunk':
-            synchronize = parameters[section].get("SYNCHRONIZE", "")
+            synchronize = str(parameters[section].get("SYNCHRONIZE", ""))
             delay = int(parameters[section].get("DELAY", -1))
             self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data,excluded_chunks=self.parse_relation(section,False,parameters[section].get( "EXCLUDED_CHUNKS", None),"EXCLUDED_CHUNKS"),excluded_members=self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", ""),"EXCLUDED_MEMBERS"))
 
@@ -456,11 +456,11 @@ class DicJobs:
         job.delay = int(parameters[section].get( "DELAY", -1))
         job.wait = parameters[section].get( "WAIT", True)
         job.rerun_only = parameters[section].get( "RERUN_ONLY", False)
-        job_type = parameters[section].get( "TYPE", default_job_type).lower()
+        job_type = str(parameters[section].get( "TYPE", default_job_type)).lower()
 
         job.dependencies = parameters[section].get( "DEPENDENCIES", "")
         if job.dependencies and type(job.dependencies) is not list:
-            job.dependencies = job.dependencies.split()
+            job.dependencies = str(job.dependencies).split()
         if job_type == 'bash':
             job.type = Type.BASH
         elif job_type == 'python' or job_type == 'python2':
@@ -469,20 +469,20 @@ class DicJobs:
             job.type = Type.PYTHON3
         elif job_type == 'r':
             job.type = Type.R
-        job.executable = parameters[section].get( "EXECUTABLE", "")
-        job.platform_name = parameters[section].get( "PLATFORM", "").upper()
-        job.file = parameters[section].get( "FILE", "")
-        job.queue = parameters[section].get( "QUEUE", "")
-        job.check = parameters[section].get( "CHECK", True)
-        job.export = parameters[section].get( "EXPORT", "")
-        job.processors = parameters[section].get( "PROCESSORS", "")
-        job.threads = parameters[section].get( "THREADS", "")
-        job.tasks = parameters[section].get( "TASKS", "")
-        job.memory = parameters[section].get("MEMORY", "")
-        job.memory_per_task = parameters[section].get("MEMORY_PER_TASK", "")
+        job.executable = str(parameters[section].get( "EXECUTABLE", ""))
+        job.platform_name = str(parameters[section].get( "PLATFORM", "")).upper()
+        job.file = str(parameters[section].get( "FILE", ""))
+        job.queue = str(parameters[section].get( "QUEUE", ""))
+        job.check = str(parameters[section].get( "CHECK", "true")).lower()
+        job.export = str(parameters[section].get( "EXPORT", ""))
+        job.processors = str(parameters[section].get( "PROCESSORS", ""))
+        job.threads = str(parameters[section].get( "THREADS", ""))
+        job.tasks = str(parameters[section].get( "TASKS", ""))
+        job.memory = str(parameters[section].get("MEMORY", ""))
+        job.memory_per_task = str(parameters[section].get("MEMORY_PER_TASK", ""))
         job.wallclock = parameters[section].get("WALLCLOCK", None)
-        job.retrials = parameters[section].get( 'RETRIALS', 0)
-        job.delay_retrials = parameters[section].get( 'DELAY_RETRY_TIME', -1)
+        job.retrials = int(parameters[section].get( 'RETRIALS', 0))
+        job.delay_retrials = int(parameters[section].get( 'DELAY_RETRY_TIME', -1))
         if job.wallclock is None and job.platform_name.lower() != "local":
             job.wallclock = "01:59"
         elif job.wallclock is None and job.platform_name.lower() == "local":
@@ -494,9 +494,9 @@ class DicJobs:
             job.notify_on = [x.upper() for x in notify_on.split(' ')]
         else:
             job.notify_on = ""
-        job.synchronize = parameters[section].get( "SYNCHRONIZE", "")
+        job.synchronize = str(parameters[section].get( "SYNCHRONIZE", ""))
         job.check_warnings = parameters[section].get("SHOW_CHECK_WARNINGS", False)
-        job.running = parameters[section].get( 'RUNNING', 'once')
+        job.running = str(parameters[section].get( 'RUNNING', 'once'))
         job.x11 = parameters[section].get( 'X11', False )
         job.skippable = parameters[section].get( "SKIPPABLE", False)
         self._jobs_list.get_job_list().append(job)

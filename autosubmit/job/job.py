@@ -936,8 +936,8 @@ class Job(object):
             parameters['CHUNK'] = chunk
             total_chunk = int(parameters.get('EXPERIMENT.NUMCHUNKS'))
             chunk_length = int(parameters['EXPERIMENT.CHUNKSIZE'])
-            chunk_unit = parameters['EXPERIMENT.CHUNKSIZEUNIT'].lower()
-            cal = parameters['EXPERIMENT.CALENDAR'].lower()
+            chunk_unit = str(parameters['EXPERIMENT.CHUNKSIZEUNIT']).lower()
+            cal = str(parameters['EXPERIMENT.CALENDAR']).lower()
             chunk_start = chunk_start_date(
                 self.date, chunk, chunk_length, chunk_unit, cal)
             chunk_end = chunk_end_date(
@@ -986,18 +986,18 @@ class Job(object):
                 parameters['Chunk_LAST'] = 'FALSE'
 
         job_platform = self._platform
-        self.processors = as_conf.jobs_data[self.section].get("PROCESSORS","1")
-        self.threads = as_conf.jobs_data[self.section].get("THREADS","1")
-        self.tasks = as_conf.jobs_data[self.section].get("TASKS","1")
-        self.hyperthreading = as_conf.jobs_data[self.section].get("HYPERTHREADING","none")
+        self.processors = str(as_conf.jobs_data[self.section].get("PROCESSORS","1"))
+        self.threads = str(as_conf.jobs_data[self.section].get("THREADS","1"))
+        self.tasks = str(as_conf.jobs_data[self.section].get("TASKS","1"))
+        self.hyperthreading = str(as_conf.jobs_data[self.section].get("HYPERTHREADING","none"))
         if self.hyperthreading == 'none':
             self.hyperthreading = job_platform.hyperthreading
-        if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 :
+        if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 and int(self.processors) > int(job_platform.processors_per_node):
             self.tasks = job_platform.processors_per_node
-        self.memory = as_conf.jobs_data[self.section].get("MEMORY","")
-        self.memory_per_task = as_conf.jobs_data[self.section].get("MEMORY_PER_TASK","")
+        self.memory = str(as_conf.jobs_data[self.section].get("MEMORY",""))
+        self.memory_per_task = str(as_conf.jobs_data[self.section].get("MEMORY_PER_TASK",""))
         self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK",None)
-        self.wchunkinc = as_conf.jobs_data[self.section].get("WCHUNKINC","")
+        self.wchunkinc = str(as_conf.jobs_data[self.section].get("WCHUNKINC",""))
         if self.wallclock is None and job_platform.type not in ['ps',"local"]:
             self.wallclock = "01:59"
         elif self.wallclock is None and job_platform.type in ['ps','local']:
@@ -1006,10 +1006,10 @@ class Job(object):
         # Increasing according to chunk
         self.wallclock = increase_wallclock_by_chunk(
             self.wallclock, self.wchunkinc, chunk)
-        self.scratch_free_space = as_conf.jobs_data[self.section].get("SCRATCH_FREE_SPACE","")
+        self.scratch_free_space = int(as_conf.jobs_data[self.section].get("SCRATCH_FREE_SPACE",0))
         if self.scratch_free_space == 0:
             self.scratch_free_space = job_platform.scratch_free_space
-        self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","")
+        self.custom_directives = str(as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES",""))
         if self.custom_directives != '':
             self.custom_directives = json.loads(
                 as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES",""))
@@ -1055,7 +1055,7 @@ class Job(object):
             BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
-        parameters['DEPENDENCIES'] = as_conf.jobs_data[self.section].get("DEPENDENCIES","")
+        parameters['DEPENDENCIES'] = str(as_conf.jobs_data[self.section].get("DEPENDENCIES",""))
         wrappers = as_conf.experiment_data.get("WRAPPERS",{})
         if len(wrappers) > 0:
             parameters['WRAPPER'] = as_conf.get_wrapper_type()

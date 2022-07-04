@@ -306,9 +306,9 @@ class JobList(object):
                 section = section_name
             if parameters.get(section,None) is None:
                 raise AutosubmitCritical("Section:{0} doesn't exists.".format(section),7014)
-            dependency_running_type = parameters[section].get('RUNNING', 'once').lower()
+            dependency_running_type = str(parameters[section].get('RUNNING', 'once')).lower()
             delay = int(parameters[section].get('DELAY', -1))
-            select_chunks_opt = parameters[job_section].get( 'SELECT_CHUNKS', "")
+            select_chunks_opt = str(parameters[job_section].get( 'SELECT_CHUNKS', ""))
             selected_chunks = []
             if select_chunks_opt:
                 if '*' in select_chunks_opt:
@@ -322,7 +322,7 @@ class JobList(object):
                             selected_chunks.append(auxiliar_relation_list)
                 else:
                     raise AutosubmitCritical("Wrong syntax for select_chunks. The correct Syntax is:Dependency_KEY*[#chunk_number,#chunk_number...] Dependency_Key...",7011)
-            select_member_opt = parameters[job_section].get('SELECT_MEMBERS', "")
+            select_member_opt = str(parameters[job_section].get('SELECT_MEMBERS', ""))
             selected_member = []
             if select_member_opt:
                 if '*' in select_member_opt:
@@ -572,7 +572,7 @@ class JobList(object):
             for section in wrapper_jobs:
                 # RUNNING = once, as default. This value comes from jobs_.yml
                 try:
-                    sections_running_type_map[section] = self.jobs_data[section].get("RUNNING", 'once')
+                    sections_running_type_map[section] = str(self.jobs_data[section].get("RUNNING", 'once'))
                 except BaseException as e:
                     raise AutosubmitCritical("Key {0} doesn't exists.".format(section),7014,str(e))
 

@@ -1121,11 +1121,12 @@ class ParamikoPlatform(Platform):
         try:
             path = os.path.join(self.scratch, self.project, self.user, "permission_checker_azxbyc")
             try:
+                self._ftpChannel.mkdir(path)
                 self._ftpChannel.rmdir(path)
             except IOError as e:
-                pass
-            self._ftpChannel.mkdir(path)
-            self._ftpChannel.rmdir(path)
+                self._ftpChannel.rmdir(path)
+                self._ftpChannel.mkdir(path)
+                self._ftpChannel.rmdir(path)
             return True
         except:
             return False
