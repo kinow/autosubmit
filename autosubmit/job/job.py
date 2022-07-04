@@ -589,7 +589,7 @@ class Job(object):
                     Log.printlog("Failed to retrieve log files {1} and {2} e=6001".format(
                         retries, remote_logs[0], remote_logs[1]))
                     return
-            if copy_remote_logs:
+            if str(copy_remote_logs).lower() == "true":
                 # unifying names for log files
                 if remote_logs != local_logs:
                     self.synchronize_logs(
@@ -776,7 +776,7 @@ class Job(object):
             pass
         return
     
-    def update_status(self, copy_remote_logs=False, failed_file=False):
+    def update_status(self, copy_remote_logs="true", failed_file=False):
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -1133,11 +1133,11 @@ class Job(object):
                 template_file.close()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 35'
+                    template = 'sleep 5'
                 elif self.type == Type.PYTHON:
-                    template = 'time.sleep(35)'
+                    template = 'time.sleep(5)'
                 elif self.type == Type.R:
-                    template = 'Sys.sleep(35)'
+                    template = 'Sys.sleep(5)'
                 else:
                     template = ''
         except:

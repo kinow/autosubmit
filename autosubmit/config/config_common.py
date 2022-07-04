@@ -1976,9 +1976,9 @@ class AutosubmitConfig(object):
         Returns if the user has enabled the logs local copy from autosubmit's config file
 
         :return: if logs local copy
-        :rtype: bool
+        :rtype: str
         """
-        return self.get_section(['storage', 'COPY_REMOTE_LOGS'], True)
+        return str(self.get_section(['storage', 'COPY_REMOTE_LOGS'], "true")).lower()
 
     def get_mails_to(self):
         """
