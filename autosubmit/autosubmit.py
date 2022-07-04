@@ -4628,7 +4628,7 @@ class Autosubmit:
                                         startingDate['sd'] + \
                                         " does not exist in experiment."
                                 for member in startingDate['ms']:
-                                    if member['m'] not in current_members:
+                                    if member['m'] not in current_members and member['m'].lower() != "any":
                                         fc_filter_is_correct = False
                                         fc_validation_message += "\n\tMember " + \
                                             member['m'] + \
@@ -4636,6 +4636,7 @@ class Autosubmit:
 
                      # Ending validation
                     if fc_filter_is_correct == False:
+                        section_validation_message= fc_validation_message
                         raise AutosubmitCritical(
                             "Error in the supplied input for -fc.", 7011, section_validation_message)
                 # Validating status, if filter_status -fs has been set:
@@ -4881,17 +4882,27 @@ class Autosubmit:
                         data = json.loads(Autosubmit._create_json(fc))
                         for date_json in data['sds']:
                             date = date_json['sd']
+                            if len(str(date)) < 9:
+                                format = "D"
+                            elif len(str(date)) < 11:
+                                format = "H"
+                            elif len(str(date)) < 13:
+                                format = "M"
+                            elif len(str(date)) < 15:
+                                format = "S"
+                            else:
+                                format = "D"
                             jobs_date = filter(lambda j: date2str(
-                                j.date) == date, jobs_filtered)
+                                j.date,format) == date, jobs_filtered)
 
                             for member_json in date_json['ms']:
                                 member = member_json['m']
                                 jobs_member = filter(
-                                    lambda j: j.member == member, jobs_date)
+                                    lambda j: j.member == member or member.lower() == "any", jobs_date)
 
                                 for chunk_json in member_json['cs']:
                                     chunk = int(chunk_json)
-                                    for job in filter(lambda j: j.chunk == chunk and j.synchronize is not None, jobs_date):
+                                    for job in filter(lambda j: (j.chunk == chunk or str(chunk).lower() == "any") and j.synchronize is not None, jobs_date):
                                         Autosubmit.change_status(
                                             final, final_status, job, save)
 
