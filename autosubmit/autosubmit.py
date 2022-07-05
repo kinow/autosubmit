@@ -2676,9 +2676,9 @@ class Autosubmit:
                 if job.platform_name is None:
                     job.platform_name = hpcarch
                 # noinspection PyTypeChecker
-                job.platform = platforms[job.platform_name.lower()]
+                job.platform = platforms[job.platform_name]
                 # noinspection PyTypeChecker
-                platforms_to_test.add(platforms[job.platform_name.lower()])
+                platforms_to_test.add(platforms[job.platform_name])
             # establish the connection to all platforms
             Autosubmit.restore_platforms(platforms_to_test)
 
@@ -2696,7 +2696,7 @@ class Autosubmit:
                 if job.platform_name is None:
                     job.platform_name = hpcarch
                 # noinspection PyTypeChecker
-                job.platform = platforms[job.platform_name.lower()]
+                job.platform = platforms[job.platform_name]
 
                 if job.platform.get_completed_files(job.name, 0, recovery=True):
                     job.status = Status.COMPLETED
@@ -2814,7 +2814,7 @@ class Autosubmit:
                 job.submitter = submitter
                 if job.platform_name is None:
                     job.platform_name = as_conf.get_platform()
-                platforms_to_test.add(platforms[job.platform_name.lower()])
+                platforms_to_test.add(platforms[job.platform_name])
             # establish the connection to all platforms on use
             Autosubmit.restore_platforms(platforms_to_test)
             Log.info('Migrating experiment {0}'.format(experiment_id))
@@ -3018,7 +3018,7 @@ class Autosubmit:
                 job.submitter = submitter
                 if job.platform_name is None:
                     job.platform_name = as_conf.get_platform()
-                platforms_to_test.add(platforms[job.platform_name.lower()])
+                platforms_to_test.add(platforms[job.platform_name])
 
             Log.info("Checking remote platforms")
             platforms = [x for x in submitter.platforms if x not in [
@@ -3151,7 +3151,7 @@ class Autosubmit:
             for job in job_list.get_job_list():
                 if job.platform_name is None:
                     job.platform_name = hpc_architecture
-                job.platform = submitter.platforms[job.platform_name.lower()]
+                job.platform = submitter.platforms[job.platform_name]
                 job.update_parameters(as_conf, job_list.parameters)
         except AutosubmitError:
             raise
@@ -3233,28 +3233,8 @@ class Autosubmit:
                 submitter.load_local_platform(as_conf)
             try:
                 # Gathering parameters of autosubmit and expdef config files
-                exp_parameters.update(as_conf.load_parameters())
-                # Gathering parameters of project config file
-                exp_parameters.update(as_conf.load_project_parameters())
-                # Gathering common parameters of jobs and platform config file
-                if not no_load_platforms:
-                    Autosubmit._load_parameters(
-                        as_conf, job_list, submitter.platforms)
-                    exp_parameters.update(job_list.parameters)
-                else:
-                    Log.printlog("Incorrect platform configuration/insufficient permissions \nUnable to load common job_list variables \nJob section specific parameters will be tried to load regarless of this issue", 6013)
-                # Gathering parameters of jobs divided by SECTION_PARAMETER
-                if not no_load_sections:
-                    exp_parameters.update(as_conf.load_section_parameters(
-                        job_list, as_conf, submitter))
-                else:
-                    Log.printlog(
-                        "Unable to load section jobs parameters, the report will have uncompleted parameters", 6014)
-
-                # Gathering parameters of jobs divided by PLATFORM
-                exp_parameters.update(as_conf.load_platform_parameters())
-                # All parameters to upper_case to be easier to identify
-                exp_parameters = Autosubmit.capitalize_keys(exp_parameters)
+                as_conf.reload(True)
+                exp_parameters = as_conf.load_parameters()
             except Exception as e:
                 raise AutosubmitCritical(
                     "Couldn't gather the experiment parameters", 7012, str(e))
@@ -4697,11 +4677,10 @@ class Autosubmit:
                 submitter.load_platforms(as_conf)
                 hpcarch = as_conf.get_platform()
                 for job in job_list.get_job_list():
-                    if job.platform_name is None:
+                    if job.platform_name is None or job.platform_name.lower() == "":
                         job.platform_name = hpcarch
                     # noinspection PyTypeChecker
-                    job.platform = submitter.platforms[job.platform_name.lower(
-                    )]
+                    job.platform = submitter.platforms[job.platform_name]
                 platforms_to_test = set()
                 platforms = submitter.platforms
                 for job in job_list.get_job_list():
@@ -4709,11 +4688,11 @@ class Autosubmit:
                     if job.platform_name is None:
                         job.platform_name = hpcarch
                     # noinspection PyTypeChecker
-                    job.platform = platforms[job.platform_name.lower()]
+                    job.platform = platforms[job.platform_name]
                     # noinspection PyTypeChecker
                     if job.status in [Status.QUEUING, Status.SUBMITTED, Status.RUNNING]:
                         platforms_to_test.add(
-                            platforms[job.platform_name.lower()])
+                            platforms[job.platform_name])
                 # establish the connection to all platforms
                 definitive_platforms = list()
                 for platform in platforms_to_test:
@@ -5621,9 +5600,9 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.platform = platforms[job.platform_name.lower()]
+            job.platform = platforms[job.platform_name]
             # noinspection PyTypeChecker
-            platforms_to_test.add(platforms[job.platform_name.lower()])
+            platforms_to_test.add(platforms[job.platform_name])
         rerun_names = []
 
         [rerun_names.append(job.name) for job in rerun_list.get_job_list()]
