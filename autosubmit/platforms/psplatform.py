@@ -79,7 +79,7 @@ class PsPlatform(ParamikoPlatform):
     def get_submit_cmd(self, job_script, job, hold=False, export=""):
         wallclock = self.parse_time(job.wallclock)
         seconds = int(wallclock.days * 86400 + wallclock.seconds)
-        if export == "none" or export == "None" or export is None or export == "":
+        if (export is None or export.lower() == "none") or len(export) == 0:
             export = ""
         else:
             export += " ; "

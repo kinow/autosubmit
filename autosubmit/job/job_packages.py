@@ -99,7 +99,7 @@ class JobPackageBase(object):
                     break
                 if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
                     lock.acquire()
-                    if configuration.get_project_type().lower() != "none":
+                    if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
                         raise AutosubmitCritical(
                             "Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(
                                 job.name), 7014)
@@ -150,7 +150,7 @@ class JobPackageBase(object):
                             exit=True
                             break
                         if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                            if configuration.get_project_type().lower() != "none":
+                            if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
                                 raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
                         if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
                             Log.warning("Script {0} check failed",job.name)
@@ -339,17 +339,17 @@ class JobPackageThread(JobPackageBase):
     def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="WRAPPERS", wrapper_info= {}):
         super(JobPackageThread, self).__init__(jobs)
         if len(wrapper_info) > 0 :
-            self.wrapper_type = wrapper_info[0][wrapper_section]
-            self.wrapper_policy = wrapper_info[1][wrapper_section]
-            self.wrapper_method = wrapper_info[2][wrapper_section]
-            self.jobs_in_wrapper = wrapper_info[3][wrapper_section]
-            self.extensible_wallclock = wrapper_info[4][wrapper_section]
+            self.wrapper_type = wrapper_info[0]
+            self.wrapper_policy = wrapper_info[1]
+            self.wrapper_method = wrapper_info[2]
+            self.jobs_in_wrapper = wrapper_info[3]
+            self.extensible_wallclock = wrapper_info[4]
         else:
             self.wrapper_type = None
             self.wrapper_policy = None
             self.wrapper_method = None
             self.jobs_in_wrapper = None
-            self.extensible_wallclock = None
+            self.extensible_wallclock = 0
 
         self._job_scripts = {}
         # Seems like this one is not used at all in the class
@@ -364,13 +364,14 @@ class JobPackageThread(JobPackageBase):
         if configuration is not None:
             self.inner_retrials = configuration.get_retrials()
             self.export = configuration.get_wrapper_export(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
-            if self.export != "none" and self.export != "None":
+            if self.export.lower() != "none" and len(self.export) > 0:
                 for job in self.jobs:
-                    if job.export != "none" and job.export != "None":
+                    if job.export.lower() != "none" and len(job.export) > 0:
                         self.export == job.export
                         break
-            if configuration.get_wrapper_queue(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section]) != 'None':
-                self.queue = configuration.get_wrapper_queue(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
+            wr_queue = configuration.get_wrapper_queue(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
+            if wr_queue is not None and len(str(wr_queue)) > 0:
+                self.queue = wr_queue
             else:
                 self.queue = jobs[0].queue
         else:
@@ -584,21 +585,21 @@ class JobPackageVertical(JobPackageThread):
         if self.jobs[0].wrapper_type == "vertical":
             #wallclock = datetime.datetime.strptime(self._wallclock, '%H:%M')
             wallclock = self.parse_time()
-            total = wallclock.days + wallclock.seconds / 86400.0
+            total = wallclock.days * 24 + wallclock.seconds / 60 / 60
             total = total * 1.15
-            hour = int(total * 24.0)
+            hour = int(total )
             minute = int((total - int(total)) * 60.0)
             second = int(((total - int(total)) * 60 -
                           int((total - int(total)) * 60.0)) * 60.0)
             wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,seconds=second)
-            wallclock_seconds = wallclock_delta.days*86400.0 + wallclock_delta.seconds
+            wallclock_seconds = wallclock_delta.days * 24 * 60 * 60 + wallclock_delta.seconds
             wallclock_by_level = wallclock_seconds/(self.jobs[-1].level+1)
             if self.extensible_wallclock > 0:
                 original_wallclock_to_seconds = wallclock.days * 86400.0 + wallclock.seconds
                 wallclock_seconds = int(original_wallclock_to_seconds + wallclock_by_level * self.extensible_wallclock)
                 wallclock_delta = datetime.timedelta(hours=0, minutes=0, seconds=wallclock_seconds)
-                total = wallclock_delta.days + wallclock_delta.seconds / 86400.0
-                hh = int(total * 24.0)
+                total = wallclock.days * 24 + wallclock.seconds / 60 / 60
+                hh = int(total)
                 mm = int((total - int(total)) * 60.0)
                 ss = int(((total - int(total)) * 60 -
                               int((total - int(total)) * 60.0)) * 60.0)

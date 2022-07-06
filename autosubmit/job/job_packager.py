@@ -245,7 +245,7 @@ class JobPackager(object):
                             for sectionN in multiple_sections:
                                 if self._as_config.jobs_data[sectionN].get('DEPENDENCIES',"") != "":
                                     dependencies_keys += self._as_config.jobs_data.get("DEPENDENCIES", "").split()
-                                if self._as_config.jobs_data[sectionN].get('MAX_WRAPPED',None) is not None:
+                                if self._as_config.jobs_data[sectionN].get('MAX_WRAPPED',None) is not None and len(str(self._as_config.jobs_data[sectionN].get('MAX_WRAPPED',None))) > 0:
                                     wrapper_limits["max_by_section"][sectionN] = int(self._as_config.jobs_data[sectionN].get("MAX_WRAPPED"))
                                 else:
                                     wrapper_limits["max_by_section"][sectionN] = wrapper_limits["max"]
@@ -267,13 +267,16 @@ class JobPackager(object):
                             wrapper_limits["min"] = max(wrapper_limits["min_v"],wrapper_limits["min_h"])
                         if len(self._jobs_list.jobs_to_run_first) > 0:
                             wrapper_limits["min"] = 2
+                        current_info = list()
+                        for param in self.wrapper_info:
+                            current_info.append(param[self.current_wrapper_section])
                         if self.wrapper_type[self.current_wrapper_section] == 'vertical':
-                            built_packages_tmp = self._build_vertical_packages(jobs, wrapper_limits)
+                            built_packages_tmp = self._build_vertical_packages(jobs, wrapper_limits,wrapper_info=current_info)
                         elif self.wrapper_type[self.current_wrapper_section] == 'horizontal':
-                            built_packages_tmp = self._build_horizontal_packages(jobs, wrapper_limits, section)
+                            built_packages_tmp = self._build_horizontal_packages(jobs, wrapper_limits, section,wrapper_info=current_info)
                         elif self.wrapper_type[self.current_wrapper_section] in ['vertical-horizontal', 'horizontal-vertical']:
                             built_packages_tmp = list()
-                            built_packages_tmp.append(self._build_hybrid_package(jobs, wrapper_limits, section))
+                            built_packages_tmp.append(self._build_hybrid_package(jobs, wrapper_limits, section,wrapper_info=current_info))
                         else:
                             built_packages_tmp = self._build_vertical_packages(jobs, wrapper_limits)
 
@@ -539,7 +542,7 @@ class JobPackager(object):
         return jobs_by_section
 
 
-    def _build_horizontal_packages(self, section_list, wrapper_limits, section):
+    def _build_horizontal_packages(self, section_list, wrapper_limits, section,wrapper_info={}):
         packages = []
         horizontal_packager = JobPackagerHorizontal(section_list, self._platform.max_processors, wrapper_limits,
                                                     self.max_jobs, self._platform.processors_per_node, self.wrapper_method[self.current_wrapper_section])
@@ -588,7 +591,7 @@ class JobPackager(object):
                 break
         return packages
 
-    def _build_hybrid_package(self, jobs_list, wrapper_limits, section):
+    def _build_hybrid_package(self, jobs_list, wrapper_limits, section,wrapper_info={}):
         jobs_resources = dict()
         jobs_resources['MACHINEFILES'] = self._as_config.get_wrapper_machinefiles()
 
@@ -619,7 +622,7 @@ class JobPackager(object):
         new_package = horizontal_packager.get_next_packages(
             section, max_wallclock=self._platform.max_wallclock, horizontal_vertical=True, max_procs=max_procs)
 
-        if new_package is not None:
+        if new_package is not None and len(str(new_package)) > 0:
             current_package += new_package
 
         for i in range(len(current_package)):
@@ -701,7 +704,7 @@ class JobPackagerVertical(object):
             return self.jobs_list
         child = self.get_wrappable_child(job)
         # If not None, it is wrappable
-        if child is not None:
+        if child is not None and len(str(child)) > 0:
             # Calculate total wallclock per possible wrapper
             self.total_wallclock = sum_str_hours(
                 self.total_wallclock, child.wallclock)
@@ -754,9 +757,9 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         # Last member from the last date from the ordering
         member = list(dict_jobs[date].keys())[-1]
         # If job to be wrapped has date and member, use those
-        if ready_job.date is not None:
+        if ready_job.date is not None and len(str(ready_job.date)) > 0:
             date = ready_job.date
-        if ready_job.member is not None:
+        if ready_job.member is not None and len(str(ready_job.member)) > 0:
             member = ready_job.member
         # Extract list of sorted jobs per date and member
         self.sorted_jobs = dict_jobs[date][member]

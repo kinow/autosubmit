@@ -169,17 +169,17 @@ class JobGrouping(object):
             groups = []
             if not self._check_synchronized_job(job, groups):
                 if self.group_by == 'split':
-                    if job.split is not None:
+                    if job.split is not None and len(str(job.split)) > 0:
                         idx = job.name.rfind("_")
                         groups.append(job.name[:idx - 1] + job.name[idx + 1:])
                 elif self.group_by == 'chunk':
-                    if job.chunk is not None:
+                    if job.chunk is not None and len(str(job.chunk)) > 0:
                         groups.append(date2str(job.date, self.date_format) + '_' + job.member + '_' + str(job.chunk))
                 elif self.group_by == 'member':
-                    if job.member is not None:
+                    if job.member is not None and len(str(job.member)) > 0:
                         groups.append(date2str(job.date, self.date_format) + '_' + job.member)
                 elif self.group_by == 'date':
-                    if job.date is not None:
+                    if job.date is not None and len(str(job.date)) > 0:
                         groups.append(date2str(job.date, self.date_format))
 
             if groups:
@@ -204,8 +204,8 @@ class JobGrouping(object):
 
     def _check_synchronized_job(self, job, groups):
         synchronized = False
-        if job.chunk is not None:
-            if job.date is None and job.member is None:
+        if job.chunk is not None and len(str(job.chunk)) > 0:
+            if job.date is None and len(str(job.date)) > 0 and job.member is None and len(str(job.member)) > 0:
                 synchronized = True
                 for date in self.job_list.get_date_list():
                     group_name = date2str(date, self.date_format)

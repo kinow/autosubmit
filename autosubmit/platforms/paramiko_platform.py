@@ -869,6 +869,8 @@ class ParamikoPlatform(Platform):
                         'SSH Session not active, will restart the platforms', 6005)
                 if errorLine.find("command not found") != -1:
                     raise AutosubmitCritical("scheduler is not installed.",7052,self._ssh_output_err)
+                elif errorLine.find("syntax error") != -1:
+                    raise AutosubmitCritical("Syntax error",7052,self._ssh_output_err)
                 elif errorLine.find("refused") != -1 or errorLine.find("slurm_persist_conn_open_without_init") != -1 or errorLine.find("slurmdbd") != -1 or errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1 or errorLine.find("sbatch: error: ") != -1 or errorLine.find("not submitted") != -1 or errorLine.find("invalid") != -1:
                     if (self._submit_command_name == "sbatch" and (errorLine.find("policy") != -1 or errorLine.find("invalid") != -1) ) or (self._submit_command_name == "sbatch" and errorLine.find("argument") != -1) or (self._submit_command_name == "bsub" and errorLine.find("job not submitted") != -1) or self._submit_command_name == "ecaccess-job-submit" or self._submit_command_name == "qsub ":
                         raise AutosubmitError(errorLine, 7014, "Bad Parameters.")
@@ -876,9 +878,7 @@ class ParamikoPlatform(Platform):
 
             if not ignore_log:
                 if len(stderr_readlines) > 0:
-                    lines = '\n'.join(stderr_readlines)
-                    Log.printlog('Command {0} in {1} warning: {2}'.format(
-                        command, self.host,lines.decode(locale.getlocale()[1])), 6006)
+                    Log.printlog('Command {0} in {1} warning: {2}'.format(command, self.host,self._ssh_output_err, 6006))
                 else:
                     pass
                     #Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
@@ -1094,9 +1094,9 @@ class ParamikoPlatform(Platform):
         return timedelta(**time_params)
 
     def closeConnection(self):
-        if self._ftpChannel is not None:
+        if self._ftpChannel is not None and len(str(self._ftpChannel)) > 0:
             self._ftpChannel.close()
-        if self._ssh is not None:
+        if self._ssh is not None and len(str(self._ssh)) > 0:
             self._ssh.close()
             self.transport.close()
             self.transport.stop_thread()

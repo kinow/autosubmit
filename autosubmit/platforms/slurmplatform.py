@@ -89,6 +89,8 @@ class SlurmPlatform(ParamikoPlatform):
                 self.send_command(cmd)
             except AutosubmitError as e:
                 raise
+            except AutosubmitCritical as e:
+                raise
             except Exception as e:
                 raise
             jobs_id = self.get_submitted_job_id(self.get_ssh_output())
@@ -343,7 +345,7 @@ class SlurmPlatform(ParamikoPlatform):
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
     def get_submit_cmd(self, job_script, job, hold=False, export=""):
-        if export == "none" or export == "None" or export is None or export == "":
+        if (export is None or export.lower() == "none") or len(export) == 0:
             export = ""
         else:
             export += " ; "

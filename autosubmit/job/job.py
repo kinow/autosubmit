@@ -240,7 +240,7 @@ class Job(object):
         :return HPCPlatform object for the job to use
         :rtype: HPCPlatform
         """
-        if self._queue is not None:
+        if self._queue is not None and len(str(self._queue)) > 0:
             return self._queue
         if self.is_serial:
             return self._platform.serial_platform.serial_queue
@@ -924,8 +924,8 @@ class Job(object):
             parameters['RETRIALS'] = self.retrials
         if hasattr(self, 'delay_retrials'):
             parameters['DELAY_RETRIALS'] = self.delay_retrials
-        if self.date is not None:
-            if self.chunk is None or not self.chunk:
+        if self.date is not None and len(str(self.date)) > 0:
+            if self.chunk is None and len(str(self.chunk)) > 0:
                 chunk = 1
             else:
                 chunk = self.chunk
@@ -983,11 +983,12 @@ class Job(object):
                 parameters['Chunk_LAST'] = 'FALSE'
 
         job_platform = self._platform
+        self.queue = self.queue
         self.processors = str(as_conf.jobs_data[self.section].get("PROCESSORS","1"))
         self.threads = str(as_conf.jobs_data[self.section].get("THREADS","1"))
         self.tasks = str(as_conf.jobs_data[self.section].get("TASKS","1"))
         self.hyperthreading = str(as_conf.jobs_data[self.section].get("HYPERTHREADING","none"))
-        if self.hyperthreading == 'none':
+        if self.hyperthreading == 'none' and len(self.hyperthreading) > 0:
             self.hyperthreading = job_platform.hyperthreading
         if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 and int(self.processors) > int(job_platform.processors_per_node):
             self.tasks = job_platform.processors_per_node
@@ -1013,7 +1014,7 @@ class Job(object):
             if job_platform.custom_directives != "":
                 self.custom_directives = self.custom_directives + \
                     json.loads(job_platform.custom_directives)
-        elif job_platform.custom_directives is not None and job_platform.custom_directives != "":
+        elif job_platform.custom_directives is not None and len(str(job_platform.custom_directives)) > 0:
             self.custom_directives = json.loads(job_platform.custom_directives)
         elif self.custom_directives == '':
             self.custom_directives = []
@@ -1115,7 +1116,7 @@ class Job(object):
         """
         parameters = self.parameters
         try:  # issue in tests with project_type variable while using threads
-            if as_conf.get_project_type().lower() != "none":
+            if as_conf.get_project_type().lower() != "none" and len(as_conf.get_project_type()) > 0:
                 template_file = open(os.path.join(
                     as_conf.get_project_dir(), self.file), 'r')
                 template = ''
@@ -1802,10 +1803,10 @@ class WrapperJob(Job):
             output = ''
             while output == '' and retries > 0:
                 output = self._platform.check_completed_files(job.name)
-                if output is None or output == '':
+                if output is None or len(output) == 0:
                     sleep(wait)
                 retries = retries - 1
-            if (output is not None and output != '') or 'COMPLETED' in output:
+            if (output is not None and len(str(output)) > 0 ) or 'COMPLETED' in output:
                 job.new_status = Status.COMPLETED
             else:
                 failed_file = True

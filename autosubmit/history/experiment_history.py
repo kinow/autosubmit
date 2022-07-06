@@ -290,7 +290,7 @@ class ExperimentHistory():
         return Models.RowType.NORMAL
   
   def _get_defined_queue_name(self, wrapper_queue, wrapper_code, qos):
-    if wrapper_code and wrapper_code > 2 and wrapper_queue is not None:
+    if wrapper_code and wrapper_code > 2 and wrapper_queue is not None and len(str(wrapper_queue)) > 0:
       return wrapper_queue
     return qos
 

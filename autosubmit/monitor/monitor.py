@@ -142,7 +142,7 @@ class Monitor:
         Log.debug('Creating job graph...')
 
         jobs_packages_dict = dict()
-        if packages is not None and packages:
+        if packages is not None and len(str(packages)) > 0:
             for (exp_id, package_name, job_name) in packages:
                 jobs_packages_dict[job_name] = package_name
 

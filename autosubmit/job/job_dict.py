@@ -278,7 +278,7 @@ class DicJobs:
         """
         # Temporally creation for unified jobs in case of synchronize
 
-        if synchronize is not None:
+        if synchronize is not None and len(str(synchronize)) > 0:
             tmp_dic = dict()
             count = 0
             for chunk in self._chunk_list:
@@ -374,7 +374,7 @@ class DicJobs:
         elif type(dic) is not dict:
             jobs.append(dic)
         else:
-            if date is not None:
+            if date is not None and len(str(date)) > 0:
                 self._get_date(jobs, dic, date, member, chunk)
             else:
                 for d in self._date_list:
@@ -397,7 +397,7 @@ class DicJobs:
         elif type(dic) is not dict:
             jobs.append(dic)
         else:
-            if member is not None:
+            if member is not None and len(str(member)) > 0:
                 self._get_member(jobs, dic, member, chunk)
             else:
                 for m in self._member_list:
@@ -412,7 +412,7 @@ class DicJobs:
         if type(dic) is not dict:
             jobs.append(dic)
         else:
-            if chunk is not None:
+            if chunk is not None and len(str(chunk)) > 0:
                 if chunk in dic:
                     jobs.append(dic[chunk])
             else:
@@ -425,11 +425,11 @@ class DicJobs:
     def build_job(self, section, priority, date, member, chunk, default_job_type, jobs_data=dict(), split=-1):
         parameters = self.experiment_data["JOBS"]
         name = self._jobs_list.expid
-        if date is not None:
+        if date is not None and len(str(date)) > 0:
             name += "_" + date2str(date, self._date_format)
-        if member is not None:
+        if member is not None and len(str(member)) > 0:
             name += "_" + member
-        if chunk is not None:
+        if chunk is not None and len(str(chunk)) > 0:
             name += "_{0}".format(chunk)
         if split > -1:
             name += "_{0}".format(split)

@@ -188,7 +188,7 @@ class ParamikoSubmitter(Submitter):
             platforms[section] = remote_platform
 
             serial = platform_data[section].get('SERIAL_PLATFORM',None)
-            if serial is not None:
+            if serial is not None and len(str(serial)) > 0:
                 platforms[section].serial_platform = serial.upper()
 
 

@@ -123,7 +123,7 @@ class JobList(object):
 
     @run_members.setter
     def run_members(self, value):
-        if value is not None:
+        if value is not None and len(str(value)) > 0 :
             self._run_members = value
             self._base_job_list = [job for job in self._job_list]            
             found_member = False
@@ -131,7 +131,7 @@ class JobList(object):
             for job in self._job_list: # We are assuming that the jobs are sorted in topological order (which is the default)
                 if (job.member is None and found_member == False) or job.member in self._run_members or job.status not in [Status.WAITING, Status.READY]:
                     processed_job_list.append(job)
-                if job.member is not None:
+                if job.member is not None and len(str(job.member)) > 0:
                     found_member = True
             self._job_list = processed_job_list    
             # Old implementation that also considered children of the members.        
@@ -145,9 +145,8 @@ class JobList(object):
         dic_jobs = DicJobs(self, date_list, member_list,
                            chunk_list, date_format, default_retrials,jobs_data={},experiment_data=self.experiment_data)
         self._dic_jobs = dic_jobs
-        # Perhaps this should be done by default independent of the wrapper_type supplied
         for wrapper_section in wrapper_jobs:
-            if wrapper_jobs[wrapper_section] != 'None':
+            if str(wrapper_jobs[wrapper_section]).lower() != 'none':
                 self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
             else:
                 self._ordered_jobs_by_date_member[wrapper_section] = {}
@@ -237,7 +236,7 @@ class JobList(object):
 
         try:
             for wrapper_section in wrapper_jobs:
-                if wrapper_jobs[wrapper_section] is not None and len(wrapper_jobs[wrapper_section]) > 0:
+                if wrapper_jobs[wrapper_section] is not None and len(str(wrapper_jobs[wrapper_section])) > 0:
                     self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
                 else:
                     self._ordered_jobs_by_date_member[wrapper_section] = {}
@@ -404,12 +403,12 @@ class JobList(object):
                 # Generic for all dependencies
                 if dependency.delay == -1 or chunk > dependency.delay:
                     if isinstance(parent, list):
-                        if job.split is not None:
+                        if job.split is not None and len(str(job.split)) > 0:
                             parent = list(filter(
                                 lambda _parent: _parent.split == job.split, parent))
                             parent = parent[0]
                         else:
-                            if dependency.splits is not None:
+                            if dependency.splits is not None and len(str(dependency.splits)) > 0:
                                 parent = [_parent for _parent in parent if _parent.split in dependency.splits]
                 #Select chunk + select member
                 if parent.running in ["once"] or ( len(dependency.select_members_orig) <= 0 and len(dependency.select_chunks_orig) <= 0):
@@ -440,19 +439,19 @@ class JobList(object):
     def _calculate_dependency_metadata(chunk, chunk_list, member, member_list, date, date_list, dependency):
         skip = False
         if dependency.sign == '-':
-            if chunk is not None and dependency.running == 'chunk':
+            if chunk is not None and len(str(chunk)) > 0 and dependency.running == 'chunk':
                 chunk_index = chunk_list.index(chunk)
                 if chunk_index >= dependency.distance:
                     chunk = chunk_list[chunk_index - dependency.distance]
                 else:
                     skip = True
-            elif member is not None and dependency.running in ['chunk', 'member']:
+            elif member is not None and len(str(member)) > 0 and dependency.running in ['chunk', 'member']:
                 member_index = member_list.index(member)
                 if member_index >= dependency.distance:
                     member = member_list[member_index - dependency.distance]
                 else:
                     skip = True
-            elif date is not None and dependency.running in ['chunk', 'member', 'startdate']:
+            elif date is not None and len(str(date)) > 0 and dependency.running in ['chunk', 'member', 'startdate']:
                 date_index = date_list.index(date)
                 if date_index >= dependency.distance:
                     date = date_list[date_index - dependency.distance]
@@ -460,7 +459,7 @@ class JobList(object):
                     skip = True
 
         if dependency.sign == '+':
-            if chunk is not None and dependency.running == 'chunk':
+            if chunk is not None and len(str(chunk)) > 0 and dependency.running == 'chunk':
                 chunk_index = chunk_list.index(chunk)
                 if (chunk_index + dependency.distance) < len(chunk_list):
                     chunk = chunk_list[chunk_index + dependency.distance]
@@ -472,13 +471,13 @@ class JobList(object):
                             chunk = chunk_list[chunk_index + temp_distance]
                             break
 
-            elif member is not None and dependency.running in ['chunk', 'member']:
+            elif member is not None and len(str(member)) > 0 and dependency.running in ['chunk', 'member']:
                 member_index = member_list.index(member)
                 if (member_index + dependency.distance) < len(member_list):
                     member = member_list[member_index + dependency.distance]
                 else:
                     skip = True
-            elif date is not None and dependency.running in ['chunk', 'member', 'startdate']:
+            elif date is not None and len(str(date)) > 0 and dependency.running in ['chunk', 'member', 'startdate']:
                 date_index = date_list.index(date)
                 if (date_index + dependency.distance) < len(date_list):
                     date = date_list[date_index - dependency.distance]
@@ -490,7 +489,7 @@ class JobList(object):
     def handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member, member_list,
                                                section_name, graph,visited_parents):
         if job.wait and job.frequency > 1:
-            if job.chunk is not None:
+            if job.chunk is not None and len(str(job.chunk)) > 0:
                 max_distance = (chunk_list.index(chunk) + 1) % job.frequency
                 if max_distance == 0:
                     max_distance = job.frequency
@@ -499,7 +498,7 @@ class JobList(object):
                         if parent not in visited_parents:
                             job.add_parent(parent)
                             JobList._add_edge(graph, job, parent)
-            elif job.member is not None:
+            elif job.member is not None and len(str(job.member)) > 0:
                 member_index = member_list.index(job.member)
                 max_distance = (member_index + 1) % job.frequency
                 if max_distance == 0:
@@ -510,7 +509,7 @@ class JobList(object):
                         if parent not in visited_parents:
                             job.add_parent(parent)
                             JobList._add_edge(graph, job, parent)
-            elif job.date is not None:
+            elif job.date is not None and len(str(job.date)) > 0:
                 date_index = date_list.index(job.date)
                 max_distance = (date_index + 1) % job.frequency
                 if max_distance == 0:
@@ -560,7 +559,7 @@ class JobList(object):
 
 
         sections_running_type_map = dict()
-        if wrapper_jobs is not None and len(wrapper_jobs) > 0:
+        if wrapper_jobs is not None and len(str(wrapper_jobs)) > 0:
             if type(wrapper_jobs) is not list:
                 if "&" in wrapper_jobs:
                     char = "&"
@@ -1001,7 +1000,7 @@ class JobList(object):
         ultimate_jobs_list = []
         # First Filter {select job by name}
         if select_jobs_by_name != "":
-            jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",select_jobs_by_name.lower()) is not None ]
+            jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",select_jobs_by_name.lower()) is not None  ]
             jobs_by_name_no_expid = [job for job in self._job_list if
                             re.search("(^|[^0-9a-z_])" + job.name.lower()[5:] + "([^a-z0-9_]|$)",
                                       select_jobs_by_name.lower()) is not None]
@@ -1405,7 +1404,7 @@ class JobList(object):
 
         try:
             job_list = None
-            if self.run_members is not None:
+            if self.run_members is not None and len(str(self.run_members)) > 0:
                 job_names = [job.name for job in self._job_list]
                 job_list = [job for job in self._job_list]
                 for job in self._base_job_list:
@@ -1572,7 +1571,7 @@ class JobList(object):
                     save = True
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
-            if job.synchronize is not None:
+            if job.synchronize is not None and len(str(job.synchronize)) > 0:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):
                     tmp2 = [parent for parent in job.parents if
@@ -1923,11 +1922,11 @@ class JobList(object):
                 job_sections.add(job.section)
                 if not monitor:
                     job.status = Status.WAITING
-                if job.member is not None:
+                if job.member is not None and len(str(job.member)) > 0:
                     member_list.add(job.member)
-                if job.chunk is not None:
+                if job.chunk is not None and len(str(job.chunk)) > 0:
                     chunk_list.add(job.chunk)
-                if job.date is not None:
+                if job.date is not None and len(str(job.date)) > 0:
                     date_list.add(job.date)
             else:
                 self._remove_job(job)
@@ -1996,7 +1995,7 @@ class JobList(object):
         # Header
         result = (bcolors.BOLD if nocolor == False else '') + \
             "## String representation of Job List [" + str(len(allJobs)) + "] "
-        if statusChange is not None:
+        if statusChange is not None and len(str(statusChange)) > 0:
             result += "with " + (bcolors.OKGREEN if nocolor == False else '') + str(len(list(statusChange.keys()))
                                                                                     ) + " Change(s) ##" + (bcolors.ENDC + bcolors.ENDC if nocolor == False else '')
         else:
@@ -2010,7 +2009,7 @@ class JobList(object):
         visited = list()
         #print(root)
         # root exists
-        if root is not None:
+        if root is not None and len(str(root)) > 0:
             result += self._recursion_print(root, 0, visited,
                                             statusChange=statusChange, nocolor=nocolor)
         else:
@@ -2037,7 +2036,7 @@ class JobList(object):
                 root = job
 
         # root exists
-        if root is not None:
+        if root is not None and len(str(root)) > 0:
             result += self._recursion_print(root, 0)
         else:
             result += "\nCannot find root."
@@ -2079,7 +2078,7 @@ class JobList(object):
                 result += " ~ [" + str(total_children) + (" children] " if total_children > 1 else " child] ") + \
                     ("[" + Status.VALUE_TO_KEY[job.status] +
                      "] " if nocolor == True else "")
-                if statusChange is not None:
+                if statusChange is not None and len(str(statusChange)) > 0:
                     # Writes change if performed
                     result += (bcolors.BOLD +
                                bcolors.OKGREEN if nocolor == False else '')

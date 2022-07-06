@@ -681,7 +681,7 @@ class AutosubmitConfig(object):
             get_data = data.get(section, {})
             if not isinstance(get_data, collections.abc.Mapping):
                 put_data = parameters.get(key, None)
-                if put_data is not None:
+                if put_data is not None and len(str(put_data)) > 0:
                     if "%" in str(get_data):
                         new_placeholders = True
                     parameters[key] = re.sub('%(?<!%%)' + section + '%(?!%%)', str(get_data), parameters[key],flags=re.I)
@@ -1085,8 +1085,7 @@ class AutosubmitConfig(object):
                     default_section = self._exp_parser.data.get("DEFAULT",None)
                     default_path = Path(self.basic_config.LOCAL_ROOT_DIR) / self.expid
                     custom_folder_path = default_path / "conf"
-                    if default_section is not None:
-
+                    if default_section is not None and len(str(default_section)) > 0:
                         custom_folder_path = Path(re.sub('%(?<!%%)' + "ROOTDIR" + '%(?!%%)', str(default_path), str(custom_folder_path), flags=re.I))
                         default_section["CUSTOM_CONFIG_DIR"] = str(custom_folder_path)
                     else:
@@ -1450,10 +1449,10 @@ class AutosubmitConfig(object):
                             date_list.append(parse_date(string_date + split_in))
                     string_date = None
                 else:
-                    if string_date is not None:
+                    if string_date is not None and len(str(string_date)) > 0:
                         date_list.append(parse_date(string_date))
                     string_date = split
-            if string_date is not None:
+            if string_date is not None and len(str(string_date)) > 0:
                 date_list.append(parse_date(string_date))
         else:
             for str_date in date_value:
@@ -1533,10 +1532,10 @@ class AutosubmitConfig(object):
                         member_list.append(string_member + split_in)
                 string_member = None
             else:
-                if string_member is not None:
+                if string_member is not None and len(str(string_member)) > 0:
                     member_list.append(string_member)
                 string_member = split
-        if string_member is not None:
+        if string_member is not None and len(str(string_member)) > 0:
             member_list.append(string_member)
         return member_list
     def get_dependencies(self, section="None"):
@@ -1551,7 +1550,7 @@ class AutosubmitConfig(object):
         except:
             return []
 
-        if section is not None:
+        if section is not None and len(str(section)) > 0:
             return member_list
         else:
             return None
@@ -2038,7 +2037,7 @@ class AutosubmitConfig(object):
     def is_valid_jobs_in_wrapper(self,wrapper={}):
         expression = self.get_wrapper_jobs(wrapper)
         jobs_data = self.experiment_data.get("JOBS",{}).keys()
-        if expression is not None and expression != "":
+        if expression is not None and len(str(expression)) > 0:
             for section in expression:
                 if section not in jobs_data:
                     return False
@@ -2048,7 +2047,7 @@ class AutosubmitConfig(object):
         origin_exists = str(self.experiment_data["GIT"].get('PROJECT_ORIGIN',""))
         branch = self.get_git_project_branch()
         commit = self.get_git_project_commit()
-        return origin_exists and (branch is not None or commit is not None)
+        return origin_exists and ( (branch is not None and len(str(branch)) > 0) or ( commit is not None and len(str(commit)) > 0))
 
     @staticmethod
     def get_parser(parser_factory, file_path):

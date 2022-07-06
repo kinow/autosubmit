@@ -2192,7 +2192,7 @@ class Autosubmit:
                                     platform.cancel_job(id)
                             jobs_id = None
                             platform.connected = False
-                            if type(e.trace) is not None:
+                            if e.trace is not None and len(str(e.trace)) > 0 :
                                 has_trace_bad_parameters = e.trace.lower().find("bad parameters") != -1
                             else:
                                 has_trace_bad_parameters = False
@@ -2208,6 +2208,8 @@ class Autosubmit:
                                     error_message+="\ncheck that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
                                             error_msg[:-1], platform.name)
                                 raise AutosubmitCritical(error_message,7014,e.message+"\n"+e.trace)
+                        except AutosubmitCritical as e:
+                            raise
                         except IOError as e:
                             raise AutosubmitError(
                                 "IO issues ", 6016, e.message)
@@ -2215,10 +2217,10 @@ class Autosubmit:
                             if e.message.find("scheduler") != -1:
                                 raise AutosubmitCritical("Are you sure that [{0}] scheduler is the correct type for platform [{1}]?.\n Please, double check that {0} is loaded for {1} before autosubmit launch any job.".format(platform.type.upper(),platform.name.upper()),7070)
                             raise AutosubmitError(
-                                "Submission failed, this can be due a failure on the platform", 6015, e.message)
+                                "Submission failed, this can be due a failure on the platform", 6015, str(e))
                         if jobs_id is None or len(jobs_id) <= 0:
                             raise AutosubmitError(
-                                "Submission failed, this can be due a failure on the platform", 6015)
+                                "Submission failed, this can be due a failure on the platform", 6015,"Jobs_id {0}".format(jobs_id))
                         i = 0
                         if hold:
                             sleep(10)
@@ -2495,7 +2497,7 @@ class Autosubmit:
                                             jobs,
                                             os.path.join(
                                                 exp_path, "/tmp/LOG_", expid),
-                                            output_format=file_format if file_format is not None else output_type,
+                                            output_format=file_format if file_format is not None and len(str(file_format)) > 0 else output_type,
                                             packages=packages,
                                             show=not hide,
                                             groups=groups_dict,
@@ -2880,7 +2882,7 @@ class Autosubmit:
                     as_conf.get_current_project(platform)
                     as_conf.get_current_user(platform)
 
-                if as_conf.get_migrate_host_to(platform) != "none":
+                if as_conf.get_migrate_host_to(platform) != "none" and len(as_conf.get_migrate_host_to()) > 0:
                     Log.result(
                         "Host in platform configuration file successfully updated to {0}", as_conf.get_migrate_host_to(platform))
                     as_conf.set_new_host(
@@ -2953,9 +2955,9 @@ class Autosubmit:
                         p.temp_dir, experiment_id), p.root_dir, True)
                 for platform in backup_conf:
                     as_conf.set_new_user(platform[0], platform[1])
-                    if platform[2] is not None:
+                    if platform[2] is not None and len(str(platform[2])) > 0:
                         as_conf.set_new_project(platform[0], platform[2])
-                    if as_conf.get_migrate_host_to(platform[0]) != "none":
+                    if as_conf.get_migrate_host_to(platform[0]) != "none" and len(as_conf.get_migrate_host_to()) > 0 :
                         as_conf.set_new_host(
                             platform[0], as_conf.get_migrate_host_to(platform[0]))
                 raise AutosubmitCritical(
@@ -2970,7 +2972,7 @@ class Autosubmit:
                                     p.temp_dir, experiment_id), p.root_dir, True)
                             for platform in backup_conf:
                                 as_conf.set_new_user(platform[0], platform[1])
-                                if platform[2] is not None:
+                                if platform[2] is not None and len(str(platform[2])) > 0:
                                     as_conf.set_new_project(
                                         platform[0], platform[2])
                             raise AutosubmitCritical(
@@ -2983,7 +2985,7 @@ class Autosubmit:
                             p.temp_dir, experiment_id), p.root_dir, True)
                     for platform in backup_conf:
                         as_conf.set_new_user(platform[0], platform[1])
-                        if platform[2] is not None:
+                        if platform[2] is not None and len(str(platform[2])) > 0:
                             as_conf.set_new_project(platform[0], platform[2])
                     raise AutosubmitCritical(
                         "The experiment cannot be offered, changes are reverted", 7014, str(e))
@@ -3194,7 +3196,7 @@ class Autosubmit:
                                        "warnings_job_data", "considered"]
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
-            if folder_path is not None:
+            if folder_path is not None and len(str(folder_path)) > 0:
                 tmp_path = folder_path
             import platform
             host = platform.node()
@@ -3251,7 +3253,7 @@ class Autosubmit:
                 parameter_file = open(os.path.join(
                     tmp_path, parameter_output), 'a')
                 for key, value in exp_parameters.items():
-                    if value is not None:
+                    if value is not None and len(str(value)) > 0:
                         parameter_file.write(key + "=" + str(value) + "\n")
                     else:
                         if placeholders:
@@ -3260,7 +3262,7 @@ class Autosubmit:
                         else:
                             parameter_file.write(key + "=" + "-" + "\n")
 
-                if performance_metrics is not None:
+                if performance_metrics is not None and len(str(performance_metrics)) > 0:
                     for key in performance_metrics:
                         parameter_file.write("{0} = {1}\n".format(
                             key, performance_metrics.get(key, "-")))
@@ -3270,7 +3272,7 @@ class Autosubmit:
                 Log.result("A list of all parameters has been written on {0}".format(
                     os.path.join(tmp_path, parameter_output)))
 
-            if template_file_path is not None:
+            if template_file_path is not None and len(str(template_file_path)) > 0:
                 if os.path.exists(template_file_path):
                     Log.info(
                         "Gathering the selected parameters (all keys are on upper_case)")
@@ -3280,7 +3282,7 @@ class Autosubmit:
                         template_content = re.sub(
                             '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content,flags=re.I)
                     # Performance metrics
-                    if performance_metrics is not None:
+                    if performance_metrics is not None and len(str(performance_metrics)) > 0:
                         for key in performance_metrics:
                             template_content = re.sub(
                                 '%(?<!%%)' + key + '%(?!%%)', str(performance_metrics[key]), template_content,flags=re.I)
@@ -3431,12 +3433,12 @@ class Autosubmit:
             historicdb_path = os.path.join(local_root_path, "metadata", "data")
             historiclog_path = os.path.join(local_root_path, "metadata", "logs")
 
-            if platforms_conf_path is not None:
+            if platforms_conf_path is not None and len(str(platforms_conf_path)) > 0:
                 platforms_conf_path = platforms_conf_path.replace('~', home_path)
                 if not os.path.exists(platforms_conf_path):
                     Log.error("platforms.yml path does not exist.")
                     return False
-            if jobs_conf_path is not None:
+            if jobs_conf_path is not None and len(str(jobs_conf_path)) > 0:
                 jobs_conf_path = jobs_conf_path.replace('~', home_path)
                 if not os.path.exists(jobs_conf_path):
                     Log.error("jobs.yml path does not exist.")
@@ -3456,11 +3458,11 @@ class Autosubmit:
                 parser = SafeConfigParser()
                 parser.add_section('database')
                 parser.set('database', 'path', database_path)
-                if database_filename is not None:
+                if database_filename is not None and len(str(database_filename)) > 0:
                     parser.set('database', 'filename', database_filename)
                 parser.add_section('local')
                 parser.set('local', 'path', local_root_path)
-                if jobs_conf_path is not None or platforms_conf_path is not None:
+                if (jobs_conf_path is not None and len(str(jobs_conf_path)) > 0) or (platforms_conf_path is not None and len(str(platforms_conf_path)) > 0 ):
                     parser.add_section('conf')
                     if jobs_conf_path is not None:
                         parser.set('conf', 'jobs', jobs_conf_path)

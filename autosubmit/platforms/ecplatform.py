@@ -117,7 +117,7 @@ class EcPlatform(ParamikoPlatform):
         return self._checkjob_cmd + str(job_id)
 
     def get_submit_cmd(self, job_script, job, hold=False, export=""):
-        if export == "none" or export == "None" or export is None or export == "":
+        if (export is None or export == "none") or len(export) == 0:
             export = ""
         else:
             export += " ; "
