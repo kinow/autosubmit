@@ -473,6 +473,7 @@ class DicJobs:
         job.platform_name = str(parameters[section].get( "PLATFORM", "")).upper()
         job.file = str(parameters[section].get( "FILE", ""))
         job.queue = str(parameters[section].get( "QUEUE", ""))
+        #job.partition = str(parameters[section].get( "PARTITION", ""))
         job.check = str(parameters[section].get( "CHECK", "true")).lower()
         job.export = str(parameters[section].get( "EXPORT", ""))
         job.processors = str(parameters[section].get( "PROCESSORS", ""))

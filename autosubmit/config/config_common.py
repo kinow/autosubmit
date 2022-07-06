@@ -1051,7 +1051,13 @@ class AutosubmitConfig(object):
         any_file_changed = False
         # check if original_files has been edited
         for config_file in range(0,len(self._original_parser_files)):
-            modified,self._original_parser_files_modtime[config_file] = self.file_modified(self._original_parser_files[config_file],self._original_parser_files_modtime[config_file])
+            if self._original_parser_files[config_file].name != self._proj_parser_file.name:
+                modified, self._original_parser_files_modtime[config_file] = self.file_modified(
+                    self._original_parser_files[config_file], self._original_parser_files_modtime[config_file])
+            else:
+                if self._proj_parser_file.exists():
+                    modified, self._original_parser_files_modtime[config_file] = self.file_modified(
+                        self._original_parser_files[config_file], self._original_parser_files_modtime[config_file])
             if modified:
                 any_file_changed = True
         # check if custom_files has been edited
@@ -1072,12 +1078,19 @@ class AutosubmitConfig(object):
                     self.parser_factory, self._exp_parser_file)
                 if first_load:
                     self._custom_parser = []
+                    self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
+                    self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
+                    self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
+                    self._platforms_parser.data = self.deep_normalize(self._platforms_parser.data)
                     default_section = self._exp_parser.data.get("DEFAULT",None)
                     default_path = Path(self.basic_config.LOCAL_ROOT_DIR) / self.expid
+                    custom_folder_path = default_path / "conf"
                     if default_section is not None:
-                        custom_folder_path = default_section.get("CUSTOM_CONFIG_DIR",default_path / "conf")
-                        custom_folder_path = Path(re.sub('%(?<!%%)' + "ROOTDIR" + '%(?!%%)', str(default_path), custom_folder_path, flags=re.I))
+
+                        custom_folder_path = Path(re.sub('%(?<!%%)' + "ROOTDIR" + '%(?!%%)', str(default_path), str(custom_folder_path), flags=re.I))
                         default_section["CUSTOM_CONFIG_DIR"] = str(custom_folder_path)
+                    else:
+                        custom_folder_path = default_path / "conf"
                     self._custom_parser_files = []
                     self._custom_parser_files_modtime = []
 
@@ -1095,7 +1108,7 @@ class AutosubmitConfig(object):
                 raise AutosubmitError("IO issues during the parsing of configuration files",6014,str(e))
             except Exception as e:
                 raise AutosubmitCritical(
-                    "{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(str(e)), 7014)
+                    "{0}\nCheck configuration indentation or look for repeated parameter\nCheck if you have any uncommented value that should be commented".format(str(e)), 7014)
             try:
                 if not self._proj_parser_file:
                     self._proj_parser = None
@@ -1586,7 +1599,7 @@ class AutosubmitConfig(object):
         """
         content = open(self._conf_parser_file, 'r').read()
         if re.search('AUTOSUBMIT_VERSION:.*', content):
-            content = content.replace(re.search('AUTOSUBMIT_VERSION:.*', content).group(0),"AUTOSUBMIT_VERSION: 4.0" )
+            content = content.replace(re.search('AUTOSUBMIT_VERSION:.*', content).group(0),"AUTOSUBMIT_VERSION: {0}".format(autosubmit_version) )
         open(self._conf_parser_file, 'w').write(content)
 
     def get_version(self):

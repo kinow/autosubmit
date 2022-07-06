@@ -18,7 +18,6 @@ JOBS:
     DEPENDENCIES: INI SIM-1
     RUNNING: chunk
     WALLCLOCK: '00:05'
-    TASKS: '1'
   POST:
     FILE: POST.sh
     DEPENDENCIES: SIM

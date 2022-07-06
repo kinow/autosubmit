@@ -1100,15 +1100,17 @@ class Autosubmit:
                     #####
                     autosubmit_config = AutosubmitConfig(
                         exp_id, BasicConfig, YAMLParserFactory())
-                    autosubmit_config.check_conf_files(False)
-                    project_type = autosubmit_config.get_project_type()
-                    if project_type == "git":
-                        autosubmit_git = AutosubmitGit(copy_id[0])
-                        Log.info("checking model version...")
-                        if not autosubmit_git.check_commit(autosubmit_config):
-                            raise AutosubmitCritical(
-                                "Uncommitted changes", 7013)
-
+                    try:
+                        autosubmit_config.check_conf_files(False)
+                        project_type = autosubmit_config.get_project_type()
+                        if project_type == "git":
+                            autosubmit_git = AutosubmitGit(copy_id[0])
+                            Log.info("checking model version...")
+                            if not autosubmit_git.check_commit(autosubmit_config):
+                                raise AutosubmitCritical(
+                                    "Uncommitted changes", 7013)
+                    except Exception as error:
+                        Log.warning("Trace: {0}\nCouldn't load experiment configuration, check the experiments files before perform a create".format(str(error)))
                 else:
                     raise AutosubmitCritical(
                         "The experiment directory doesn't exist", 7012)
@@ -1117,6 +1119,7 @@ class Autosubmit:
                 raise AutosubmitCritical(
                     "Can not create experiment", 7012, str(e))
             except BaseException as e:
+                Autosubmit._delete_expid(exp_id, True)
                 raise AutosubmitCritical(
                     "Can not create experiment", 7012, str(e))
 
@@ -4463,8 +4466,10 @@ class Autosubmit:
         :return: True if succesful, False if not
         :rtype: bool
         """
+
         project_destination = as_conf.get_project_destination()
-        if project_destination is None or len(project_destination) == 0:
+
+        if project_type.lower() != "none" and (project_destination is None or len(project_destination) == 0):
              raise AutosubmitCritical("Autosubmit couldn't identify the project destination.", 7014)
 
         if project_type == "git":
@@ -5222,7 +5227,7 @@ class Autosubmit:
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
 
-        if dummy or copy_id is None:
+        if dummy:
             content = open(as_conf.experiment_file).read()
 
             # Experiment
@@ -5233,7 +5238,7 @@ class Autosubmit:
             content = content.replace(re.search('CHUNKSIZE: .*', content, re.MULTILINE).group(0),
                                       "CHUNKSIZE: 4")
             content = content.replace(re.search('NUMCHUNKS: .*', content, re.MULTILINE).group(0),
-                                      "NUMCHUNKS: 1")
+                                      "NUMCHUNKS: 2")
             content = content.replace(re.search('PROJECT_TYPE: .*', content, re.MULTILINE).group(0),
                                       "PROJECT_TYPE: 'none'")
 
