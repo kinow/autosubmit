@@ -1798,7 +1798,7 @@ class Autosubmit:
                             platform.check_Alljobs(platform_jobs, as_conf)
                             # mail notification
                             for job,job_prev_status in jobs_to_check[platform.name]:
-                                if job_prev_status != job.update_status(as_conf.get_copy_remote_logs()):
+                                if job_prev_status != job.update_status(as_conf):
                                     # Keeping track of changes
                                     job_changes_tracker[job.name] = (job_prev_status, job.status)
                                     if as_conf.get_notifications():

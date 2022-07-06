@@ -583,7 +583,7 @@ class ParamikoPlatform(Platform):
                     job_status = Status.FAILED
                 elif retries == 0:
                     job_status = Status.COMPLETED
-                    job.update_status(remote_logs)
+                    job.update_status(as_conf)
 
                 else:
                     job_status = Status.UNKNOWN
@@ -603,7 +603,7 @@ class ParamikoPlatform(Platform):
                         self.send_command(
                             self.platform.cancel_cmd + " {0}".format(job.id))
                         job.new_status = Status.FAILED
-                        job.update_status(remote_logs)
+                        job.update_status(as_conf)
                         return
                     elif reason == '(JobHeldUser)':
                         job.new_status = Status.HELD

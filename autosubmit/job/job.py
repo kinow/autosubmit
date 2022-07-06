@@ -776,7 +776,7 @@ class Job(object):
             pass
         return
     
-    def update_status(self, copy_remote_logs="true", failed_file=False):
+    def update_status(self, as_conf, failed_file=False):
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -784,7 +784,7 @@ class Job(object):
         :param failed_file: boolean, if True, checks if the job failed
         :return:
         """
-
+        copy_remote_logs = as_conf.get_copy_remote_logs()
         previous_status = self.status
         self.prev_status = previous_status
         new_status = self.new_status
@@ -844,9 +844,6 @@ class Job(object):
             platform_name = copy.deepcopy(self.platform_name)
             local_logs = copy.deepcopy(self.local_logs)
             remote_logs = copy.deepcopy(self.remote_logs)
-            #TODO as_conf should be accesible already, no need to declare it again.
-            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            as_conf.reload(first_load=True)
             if as_conf.get_disable_recovery_threads(self.platform.name) == "true":
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
             else:
@@ -1648,8 +1645,7 @@ class WrapperJob(Job):
                     if job.name in completed_files:
                         completed_jobs.append(job)
                         job.new_status = Status.COMPLETED
-                        job.update_status(
-                            self.as_config.get_copy_remote_logs() == 'true')
+                        job.update_status(self.as_config)
             for job in completed_jobs:
                 self.running_jobs_start.pop(job, None)
             not_completed_jobs = list(
@@ -1682,7 +1678,7 @@ class WrapperJob(Job):
                     for job in self.job_list:
                         job.hold = self.hold
                         job.new_status = Status.QUEUING
-                        job.update_status(self.as_config.get_copy_remote_logs() == 'true')                        
+                        job.update_status(self.as_config)
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
                 else:
                     self.status = Status.HELD
@@ -1774,8 +1770,7 @@ class WrapperJob(Job):
                                 self.running_jobs_start[job] = start_time
                                 job.new_status = Status.RUNNING
                                 #job.status = Status.RUNNING
-                                job.update_status(
-                                    self.as_config.get_copy_remote_logs() == 'true')
+                                job.update_status(self.as_config)
                             if len(out) == 2:
                                 Log.info("Job {0} is RUNNING".format(jobname))
                                 over_wallclock = self._check_inner_job_wallclock(
@@ -1814,7 +1809,7 @@ class WrapperJob(Job):
                 job.new_status = Status.COMPLETED
             else:
                 failed_file = True
-        job.update_status(self.as_config.get_copy_remote_logs() == 'true', failed_file)
+        job.update_status(self.as_config, failed_file)
         self.running_jobs_start.pop(job, None)
 
     def update_failed_jobs(self, check_ready_jobs=False):
@@ -1846,8 +1841,7 @@ class WrapperJob(Job):
                 self.running_jobs_start.pop(job, None)
                 Log.debug('Setting job {0} to COMPLETED'.format(job.name))
                 job.new_status = Status.COMPLETED
-                job.update_status(
-                    self.as_config.get_copy_remote_logs() == 'true')
+                job.update_status(self.as_config)
 
     def _is_over_wallclock(self, start_time, wallclock):
         elapsed = datetime.datetime.now() - parse_date(start_time)
