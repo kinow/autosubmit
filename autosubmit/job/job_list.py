@@ -1610,7 +1610,7 @@ class JobList(object):
                     job.hold = False
                     Log.debug(
                         "Setting job: {0} status to: READY (all parents completed)...".format(job.name))
-                    if as_conf.get_remote_dependencies():
+                    if as_conf.get_remote_dependencies() == "true":
                         all_parents_completed.append(job.name)
                 if job.status != Status.READY:
                     if len(tmp3) != len(job.parents):
@@ -1630,7 +1630,7 @@ class JobList(object):
                                 Log.debug(
                                     "Setting job: {0} status to: READY (conditional jobs are completed/failed)...".format(job.name))
                                 break
-                            if as_conf.get_remote_dependencies():
+                            if as_conf.get_remote_dependencies() == "true":
                                 all_parents_completed.append(job.name)
                     else:
                         if len(tmp3) == 1 and len(job.parents) == 1:
@@ -1642,7 +1642,7 @@ class JobList(object):
                                         "Setting job: {0} status to: READY (conditional jobs are completed/failed)...".format(
                                             job.name))
                                     break
-            if as_conf.get_remote_dependencies():
+            if as_conf.get_remote_dependencies() == "true":
                 for job in self.get_prepared():
                     tmp = [
                         parent for parent in job.parents if parent.status == Status.COMPLETED]

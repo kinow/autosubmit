@@ -1817,7 +1817,7 @@ class Autosubmit:
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
 
-                        if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
+                        if as_conf.get_remote_dependencies() == "true" and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
                             job_list.update_list(as_conf, submitter=submitter)

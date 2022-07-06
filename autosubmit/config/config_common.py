@@ -1791,7 +1791,7 @@ class AutosubmitConfig(object):
         :return: if remote dependencies
         :rtype: bool
         """
-        return self.get_section(['config', 'PRESUBMISSION'], False)
+        return str(self.get_section(['config', 'PRESUBMISSION'], "false")).lower()
 
     def get_wrapper_type(self, wrapper={}):
         """

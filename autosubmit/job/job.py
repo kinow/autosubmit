@@ -1119,9 +1119,9 @@ class Job(object):
                 template_file = open(os.path.join(
                     as_conf.get_project_dir(), self.file), 'r')
                 template = ''
-                if as_conf.get_remote_dependencies():
+                if as_conf.get_remote_dependencies() == "true":
                     if self.type == Type.BASH:
-                        template = 'sleep 5' + "\n"
+                        template = 'sleep 30' + "\n"
                     elif self.type == Type.PYTHON:
                         template = 'time.sleep(30)' + "\n"
                     elif self.type == Type.R:
