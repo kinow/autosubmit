@@ -554,8 +554,8 @@ class Job(object):
                     if already_completed:
                         break
                     already_completed = True
-                retrial_dates = map(lambda y: parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y,
-                                    retrial_fields)
+                retrial_dates = list(map(lambda y: parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y,
+                                    retrial_fields))
                 # Inserting list [submit, start, finish] of datetimes at the beginning of the list. Restores ordering.
                 retrials_list.insert(0, retrial_dates)
         return retrials_list

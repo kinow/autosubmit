@@ -45,8 +45,11 @@ def parse_number_processors(processors_str):
     return processors
   else:
     try:
-      processors = int(processors_str)
-      return processors
+      if processors_str == "":
+        return 1
+      else:
+        processors = int(processors_str)
+        return processors
     except:
       return 1
   
