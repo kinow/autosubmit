@@ -715,6 +715,7 @@ class Job(object):
                                         with open(os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP'), 'rb+') as f2:
                                             for line in f2.readlines():
                                                 if len(line) > 0:
+                                                    line = line.decode(locale.getlocale()[1])
                                                     time_stamp = line.split(" ")[0]
 
                                     self.write_total_stat_by_retries(total_stats,max_logs == ( int(as_conf.get_retrials()) - fail_count ))
@@ -1122,11 +1123,11 @@ class Job(object):
                 template = ''
                 if as_conf.get_remote_dependencies() == "true":
                     if self.type == Type.BASH:
-                        template = 'sleep 30' + "\n"
+                        template = 'sleep 60' + "\n"
                     elif self.type == Type.PYTHON:
-                        template = 'time.sleep(30)' + "\n"
+                        template = 'time.sleep(60)' + "\n"
                     elif self.type == Type.R:
-                        template = 'Sys.sleep(30)' + "\n"
+                        template = 'Sys.sleep(60)' + "\n"
                 template += template_file.read()
                 template_file.close()
             else:
