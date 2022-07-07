@@ -86,7 +86,7 @@ class Job(object):
     def __init__(self, name, job_id, status, priority):
         self.delay_end = datetime.datetime.now()
         self.delay_retrials = 0
-        self.wrapper_type = "none"
+        self.wrapper_type = None
         self._wrapper_queue = None
         self._platform = None
         self._queue = None
