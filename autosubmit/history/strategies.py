@@ -61,7 +61,9 @@ class Strategy(metaclass=ABCMeta):
   def get_calculated_weights_of_jobs_in_wrapper(self, job_data_dcs_in_wrapper):
     """ Based on computational weight: running time in seconds * number of cpus. """
     total_weight = sum(job.computational_weight for job in job_data_dcs_in_wrapper)
-    return {job.job_name: round(job.computational_weight/total_weight, 4) for job in job_data_dcs_in_wrapper}    
+    if total_weight == 0:
+      total_weight = 1
+    return {job.job_name: round(job.computational_weight/total_weight, 4) for job in job_data_dcs_in_wrapper}
 
 
 class SingleAssociationStrategy(Strategy):

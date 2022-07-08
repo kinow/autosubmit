@@ -1511,7 +1511,7 @@ class Autosubmit:
                 job_list.packages_dict.pop(
                     wrapper_id, None)
             save = True
-            return wrapper_job,save
+        return wrapper_job,save
 
     @staticmethod
     def run_experiment(expid, notransitive=False, update_version=False, start_time=None, start_after=None, run_members=None):

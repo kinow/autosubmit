@@ -1642,7 +1642,7 @@ class AutosubmitConfig(object):
         :return: recovery_threads_option
         :rtype: str
         """
-        return self.get_section([section, 'DISABLE_RECOVERY_THREADS'], False)
+        return self.platforms_data[section].get('DISABLE_RECOVERY_THREADS',"false").lower()
 
     def get_max_processors(self):
         """

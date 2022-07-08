@@ -1431,11 +1431,11 @@ class Job(object):
         if first_retrial:
             self.write_submit_time(enabled=True)
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-        f = open(path, 'a')
+        f = open(path, 'ab')
         if first_retrial:
-            f.write(" " + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + ' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + ' ' + total_stats[2])
+            f.write(b" " + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + b' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + b' ' + total_stats[2])
         else:
-            f.write('\n' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + ' ' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + ' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + ' ' + total_stats[2])
+            f.write(b'\n' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + b' ' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + b' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + b' ' + total_stats[2])
         out, err = self.local_logs
         path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
         # Launch first as simple non-threaded function

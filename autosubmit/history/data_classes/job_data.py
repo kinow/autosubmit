@@ -274,7 +274,7 @@ class JobData(object):
         """
         if self.status in ["RUNNING", "COMPLETED", "FAILED"]:
             return HUtils.calculate_run_time_in_seconds(self.start, self.finish)                        
-        return 0
+        return 1
 
     @property
     def queuing_time(self):

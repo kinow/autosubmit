@@ -304,6 +304,8 @@ class JobList(object):
                     section, splits_section)
                 section = section_name
             if parameters.get(section,None) is None:
+                #Log.printlog("WARNING: SECTION {0} is not defined in jobs.conf".format(section))
+                #continue
                 raise AutosubmitCritical("Section:{0} doesn't exists.".format(section),7014)
             dependency_running_type = str(parameters[section].get('RUNNING', 'once')).lower()
             delay = int(parameters[section].get('DELAY', -1))
