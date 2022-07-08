@@ -39,7 +39,7 @@ setup(
     url='http://www.bsc.es/projects/earthscience/autosubmit/',
     download_url='https://earth.bsc.es/wiki/doku.php?id=tools:autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
-    install_requires=['configobj>=5.0.6','argparse>=1.4.0','python-dateutil>=2.8.2','matplotlib>=3.5.1','numpy>=1.2','py3dotplus>=1.1.0','pyparsing>=3.0.7','paramiko>=2.9.2','mock>=4.0.3','portalocker>=2.3.2','networkx>=2.6.3','typing>=3.7.4.3','requests>=2.27.1','bscearth.utils>=0.5.2','cryptography>=36.0.1','setuptools>=60.8.2','xlib>=0.21','pip>=22.0.3','ruamel.yaml','pythondialog','pytest','nose','coverage','PyNaCl==1.4.0','Pygments','configobj'],
+    install_requires=['configobj>=5.0.6','argparse>=1.4.0','python-dateutil>=2.8.2','matplotlib>=3.5.1','numpy>=1.2','py3dotplus>=1.1.0','pyparsing>=3.0.7','paramiko>=2.9.2','mock>=4.0.3','portalocker>=2.3.2','networkx>=2.6.3','typing>=3.7.4.3','requests>=2.27.1','bscearth.utils>=0.5.2','cryptography>=36.0.1','setuptools>=60.8.2','xlib>=0.21','pip>=22.0.3','ruamel.yaml','pythondialog','pytest','nose','coverage','PyNaCl==1.4.0','Pygments'],
     packages=find_packages(),
     include_package_data=True,
     package_data={'autosubmit': [
