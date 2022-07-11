@@ -20,16 +20,9 @@
 """Script for handling experiment monitoring"""
 import os
 import sys
-# easybuild crashes without this
-try:
-    from log.log import Log, AutosubmitCritical , AutosubmitError
-except:
-    pass
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
-print(sys.path[0])
-sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
-print(sys.path[0])
-#assert sys.path[0] == scriptdir
+sys.path.append(scriptdir)
+sys.path.append(os.path.normpath(os.path.join(scriptdir, os.pardir)))
 # noinspection PyUnresolvedReferences
 try:
     from log.log import Log, AutosubmitCritical , AutosubmitError
