@@ -8,5 +8,6 @@
 autosubmit/miniTest.py
 autosubmit/simple_test.py
 .vscode/
-.vscode
+.pytest_cache/
+.idea/
 autosubmit.egg-info/
