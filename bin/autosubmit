@@ -20,6 +20,7 @@
 """Script for handling experiment monitoring"""
 import os
 import sys
+import traceback
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 sys.path.append(scriptdir)
 sys.path.append(os.path.normpath(os.path.join(scriptdir, os.pardir)))
