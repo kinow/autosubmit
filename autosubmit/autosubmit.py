@@ -965,10 +965,10 @@ class Autosubmit:
 
                             if filename == 'platforms.yml' and BasicConfig.DEFAULT_PLATFORMS_CONF != '':
                                 content = open(os.path.join(
-                                    BasicConfig.DEFAULT_PLATFORMS_CONF, filename)).read()
+                                    BasicConfig.DEFAULT_PLATFORMS_CONF, filename),'rb').read()
                             elif filename == 'jobs.yml' and BasicConfig.DEFAULT_JOBS_CONF != '':
                                 content = open(os.path.join(
-                                    BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
+                                    BasicConfig.DEFAULT_JOBS_CONF, filename),'rb').read()
                             else:
                                 content = resource_string(
                                     'autosubmit.config', 'files/' + filename)
