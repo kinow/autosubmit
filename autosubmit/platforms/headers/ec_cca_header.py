@@ -83,7 +83,7 @@ class EcCcaHeader(object):
         :rtype: str
         """
         # There is no memory per task, so directive is empty
-        if job.parameters['HYPERTHREADING'] is True:
+        if job.parameters['HYPERTHREADING'] == "true":
             return "#PBS -l EC_hyperthreads=2"
         return "#PBS -l EC_hyperthreads=1"
 

@@ -237,7 +237,7 @@ class AutosubmitConfig(object):
         :return: false/true
         :rtype: str
         """
-        return self.get_section([section, 'X11'], False)
+        return str(self.get_section([section, 'X11'], "false")).lower()
 
     def get_section(self, section, d_value="", must_exists = False ):
         """
@@ -374,7 +374,7 @@ class AutosubmitConfig(object):
         :return: migrate user to
         :rtype: str
         """
-        return self.get_section([section, 'SAME_USER'], False)
+        return str(self.get_section([section, 'SAME_USER'], "false")).lower()
 
     def get_current_user(self, section):
         """
@@ -797,7 +797,7 @@ class AutosubmitConfig(object):
         wrappers_info = parser_data.get("WRAPPERS",{})
         if wrappers_info:
             self.check_wrapper_conf(wrappers_info)
-        if parser_data["MAIL"].get("NOTIFICATIONS", False):
+        if str(parser_data["MAIL"].get("NOTIFICATIONS", "false")).lower() == "true":
             mails = parser_data["MAIL"].get("TO", "")
             if type(mails) == list:
                 pass
@@ -917,7 +917,7 @@ class AutosubmitConfig(object):
                     if dependency not in parser.data["JOBS"].keys():
                         self.warn_config["Jobs"] += [
                             [section, "RERUN_DEPENDENCIES parameter is invalid, job {0} is not configured".format(dependency)]]
-            running_type = section_data.get('RUNNING', "")
+            running_type = section_data.get('RUNNING', "once").lower()
             if running_type not in ['once', 'date', 'member', 'chunk']:
                 self.wrong_config["Jobs"] += [[section,
                                                "Mandatory RUNNING parameter is invalid"]]
@@ -1331,9 +1331,9 @@ class AutosubmitConfig(object):
         Returns fetch single branch from experiment's config file
         Default is -single-branch
         :return: fetch_single_branch(Y/N)
-        :rtype: boolean
+        :rtype: str
         """
-        return self.get_section(['git', 'FETCH_SINGLE_BRANCH'], False)
+        return str(self.get_section(['git', 'FETCH_SINGLE_BRANCH'], "true")).lower()
 
     def get_project_destination(self):
         """
@@ -1560,10 +1560,10 @@ class AutosubmitConfig(object):
         Returns startdates list from experiment's config file
 
         :return: rerurn value
-        :rtype: list
+        :rtype: bool
         """
 
-        return self.get_section(['rerun', 'RERUN'])
+        return str(self.get_section(['rerun', 'RERUN'])).lower()
 
 
 
@@ -1642,8 +1642,10 @@ class AutosubmitConfig(object):
         :return: recovery_threads_option
         :rtype: str
         """
-        return self.platforms_data[section].get('DISABLE_RECOVERY_THREADS',"false").lower()
-
+        if self.platforms_data.get(section,"false") != "false":
+            return self.platforms_data[section].get('DISABLE_RECOVERY_THREADS',"false").lower()
+        else:
+            return "false"
     def get_max_processors(self):
         """
         Returns max processors from autosubmit's config file
@@ -1715,7 +1717,7 @@ class AutosubmitConfig(object):
         :return: if notifications
         :rtype: string
         """
-        return self.get_section(['MAIL', 'NOTIFICATIONS'], False)
+        return str(self.get_section(['MAIL', 'NOTIFICATIONS'], "false")).lower()
 
     # based on https://github.com/cbirajdar/properties-to-yaml-converter/blob/master/properties_to_yaml.py
     @staticmethod
@@ -1869,7 +1871,7 @@ class AutosubmitConfig(object):
         :return: expression (or none)
         :rtype: string
         """
-        return self.get_section(['config', 'X11_JOBS'], False)
+        return str(self.get_section(['config', 'X11_JOBS'], "false")).lower()
 
     def get_wrapper_queue(self, wrapper={}):
         """

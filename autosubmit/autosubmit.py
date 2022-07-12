@@ -1116,11 +1116,17 @@ class Autosubmit:
                         raise AutosubmitCritical(
                             "The experiment directory doesn't exist", 7012)
                 except (OSError, IOError) as e:
-                    Autosubmit._delete_expid(exp_id, True)
+                    try:
+                        Autosubmit._delete_expid(exp_id, True)
+                    except:
+                        pass
                     raise AutosubmitCritical(
                         "Can not create experiment", 7012, str(e))
                 except BaseException as e:
-                    Autosubmit._delete_expid(exp_id, True)
+                    try:
+                        Autosubmit._delete_expid(exp_id, True)
+                    except:
+                        pass
                     raise AutosubmitCritical(
                         "Can not create experiment", 7012, str(e))
 
@@ -1169,10 +1175,10 @@ class Autosubmit:
             Log.debug("Finished")
 
             return exp_id
-        except BaseException as e:
-            raise AutosubmitCritical(str(e))
         except AutosubmitCritical:
             raise
+        except Exception as e:
+            raise AutosubmitCritical("Couldn't create a new experiment",7012,str(e))
 
     @staticmethod
     def delete(expid, force):
@@ -5492,10 +5498,10 @@ class Autosubmit:
     @staticmethod
     def _change_conf(testid, hpc, start_date, member, chunks, branch, random_select=False):
         as_conf = AutosubmitConfig(testid, BasicConfig, YAMLParserFactory())
-        exp_parser = as_conf.get_parser(
-            YAMLParserFactory(), as_conf.experiment_file)
-        if exp_parser.get_bool_option('rerun', "RERUN", True):
-            raise AutosubmitCritical('Can not test a RERUN experiment', 7014)
+
+        if as_conf.experiment_data.get("RERUN",False):
+            if str(as_conf.experiment_data["RERUN"].get("RERUN","False")).lower() != "true":
+                raise AutosubmitCritical('Can not test a RERUN experiment', 7014)
 
         content = open(as_conf.experiment_file).read()
         if random_select:

@@ -110,8 +110,9 @@ class LocalPlatform(ParamikoPlatform):
             if not ignore_log:
                 Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
             return False
-        Log.debug("Command '{0}': {1}", command, output)
         self._ssh_output = output.decode(locale.getlocale()[1])
+        Log.debug("Command '{0}': {1}", command, self._ssh_output)
+
         return True
 
     def send_file(self, filename):

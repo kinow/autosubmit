@@ -1486,7 +1486,7 @@ class JobList(object):
                                   "_" + output_date))
 
     def get_skippable_jobs(self, jobs_in_wrapper):
-        job_list_skip = [job for job in self.get_job_list() if job.skippable is True and (job.status == Status.QUEUING or job.status ==
+        job_list_skip = [job for job in self.get_job_list() if job.skippable == "true" and (job.status == Status.QUEUING or job.status ==
                                                                                           Status.RUNNING or job.status == Status.COMPLETED or job.status == Status.READY) and jobs_in_wrapper.find(job.section) == -1]
         skip_by_section = dict()
         for job in job_list_skip:
@@ -1970,7 +1970,7 @@ class JobList(object):
         """
         flag = False
         for job in set(self._job_list):
-            if job.rerun_only:
+            if job.rerun_only == "true":
                 self._remove_job(job)
                 flag = True
 

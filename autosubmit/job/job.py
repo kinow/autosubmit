@@ -629,7 +629,7 @@ class Job(object):
                 pass
             max_logs = int(as_conf.get_retrials()) - fail_count
             last_log = int(as_conf.get_retrials()) - fail_count
-            if self.wrapper_type == "vertical":
+            if self.wrapper_type is not None and self.wrapper_type == "vertical":
                 found = False
                 retrials = 0
                 while retrials < 3 and not found:
@@ -1071,7 +1071,7 @@ class Job(object):
             parameters[wrapper_section+"_EXTENSIBLE"] = int(as_conf.get_extensible_wallclock(as_conf.experiment_data["WRAPPERS"].get(wrapper_section)))
         self.dependencies = parameters['DEPENDENCIES']
 
-        if self.export:
+        if len(self.export) > 0:
             variables = re.findall('%(?<!%%)\w+%(?!%%)', self.export)
             if len(variables) > 0:
                 variables = [variable[1:-1] for variable in variables]
@@ -1673,7 +1673,7 @@ class WrapperJob(Job):
 
                 return
             if reason == '(JobHeldUser)':
-                if self.hold is False:
+                if self.hold == "false":
                     # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
                     self._platform.send_command("scontrol release " + "{0}".format(self.id))
                     self.new_status = Status.QUEUING

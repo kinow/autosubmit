@@ -454,8 +454,8 @@ class DicJobs:
 
         job.frequency = int(parameters[section].get( "FREQUENCY", 1))
         job.delay = int(parameters[section].get( "DELAY", -1))
-        job.wait = parameters[section].get( "WAIT", True)
-        job.rerun_only = parameters[section].get( "RERUN_ONLY", False)
+        job.wait = str(parameters[section].get( "WAIT", True)).lower()
+        job.rerun_only = str(parameters[section].get( "RERUN_ONLY", False)).lower()
         job_type = str(parameters[section].get( "TYPE", default_job_type)).lower()
 
         job.dependencies = parameters[section].get( "DEPENDENCIES", "")
@@ -496,10 +496,10 @@ class DicJobs:
         else:
             job.notify_on = ""
         job.synchronize = str(parameters[section].get( "SYNCHRONIZE", ""))
-        job.check_warnings = parameters[section].get("SHOW_CHECK_WARNINGS", False)
+        job.check_warnings = str(parameters[section].get("SHOW_CHECK_WARNINGS", False)).lower()
         job.running = str(parameters[section].get( 'RUNNING', 'once'))
-        job.x11 = parameters[section].get( 'X11', False )
-        job.skippable = parameters[section].get( "SKIPPABLE", False)
+        job.x11 = str(parameters[section].get( 'X11', False )).lower()
+        job.skippable = str(parameters[section].get( "SKIPPABLE", False)).lower()
         self._jobs_list.get_job_list().append(job)
 
         return job

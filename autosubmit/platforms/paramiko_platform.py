@@ -422,7 +422,11 @@ class ParamikoPlatform(Platform):
             self.get_submit_cmd(script_name, job, hold=hold, export=export)
             return None
         else:
-            if self.send_command(self.get_submit_cmd(script_name, job, export=export), x11=x11):
+
+            cmd = self.get_submit_cmd(script_name, job, hold=hold, export=export)
+            if cmd is None:
+                return None
+            if self.send_command(cmd,x11=x11):
                 job_id = self.get_submitted_job_id(self.get_ssh_output(),x11=job.x11)
                 Log.debug("Job ID: {0}", job_id)
                 return int(job_id)
@@ -492,9 +496,9 @@ class ParamikoPlatform(Platform):
                 job_status = Status.COMPLETED
             elif job_status in self.job_status['RUNNING']:
                 job_status = Status.RUNNING
-            elif job_status in self.job_status['QUEUING'] and job.hold is False:
+            elif job_status in self.job_status['QUEUING'] and job.hold == "false":
                 job_status = Status.QUEUING
-            elif job_status in self.job_status['QUEUING'] and job.hold is True:
+            elif job_status in self.job_status['QUEUING'] and job.hold == "true":
                 job_status = Status.HELD
             elif job_status in self.job_status['FAILED']:
                 job_status = Status.FAILED
@@ -761,7 +765,7 @@ class ParamikoPlatform(Platform):
         while retries > 0:
             try:
                 chan = self.transport.open_session()
-                if x11:
+                if x11 == "true":
                     display = os.getenv('DISPLAY')
                     if display is None or not display:
                         display = "localhost:0"
@@ -769,7 +773,7 @@ class ParamikoPlatform(Platform):
                     chan.request_x11(handler=self.x11_handler)
                 else:
                     chan.settimeout(timeout)
-                if x11:
+                if x11 == "true":
                     command = command + " ; sleep infinity"
                     chan.exec_command(command)
                     chan_fileno = chan.fileno()
@@ -840,7 +844,7 @@ class ParamikoPlatform(Platform):
                             stderr.channel.recv_stderr(len(c.in_stderr_buffer)))
                         #stdout_chunks.append(" ")
                         got_chunk = True
-                if x11:
+                if x11 == "true":
                     got_chunk = True
                     break
                 if not got_chunk and stdout.channel.exit_status_ready() and not stderr.channel.recv_stderr_ready() and not stdout.channel.recv_ready():
@@ -1053,7 +1057,7 @@ class ParamikoPlatform(Platform):
         if hasattr(self.header, 'get_threads_per_task'):
             header = header.replace(
                 '%THREADS_PER_TASK_DIRECTIVE%', self.header.get_threads_per_task(job))
-        if job.x11:
+        if job.x11 == "true":
             header = header.replace(
                 '%X11%', "SBATCH --x11=batch")
         else:

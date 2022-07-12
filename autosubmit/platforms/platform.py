@@ -97,15 +97,15 @@ class Platform(object):
 
     @property
     def allow_arrays(self):
-        return self._allow_arrays is True
+        return self._allow_arrays == "true"
 
     @property
     def allow_wrappers(self):
-        return self._allow_wrappers is True
+        return self._allow_wrappers == "true"
 
     @property
     def allow_python_jobs(self):
-        return self._allow_python_jobs is True
+        return self._allow_python_jobs == "true"
 
     def add_parameters(self, parameters, main_hpc=False):
         """

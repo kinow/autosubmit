@@ -331,7 +331,7 @@ class SlurmPlatform(ParamikoPlatform):
             jobs_id = []
             for output in outputlines.splitlines():
                 jobs_id.append(int(output.split(' ')[3]))
-            if x11:
+            if x11 == "true":
                 return jobs_id[0]
             else:
                 return jobs_id
@@ -354,7 +354,7 @@ class SlurmPlatform(ParamikoPlatform):
         else:
             x11 = job.x11
 
-        if x11:
+        if x11 == "true":
             if not hold:
                 return export + self._submit_cmd + job_script
             else:

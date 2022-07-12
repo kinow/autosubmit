@@ -165,7 +165,7 @@ class ParamikoSubmitter(Submitter):
             remote_platform.max_processors = platform_data[section].get('MAX_PROCESSORS',asconf.get_max_processors())
             remote_platform.max_waiting_jobs = platform_data[section].get('MAX_WAITING_JOBS',asconf.get_max_waiting_jobs())
             remote_platform.total_jobs = platform_data[section].get('TOTAL_JOBS',asconf.get_total_jobs())
-            remote_platform.hyperthreading = platform_data[section].get('HYPERTHREADING',False)
+            remote_platform.hyperthreading = str(platform_data[section].get('HYPERTHREADING',False)).lower()
             remote_platform.project = platform_data[section].get('PROJECT',"")
             remote_platform.budget = platform_data[section].get('BUDGET', "")
             remote_platform.reservation = platform_data[section].get('RESERVATION', "")
@@ -179,7 +179,7 @@ class ParamikoSubmitter(Submitter):
             remote_platform.custom_directives = platform_data[section].get('CUSTOM_DIRECTIVES',"")
             Log.debug("Custom directives from platform.conf: {0}".format(
                 remote_platform.custom_directives))
-            remote_platform.scratch_free_space = platform_data[section].get('SCRATCH_FREE_SPACE',False)
+            remote_platform.scratch_free_space = str(platform_data[section].get('SCRATCH_FREE_SPACE',False)).lower()
             remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,
                                                     remote_platform.user, remote_platform.expid)
             # Executes update_cmds() from corresponding Platform Object
