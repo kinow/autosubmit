@@ -421,7 +421,12 @@ class Platform(object):
         :rtype: Boolean
         """
         try:
-            title_job = b"[INFO] JOBID=" + str(jobid).encode(locale.getlocale()[1])
+            lang = locale.getlocale()[1]
+            if lang is None:
+                lang = locale.getdefaultlocale()[1]
+                if lang is None:
+                    lang = 'UTF-8'
+            title_job = b"[INFO] JOBID=" + str(jobid).encode(lang)
             if os.path.exists(complete_path):
                 file_type = complete_path[-3:]
                 if file_type == "out" or file_type == "err":

@@ -255,7 +255,12 @@ class ParamikoPlatform(Platform):
         multiple_delete_previous_run = os.path.join(
             log_dir, "multiple_delete_previous_run.sh")
         if os.path.exists(log_dir):
-            open(multiple_delete_previous_run, 'wb+').write( ("rm -f" + filenames).encode(locale.getlocale()[1]) )
+            lang = locale.getlocale()[1]
+            if lang is None:
+                lang = locale.getdefaultlocale()[1]
+                if lang is None:
+                    lang = 'UTF-8'
+            open(multiple_delete_previous_run, 'wb+').write( ("rm -f" + filenames).encode(lang))
             os.chmod(multiple_delete_previous_run, 0o770)
             self.send_file(multiple_delete_previous_run, False)
             command = os.path.join(self.get_files_path(),
@@ -810,7 +815,11 @@ class ParamikoPlatform(Platform):
         :return: True if executed, False if failed
         :rtype: bool
         """
-
+        lang = locale.getlocale()[1]
+        if lang is None:
+            lang = locale.getdefaultlocale()[1]
+            if lang is None:
+                lang = 'UTF-8'
         if "rsync" in command or "find" in command or "convertLink" in command:
             timeout = None  # infinite timeout on migrate command
         elif "rm" in command:
@@ -862,12 +871,12 @@ class ParamikoPlatform(Platform):
             self._ssh_output = ""
             self._ssh_output_err = ""
             for s in stdout_chunks:
-                if s.decode(locale.getlocale()[1]) != '':
-                    self._ssh_output += s.decode(locale.getlocale()[1])
+                if s.decode(lang) != '':
+                    self._ssh_output += s.decode(lang)
             for errorLineCase in stderr_readlines:
-                self._ssh_output_err += errorLineCase.decode(locale.getlocale()[1])
+                self._ssh_output_err += errorLineCase.decode(lang)
 
-                errorLine = errorLineCase.lower().decode(locale.getlocale()[1])
+                errorLine = errorLineCase.lower().decode(lang)
                 if "not active" in errorLine:
                     raise AutosubmitError(
                         'SSH Session not active, will restart the platforms', 6005)

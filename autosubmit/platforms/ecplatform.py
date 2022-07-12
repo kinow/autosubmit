@@ -168,7 +168,12 @@ class EcPlatform(ParamikoPlatform):
             if not ignore_log:
                 raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,str(e))
             return False
-        self._ssh_output = output.decode(locale.getlocale()[1])
+        lang = locale.getlocale()[1]
+        if lang is None:
+            lang = locale.getdefaultlocale()[1]
+            if lang is None:
+                lang = 'UTF-8'
+        self._ssh_output = output.decode(lang)
         return True
 
     def send_file(self, filename, check=True):

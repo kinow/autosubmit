@@ -104,13 +104,18 @@ class LocalPlatform(ParamikoPlatform):
         for job,prev_job_status in job_list:
             self.check_job(job)
     def send_command(self, command,ignore_log=False, x11 = False):
+        lang = locale.getlocale()[1]
+        if lang is None:
+            lang = locale.getdefaultlocale()[1]
+            if lang is None:
+                lang = 'UTF-8'
         try:
-            output = subprocess.check_output(command.encode(locale.getlocale()[1]), shell=True)
+            output = subprocess.check_output(command.encode(lang), shell=True)
         except subprocess.CalledProcessError as e:
             if not ignore_log:
                 Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
             return False
-        self._ssh_output = output.decode(locale.getlocale()[1])
+        self._ssh_output = output.decode(lang)
         Log.debug("Command '{0}': {1}", command, self._ssh_output)
 
         return True

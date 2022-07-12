@@ -617,6 +617,11 @@ class Job(object):
         max_logs = 0
         sleep(5)
         stat_file = self.script_name[:-4] + "_STAT_"
+        lang = locale.getlocale()[1]
+        if lang is None:
+            lang = locale.getdefaultlocale()[1]
+            if lang is None:
+                lang = 'UTF-8'
         try:
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.reload(first_load=True)
@@ -715,7 +720,7 @@ class Job(object):
                                         with open(os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP'), 'rb+') as f2:
                                             for line in f2.readlines():
                                                 if len(line) > 0:
-                                                    line = line.decode(locale.getlocale()[1])
+                                                    line = line.decode(lang)
                                                     time_stamp = line.split(" ")[0]
 
                                     self.write_total_stat_by_retries(total_stats,max_logs == ( int(as_conf.get_retrials()) - fail_count ))
@@ -1230,7 +1235,12 @@ class Job(object):
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
         self.script_name = '{0}.cmd'.format(self.name)
-        open(os.path.join(self._tmp_path, script_name),'wb').write(template_content.encode(locale.getlocale()[1]))
+        lang = locale.getlocale()[1]
+        if lang is None:
+            lang = locale.getdefaultlocale()[1]
+            if lang is None:
+                lang = 'UTF-8'
+        open(os.path.join(self._tmp_path, script_name),'wb').write(template_content.encode(lang))
         #open(os.path.join(self._tmp_path, script_name),'wb').write(template_content)
 
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)

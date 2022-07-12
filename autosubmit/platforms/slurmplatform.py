@@ -361,10 +361,15 @@ class SlurmPlatform(ParamikoPlatform):
                 return export + self._submit_hold_cmd + job_script
         else:
             try:
+                lang = locale.getlocale()[1]
+                if lang is None:
+                    lang = locale.getdefaultlocale()[1]
+                    if lang is None:
+                        lang = 'UTF-8'
                 if not hold:
-                    self._submit_script_file.write((export + self._submit_cmd + job_script + "\n").encode(locale.getlocale()[1]))
+                    self._submit_script_file.write((export + self._submit_cmd + job_script + "\n").encode(lang))
                 else:
-                    self._submit_script_file.write((export + self._submit_hold_cmd + job_script + "\n").encode(locale.getlocale()[1]))
+                    self._submit_script_file.write((export + self._submit_hold_cmd + job_script + "\n").encode(lang))
             except BaseException as e:
                 pass
 
