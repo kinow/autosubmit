@@ -1241,7 +1241,6 @@ class Job(object):
             if lang is None:
                 lang = 'UTF-8'
         open(os.path.join(self._tmp_path, script_name),'wb').write(template_content.encode(lang))
-        #open(os.path.join(self._tmp_path, script_name),'wb').write(template_content)
 
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
         return script_name

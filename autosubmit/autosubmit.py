@@ -1053,13 +1053,13 @@ class Autosubmit:
                         files = os.listdir(conf_copy_id)
                         for filename in files:
                             # Allow only those files in the list
+                            Log.info("Copying filename: {0}", filename)
                             if filename in conf_copy_filter:
                                 if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                     new_filename = filename.replace(
                                         copy_id, exp_id)
                                     if new_filename[-4:] == "conf":
                                        new_filename = new_filename[:-4]+"yml"
-
                                     # Using readlines for replacement handling
                                     content = open(os.path.join(
                                         conf_copy_id, filename), 'r').readlines()
