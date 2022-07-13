@@ -1457,7 +1457,9 @@ class Autosubmit:
         if unparsed_two_step_start != "":
             job_list.parse_jobs_by_filter(unparsed_two_step_start)
         job_list.create_dictionary(date_list, member_list, num_chunks, chunk_ini, date_format, as_conf.get_retrials(), wrapper_jobs )
-
+        for job in job_list.get_active():
+            if job.status != Status.WAITING:
+                job.status = Status.READY
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
             job_list.update_list(as_conf, False)

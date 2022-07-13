@@ -101,10 +101,14 @@ class Platform(object):
 
     @property
     def allow_wrappers(self):
+        if type(self._allow_wrappers) is bool and self._allow_wrappers:
+            return True
         return self._allow_wrappers == "true"
 
     @property
     def allow_python_jobs(self):
+        if type(self._allow_python_jobs) is bool and self._allow_python_jobs:
+            return True
         return self._allow_python_jobs == "true"
 
     def add_parameters(self, parameters, main_hpc=False):
