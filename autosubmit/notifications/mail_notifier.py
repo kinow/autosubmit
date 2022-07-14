@@ -41,16 +41,16 @@ class MailNotifier:
         message_text = self._generate_message_text(exp_id, job_name, prev_status, status)
         message = MIMEText(message_text)
         message['From'] = email.utils.formataddr(('Autosubmit', self.config.MAIL_FROM))
-        message['Subject'] = '[Autosubmit] The job {0} status has changed to {1}'.format(job_name, str(status))
+        message['Subject'] = f'[Autosubmit] The job {0} status has changed to {1}'.format(job_name, str(status))
         for mail in mail_to:
             message['To'] = email.utils.formataddr((mail, mail))
             try:
                 self._send_mail(self.config.MAIL_FROM, mail, message)
             except BaseException as e:
-                Log.printlog('An error has occurred while sending a mail for the job {0}'.format(job_name), 6011)
+                Log.printlog('Trace:{0}\nAn error has occurred while sending a mail for the job {0}'.format(e,job_name), 6011)
 
     def _send_mail(self, mail_from, mail_to, message):
-        server = smtplib.SMTP(self.config.SMTP_SERVER)
+        server = smtplib.SMTP(self.config.SMTP_SERVER,timeout=60)
         server.sendmail(mail_from, mail_to, message.as_string())
         server.quit()
 

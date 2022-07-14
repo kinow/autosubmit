@@ -1491,7 +1491,7 @@ class Autosubmit:
             check_wrapper_jobs_sleeptime))
         # Setting prev_status as an easy way to check status change for inner jobs
         wrapper_job = job_list.job_package_map[wrapper_id]
-        if as_conf.get_notifications():
+        if as_conf.get_notifications() == "true":
             for inner_job in wrapper_job.job_list:
                 inner_job.prev_status = inner_job.status
         check_wrapper = True
@@ -1781,7 +1781,7 @@ class Autosubmit:
                                 if job_list.job_package_map and job_id in job_list.job_package_map:
                                     wrapper_job,save = Autosubmit.manage_wrapper_job(as_conf,job_list,platform,job_id)
                                     # Notifications e-mail
-                                    if as_conf.get_notifications():
+                                    if as_conf.get_notifications() == "true":
                                         for inner_job in wrapper_job.job_list:
                                             if inner_job.prev_status != inner_job.status:
                                                 if Status.VALUE_TO_KEY[inner_job.status] in inner_job.notify_on:
@@ -1814,7 +1814,7 @@ class Autosubmit:
                                 if job_prev_status != job.update_status(as_conf):
                                     # Keeping track of changes
                                     job_changes_tracker[job.name] = (job_prev_status, job.status)
-                                    if as_conf.get_notifications():
+                                    if as_conf.get_notifications() == "true":
                                         if Status.VALUE_TO_KEY[job.status] in job.notify_on:
                                             Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
                                                                           Status.VALUE_TO_KEY[job_prev_status],
