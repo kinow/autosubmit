@@ -97,6 +97,8 @@ class Platform(object):
 
     @property
     def allow_arrays(self):
+        if type(self._allow_arrays) is bool and self._allow_arrays:
+            return True
         return self._allow_arrays == "true"
 
     @property

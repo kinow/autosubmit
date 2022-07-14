@@ -1,5 +1,5 @@
 from unittest import TestCase
-from mock import Mock
+from mock import Mock,MagicMock
 from autosubmit.job.job_packager import JobPackager
 from autosubmit.job.job_packages import JobPackageVertical
 from autosubmit.job.job import Job
@@ -151,8 +151,8 @@ class TestWrappers(TestCase):
     def setUp(self):
         self.experiment_id = 'random-id'
         self.config = FakeBasicConfig
-        self._platform = Mock()
-        self.as_conf = Mock()
+        self._platform = MagicMock()
+        self.as_conf = MagicMock()
         self.as_conf.experiment_data = dict()
         self.as_conf.experiment_data["JOBS"] = dict()
         self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
@@ -161,18 +161,18 @@ class TestWrappers(TestCase):
         self.as_conf.experiment_data["WRAPPERS"] = dict()
         self.job_list = JobList(self.experiment_id, self.config, YAMLParserFactory(),
                                 JobListPersistenceDb('.', '.'),self.as_conf)
-        self.parser_mock = Mock(spec='SafeConfigParser')
+        self.parser_mock = MagicMock(spec='SafeConfigParser')
 
         self._platform.max_waiting_jobs = 100
         self._platform.total_jobs = 100
-        self.config.get_wrapper_type = Mock(return_value='vertical')
-        self.config.get_wrapper_export = Mock(return_value='')
-        self.config.get_wrapper_jobs = Mock(return_value='None')
-        self.config.get_wrapper_method = Mock(return_value='ASThread')
-        self.config.get_wrapper_queue = Mock(return_value='debug')
-        self.config.get_wrapper_policy = Mock(return_value='flexible')
-        self.config.get_extensible_wallclock = Mock(return_value=0)
-        self.config.get_retrials = Mock(return_value=0)
+        self.config.get_wrapper_type = MagicMock(return_value='vertical')
+        self.config.get_wrapper_export = MagicMock(return_value='')
+        self.config.get_wrapper_jobs = MagicMock(return_value='None')
+        self.config.get_wrapper_method = MagicMock(return_value='ASThread')
+        self.config.get_wrapper_queue = MagicMock(return_value='debug')
+        self.config.get_wrapper_policy = MagicMock(return_value='flexible')
+        self.config.get_extensible_wallclock = MagicMock(return_value=0)
+        self.config.get_retrials = MagicMock(return_value=0)
         options = {
             'TYPE': "vertical",
             'JOBS_IN_WRAPPER': "None",
@@ -1107,9 +1107,9 @@ class TestWrappers(TestCase):
         d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
         d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
 
-        self.parser_mock.has_option = Mock(return_value=True)
-        self.parser_mock.get = Mock(return_value="chunk")
-        self.job_list._get_date = Mock(return_value='d1')
+        self.parser_mock.has_option = MagicMock(return_value=True)
+        self.parser_mock.get = MagicMock(return_value="chunk")
+        self.job_list._get_date = MagicMock(return_value='d1')
 
         ordered_jobs_by_date_member = dict()
         ordered_jobs_by_date_member["d1"] = dict()
@@ -1131,9 +1131,9 @@ class TestWrappers(TestCase):
         self._createDummyJobs(
             self.workflows['running_date'], date_list, member_list, chunk_list)
 
-        self.parser_mock.has_option = Mock(return_value=True)
-        self.parser_mock.get = Mock(side_effect=["chunk", "chunk", "date"])
-        self.job_list._get_date = Mock(side_effect=['d1', 'd2'])
+        self.parser_mock.has_option = MagicMock(return_value=True)
+        self.parser_mock.get = MagicMock(side_effect=["chunk", "chunk", "date"])
+        self.job_list._get_date = MagicMock(side_effect=['d1', 'd2'])
 
         d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
         d1_m1_2_s2 = self.job_list.get_job_by_name('expid_d1_m1_2_s2')
@@ -1201,9 +1201,9 @@ class TestWrappers(TestCase):
         self._createDummyJobs(
             self.workflows['running_once'], date_list, member_list, chunk_list)
 
-        self.parser_mock.has_option = Mock(return_value=True)
-        self.parser_mock.get = Mock(side_effect=["chunk", "chunk", "once"])
-        self.job_list._get_date = Mock(side_effect=['d2', 'd1', 'd2'])
+        self.parser_mock.has_option = MagicMock(return_value=True)
+        self.parser_mock.get = MagicMock(side_effect=["chunk", "chunk", "once"])
+        self.job_list._get_date = MagicMock(side_effect=['d2', 'd1', 'd2'])
 
         d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
         d1_m1_2_s2 = self.job_list.get_job_by_name('expid_d1_m1_2_s2')
@@ -1269,9 +1269,9 @@ class TestWrappers(TestCase):
         self._createDummyJobs(
             self.workflows['synchronize_date'], date_list, member_list, chunk_list)
 
-        self.parser_mock.has_option = Mock(return_value=True)
-        self.parser_mock.get = Mock(return_value="chunk")
-        self.job_list._get_date = Mock(
+        self.parser_mock.has_option = MagicMock(return_value=True)
+        self.parser_mock.get = MagicMock(return_value="chunk")
+        self.job_list._get_date = MagicMock(
             side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd2'])
 
         d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
@@ -1341,9 +1341,9 @@ class TestWrappers(TestCase):
         self._createDummyJobs(
             self.workflows['synchronize_member'], date_list, member_list, chunk_list)
 
-        self.parser_mock.has_option = Mock(return_value=True)
-        self.parser_mock.get = Mock(return_value="chunk")
-        self.job_list._get_date = Mock(side_effect=['d1', 'd2'])
+        self.parser_mock.has_option = MagicMock(return_value=True)
+        self.parser_mock.get = MagicMock(return_value="chunk")
+        self.job_list._get_date = MagicMock(side_effect=['d1', 'd2'])
 
         d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
         d1_m1_2_s2 = self.job_list.get_job_by_name('expid_d1_m1_2_s2')

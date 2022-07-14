@@ -1790,7 +1790,7 @@ class AutosubmitConfig(object):
         Returns if the user has enabled the PRESUBMISSION configuration parameter from autosubmit's config file
 
         :return: if remote dependencies
-        :rtype: bool
+        :rtype: string
         """
         return str(self.get_section(['config', 'PRESUBMISSION'], "false")).lower()
 

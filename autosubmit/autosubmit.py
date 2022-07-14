@@ -4350,7 +4350,7 @@ class Autosubmit:
                                       as_conf.get_default_job_type(),
                                       as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive, update_structure=True, run_only_members=run_only_members,jobs_data= as_conf.experiment_data,as_conf=as_conf)
 
-                    if rerun == "true":
+                    if str(rerun).lower() == "true":
                         job_list.rerun(as_conf.get_rerun_jobs())
                     else:
                         job_list.remove_rerun_only_jobs(notransitive)
@@ -5578,7 +5578,7 @@ class Autosubmit:
                           as_conf.experiment_data, date_format, as_conf.get_retrials(),
                           as_conf.get_default_job_type(), as_conf.get_wrapper_type(), wrapper_jobs,
                           new=False, notransitive=notransitive, run_only_members=run_only_members,jobs_data=as_conf.experiment_data,as_conf=as_conf)
-        if rerun == "true":
+        if str(rerun).lower() == "true":
             rerun_jobs  = as_conf.get_rerun_jobs()
             job_list.rerun(rerun_jobs,monitor=monitor)
         else:
