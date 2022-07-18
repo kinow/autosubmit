@@ -46,12 +46,13 @@ class LogFormatter:
     :type to_file: bool
     """
     __module__ = __name__
+    yellow = "\x1b[33;20m"
     RESULT = '\x1b[32m'
-    WARNING = '\x1b[33m'
     ERROR = '\x1b[31m'
     CRITICAL = '\x1b[1m \x1b[31m'
     DEFAULT = '\x1b[0m\x1b[39m'
     ERROR = '\033[38;5;214m'
+    WARNING = "\x1b[33;20m"
 
     def __init__(self, to_file=False):
         """
@@ -357,15 +358,15 @@ class Log:
             errorcode -- Classified code
             message -- explanation
         """
-        if 4000 >= code < 5000:
+        if 4000 <= code < 5000:
             Log.info("{0}", message)
-        elif 5000 >= code < 6000:
+        elif 5000 <= code < 6000:
             Log.result("{0}", message)
-        elif 3000 >= code < 4000:
+        elif 3000 <= code < 4000:
             Log.warning("{1}[eCode={0}]", code, message)
-        elif 6000 >= code < 7000:
+        elif 6000 <= code < 7000:
             Log.error("[ERROR] {1}[eCode={0}]", code, message)
-        elif code >= 7000:
+        elif code <= 7000:
             Log.critical("{1}[eCode={0}]", code, message)
         else:
             Log.info("{0}", message)
