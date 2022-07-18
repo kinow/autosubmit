@@ -2050,8 +2050,11 @@ class Autosubmit:
                 if message is None:
                     message = "OK"
                 if message != "OK":
-                    ssh_config_issues += message + " this is an PARAMIKO SSHEXCEPTION: indicates that there is something incompatible in the ssh_config for host:{0}\n maybe you need to contact your sysadmin".format(
-                        platform.host)
+                    if message.find("doesn't accept remote connections") != -1:
+                        ssh_config_issues += message
+                    else:
+                        ssh_config_issues += message + " this is an PARAMIKO SSHEXCEPTION: indicates that there is something incompatible in the ssh_config for host:{0}\n maybe you need to contact your sysadmin".format(
+                            platform.host)
             except BaseException as e:
                 try:
                     if mail_notify:

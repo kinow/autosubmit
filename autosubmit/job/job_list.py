@@ -304,9 +304,9 @@ class JobList(object):
                     section, splits_section)
                 section = section_name
             if parameters.get(section,None) is None:
-                #Log.printlog("WARNING: SECTION {0} is not defined in jobs.conf".format(section))
-                #continue
-                raise AutosubmitCritical("Section:{0} doesn't exists.".format(section),7014)
+                Log.printlog("WARNING: SECTION {0} is not defined in jobs.conf".format(section))
+                continue
+                #raise AutosubmitCritical("Section:{0} doesn't exists.".format(section),7014)
             dependency_running_type = str(parameters[section].get('RUNNING', 'once')).lower()
             delay = int(parameters[section].get('DELAY', -1))
             select_chunks_opt = str(parameters[job_section].get( 'SELECT_CHUNKS', ""))
@@ -372,7 +372,10 @@ class JobList(object):
         visited_parents = set()
         other_parents   = set()
         for key in dependencies_keys:
-            dependency = dependencies[key]
+            dependency = dependencies.get(key,None)
+            if dependency is None:
+                Log.printlog("WARNING: SECTION {0} is not defined in jobs.conf. Dependency skipped".format(key),Log.WARNING)
+                continue
             skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
                                                                                  job.member, member_list,
                                                                                  job.date, date_list,

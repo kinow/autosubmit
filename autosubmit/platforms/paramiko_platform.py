@@ -217,7 +217,9 @@ class ParamikoPlatform(Platform):
         except SSHException as e:
             raise
         except IOError as e:
-            if "refused" in e.strerror:
+            if "refused" in e.strerror.lower():
+                raise SSHException(" {0} doesn't accept remote connections. Check if there is an typo in the hostname".format(self.host))
+            elif "name or service not known" in e.strerror.lower():
                 raise SSHException(" {0} doesn't accept remote connections. Check if there is an typo in the hostname".format(self.host))
             else:
                 raise AutosubmitError("File can't be located due an slow connection", 6016, str(e))
@@ -1052,7 +1054,7 @@ class ParamikoPlatform(Platform):
         else:
             header = self.header.PARALLEL
         str_datetime = date2str(datetime.datetime.now(), 'S')
-        if job.wrapper_type.lower() != "vertical":
+        if str(job.wrapper_type).lower() != "vertical":
             out_filename = "{0}.cmd.out.{1}".format(job.name,job.fail_count)
             err_filename = "{0}.cmd.err.{1}".format(job.name,job.fail_count)
         else:
