@@ -2982,14 +2982,14 @@ class Autosubmit:
                         Log.info("Copying from {0} to {1}", os.path.join(
                             p.temp_dir, experiment_id), p.root_dir)
                         finished = False
-                        limit = 50
+                        limit = 150
                         rsync_retries = 0
                         try:
                             # Avoid infinite loop unrealistic upper limit, only for rsync failure
                             while not finished and rsync_retries < limit:
                                 finished = False
                                 pipeline_broke = False
-                                Log.info("Rsync launched {0} times. Can take up to 50 retrials or until all data is transfered".format(rsync_retries+1))
+                                Log.info("Rsync launched {0} times. Can take up to 150 retrials or until all data is transfered".format(rsync_retries+1))
                                 try:
                                     p.send_command("rsync --timeout=3600 --bwlimit=20000 -aq --remove-source-files " + os.path.join(
                                         p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
@@ -2999,7 +2999,7 @@ class Autosubmit:
                                     try:
                                         if p.get_ssh_output_err() == "":
                                             finished = True
-                                        elif "no such file or directory" in p.get_ssh_output_err().lower():
+                                        elif p.get_ssh_output_err().lower().find("no such file or directory") == -1:
                                             finished = True
                                         else:
                                             finished = False
@@ -3007,9 +3007,9 @@ class Autosubmit:
                                         finished = False
                                     pipeline_broke = True
                                 if not pipeline_broke:
-                                    if "no such file or directory" in p.get_ssh_output_err().lower():
+                                    if p.get_ssh_output_err().lower().find("no such file or directory") == -1:
                                         finished = True
-                                    elif "warning: rsync" in p.get_ssh_output_err().lower() or "connection unexpectedly closed" in p.get_ssh_output_err().lower():
+                                    elif p.get_ssh_output_err().lower().find("warning: rsync") != -1 or p.get_ssh_output_err().lower().find("closed") != -1 or p.get_ssh_output_err().lower().find("broken pipe") != -1 or p.get_ssh_output_err().lower().find("directory has vanished") != -1:
                                         rsync_retries += 1
                                         finished = False
                                     elif p.get_ssh_output_err() == "":
