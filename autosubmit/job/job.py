@@ -612,6 +612,7 @@ class Job(object):
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0):
         max_logs = 0
         sleep(5)
+        stat_file = self.script_name[:-4] + "_STAT_"
         try:
             as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
@@ -624,8 +625,7 @@ class Job(object):
                 pass
             max_logs = int(as_conf.get_retrials()) - fail_count
             last_log = int(as_conf.get_retrials()) - fail_count
-            if self.wrapper_type == "vertical":
-                stat_file = self.script_name[:-4] + "_STAT_"
+            if self.wrapper_type is not None and self.wrapper_type == "vertical":
                 found = False
                 retrials = 0
                 while retrials < 3 and not found:
@@ -641,7 +641,7 @@ class Job(object):
                 remote_logs = (self.script_name + ".out." + str(last_log), self.script_name + ".err." + str(last_log))
 
             else:
-                remote_logs = (self.script_name + ".out", self.script_name + ".err")
+                remote_logs = (self.script_name + ".out."+str(fail_count), self.script_name + ".err." + str(fail_count))
 
         except Exception as e:
             Log.printlog(
