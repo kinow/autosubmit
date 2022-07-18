@@ -1054,7 +1054,7 @@ class ParamikoPlatform(Platform):
         else:
             header = self.header.PARALLEL
         str_datetime = date2str(datetime.datetime.now(), 'S')
-        if str(job.wrapper_type).lower() != "vertical":
+        if job.wrapper_type.lower() != "vertical":
             out_filename = "{0}.cmd.out.{1}".format(job.name,job.fail_count)
             err_filename = "{0}.cmd.err.{1}".format(job.name,job.fail_count)
         else:
