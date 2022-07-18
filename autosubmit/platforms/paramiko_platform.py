@@ -1052,8 +1052,12 @@ class ParamikoPlatform(Platform):
         else:
             header = self.header.PARALLEL
         str_datetime = date2str(datetime.datetime.now(), 'S')
-        out_filename = "{0}.cmd.out".format(job.name)
-        err_filename = "{0}.cmd.err".format(job.name)
+        if job.wrapper_type.lower() != "vertical":
+            out_filename = "{0}.cmd.out.{1}".format(job.name,job.fail_count)
+            err_filename = "{0}.cmd.err.{1}".format(job.name,job.fail_count)
+        else:
+            out_filename = "{0}.cmd.out".format(job.name)
+            err_filename = "{0}.cmd.err".format(job.name)
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
 

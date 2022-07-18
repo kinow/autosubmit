@@ -650,7 +650,7 @@ class Job(object):
                 remote_logs = (self.script_name + ".out." + str(last_log), self.script_name + ".err." + str(last_log))
 
             else:
-                remote_logs = (self.script_name + ".out", self.script_name + ".err")
+                remote_logs = (self.script_name + ".out."+str(fail_count), self.script_name + ".err." + str(fail_count))
 
         except Exception as e:
             Log.printlog(

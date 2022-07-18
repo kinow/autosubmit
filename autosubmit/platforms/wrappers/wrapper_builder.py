@@ -151,9 +151,9 @@ class PythonWrapperBuilder(WrapperBuilder):
             def run(self):
                 jobname = self.template.replace('.cmd', '')
                 #os.system("echo $(date +%s) > "+jobname+"_STAT")
-                out = str(self.template) + ".out"
-                err = str(self.template) + ".err"
-                print((out+"\\n"))
+                out = str(self.template) + ".out." + str(self.retrials)
+                err = str(self.template) + ".err." + str(self.retrials)
+                print(out+"\\n")
                 command = "./" + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
         """).format('\n'.ljust(13))
