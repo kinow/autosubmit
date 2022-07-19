@@ -1996,7 +1996,7 @@ class Autosubmit:
                             raise AutosubmitCritical("Autosubmit Encounter too much errors during running time, limit of 4hours reached", 7051, e.message)
                     except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
                         raise AutosubmitCritical(e.message, e.code, e.trace)
-                    except portalocker.AlreadyLocked:
+                    except (portalocker.AlreadyLocked, portalocker.LockException) as e:
                         message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
                         raise AutosubmitCritical(message, 7000)
                     except BaseException as e:  # If this happens, there is a bug in the code or an exception not-well caught
@@ -2029,7 +2029,7 @@ class Autosubmit:
                     Log.result("Run successful")
                     # Updating finish time for job data header
                     exp_history.finish_current_experiment_run()
-        except portalocker.AlreadyLocked:
+        except (portalocker.AlreadyLocked, portalocker.LockException) as e:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message, 7000)
         except AutosubmitCritical as e:
@@ -4022,7 +4022,7 @@ class Autosubmit:
                 else:
                     Log.info(
                         "Backup file not found. Pkl restore operation stopped. No changes have been made.")
-        except portalocker.AlreadyLocked:
+        except (portalocker.AlreadyLocked, portalocker.LockException) as e:
             message = "Another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on the /tmp folder."
             raise AutosubmitCritical(message, 7000)
         except AutosubmitCritical as e:
@@ -4455,7 +4455,7 @@ class Autosubmit:
                     raise AutosubmitCritical("Stopped by user input", 7010)
                 except (BaseException) as e:
                     raise
-        except portalocker.AlreadyLocked:
+        except (portalocker.AlreadyLocked, portalocker.LockException) as e:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message, 7000)
         except AutosubmitError as e:
@@ -5194,7 +5194,7 @@ class Autosubmit:
                     Log.warning("-d option only works with -ftc.")
                 return True
 
-        except portalocker.AlreadyLocked:
+        except (portalocker.AlreadyLocked, portalocker.LockException) as e:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message, 7000)
         except (AutosubmitError,AutosubmitCritical):
