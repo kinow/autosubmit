@@ -1237,6 +1237,10 @@ class Autosubmit:
             platform = platforms[as_conf.get_platform()]
             platform.add_parameters(parameters, True)
         # Attach paramenters to JobList
+        parameters['STARTDATES'] = []
+        for date in job_list._date_list:
+            parameters['STARTDATES'].append(date2str(date, job_list.get_date_format()))
+
         job_list.parameters = parameters
 
     @staticmethod
