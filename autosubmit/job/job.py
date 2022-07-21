@@ -933,7 +933,10 @@ class Job(object):
                 self.date, chunk, chunk_length, chunk_unit, cal)
             chunk_end = chunk_end_date(
                 chunk_start, chunk_length, chunk_unit, cal)
-            chunk_end_1 = previous_day(chunk_end, cal)
+            if chunk_unit == 'hour':
+                chunk_end_1 = chunk_end
+            else:
+                chunk_end_1 = previous_day(chunk_end, cal)
 
             parameters['DAY_BEFORE'] = date2str(
                 previous_day(self.date, cal), self.date_format)
@@ -949,11 +952,7 @@ class Job(object):
             parameters['Chunk_START_MONTH'] = str(chunk_start.month).zfill(2)
             parameters['Chunk_START_DAY'] = str(chunk_start.day).zfill(2)
             parameters['Chunk_START_HOUR'] = str(chunk_start.hour).zfill(2)
-            #parameters['Chunk_START_DATE'] = date2str(chunk_end_1, self.date_format)
-            #parameters['Chunk_START_YEAR'] = str(chunk_end_1.year)
-            #parameters['Chunk_START_MONTH'] = str(chunk_end_1.month).zfill(2)
-            #parameters['Chunk_START_DAY'] = str(chunk_end_1.day).zfill(2)
-            #parameters['Chunk_START_HOUR'] = str(chunk_end_1.hour).zfill(2)
+
 
             parameters['Chunk_SECOND_TO_LAST_DATE'] = date2str(
                 chunk_end_1, self.date_format)
