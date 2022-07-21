@@ -379,11 +379,10 @@ class ParamikoPlatform(Platform):
 
         except IOError as e:
             if str(e) in "Garbage":
-                raise AutosubmitError('File {0} does not exists, something went wrong with the platform'.format(
-                    path_root), 6004, e.message)
+                raise AutosubmitError('File {0} does not exists, something went wrong with the platform'.format(os.path.join(path_root,src)), 6004, e.message)
             if must_exist:
-                raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(
-                    path_root), 6004, e.message)
+                raise AutosubmitError("File {0} does not exists".format(
+                    os.path.join(path_root,src)), 6004, e.message)
             else:
                 Log.debug("File {0} doesn't exists ".format(path_root))
                 return False
@@ -392,7 +391,7 @@ class ParamikoPlatform(Platform):
                 raise AutosubmitError('File {0} does not exists'.format(
                     os.path.join(self.get_files_path(), src)), 6004, e.message)
             if must_exist:
-                raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(
+                raise AutosubmitError("File {0} does not exists".format(
                     os.path.join(self.get_files_path(), src)), 6004, e.message)
             else:
                 Log.printlog("Log file couldn't be moved: {0}".format(
@@ -980,7 +979,7 @@ class ParamikoPlatform(Platform):
             executable = 'python'
         elif job.type == Type.R:
             executable = 'Rscript'
-        remote_logs = (job.script_name + ".out", job.script_name + ".err")
+        remote_logs = (job.script_name + ".out."+str(job.fail_count), job.script_name + ".err."+str(job.fail_count))
         if timeout < 1:
             command = export + ' nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
                 os.path.join(self.remote_log_dir, job_script),

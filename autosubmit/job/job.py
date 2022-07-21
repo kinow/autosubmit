@@ -557,7 +557,7 @@ class Job(object):
         return retrials_list
 
     def retrieve_logfiles_unthreaded(self, copy_remote_logs, local_logs):
-        remote_logs = (self.script_name + ".out", self.script_name + ".err")
+        remote_logs = (self.script_name + ".out."+str(self.fail_count), self.script_name + ".err."+str(self.fail_count))
         out_exist = False
         err_exist = False
         retries = 3
@@ -656,12 +656,12 @@ class Job(object):
             while (not out_exist and not err_exist) and i < retries:
                 try:
                     out_exist = platform.check_file_exists(
-                        remote_logs[0], True)
+                        remote_logs[0], False)
                 except IOError as e:
                     out_exist = False
                 try:
                     err_exist = platform.check_file_exists(
-                        remote_logs[1], True)
+                        remote_logs[1], False)
                 except IOError as e:
                     err_exists = False
                 if not out_exist or not err_exist:
