@@ -10,6 +10,7 @@ Welcome to autosubmit's documentation!
 .. toctree::
    :maxdepth: 2
 
+   changelog
    introduction
    tutorial
    devel_proj
