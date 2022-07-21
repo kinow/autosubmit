@@ -83,8 +83,8 @@ class LocalPlatform(ParamikoPlatform):
 
     def get_submit_cmd(self, job_script, job, hold=False, export=""):
         wallclock = self.parse_time(job.wallclock)
-        seconds = int(wallclock.days * 86400 + wallclock.seconds)
-        if (export is None or export.lower() == "none") or len(export) == 0:
+        seconds = int(wallclock.days * 86400 + wallclock.seconds + 60)
+        if export == "none" or export == "None" or export is None or export == "":
             export = ""
         else:
             export += " ; "
