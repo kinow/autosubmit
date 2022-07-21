@@ -1516,12 +1516,12 @@ class JobList(object):
                     tmp = [
                         parent for parent in job.parents if parent.status == Status.COMPLETED]
                     if len(tmp) == len(job.parents):
-                        if not hasattr(job, 'DELAY_RETRY_TIME') or job.retrials is None:
+                        if not hasattr(job, 'delay_retrials') or job.retrials is None:
                             delay_retry_time = as_conf.get_delay_retry_time()
                         else:
-                            delay_retry_time = job.retry_delay
+                            delay_retry_time = job.delay_retrials
                         if "+" in delay_retry_time:
-                            retry_delay = job.fail_count * int(delay_retry_time[:-1]) + int(delay_retry_time[:-1])
+                            retry_delay = job.fail_count * int(delay_retry_time[1:]) + int(delay_retry_time[1:])
                         elif "*" in delay_retry_time:
                             retry_delay = int(delay_retry_time[1:])
                             for retrial_amount in range(0,job.fail_count):
