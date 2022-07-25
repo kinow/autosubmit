@@ -698,10 +698,10 @@ class Autosubmit:
         message += "[Command: autosubmit {0}] is not allowed to run in [host: {1}].".format(args.command.upper(), host)
         if args.command in BasicConfig.DENIED_HOSTS:
             if 'all' in BasicConfig.DENIED_HOSTS[args.command] or host in BasicConfig.DENIED_HOSTS[args.command]:
-                raise AutosubmitCritical(message, 7004)
+                raise AutosubmitCritical(message, 7071)
         if args.command in BasicConfig.ALLOWED_HOSTS:
             if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and host not in BasicConfig.ALLOWED_HOSTS[args.command]:
-                raise AutosubmitCritical(message, 7004)
+                raise AutosubmitCritical(message, 7071)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()

@@ -102,15 +102,17 @@ Uncatalogued codes  - Critical Error codes [7060+]
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7065 | Wrong git configuration             | Invalid git url. Check [GIT] expdef config. If issue persists, check if proj folder is a well configured git folder.   |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7066 | Pre-submission feature issues        | New feature, this message shouldn't be prompt. Please report it to Git.                                                |
+| 7066 | Pre-submission feature issues        | New feature, this message shouldn't be prompt. Please report it to Git.                                               |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7067 | Historical Database not found       | Configure [historicdb] PATH = <file_path>.                                                                             |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7068 | Monitor output can't be loaded      | Try another output method// Check if the experiment is reachable                                                       |
+| 7068 | Monitor output can't be loaded      | Try another output method// Check if the experiment is reachable.                                                      |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7069 | Monitor output format invalid       | Try another output method                                                                                              |
+| 7069 | Monitor output format invalid       | Try another output method.                                                                                             |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7070 | Bug in code                         | Contact us via git/e-mail output                                                                                       |
+| 7070 | Bug in code                         | Contact us via git/e-mail output.                                                                                      |
++------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
+| 7071 | AS can't run in this host           | If you think that this is an error, check the .autosubmitrc and modify the allowed/forbidden directives.               |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 
 
@@ -129,7 +131,7 @@ Minor errors  - Error codes [6000+]
 +======+======================================================+================================================================================================+
 | 6001 |     Failed to retrieve log files                     | Automatically, if there aren't bigger issues                                                   |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
-| 6002 |     Failed reconnection                               | Automatically, if there aren't bigger issues                                                   |
+| 6002 |     Failed reconnection                               | Automatically, if there aren't bigger issues                                                  |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6003 |     Failed connection, wrong configuration           | Check your platform.conf file                                                                  |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
@@ -153,7 +155,7 @@ Minor errors  - Error codes [6000+]
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6013 |     Configuration issues                             | Check log output for more info                                                                 |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
-| 6014 | Git Can't clone repository submodule                  | Check submodule url, perform a refresh                                                         |
+| 6014 | Git Can't clone repository submodule                  | Check submodule url, perform a refresh                                                        |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6015 | Submission failed                                    | Automatically, if there aren't bigger issues                                                   |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
