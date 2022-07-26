@@ -495,7 +495,11 @@ class ParamikoPlatform(Platform):
                     job.start_time = datetime.datetime.now() # URi: start time
                 if job.start_time is not None and str(job.wrapper_type).lower() == "none":
                     if job.is_over_wallclock(job.start_time, job.wallclock):
-                        job_status = Status.FAILED
+                        try:
+                            self.cancel_job(job)
+                            job_status = Status.FAILED
+                        except:
+                            pass
             elif job_status in self.job_status['QUEUING'] and job.hold is False:
                 job_status = Status.QUEUING
             elif job_status in self.job_status['QUEUING'] and job.hold is True:
