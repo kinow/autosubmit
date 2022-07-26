@@ -799,7 +799,7 @@ class Job(object):
             total += wallclock.minute / 60.0
         if wallclock.second > 0:
             total += wallclock.second / 60.0 / 60.0
-        total = total * 1.50 # in this case we only want to avoid slurm issues so the time is increased by 50%
+        total = total * 1.30 # in this case we only want to avoid slurm issues so the time is increased by 50%
         hour = int(total)
         minute = int((total - int(total)) * 60.0)
         second = int(((total - int(total)) * 60 -
