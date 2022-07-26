@@ -149,6 +149,7 @@ class Job(object):
         self.export = "none"
         self.dependencies = []
         self.running = "once"
+        self.start_time = None
 
     def __getstate__(self):
         odict = self.__dict__
@@ -183,7 +184,7 @@ class Job(object):
         :rtype: set
         """
         return self._parents
-    
+
     @parents.setter
     def parents(self, parents):
         """
@@ -194,13 +195,13 @@ class Job(object):
     @property
     def status_str(self):
         """
-        String representation of the current status 
+        String representation of the current status
         """
         return Status.VALUE_TO_KEY.get(self.status, "UNKNOWN")
-    
+
     @property
     def children_names_str(self):
-        """ 
+        """
         Comma separated list of children's names
         """
         return ",".join([str(child.name) for child in self._children])
@@ -316,7 +317,7 @@ class Job(object):
     @property
     def total_processors(self):
         """
-        Number of processors requested by job.  
+        Number of processors requested by job.
         Reduces ':' separated format  if necessary.
         """
         if ':' in str(self.processors):
@@ -540,7 +541,7 @@ class Job(object):
         Returns the retrials of a job, including the last COMPLETED run. The selection stops, and does not include, when the previous COMPLETED job is located or the list of registers is exhausted.
 
         :return: list of dates of retrial [submit, start, finish] in datetime format
-        :rtype: list of list  
+        :rtype: list of list
         """
         log_name = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         retrials_list = []
@@ -781,8 +782,35 @@ class Job(object):
         except BaseException as e:
             pass
         return
-    
-    def update_status(self, as_conf, failed_file=False):
+    # Duplicated for wrappers and jobs to fix in 4.0.0
+    def is_over_wallclock(self, start_time, wallclock):
+        """
+        Check if the job is over the wallclock time, it is an alternative method to avoid platform issues
+        :param start_time:
+        :param wallclock:
+        :return:
+        """
+        elapsed = datetime.datetime.now() - start_time
+        wallclock = datetime.datetime.strptime(wallclock, '%H:%M')
+        total = 0.0
+        if wallclock.hour > 0:
+            total = wallclock.hour
+        if wallclock.minute > 0:
+            total += wallclock.minute / 60.0
+        if wallclock.second > 0:
+            total += wallclock.second / 60.0 / 60.0
+        total = total * 1.50 # in this case we only want to avoid slurm issues so the time is increased by 50%
+        hour = int(total)
+        minute = int((total - int(total)) * 60.0)
+        second = int(((total - int(total)) * 60 -
+                      int((total - int(total)) * 60.0)) * 60.0)
+        wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,
+                                             seconds=second)
+        if elapsed > wallclock_delta:
+            return True
+        return False
+
+    def update_status(self, copy_remote_logs=False, failed_file=False):
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -841,7 +869,7 @@ class Job(object):
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
             self.write_start_time()
-        if previous_status == Status.HELD and self.status in [Status.SUBMITTED, Status.QUEUING, Status.RUNNING]:            
+        if previous_status == Status.HELD and self.status in [Status.SUBMITTED, Status.QUEUING, Status.RUNNING]:
             self.write_submit_time()
         # Updating logs
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
@@ -1354,7 +1382,7 @@ class Job(object):
             exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
             exp_history.write_submit_time(self.name, submit=data_time[1], status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
                                         wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
-                                        platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name), 
+                                        platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
                                         children=self.children_names_str)
 
     def write_start_time(self, enabled = False):
@@ -1383,8 +1411,8 @@ class Job(object):
             # Writing database
             exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
             exp_history.write_start_time(self.name, start=start_time, status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
-                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk, 
-                                    platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name), 
+                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
+                                    platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
                                     children=self.children_names_str)
         return True
 
@@ -1427,7 +1455,7 @@ class Job(object):
                                         wrapper_code=get_job_package_code(self.expid, self.name), children=self.children_names_str)
 
             # Launch second as threaded function only for slurm
-            if job_data_dc and type(self.platform) is not str and self.platform.type == "slurm":                
+            if job_data_dc and type(self.platform) is not str and self.platform.type == "slurm":
                 thread_write_finish = Thread(target=ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR).write_platform_data_after_finish, args=(job_data_dc, self.platform))
                 thread_write_finish.name = "JOB_data_{}".format(self.name)
                 thread_write_finish.start()
@@ -1462,12 +1490,12 @@ class Job(object):
             exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
             exp_history.write_submit_time(self.name, submit=total_stats[0], status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
                                         wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
-                                        platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name), 
+                                        platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
                                         children=self.children_names_str)
         exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
         exp_history.write_start_time(self.name, start=total_stats[0], status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
-                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk, 
-                                    platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name), 
+                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
+                                    platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
                                     children=self.children_names_str)
 
         exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
@@ -1476,7 +1504,7 @@ class Job(object):
                                         platform=self.platform_name, job_id=self.id, out_file=out, err_file=err, wrapper_queue=self._wrapper_queue,
                                         wrapper_code=get_job_package_code(self.expid, self.name), children=self.children_names_str)
          # Launch second as threaded function only for slurm
-        if job_data_dc and type(self.platform) is not str and self.platform.type == "slurm":                
+        if job_data_dc and type(self.platform) is not str and self.platform.type == "slurm":
             thread_write_finish = Thread(target=ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR).write_platform_data_after_finish, args=(job_data_dc, self.platform))
             thread_write_finish.name = "JOB_data_{}".format(self.name)
             thread_write_finish.start()

@@ -5,6 +5,7 @@ import socket
 import os
 import paramiko
 import datetime
+import time
 import select
 import re
 from datetime import timedelta
@@ -502,6 +503,11 @@ class ParamikoPlatform(Platform):
                 job_status = Status.COMPLETED
             elif job_status in self.job_status['RUNNING']:
                 job_status = Status.RUNNING
+                if job.status != Status.RUNNING:
+                    job.start_time = datetime.datetime.now() # URi: start time
+                if job.start_time is not None and str(job.wrapper_type).lower() == "none":
+                    if job.is_over_wallclock(job.start_time, job.wallclock):
+                        job_status = Status.FAILED
             elif job_status in self.job_status['QUEUING'] and job.hold == "false":
                 job_status = Status.QUEUING
             elif job_status in self.job_status['QUEUING'] and job.hold == "true":
