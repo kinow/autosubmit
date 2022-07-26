@@ -147,6 +147,7 @@ class Job(object):
         self.level = 0
         self.export = "none"
         self.dependencies = []
+        self.start_time = None
 
     def __getstate__(self):
         odict = self.__dict__
@@ -767,7 +768,34 @@ class Job(object):
         except BaseException as e:
             pass
         return
-    
+    # Duplicated for wrappers and jobs to fix in 4.0.0
+    def is_over_wallclock(self, start_time, wallclock):
+        """
+        Check if the job is over the wallclock time, it is an alternative method to avoid platform issues
+        :param start_time:
+        :param wallclock:
+        :return:
+        """
+        elapsed = datetime.datetime.now() - start_time
+        wallclock = datetime.datetime.strptime(wallclock, '%H:%M')
+        total = 0.0
+        if wallclock.hour > 0:
+            total = wallclock.hour
+        if wallclock.minute > 0:
+            total += wallclock.minute / 60.0
+        if wallclock.second > 0:
+            total += wallclock.second / 60.0 / 60.0
+        total = total * 1.50 # in this case we only want to avoid slurm issues so the time is increased by 50%
+        hour = int(total)
+        minute = int((total - int(total)) * 60.0)
+        second = int(((total - int(total)) * 60 -
+                      int((total - int(total)) * 60.0)) * 60.0)
+        wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,
+                                             seconds=second)
+        if elapsed > wallclock_delta:
+            return True
+        return False
+
     def update_status(self, copy_remote_logs=False, failed_file=False):
         """
         Updates job status, checking COMPLETED file if needed
