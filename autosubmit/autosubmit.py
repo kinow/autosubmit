@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 
@@ -67,7 +69,7 @@ from typing import Set
 #except Exception:
 dialog = None
 from time import sleep
-import argparse
+import argparse, argcomplete
 import subprocess
 import json
 import tarfile
@@ -123,6 +125,12 @@ def signal_handler_create(signal_received, frame):
     raise AutosubmitCritical(
         'Autosubmit has been closed in an unexpected way. Killed or control + c.', 7010)
 
+class MyParser(argparse.ArgumentParser):
+   def error(self, message):
+      sys.stderr.write('error: %s\n' % message)
+      self.print_help()
+      sys.exit(2)
+
 class Autosubmit:
     """
     Interface class for autosubmit.
@@ -159,9 +167,8 @@ class Autosubmit:
 
         try:
             BasicConfig.read()
-            parser = argparse.ArgumentParser(
+            parser = MyParser(
                 description='Main executable for autosubmit. ')
-
             parser.add_argument('-v', '--version', action='version',
                                 version=Autosubmit.autosubmit_version)
             parser.add_argument('-lf', '--logfile', choices=('NO_LOG', 'INFO', 'WARNING', 'DEBUG'),
@@ -588,8 +595,9 @@ class Autosubmit:
 
             # Changelog
             subparsers.add_parser('changelog', description='show changelog')
-
+            argcomplete.autocomplete(parser)
             args = parser.parse_args()
+
 
         except Exception as e:
             if type(e) is SystemExit: #todo check
