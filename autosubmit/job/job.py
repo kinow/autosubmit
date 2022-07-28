@@ -782,6 +782,22 @@ class Job(object):
         except BaseException as e:
             pass
         return
+    def parse_time(self,wallclock):
+        format = "minute"
+        regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
+        parts = regex.match(wallclock)
+        if not parts:
+            return
+        parts = parts.groupdict()
+        if int(parts['hours']) > 0 :
+            format = "hour"
+        else:
+            format = "minute"
+        time_params = {}
+        for name, param in parts.items():
+            if param:
+                time_params[name] = int(param)
+        return datetime.timedelta(**time_params),format
     # Duplicated for wrappers and jobs to fix in 4.0.0
     def is_over_wallclock(self, start_time, wallclock):
         """
@@ -791,25 +807,13 @@ class Job(object):
         :return:
         """
         elapsed = datetime.datetime.now() - start_time
-        wallclock = datetime.datetime.strptime(wallclock, '%H:%M')
-        total = 0.0
-        if wallclock.hour > 0:
-            total = wallclock.hour
-            format = "hour"
+        wallclock,time_format = self.parse_time(wallclock)
+        if time_format == "hour":
+            total = wallclock.days * 24 + wallclock.seconds / 60 / 60
         else:
-            format = "minute"
-        if format == "hour":
-            if wallclock.minute > 0:
-                total += wallclock.minute / 60.0
-            if wallclock.second > 0:
-                total += wallclock.second / 60.0 / 60.0
-        else:
-            if wallclock.minute > 0:
-                total += wallclock.minute
-            if wallclock.second > 0:
-                total += wallclock.second / 60.0
+            total = wallclock.days * 24 + wallclock.seconds / 60
         total = total * 1.30 # in this case we only want to avoid slurm issues so the time is increased by 50%
-        if format == "hour":
+        if time_format == "hour":
             hour = int(total)
             minute = int((total - int(total)) * 60.0)
             second = int(((total - int(total)) * 60 -
