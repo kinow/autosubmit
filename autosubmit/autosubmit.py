@@ -2612,7 +2612,13 @@ class Autosubmit:
             if len(current_active_jobs) > 0:
                 if force and save:
                     for job in current_active_jobs:
-                        job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
+                        if job.platform_name is None:
+                            job.platform_name = hpcarch
+                        job.platform = submitter.platforms[job.platform_name.lower()]
+                        platforms_to_test.add(job.platform)
+                    for platform in platforms_to_test:
+                        platform.test_connection()
+                    job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
                 if not force:
                     raise AutosubmitCritical(
                         "Experiment can't be recovered due being {0} active jobs in your experiment, If you want to recover the experiment, please use the flag -f and all active jobs will be cancelled".format(
