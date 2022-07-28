@@ -1474,6 +1474,8 @@ class Autosubmit:
                 job.status = Status.READY
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
+            #for job in job_list.get_uncompleted_and_not_waiting():
+            #    job.status = Status.COMPLETED
             job_list.update_list(as_conf, False)
 
 
@@ -2123,7 +2125,8 @@ class Autosubmit:
         failed_packages = list()
         error_message = ""
         for platform in platforms_to_test:
-            job_list.save()
+            if not inspect:
+                job_list.save()
             if not hold:
                 Log.debug("\nJobs ready for {1}: {0}", len(
                     job_list.get_ready(platform, hold=hold)), platform.name)
@@ -2160,7 +2163,8 @@ class Autosubmit:
                         try:
                             package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             save=True
-                            job_list.save()
+                            if not inspect:
+                                job_list.save()
                             valid_packages_to_submit.append(package)
                             #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str(open()))
                         except (IOError, OSError):
@@ -2318,9 +2322,10 @@ class Autosubmit:
                             # Saving only when it is a real multi job package
                             packages_persistence.save(
                                 package.name, package.jobs, package._expid, inspect)
-        job_list.save()
-        if error_message != "":
-            raise AutosubmitCritical("Submission Failed due wrong configuration:{0}".format(error_message), 7015)
+            if not inspect:
+                job_list.save()
+            if error_message != "":
+                raise AutosubmitCritical("Submission Failed due wrong configuration:{0}".format(error_message),7015)
         return save
 
     @staticmethod
