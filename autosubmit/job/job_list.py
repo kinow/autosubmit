@@ -1452,8 +1452,10 @@ class JobList(object):
             Log.status_failed("\n{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", "Job Name",
                        "Job Id", "Job Status", "Job Platform", "Job Queue")
         for job in job_list:
-            if len(job.queue) < 1:
-                queue = "no-scheduler"
+            if len(job.queue) > 0 and str(job.platform.queue).lower() != "none":
+                queue = job.queue
+            elif len(job.platform.queue) > 0 and str(job.platform.queue).lower() != "none":
+                queue = job.platform.queue
             else:
                 queue = job.queue
             Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status(

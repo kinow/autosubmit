@@ -1741,7 +1741,7 @@ class AutosubmitConfig(object):
             shutil.copyfile(ini_file, backup_path)
         # Read key=value property configs in python dictionary
         content = open(input_file,'r').read()
-        regex = r"\=( )*\[[\[\]\'_0-9.ñ\"#A-Za-z \-,]*\]"
+        regex = r"\=( )*\[[\[\]\'_0-9.\"#A-Za-z \-,]*\]"
 
         matches = re.finditer(regex, content)
 

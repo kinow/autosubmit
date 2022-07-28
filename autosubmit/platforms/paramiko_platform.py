@@ -1002,7 +1002,7 @@ class ParamikoPlatform(Platform):
             executable = 'python'
         elif job.type == Type.R:
             executable = 'Rscript'
-        remote_logs = (job.script_name + ".out", job.script_name + ".err")
+        remote_logs = (job.script_name + ".out."+str(job.fail_count), job.script_name + ".err."+str(job.fail_count))
         if timeout < 1:
             command = export + ' nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
                 os.path.join(self.remote_log_dir, job_script),

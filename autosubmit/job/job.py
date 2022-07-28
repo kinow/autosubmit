@@ -561,7 +561,7 @@ class Job(object):
         return retrials_list
 
     def retrieve_logfiles_unthreaded(self, copy_remote_logs, local_logs):
-        remote_logs = (self.script_name + ".out", self.script_name + ".err")
+        remote_logs = (self.script_name + ".out."+str(self.fail_count), self.script_name + ".err."+str(self.fail_count))
         out_exist = False
         err_exist = False
         retries = 3
