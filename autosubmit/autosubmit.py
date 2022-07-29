@@ -2066,6 +2066,8 @@ class Autosubmit:
                 if message != "OK":
                     if message.find("doesn't accept remote connections") != -1:
                         ssh_config_issues += message
+                    elif message.find("Authentication failed") != -1:
+                        ssh_config_issues += message + ". Please, check the user and project of this platform\nIf it is correct, try another host"
                     else:
                         ssh_config_issues += message + " this is an PARAMIKO SSHEXCEPTION: indicates that there is something incompatible in the ssh_config for host:{0}\n maybe you need to contact your sysadmin".format(
                             platform.host)
