@@ -1983,6 +1983,8 @@ class Autosubmit:
                 if message != "OK":
                     if message.find("doesn't accept remote connections") != -1:
                         ssh_config_issues += message
+                    elif message.find("Authentication failed") != -1:
+                        ssh_config_issues += message + ". Please, check the user and project of this platform\nIf it is correct, try another host"
                     else:
                         ssh_config_issues += message + " this is an PARAMIKO SSHEXCEPTION: indicates that there is something incompatible in the ssh_config for host:{0}\n maybe you need to contact your sysadmin".format(
                             platform.host)
@@ -2009,7 +2011,7 @@ class Autosubmit:
                 Log.result("[{1}] Connection successful to host {0}", platform.host, platform.name)
             else:
                 platform.connected = False
-                Log.result("[{1}] Connection failed to host {0}", platform.host, platform.name)
+                Log.printlog("[{1}] Connection failed to host {0}".format( platform.host, platform.name),Log.WARNING)
         if issues != "":
             platform.connected = False
             raise AutosubmitCritical(

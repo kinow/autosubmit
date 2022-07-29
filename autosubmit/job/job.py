@@ -781,17 +781,31 @@ class Job(object):
         total = 0.0
         if wallclock.hour > 0:
             total = wallclock.hour
-        if wallclock.minute > 0:
-            total += wallclock.minute / 60.0
-        if wallclock.second > 0:
-            total += wallclock.second / 60.0 / 60.0
+            format = "hour"
+        else:
+            format = "minute"
+        if format == "hour":
+            if wallclock.minute > 0:
+                total += wallclock.minute / 60.0
+            if wallclock.second > 0:
+                total += wallclock.second / 60.0 / 60.0
+        else:
+            if wallclock.minute > 0:
+                total += wallclock.minute
+            if wallclock.second > 0:
+                total += wallclock.second / 60.0
         total = total * 1.30 # in this case we only want to avoid slurm issues so the time is increased by 50%
-        hour = int(total)
-        minute = int((total - int(total)) * 60.0)
-        second = int(((total - int(total)) * 60 -
-                      int((total - int(total)) * 60.0)) * 60.0)
-        wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,
-                                             seconds=second)
+        if format == "hour":
+            hour = int(total)
+            minute = int((total - int(total)) * 60.0)
+            second = int(((total - int(total)) * 60 -
+                          int((total - int(total)) * 60.0)) * 60.0)
+            wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,
+                                                 seconds=second)
+        else:
+            minute = int(total)
+            second = int((total - int(total)) * 60.0)
+            wallclock_delta = datetime.timedelta(minutes=minute, seconds=second)
         if elapsed > wallclock_delta:
             return True
         return False
