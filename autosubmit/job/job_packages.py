@@ -575,26 +575,39 @@ class JobPackageVertical(JobPackageThread):
                                                                                   len(self._jobs))
 
     def parse_time(self):
+        format = "minute"
         regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
         parts = regex.match(self._wallclock)
         if not parts:
             return
         parts = parts.groupdict()
+        if int(parts['hours']) > 0 :
+            format = "hour"
+        else:
+            format = "minute"
         time_params = {}
         for name, param in parts.items():
             if param:
                 time_params[name] = int(param)
-        return timedelta(**time_params)
+        return timedelta(**time_params),format
     def _common_script_content(self):
         if self.jobs[0].wrapper_type == "vertical":
             #wallclock = datetime.datetime.strptime(self._wallclock, '%H:%M')
-            wallclock = self.parse_time()
-            total = wallclock.days * 24 + wallclock.seconds / 60 / 60
+            wallclock,format = self.parse_time()
+            if format == "hour":
+                total = wallclock.days * 24 + wallclock.seconds / 60 / 60
+            else:
+                total = wallclock.days * 24 + wallclock.seconds / 60
             total = total * 1.15
-            hour = int(total )
-            minute = int((total - int(total)) * 60.0)
-            second = int(((total - int(total)) * 60 -
-                          int((total - int(total)) * 60.0)) * 60.0)
+            if format == "hour":
+                hour = int(total )
+                minute = int((total - int(total)) * 60.0)
+                second = int(((total - int(total)) * 60 -
+                              int((total - int(total)) * 60.0)) * 60.0)
+            else:
+                hour = 0
+                minute = int(total)
+                second = int((total - int(total)) * 60.0)
             wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,seconds=second)
             wallclock_seconds = wallclock_delta.days * 24 * 60 * 60 + wallclock_delta.seconds
             wallclock_by_level = wallclock_seconds/(self.jobs[-1].level+1)
