@@ -31,10 +31,12 @@ This is the minimum job definition and usually is not enough. You usually will n
 .. code-block:: ini
 
     [jobs]
-    SELECT_CHUNKS = SIM*[1]*[3] # Enables the dependency of  chunk 1 with chunk 3. While chunks 2,4  won't be linked.
+
     SELECT_CHUNKS = SIM*[1:3] # Enables the dependency of chunk 1,2 and 3. While 4 won't be linked.
     SELECT_CHUNKS = SIM*[1,3] # Enables the dependency of chunk 1 and 3. While 2 and 4 won't be linked
     SELECT_CHUNKS = SIM*[1] # Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked
+    SELECT_CHUNKS = SIM*[1]*[3] # Enables the dependency of SIM_1 with CHILD_3. While chunks 2,4  won't be linked.
+    SELECT_CHUNKS = SIM*[2:4]*[2:4] SIM*[2]*[1] # Links SIM_2:4 with CHILDREN_2:4 and links SIM_2 with CHILD_1
 
 * SELECT_MEMBERS (optional): by default, all sections depend on all jobs the items specified on the DEPENDENCIES parameter. However, with this parameter, you could select the members of a specific job section. At the end of this doc, you will find diverse examples of this feature. Caution, you must pick the member index, not the member name.
 

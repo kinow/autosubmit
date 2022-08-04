@@ -387,6 +387,8 @@ class JobList(object):
             # Get current job dependency relations. Used for select chunk option. This is the job in where select chunks option is defined
             if len(dependency.select_chunks_orig) > 0:  # find chunk relation
                 other_parents = dic_jobs.get_jobs(dependency.section, date, member, None)
+                jobs_by_section = [p for p in other_parents if p.section == dependency.section]
+
                 chunk_relation_indx = 0
                 while chunk_relation_indx < len(dependency.select_chunks_orig):
                     if job.running in ["once"] or len(dependency.select_chunks_orig[chunk_relation_indx]) == 0 or job.chunk in dependency.select_chunks_orig[chunk_relation_indx]:
@@ -436,7 +438,16 @@ class JobList(object):
                                 JobList._add_edge(graph, job, parent)
                                 other_parents.remove(parent)
                         visited_parents.add(parent)
-
+            # If job doesn't have any parent after a first search, search in all dependency.section. This is to avoid +1 being added only to the last one.
+            if len(job.parents) <= 0:
+                for relation_indx in chunk_relations_to_add:
+                    for parent in jobs_by_section:
+                        if parent.chunk in dependency.select_chunks_dest[relation_indx] or len(
+                                dependency.select_chunks_dest[relation_indx]) == 0:
+                            if parent not in visited_parents:
+                                job.add_parent(parent)
+                                JobList._add_edge(graph, job, parent)
+                        visited_parents.add(parent)
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph, other_parents)
 
