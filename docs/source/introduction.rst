@@ -5,12 +5,12 @@ Introduction
 What is Autosubmit ?
 ====================
 
-::
+Autosubmit is a python-based workflow manager to create, manage and monitor experiments by using Computing Clusters, HPC’s and Supercomputers remotely via ssh. It has support for experiments running in more than one HPC and for different workflow configurations.
+It is currently used at Barcelona Supercomputing Centre (BSC) to run models (EC-Earth, MONARCH, NEMO, CALIOPE, HERMES...), operational toolchains (S2S4E), data-download workflows (ECMWF MARS), and many other.
 
-    Autosubmit is a python-based workflow manager to create, manage and monitor experiments by using Computing Clusters, HPC’s and Supercomputers remotely via ssh. It has support for experiments running in more than one HPC and for different workflow configurations.
-    Autosubmit is currently used at Barcelona Supercomputing Centre (BSC) to run models (EC-Earth, MONARCH, NEMO, CALIOPE, HERMES...), operational toolchains (S2S4E), data-download workflows (ECMWF MARS), and many other.
-    Autosubmit has been used to manage models running at supercomputers in BSC, ECMWF, IC3, CESGA, EPCC, PDC and OLCF.
-    Autosubmit is now available via PyPi package under the terms of GNU General Public License.
+Autosubmit has been used to manage models running at supercomputers in BSC, ECMWF, IC3, CESGA, EPCC, PDC and OLCF.
+
+Autosubmit is now available via PyPi package under the terms of GNU General Public License.
 
 
 
@@ -27,7 +27,7 @@ Why is Autosubmit needed ?
 
 Autosubmit is the only existing tool that satisfies the following requirements from the weather and climate community:
 
-- **Automatisation** Job submission to machines and dependencies between jobs are managed by Autosubmit. No user intervention is needed.
+- **Automatization** Job submission to machines and dependencies between jobs are managed by Autosubmit. No user intervention is needed.
 - **Data provenance** Assigns unique identifiers for each experiment and stores information about model version, experiment configuration and computing facilities used in the whole process.
 - **Failure tolerance** Automatic retrials and ability to rerun chunks in case of corrupted or missing data.
 - **Resource management** Autosubmit manages supercomputer particularities, allowing users to run their experiments in the available machine without having to adapt the code. Autosubmit also allows to submit tasks from the same experiment to different platforms.
@@ -59,7 +59,9 @@ To create a new experiment, run the command:
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
 
-This command assigns a unique four character identifier (``xxxx``, names starting from a letter, the other three characters) to the experiment and creates a new folder in experiments repository with structure shown in Figure :numref:`exp_folder`.
+This command assigns to the experiment a unique four alphanumerical characters identifier, where the first has reserved letters *o* and
+*t*. It then creates a new folder in experiments repository with structure shown in Figure :numref:`exp_folder`.
+
 
 .. figure:: fig1.png
    :name: exp_folder
@@ -100,13 +102,13 @@ To run the experiment, just execute the command:
 
 Autosubmit will start submitting jobs to the relevant platforms (both HPC and supporting computers) by using the scripts specified in ``jobs_xxxx.conf``. Autosubmit will substitute variables present on scripts where handlers appear in *%variable_name%* format. Autosubmit provides variables for *current chunk*, *start date*, *member*, *computer configuration* and more, and also will replace variables form ``proj_xxxx.conf``.
 
-To monitor the status of the experiment, the command:
+To monitor the status of the experiment, issue the command:
 
 ::
 
     autosubmit monitor xxxx
 
-is available. This will plot the workflow of the experiment and the current status.
+This will plot the workflow of the experiment and the current status.
 
 .. figure:: fig3.png
    :width: 70%
