@@ -9,14 +9,14 @@ This section contains some examples on how to develop a new project.
 
 All files, with the exception of user-defined scripts, are located in the ``<expid>/conf`` directory.
 
-Configuration files are written in ``ini`` format. In the other hand, the user-defined scripts are written in ``bash/python or R`` format.
+Configuration files are written in ``ini`` format. Autosubmit supports user-defined scripts are written in ``bash``, ``python``, and ``R``.
 
-To configure the experiment, edit ``autosubmit_cxxx.conf``, ``expdef_cxxx.conf``, ``jobs_cxxx.conf`` , ``platforms_cxxx.conf`` and ``proj_cxxx.conf``` in the ``conf`` folder of the experiment.
+To configure the experiment, edit ``autosubmit_cxxx.conf``, ``expdef_cxxx.conf``, ``jobs_cxxx.conf`` , ``platforms_cxxx.conf``, and ``proj_cxxx.conf``` in the ``conf`` folder of the experiment.
 
 Expdef configuration
 ====================
 
-    vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
+    ``vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf``
 
 .. code-block:: ini
 
@@ -95,7 +95,7 @@ Expdef configuration
 Autosubmit configuration
 ========================
 
-    vi <experiments_directory>/cxxx/conf/autosubmit_cxxx.conf
+    ``vi <experiments_directory>/cxxx/conf/autosubmit_cxxx.conf``
 
 .. code-block:: ini
 
@@ -131,7 +131,7 @@ Autosubmit configuration
 Jobs configuration
 ==================
 
-    vi <experiments_directory>/cxxx/conf/jobs_cxxx.conf
+    ``vi <experiments_directory>/cxxx/conf/jobs_cxxx.conf``
 
 .. code-block:: ini
 
@@ -237,7 +237,7 @@ Jobs configuration
 Platform configuration
 ======================
 
-    vi <experiments_directory>/cxxx/conf/platforms_cxxx.conf
+    ``vi <experiments_directory>/cxxx/conf/platforms_cxxx.conf``
 
 .. code-block:: ini
 
@@ -294,7 +294,7 @@ Platform configuration
 Proj configuration
 ==================
 
-After filling the experiment configuration and promt ``autosubmit create cxxx -np`` create, user can go into ``proj`` which has a copy of the model.
+After filling the experiment configuration and executing ``autosubmit create cxxx -np``, a copy of the model is stored in ``proj``. 
 
 The experiment project contains the scripts specified in ``jobs_cxxx.conf`` and a copy of model source code and data specified in ``expdef_xxxx.conf``.
 
@@ -674,7 +674,7 @@ In this section, we describe the platform configuration using `-QOS` and also `P
 
 The custom directives can be used for multiple parameters at the same time using the follow syntax.
 
-    vi <expid>/conf/platform_cxxx.conf
+    `vi <expid>/conf/platform_cxxx.conf`
 
 .. code-block:: ini
 
