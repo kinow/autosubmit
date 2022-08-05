@@ -512,9 +512,10 @@ class ParamikoPlatform(Platform):
                     if wallclock != "00:00" and wallclock != "00:00:00" and wallclock != "":
                         if job.is_over_wallclock(job.start_time,wallclock):
                             try:
-                                job.check_completion()
+                                job.platform.get_completed_files(job.name)
+                                job_status = job.check_completion(over_wallclock=True)
                             except:
-                                pass
+                                job_status = Status.FAILED
             elif job_status in self.job_status['QUEUING'] and job.hold == "false":
                 job_status = Status.QUEUING
             elif job_status in self.job_status['QUEUING'] and job.hold == "true":

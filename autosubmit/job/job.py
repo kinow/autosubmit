@@ -926,7 +926,7 @@ class Job(object):
                 child.status = Status.FAILED
                 children += list(child.children)
 
-    def check_completion(self, default_status=Status.FAILED):
+    def check_completion(self, default_status=Status.FAILED,over_wallclock=False):
         """
         Check the presence of *COMPLETED* file.
         Change status to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
@@ -935,12 +935,18 @@ class Job(object):
         """
         log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
 
-        if os.path.exists(log_name):  # TODO
-            self.status = Status.COMPLETED
+        if os.path.exists(log_name):
+            if not over_wallclock:
+                self.status = Status.COMPLETED
+            else:
+                return Status.COMPLETED
         else:
             Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(
                 self.name), 6009)
-            self.status = default_status
+            if not over_wallclock:
+                self.status = default_status
+            else:
+                return default_status
 
     def update_parameters(self, as_conf, parameters,
                           default_parameters={'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
