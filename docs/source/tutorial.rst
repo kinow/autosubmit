@@ -3,7 +3,7 @@ Tutorial start guide
 ====================
 
 
-This tutorial is a starter’s guide to running a dummy experiment with Autosubmit.
+This tutorial is a starter’s guide to run a dummy experiment with Autosubmit.
 
 Dummy experiments run workflows with inexpensive empty tasks and therefore are ideal for teaching and testing purposes.
 
