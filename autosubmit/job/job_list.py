@@ -254,7 +254,7 @@ class JobList(object):
             if not (job_section, option):
                 continue
 
-            dependencies_keys = jobs_data[job_section].get(option,"").upper()
+            dependencies_keys = jobs_data[job_section].get(option,{})
             if type(dependencies_keys) is str:
                 dependencies_keys = dependencies_keys.split()
             dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs, job_section)
@@ -309,44 +309,7 @@ class JobList(object):
                 #raise AutosubmitCritical("Section:{0} doesn't exists.".format(section),7014)
             dependency_running_type = str(parameters[section].get('RUNNING', 'once')).lower()
             delay = int(parameters[section].get('DELAY', -1))
-            select_chunks_opt = str(parameters[job_section].get( 'SELECT_CHUNKS', ""))
-            selected_chunks = []
-            if select_chunks_opt:
-                if '*' in select_chunks_opt:
-                    sections_chunks = select_chunks_opt.split(' ')
-                    for section_chunk in sections_chunks:
-                        info = section_chunk.split('*')
-                        if info[0] in key:
-                            auxiliar_relation_list = []
-                            for relation in range(1, len(info)):
-                                auxiliar_relation_list.append(dic_jobs.parse_relation(section,False,info[relation],"Select_chunks"))
-                            selected_chunks.append(auxiliar_relation_list)
-                else:
-                    raise AutosubmitCritical("Wrong syntax for select_chunks. The correct Syntax is:Dependency_KEY*[#chunk_number,#chunk_number...] Dependency_Key...",7011)
-            select_member_opt = str(parameters[job_section].get('SELECT_MEMBERS', ""))
-            selected_member = []
-            if select_member_opt:
-                if '*' in select_member_opt:
-                    sections_members = select_member_opt.split(' ')
-                    for section_member in sections_members:
-                        info = section_member.split('*')
-                        if info[0] in key:
-                            auxiliar_relation_list = []
-                            for relation in range(1, len(info)):
-                                auxiliar_relation_list.append(dic_jobs.parse_relation(section, True, info[relation], "Select_Members"))
-                            selected_member.append(auxiliar_relation_list)
-                else:
-                    raise AutosubmitCritical(
-                        "Wrong syntax for select_members. The correct Syntax is:Dependency_KEY*[#member_index,#member_index...]*... Dependency_Key...",
-                        7011)
-            if len(selected_chunks) >= 1 and len(selected_member) >= 1:
-               dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, selected_chunks, selected_member)
-            elif len(selected_chunks) >= 1:
-                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,selected_chunks, [])
-            elif len(selected_member) >= 1:
-                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,[], selected_member)
-            else:
-                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, [], [])
+            dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,relationships=dependencies_keys[key])
             dependencies[key] = dependency
         return dependencies
 
@@ -365,7 +328,17 @@ class JobList(object):
                 if int(str_split) <= max_splits:
                     splits.append(int(str_split))
         return splits
+    @staticmethod
+    def _valid_parent(dependency, parent, current_job):
+        valid = True
+        if dependency.relationships is not None:
+            # parse from relationships
+            members_from = dependency.relationships.get("MEMBERS_FROM","all").lower()
+            chunks_from  = dependency.relationships.get("CHUNKS_FROM","all").lower()
+            dates_from   = dependency.relationships.get("DATES_FROM","all").lower()
+            pass
 
+        return valid
     @staticmethod
     def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
                                  graph):
@@ -382,31 +355,11 @@ class JobList(object):
                                                                                  dependency)
             if skip:
                 continue
-            chunk_relations_to_add = list()
-            member_relations_to_add = list()
-            # Get current job dependency relations. Used for select chunk option. This is the job in where select chunks option is defined
-            if len(dependency.select_chunks_orig) > 0:  # find chunk relation
-                other_parents = dic_jobs.get_jobs(dependency.section, date, member, None)
-                jobs_by_section = [p for p in other_parents if p.section == dependency.section]
-
-                chunk_relation_indx = 0
-                while chunk_relation_indx < len(dependency.select_chunks_orig):
-                    if job.running in ["once"] or len(dependency.select_chunks_orig[chunk_relation_indx]) == 0 or job.chunk in dependency.select_chunks_orig[chunk_relation_indx]:
-                        chunk_relations_to_add.append(chunk_relation_indx)
-                    chunk_relation_indx += 1
-                chunk_relation_indx -= 1
-            # Get current job dependency relations. Used for select members option. This is the job in where select members option is defined
-            if len(dependency.select_members_orig) > 0:  # find member relation
-                member_relation_indx = 0
-                other_parents = dic_jobs.get_jobs(dependency.section, date, None, chunk)
-                while member_relation_indx < len(dependency.select_members_orig):
-                    if job.running in ["once"] or len(dependency.select_members_orig[member_relation_indx]) == 0 or member_list.index(job.member) in dependency.select_members_orig[member_relation_indx] :
-                        member_relations_to_add.append(member_relation_indx)
-                    member_relation_indx += 1
-                member_relation_indx -= 1
-            #Now calculate the dependencies of jobs. If parent is not chunk or member it will be added to the dependency set,
             parents_jobs = dic_jobs.get_jobs(dependency.section, date, member, chunk)
             for parent in parents_jobs:
+                #Calculate if it is a valid parent based on relationships
+                if not _valid_parent(dependency, parent, current_job):
+                    continue
                 # Generic for all dependencies
                 if dependency.delay == -1 or chunk > dependency.delay:
                     if isinstance(parent, list):

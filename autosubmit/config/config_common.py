@@ -889,24 +889,23 @@ class AutosubmitConfig(object):
                 except BaseException:
                     pass  # tests conflict quick-patch
 
-            dependencies = section_data.get('DEPENDENCIES','').upper()
-            if dependencies:
-                if type(dependencies) is str:
-                    dependencies = dependencies.split(' ')
-                for dependency in dependencies:
-                    if '-' in dependency:
-                        dependency = dependency.split('-')[0]
-                    elif '+' in dependency:
-                        dependency = dependency.split('+')[0]
-                    elif '*' in dependency:
-                        dependency = dependency.split('*')[0]
-                    elif '?' in dependency:
-                        dependency = dependency.split('?')[0]
-                    if '[' in dependency:
-                        dependency = dependency[:dependency.find('[')]
-                    if dependency not in parser.data["JOBS"].keys():
-                        self.warn_config["Jobs"].append(
-                            [section, "Dependency parameter is invalid, job {0} is not configured".format(dependency)])
+            dependencies = section_data.get('DEPENDENCIES','')
+            if dependencies != "":
+                if type(dependencies) == dict:
+                    for dependency, values in dependencies.items():
+                        if '-' in dependency:
+                            dependency = dependency.split('-')[0]
+                        elif '+' in dependency:
+                            dependency = dependency.split('+')[0]
+                        elif '*' in dependency:
+                            dependency = dependency.split('*')[0]
+                        elif '?' in dependency:
+                            dependency = dependency.split('?')[0]
+                        if '[' in dependency:
+                            dependency = dependency[:dependency.find('[')]
+                        if dependency.upper() not in parser.data["JOBS"].keys():
+                            self.warn_config["Jobs"].append(
+                                [section, "Dependency parameter is invalid, job {0} is not configured".format(dependency)])
             rerun_dependencies = section_data.get('RERUN_DEPENDENCIES',"").upper()
             if rerun_dependencies:
                 for dependency in rerun_dependencies.split(' '):
