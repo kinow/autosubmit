@@ -1369,11 +1369,14 @@ class AutosubmitConfig(object):
                 elif self.get_project_type().lower() == "git":
                     value = self.get_git_project_origin().split(
                         '/')[-1].split('.')[-2]
-            return value
+            if value != "":
+                return value
+            else:
+                return "project_files"
         except Exception as exp:
             Log.debug(str(exp))
             Log.debug(traceback.format_exc())
-            return None
+        return "project_files"
 
     def set_git_project_commit(self, as_conf):
         """

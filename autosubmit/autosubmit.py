@@ -4511,9 +4511,9 @@ class Autosubmit:
         """
 
         project_destination = as_conf.get_project_destination()
-
-        if project_type.lower() != "none" and (project_destination is None or len(project_destination) == 0):
-             raise AutosubmitCritical("Autosubmit couldn't identify the project destination.", 7014)
+        if project_destination is None or len(project_destination) == 0:
+             if project_type.lower() != "none":
+                raise AutosubmitCritical("Autosubmit couldn't identify the project destination.", 7014)
 
         if project_type == "git":
             submitter = Autosubmit._get_submitter(as_conf)
