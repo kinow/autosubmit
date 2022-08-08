@@ -331,12 +331,14 @@ class JobList(object):
     @staticmethod
     def _valid_parent(dependency, parent, current_job):
         valid = True
+        # 3_3_1
         if dependency.relationships is not None:
             # parse from relationships
             members_from = dependency.relationships.get("MEMBERS_FROM","all").lower()
             chunks_from  = dependency.relationships.get("CHUNKS_FROM","all").lower()
             dates_from   = dependency.relationships.get("DATES_FROM","all").lower()
-            pass
+            if dates_from == "all" or current_job.date in dates_from.split(","):
+                dates_from = "all"
 
         return valid
     @staticmethod
