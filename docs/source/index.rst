@@ -8,19 +8,38 @@ Welcome to autosubmit's documentation!
 ######################################
 
 .. toctree::
-   :maxdepth: 2
-
+   :caption: Introduction
+   :maxdepth: 1
    introduction
-   tutorial
-   devel_proj
-   installation
-   usage
-   workflows
-   faq-original
-   troubleshoot
-   faq
-   project
-   variables
-   codedoc/main
    autosubmit-gui
 
+.. toctree::
+   :caption: Installation
+   :maxdepth: 1
+   installation
+
+.. toctree::
+   :caption: Quick Start Guide
+   :maxdepth: 2
+   tutorial
+   devel_proj
+   usage
+
+.. toctree::
+   :caption: Documentation
+   :maxdepth: 4
+   workflows
+   variables
+   codedoc/main
+   project
+
+.. toctree::
+   :caption: Troubleshooting
+   :maxdepth: 1
+   troubleshoot
+
+.. toctree::
+   :caption: Frequently Asked Questions
+   :maxdepth: 1
+   faq-original
+   faq
