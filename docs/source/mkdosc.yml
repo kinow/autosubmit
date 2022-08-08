@@ -1,0 +1,24 @@
+introduction:
+  - Index: 'index.rst'
+  - What is Autosubmit?: 'introduction.rst'
+installation:
+  - Install guide: 'installation.rst'
+Usage:
+  - Tutorial: 'tutorial.rst'
+  - Develop a first project: 'devel_proj.rst'
+  - Defining a workflow:
+  - Usage: 'usage.rst'
+    - Create your experiment: 'usage/new_experiment/index.rst'
+      - How to create your experiment: 'usage/new_experiment/create_exp.rst'
+    - How to configure your experiment:
+    - How to run your experiment:
+    - How to recover and restart your experiment workflow:
+    - How to check your experiment workflow status:
+    - How to get statistics from your experiment:
+    - How to archive and clean your experiment:
+    - How to use advanced features:
+documentation:
+  - Defining a Workflow:
+  - Usage:
+      - How to create your
+faq: 'faq.rst'
