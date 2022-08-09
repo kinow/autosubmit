@@ -16,6 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import collections
+
 import re
 import os
 import pickle
@@ -328,19 +330,117 @@ class JobList(object):
                 if int(str_split) <= max_splits:
                     splits.append(int(str_split))
         return splits
-    @staticmethod
-    def _valid_parent(dependency, parent, current_job):
-        valid = True
-        # 3_3_1
-        if dependency.relationships is not None:
-            # parse from relationships
-            members_from = dependency.relationships.get("MEMBERS_FROM","all").lower()
-            chunks_from  = dependency.relationships.get("CHUNKS_FROM","all").lower()
-            dates_from   = dependency.relationships.get("DATES_FROM","all").lower()
-            if dates_from == "all" or current_job.date in dates_from.split(","):
-                dates_from = "all"
 
-        return valid
+    @staticmethod
+    def _apply_filter(parent_value,filter_value,associative_list,filter_type="dates"):
+        """
+        Check if the current_job_value is included in the filter_value
+        :param parent_value:
+        :param filter_value: filter
+        :param associative_list: dates, members, chunks.
+        :param is_chunk: True if the filter_value is a chunk.
+        :return: boolean
+        """
+        to_filter = []
+        if filter_value == "all" or filter_value == "natural":
+            for value in associative_list:
+                to_filter.append(value)
+        elif filter_value == "none":
+            return False
+
+        elif filter_value.find(",") != -1:
+            aux_filter = filter_value.split(",")
+            if filter_type != "chunks":
+                for value in aux_filter:
+                    if str(value).isdigit():
+                        to_filter.append(associative_list[int(value)])
+                    else:
+                        to_filter.append(value)
+            else:
+                to_filter = aux_filter
+            del aux_filter
+        elif filter_value.find(":") != -1:
+            start_end = filter_value.split(":")
+            start = start_end[0].strip("[]")
+            end = start_end[1].strip("[]")
+            del start_end
+            if filter_type == "chunks": # chunk directly
+                for value in range(int(start), int(end) + 1):
+                    to_filter.append(value)
+            else: # index
+                for value in range(int(start+1), int(end) + 1):
+                    to_filter.append(value)
+        else:
+            to_filter.append(filter_value)
+        if parent_value in to_filter:
+            return True
+        else:
+            return False
+    @staticmethod
+    def _valid_parent(dependency, parent,member_list,date_list,chunk_list,current_job,is_a_natural_relation=True):
+        is_valid_parent       = True
+        exists_dates_filter   = False
+        exists_members_filter = False
+        exists_chunks_filter  = False
+        associative_list = {}
+        if is_a_natural_relation:
+            relationship_type = "natural"
+
+        else:
+            relationship_type = "none"
+
+        if dependency.relationships is not None:
+            dependency.relationships["GENERAL"] = {}
+            dependency.relationships["GENERAL"]["DATES_TO"] = dependency.relationships.get("DATES_TO",relationship_type).lower()
+            dependency.relationships["GENERAL"]["MEMBERS_TO"] = dependency.relationships.get("MEMBERS_TO",relationship_type).lower()
+            dependency.relationships["GENERAL"]["CHUNKS_TO"] = dependency.relationships.get("CHUNKS_TO",relationship_type).lower()
+            associative_list["dates"] = date_list
+            associative_list["members"] = member_list
+            associative_list["chunks"] = chunk_list
+            for filter_type,filter_data in dependency.relationships.items():
+                if isinstance(filter_data, collections.abc.Mapping):
+                    if filter_type   == "DATES_FROM":
+                        exists_dates_filter = True
+                    elif filter_type == "MEMBERS_FROM":
+                        exists_members_filter = True
+                    elif filter_type == "CHUNKS_FROM":
+                        exists_chunks_filter = True
+            if exists_chunks_filter:
+                filter_data = dependency.relationships["CHUNKS_FROM"]
+                dates_to = filter_data.get("DATES_TO", "all").lower()
+                members_to = filter_data.get("MEMBERS_TO", "all").lower()
+                chunks_to = filter_data.get("CHUNKS_TO", "all").lower()
+            elif exists_members_filter:
+                filter_data = dependency.relationships["MEMBERS_FROM"]
+                dates_to = filter_data.get("DATES_TO", "all").lower()
+                members_to = filter_data.get("MEMBERS_TO", "all").lower()
+                chunks_to = filter_data.get("CHUNKS_TO", "all").lower()
+            elif exists_dates_filter:
+                filter_data = dependency.relationships["DATES_FROM"]
+                dates_to = filter_data.get("DATES_TO", "all").lower()
+                members_to = filter_data.get("MEMBERS_TO", "all").lower()
+                chunks_to = filter_data.get("CHUNKS_TO", "all").lower()
+            else:
+                filter_data = dependency.relationships["GENERAL"]
+                dates_to = filter_data.get("DATES_TO", "all").lower()
+                members_to = filter_data.get("MEMBERS_TO", "all").lower()
+                chunks_to = filter_data.get("CHUNKS_TO", "all").lower()
+
+            if dates_to == "natural":
+                associative_list["dates"] = parent.date
+            elif members_to == "natural":
+                associative_list["members"] = parent.member
+            elif chunks_to == "natural":
+                associative_list["chunks"] = parent.chunk
+            valid_dates   = JobList._apply_filter(parent.date, dates_to, associative_list["dates"], "dates")
+            valid_members = JobList._apply_filter(parent.member, members_to, associative_list["members"],
+                                                 "members")
+            valid_chunks  = JobList._apply_filter(parent.chunk, chunks_to, associative_list["chunks"], "chunks")
+            if valid_dates and valid_members and valid_chunks:
+                is_valid_parent = True
+            else:
+                is_valid_parent = False
+        return is_valid_parent
     @staticmethod
     def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
                                  graph):
@@ -357,10 +457,17 @@ class JobList(object):
                                                                                  dependency)
             if skip:
                 continue
+            other_parents = dic_jobs.get_jobs(dependency.section, None, None, None)
             parents_jobs = dic_jobs.get_jobs(dependency.section, date, member, chunk)
+            jobs_by_section = [p for p in other_parents if p.section == dependency.section]
+
             for parent in parents_jobs:
                 #Calculate if it is a valid parent based on relationships
-                if not _valid_parent(dependency, parent, current_job):
+                if parent in parents_jobs:
+                    natural_relationship = True
+                else:
+                    natural_relationship = False
+                if not JobList._valid_parent(dependency, parent, member_list, date_list, chunk_list,job,natural_relationship):
                     continue
                 # Generic for all dependencies
                 if dependency.delay == -1 or chunk > dependency.delay:
@@ -372,37 +479,9 @@ class JobList(object):
                         else:
                             if dependency.splits is not None and len(str(dependency.splits)) > 0:
                                 parent = [_parent for _parent in parent if _parent.split in dependency.splits]
-                #Select chunk + select member
-                if parent.running in ["once"] or ( len(dependency.select_members_orig) <= 0 and len(dependency.select_chunks_orig) <= 0):
-                    job.add_parent(parent)
-                    JobList._add_edge(graph, job, parent)
-                elif len(dependency.select_members_orig) > 0:
-                    for relation_indx in member_relations_to_add:
-                        if member_list.index(parent.member) in dependency.select_members_dest[relation_indx] or len(dependency.select_members_dest[relation_indx]) <= 0:
-                            if parent not in visited_parents:
-                                job.add_parent(parent)
-                                JobList._add_edge(graph, job, parent)
-                                other_parents.remove(parent)
-                        visited_parents.add(parent)
-                elif len(dependency.select_chunks_orig) > 0:
-                    for relation_indx in chunk_relations_to_add:
-                        if parent.chunk in dependency.select_chunks_dest[relation_indx] or len(
-                                dependency.select_chunks_dest[relation_indx]) == 0:
-                            if parent not in visited_parents:
-                                job.add_parent(parent)
-                                JobList._add_edge(graph, job, parent)
-                                other_parents.remove(parent)
-                        visited_parents.add(parent)
-            # If job doesn't have any parent after a first search, search in all dependency.section. This is to avoid +1 being added only to the last one.
-            if len(job.parents) <= 0:
-                for relation_indx in chunk_relations_to_add:
-                    for parent in jobs_by_section:
-                        if parent.chunk in dependency.select_chunks_dest[relation_indx] or len(
-                                dependency.select_chunks_dest[relation_indx]) == 0:
-                            if parent not in visited_parents:
-                                job.add_parent(parent)
-                                JobList._add_edge(graph, job, parent)
-                        visited_parents.add(parent)
+                job.add_parent(parent)
+                JobList._add_edge(graph, job, parent)
+
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph, other_parents)
 
