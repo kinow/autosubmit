@@ -11,7 +11,7 @@ The Autosubmit code is maintained in *PyPi*, the main source for python packages
 
 .. important:: (SYSTEM) Graphviz version must be >= 2.38 except 2.40(not working). You can check the version using dot -v.
 
-- Python dependencies: argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, python2-pythondialog, portalocker, requests, typing
+- Python dependencies: argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, python2-pythondialog, portalocker, requests, typing, six >= 1.10, tkinter
 
 .. important:: dot -v command should contain "dot",pdf,png,svg,xlib  in device section.
 
