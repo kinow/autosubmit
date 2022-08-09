@@ -388,7 +388,6 @@ class JobList(object):
 
         else:
             relationship_type = "none"
-
         if dependency.relationships is not None:
             dependency.relationships["GENERAL"] = {}
             dependency.relationships["GENERAL"]["DATES_TO"] = dependency.relationships.get("DATES_TO",relationship_type).lower()
@@ -400,22 +399,13 @@ class JobList(object):
             for filter_type,filter_data in dependency.relationships.items():
                 if isinstance(filter_data, collections.abc.Mapping):
                     if filter_type  == "DATES_FROM":
-                        exists_dates_filter = True
+                        if current_job.date is None or filter_data.find(current_job.date) != -1:
+                            exists_dates_filter = True
                     elif filter_type == "MEMBERS_FROM":
                         exists_members_filter = True
                     elif filter_type == "CHUNKS_FROM":
                         exists_chunks_filter = True
-            if exists_chunks_filter:
-                filter_data = dependency.relationships["CHUNKS_FROM"]
-                dates_to = filter_data.get("DATES_TO", "all").lower()
-                members_to = filter_data.get("MEMBERS_TO", "all").lower()
-                chunks_to = filter_data.get("CHUNKS_TO", "all").lower()
-            elif exists_members_filter:
-                filter_data = dependency.relationships["MEMBERS_FROM"]
-                dates_to = filter_data.get("DATES_TO", "all").lower()
-                members_to = filter_data.get("MEMBERS_TO", "all").lower()
-                chunks_to = filter_data.get("CHUNKS_TO", "all").lower()
-            elif exists_dates_filter:
+            if exists_dates_filter:
                 filter_data = dependency.relationships["DATES_FROM"]
                 dates_to = filter_data.get("DATES_TO", "all").lower()
                 members_to = filter_data.get("MEMBERS_TO", "all").lower()
