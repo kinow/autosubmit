@@ -31,6 +31,7 @@ dependencies:
   - bscearth.utils>=0.5.2
   - cryptography>=36.0.1
   - setuptools>=60.8.2
+  - six>=1.10.0
   - xlib>=0.21
   - ruamel.yaml
   - pythondialog
