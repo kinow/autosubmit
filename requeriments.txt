@@ -22,6 +22,9 @@ pytest
 nose
 coverage
 PyNaCl==1.4.0
+six>=1.10.0
+requests
+xlib
 Pygments
 packaging==19
 typing>=3.7

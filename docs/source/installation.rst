@@ -7,11 +7,11 @@ How to install
 
 The Autosubmit code is maintained in *PyPi*, the main source for python packages.
 
-- Pre-requisites: bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk, python2-dev, graphviz >= 2.41, pip2
+- Pre-requisites: bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk(tkinter in centOS), python2-dev, graphviz >= 2.41, pip2
 
 .. important:: (SYSTEM) Graphviz version must be >= 2.38 except 2.40(not working). You can check the version using dot -v.
 
-- Python dependencies: argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, python2-pythondialog, portalocker, requests, typing, six >= 1.10, tkinter
+- Python dependencies: argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, python2-pythondialog, portalocker, requests, typing, six >= 1.10
 
 .. important:: dot -v command should contain "dot",pdf,png,svg,xlib  in device section.
 
