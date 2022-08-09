@@ -399,7 +399,7 @@ class JobList(object):
             associative_list["chunks"] = chunk_list
             for filter_type,filter_data in dependency.relationships.items():
                 if isinstance(filter_data, collections.abc.Mapping):
-                    if filter_type   == "DATES_FROM":
+                    if filter_type  == "DATES_FROM":
                         exists_dates_filter = True
                     elif filter_type == "MEMBERS_FROM":
                         exists_members_filter = True
