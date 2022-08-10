@@ -639,10 +639,9 @@ class Job(object):
                 found = False
                 retrials = 0
                 while retrials < 3 and not found:
-                    sleep(2)
                     if platform.check_stat_file_by_retrials(stat_file + str(max_logs)):
                         found = True
-                    retrials = retrials - 1
+                    retrials = retrials + 1
                 for i in range(max_logs-1,-1,-1):
                     if platform.check_stat_file_by_retrials(stat_file + str(i)):
                         last_log = i
@@ -1192,20 +1191,22 @@ class Job(object):
                     if self.type == Type.BASH:
                         template = 'sleep 60' + "\n"
                     elif self.type == Type.PYTHON:
-                        template = 'time.sleep(60)' + "\n"
+                        template = 'time.sleep(5)' + "\n"
+                    elif self.type == Type.PYTHON3:
+                        template = 'time.sleep(5)' + "\n"
                     elif self.type == Type.R:
-                        template = 'Sys.sleep(60)' + "\n"
+                        template = 'Sys.sleep(5)' + "\n"
                 template += template_file.read()
                 template_file.close()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 120'
+                    template = 'sleep 5'
                 elif self.type == Type.PYTHON:
-                    template = 'time.sleep(120)'
+                    template = 'time.sleep(5)'
                 elif self.type == Type.PYTHON3:
-                    template = 'time.sleep(120)'
+                    template = 'time.sleep(5)'
                 elif self.type == Type.R:
-                    template = 'Sys.sleep(120)'
+                    template = 'Sys.sleep(5)'
                 else:
                     template = ''
         except:
