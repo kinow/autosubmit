@@ -172,7 +172,7 @@ class Autosubmit:
             parser.add_argument('-v', '--version', action='version',
                                 version=Autosubmit.autosubmit_version)
             parser.add_argument('-lf', '--logfile', choices=('NO_LOG', 'INFO', 'WARNING', 'DEBUG'),
-                                default='WARNING', type=str,
+                                default='DEBUG', type=str,
                                 help="sets file's log level.")
             parser.add_argument('-lc', '--logconsole', choices=('NO_LOG', 'INFO', 'WARNING', 'DEBUG'),
                                 default='INFO', type=str,
@@ -1792,8 +1792,54 @@ class Autosubmit:
                             Log.debug('Checking jobs for platform={0}'.format(platform.name))
                             for job_id, job in queuing_jobs.items():
                                 # Check Wrappers one-by-one
+                                #TODO CHECK this before continue
                                 if job_list.job_package_map and job_id in job_list.job_package_map:
                                     wrapper_job,save = Autosubmit.manage_wrapper_job(as_conf,job_list,platform,job_id)
+                                    wrapper_job = job_list.job_package_map[job_id]
+                                    # Setting prev_status as an easy way to check status change for inner jobs
+                                    if as_conf.get_notifications() == 'true':
+                                        for inner_job in wrapper_job.job_list:
+                                            inner_job.prev_status = inner_job.status
+                                    check_wrapper = True
+                                    if wrapper_job.status == Status.RUNNING:
+                                        check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now(
+                                        ) - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
+                                    if check_wrapper:
+                                        Log.debug('Checking Wrapper {0}'.format(str(job_id)))
+                                        wrapper_job.checked_time = datetime.datetime.now()
+                                        # This is where wrapper will be checked on the slurm platform, update takes place.
+                                        try:
+                                            platform.check_job(wrapper_job,is_wrapper=True)
+                                        except BaseException as e:
+                                            job_list.save()
+                                            raise AutosubmitError("The communication with {0} went wrong while checking wrapper {1}\n{2}".format(platform.name,wrapper_job.id,str(e)))
+                                        #Log.info("FD 3Wrapper checked: {0}".format(log.fd_show.fd_table_status_str()))
+                                        try:
+                                            if wrapper_job.status != wrapper_job.new_status:
+                                                Log.info('Wrapper job ' + wrapper_job.name + ' changed from ' + str(
+                                                    Status.VALUE_TO_KEY[wrapper_job.status]) + ' to status ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
+                                                save = True
+                                        except:
+                                            raise AutosubmitCritical(
+                                                "Wrapper is in Unknown Status couldn't get wrapper parameters", 7050)
+
+                                        # New status will be saved and inner_jobs will be checked.
+                                        try:
+                                            wrapper_job.check_status(wrapper_job.new_status)
+                                        except:
+                                            job_list.save()
+                                            raise AutosubmitError("The communication with {0} went wrong while checking the inner_jobs of {1}\n{2}".format(platform.name,wrapper_job.id,str(e)))
+
+                                        # Erase from packages if the wrapper failed to be queued ( Hold Admin bug )
+                                        if wrapper_job.status == Status.WAITING:
+                                            for inner_job in wrapper_job.job_list:
+                                                inner_job.packed = False
+                                            job_list.job_package_map.pop(
+                                                job_id, None)
+                                            job_list.packages_dict.pop(
+                                                job_id, None)
+                                        save = True
+
                                     # Notifications e-mail
                                     if as_conf.get_notifications() == "true":
                                         for inner_job in wrapper_job.job_list:
@@ -1865,9 +1911,18 @@ class Autosubmit:
                         # No need to wait until the remote platform reconnection
                         recovery = False
                         as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-                        consecutive_retrials = 1
-                        delay = min(15*consecutive_retrials,120)
+                        consecutive_retrials = 0
+                        failed_names = {}
+                        Log.info("Storing failed job count...")
+                        try:
+                            for job in job_list.get_job_list():
+                                if job.fail_count > 0:
+                                    failed_names[job.name] = job.fail_count
+                        except BaseException as e:
+                            Log.printlog("Error trying to store failed job count",Log.WARNING)
+                        Log.result("Storing failed job count...done")
                         while not recovery and main_loop_retrials > 0:
+                            delay = min(15 * consecutive_retrials, 120)
                             main_loop_retrials = main_loop_retrials - 1
                             sleep(delay)
                             consecutive_retrials = consecutive_retrials + 1
@@ -1877,6 +1932,7 @@ class Autosubmit:
                                 Log.info("Recovering job_list...")
                                 job_list = Autosubmit.load_job_list(
                                     expid, as_conf, notransitive=notransitive)
+                                Log.info("Recovering job_list... Done")
                                 if allowed_members:
                                     # Set allowed members after checks have been performed. This triggers the setter and main logic of the -rm feature.
                                     job_list.run_members = allowed_members
@@ -1884,26 +1940,20 @@ class Autosubmit:
                                         "Only jobs with member value in {0} or no member will be allowed in this run. Also, those jobs already SUBMITTED, QUEUING, or RUNNING will be allowed to complete and will be tracked.".format(
                                             str(allowed_members)))
                                 platforms_to_test = set()
+                                Log.info("Recovering platform information...")
                                 for job in job_list.get_job_list():
                                     if job.platform_name is None or job.platform_name == "":
                                         job.platform_name = hpcarch
                                     job.platform = submitter.platforms[job.platform_name]
                                     platforms_to_test.add(job.platform)
-                                #Recover job_list while keeping job.fail_count
-                                failed_names = {}
-                                for job in job_list.get_job_list():
-                                    if job.platform_name is None or job.platform_name == "":
-                                        job.platform_name = hpcarch
-                                    job.platform = submitter.platforms[job.platform_name]
-                                    platforms_to_test.add(job.platform)
-                                    if job.fail_count > 0:
-                                        failed_names[job.name] = job.fail_count
+
+                                Log.info("Recovering platform information... Done")
+                                Log.info("Recovering Failure count...")
                                 for job in job_list.get_job_list():
                                     if job.name in list(failed_names.keys()):
                                         job.fail_count = failed_names[job.name]
-                                    if job.platform_name is None or job.platform_name == "":
-                                        job.platform_name = hpcarch
-                                    job.platform = submitter.platforms[job.platform_name]
+                                Log.info("Recovering Failure count... Done")
+
                                 Log.info("Recovering parameters...")
                                 Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                                 # Recovery wrapper [Packages]
@@ -1959,9 +2009,11 @@ class Autosubmit:
                                                              None,
                                                              None, jobs[0].platform, as_conf, jobs[0].hold)
                                     job_list.job_package_map[jobs[0].id] = wrapper_job
+                                Log.info("Recovering wrappers... Done")
                                 job_list.update_list(as_conf)
                                 Log.info("Saving recovered job list...")
                                 job_list.save()
+                                Log.info("Saving recovered job list... Done")
                                 recovery = True
                                 Log.result("Recover of job_list is completed")
                             except AutosubmitError as e:
@@ -1969,10 +2021,10 @@ class Autosubmit:
                                 Log.result("Recover of job_list has fail {0}".format(e.message))
                             except IOError as e:
                                 recovery = False
-                                Log.result("Recover of job_list has fail".format(str(e)))
+                                Log.result("Recover of job_list has fail {0}".format(e.message))
                             except BaseException as e:
                                 recovery = False
-                                Log.result("Recover of job_list has fail".format(str(e)))
+                                Log.result("Recover of job_list has fail {0}".format(e.message))
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
                         mail_notify = True

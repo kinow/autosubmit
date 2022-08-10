@@ -161,7 +161,7 @@ class Log:
         logging.getLogger(name)
 
     @staticmethod
-    def set_file(file_path, type='out', level=WARNING):
+    def set_file(file_path, type='out', level="WARNING"):
         """
         Configure the file to store the log. If another file was specified earlier, new messages will only go to the
         new file.
@@ -169,6 +169,19 @@ class Log:
         :param file_path: file to store the log
         :type file_path: str
         """
+        levels = {}
+        levels["STATUS_FAILED"] = 500
+        levels["STATUS"] = 1000
+        levels["DEBUG"] = 2000
+        levels["WARNING"] = 3000
+        levels["INFO"] = 4000
+        levels["RESULT"] = 5000
+        levels["ERROR"] = 6000
+        levels["CRITICAL"] = 7000
+        levels["NO_LOG"] = levels["CRITICAL"] + 1000
+
+        level = levels.get(str(level).upper(),"DEBUG")
+
         max_retrials = 3
         retrials = 0
         timeout = 5

@@ -464,17 +464,20 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
-    def check_job(self, job, default_status=Status.COMPLETED, retries=5, submit_hold_check=False):
+    def check_job(self, job, default_status=Status.COMPLETED, retries=5, submit_hold_check=False, is_wrapper=False):
         """
         Checks job running status
 
         :param retries: retries
         :param job: job
+        :type job: autosubmit.job.job.Job
+        :param default_status: default status if job is not found
         :type job: class(job)
         :param default_status: status to assign if it can be retrieved from the platform
         :type default_status: autosubmit.job.job_common.Status
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
+
         """
         job_id = job.id
         job_status = Status.UNKNOWN
@@ -503,19 +506,20 @@ class ParamikoPlatform(Platform):
                 job_status = Status.COMPLETED
             elif job_status in self.job_status['RUNNING']:
                 job_status = Status.RUNNING
-                if job.status != Status.RUNNING:
-                    job.start_time = datetime.datetime.now() # URi: start time
-                if job.start_time is not None and str(job.wrapper_type).lower() == "none":
-                    wallclock = job.wallclock
-                    if job.wallclock == "00:00":
-                        wallclock == job.platform.max_wallclock
-                    if wallclock != "00:00" and wallclock != "00:00:00" and wallclock != "":
-                        if job.is_over_wallclock(job.start_time,wallclock):
-                            try:
-                                job.platform.get_completed_files(job.name)
-                                job_status = job.check_completion(over_wallclock=True)
-                            except:
-                                job_status = Status.FAILED
+                if not is_wrapper:
+                    if job.status != Status.RUNNING:
+                        job.start_time = datetime.datetime.now() # URi: start time
+                    if job.start_time is not None and str(job.wrapper_type).lower() == "none":
+                        wallclock = job.wallclock
+                        if job.wallclock == "00:00":
+                            wallclock == job.platform.max_wallclock
+                        if wallclock != "00:00" and wallclock != "00:00:00" and wallclock != "":
+                            if job.is_over_wallclock(job.start_time,wallclock):
+                                try:
+                                    job.platform.get_completed_files(job.name)
+                                    job_status = job.check_completion(over_wallclock=True)
+                                except:
+                                    job_status = Status.FAILED
             elif job_status in self.job_status['QUEUING'] and job.hold == "false":
                 job_status = Status.QUEUING
             elif job_status in self.job_status['QUEUING'] and job.hold == "true":
