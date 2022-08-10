@@ -1884,7 +1884,6 @@ class Autosubmit:
                         save2 = job_list.update_list(
                             as_conf, submitter=submitter)
                         job_list.save()
-
                         if len(job_list.get_ready()) > 0:
                             save = Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=False)

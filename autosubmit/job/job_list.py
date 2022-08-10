@@ -229,6 +229,15 @@ class JobList(object):
             new, notransitive, update_structure=update_structure)
         for job in self._job_list:
             job.parameters = parameters
+            job_data = jobs_data.get(job.name,"none")
+            try:
+                if job_data != "none":
+                    job.wrapper_type = job_data[12]
+                else:
+                    job.wrapper_type = "none"
+            except BaseException as e:
+                job.wrapper_type = "none"
+
         # Checking for member constraints
         if len(run_only_members) > 0:
             # Found
