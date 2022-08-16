@@ -13,7 +13,7 @@ Autosubmit has been used to manage models running at supercomputers in BSC, ECMW
 
 Autosubmit is now available via PyPi package under the terms of GNU General Public License.
 
-
+Moreover, Autosubmit has a user-friendly, web based, and fresh GUI
 
 Get involved or contact us:      
                                      

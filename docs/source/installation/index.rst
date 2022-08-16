@@ -71,11 +71,9 @@ For installing the database for Autosubmit on the configured folder, when no dat
 
     autosubmit install
 
-.. danger:: Be careful ! autosubmit install will create a blank database.
+.. important:: Be careful ! autosubmit install will create a blank database.
 
-Lastly, if autosubmit configure doesn't work for you or you need to configure additional info create:
-
-Create or modify /etc/autosubmitrc file or ~/.autosubmitrc with the information as follows:
+Lastly, if autosubmit configure doesn't work for you or you need to configure additional info create or modify /etc/autosubmitrc file or ~/.autosubmitrc with the information as follows:
 
 .. code-block:: ini
 
