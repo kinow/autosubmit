@@ -28,28 +28,17 @@ Multiple Platform
    :hidden:
    /introduction/index
 
-Quick Start Guide
------------------
-
 .. toctree::
    :caption: Quick Start Guide
    :maxdepth: 1
    :hidden:
    /qstartguide/index
 
-Install Guide
--------------
-
-In order to install Autosubmit locally follow the guide
-
 .. toctree::
    :caption: Installation
    :maxdepth: 1
    :hidden:
    /installation/index
-
-User Guide
--------------
 
 .. toctree::
    :caption: User Guide
@@ -67,17 +56,11 @@ User Guide
    /userguide/workflow_recovery/index
    /userguide/advanced_validation/index
 
-Developer Guide
----------------
-
 .. toctree::
    :caption: Developer Guide
    :maxdepth: 1
    :hidden:
    /devguide/index
-
-Troubleshooting
----------------
 
 .. toctree::
    :caption: Troubleshooting
@@ -85,9 +68,6 @@ Troubleshooting
    :hidden:
    /troubleshooting/index
    /toubleshooting/error-codes
-
-Module Documentation
---------------------
 
 .. toctree::
    :caption: Module Documentation
