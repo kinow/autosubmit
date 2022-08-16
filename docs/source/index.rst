@@ -12,7 +12,7 @@ Welcome to Autosubmit's documentation!
    :maxdepth: 1
    :hidden:
 
-   /introduction
+   /introduction/index
 
 .. toctree::
    :caption: Quick Start Guide
