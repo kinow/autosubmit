@@ -11,24 +11,28 @@ Welcome to Autosubmit's documentation!
    :caption: Introduction
    :maxdepth: 1
    :hidden:
+
    /introduction/index
 
 .. toctree::
    :caption: Quick Start Guide
    :maxdepth: 1
    :hidden:
+
    /qstartguide/index
 
 .. toctree::
    :caption: Installation
    :maxdepth: 1
    :hidden:
+
    /installation/index
 
 .. toctree::
    :caption: User Guide
    :maxdepth: 2
    :hidden:
+
    /userguide/index
    /userguide/workflows/index
    /userguide/usage/index
@@ -45,12 +49,14 @@ Welcome to Autosubmit's documentation!
    :caption: Developer Guide
    :maxdepth: 1
    :hidden:
+
    /devguide/index
 
 .. toctree::
    :caption: Troubleshooting
    :maxdepth: 1
    :hidden:
+
    /troubleshooting/index
    /toubleshooting/error-codes
 
@@ -58,6 +64,7 @@ Welcome to Autosubmit's documentation!
    :caption: Module Documentation
    :maxdepth: 1
    :hidden:
+
    /codedoc/autosubmit
    /codedoc/config
    /codedoc/database
