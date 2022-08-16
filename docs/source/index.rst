@@ -12,7 +12,7 @@ Welcome to Autosubmit's documentation!
    :maxdepth: 1
    :hidden:
 
-   /introduction/index
+   /introduction
 
 .. toctree::
    :caption: Quick Start Guide
@@ -34,8 +34,7 @@ Welcome to Autosubmit's documentation!
    :hidden:
 
    /userguide/index
-   /userguide/workflows/index
-   /userguide/usage/index
+   /userguide/usage
    /userguide/advanced_features/index
    /userguide/archive/index
    /userguide/configuration/index
@@ -58,21 +57,22 @@ Welcome to Autosubmit's documentation!
    :hidden:
 
    /troubleshooting/index
-   /toubleshooting/error-codes
+   /troubleshooting/error-codes
 
 .. toctree::
    :caption: Module Documentation
    :maxdepth: 1
    :hidden:
 
-   /codedoc/autosubmit
-   /codedoc/config
-   /codedoc/database
-   /codedoc/git
-   /codedoc/job
-   /codedoc/main
-   /codedoc/monitor
-   /codedoc/platforms
+   /moduledoc/autosubmit
+   /moduledoc/config
+   /moduledoc/database
+   /moduledoc/git
+   /moduledoc/job
+   /moduledoc/main
+   /moduledoc/monitor
+   /moduledoc/platforms
+
 
 Autosubmit is a Python software to manage complicated workflows on HPC platforms.
 
@@ -89,4 +89,3 @@ Resource Management
    without adapting job scripts.
 Multiple Platform
    Autosubmit can run jobs of an experiment in different platforms
-
