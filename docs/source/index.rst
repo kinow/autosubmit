@@ -4,11 +4,10 @@
    contain the root `toctree` directive.
 
 ######################################
-Welcome to Autosubmit's documentation!
+Welcome to autosubmit's documentation!
 ######################################
 
 .. toctree::
-   :caption: Introduction
    :maxdepth: 1
    :hidden:
 
@@ -22,7 +21,6 @@ Welcome to Autosubmit's documentation!
    /qstartguide/index
 
 .. toctree::
-   :caption: Installation
    :maxdepth: 1
    :hidden:
 
@@ -52,7 +50,6 @@ Welcome to Autosubmit's documentation!
    /devguide/index
 
 .. toctree::
-   :caption: Troubleshooting
    :maxdepth: 1
    :hidden:
 
@@ -69,7 +66,6 @@ Welcome to Autosubmit's documentation!
    /moduledoc/database
    /moduledoc/git
    /moduledoc/job
-   /moduledoc/main
    /moduledoc/monitor
    /moduledoc/platforms
 
