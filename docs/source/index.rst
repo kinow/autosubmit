@@ -57,17 +57,10 @@ Welcome to autosubmit's documentation!
    /troubleshooting/error-codes
 
 .. toctree::
-   :caption: Module Documentation
    :maxdepth: 1
    :hidden:
 
-   /moduledoc/autosubmit
-   /moduledoc/config
-   /moduledoc/database
-   /moduledoc/git
-   /moduledoc/job
-   /moduledoc/monitor
-   /moduledoc/platforms
+   /moduledoc/index
 
 
 Autosubmit is a Python software to manage complicated workflows on HPC platforms.
