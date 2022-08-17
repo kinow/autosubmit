@@ -1,6 +1,6 @@
-********************
-Module documentation
-********************
+*******
+Modules
+*******
 
 .. toctree::
    :titlesonly:

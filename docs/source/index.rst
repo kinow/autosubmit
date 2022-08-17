@@ -50,6 +50,7 @@ Welcome to autosubmit's documentation!
    /devguide/index
 
 .. toctree::
+   :caption: FAQ
    :maxdepth: 1
    :hidden:
 
@@ -57,6 +58,7 @@ Welcome to autosubmit's documentation!
    /troubleshooting/error-codes
 
 .. toctree::
+   :caption: Module Documentation
    :maxdepth: 1
    :hidden:
 
