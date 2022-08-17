@@ -1,6 +1,6 @@
-####################
-Developing a project
-####################
+##############################
+Developing an EC-Earth Project
+##############################
 
 Autosubmit is used at BSC to run EC-Earth. To do that, a git repository has been created that contains the model source
 code and the scripts used to run the tasks.
