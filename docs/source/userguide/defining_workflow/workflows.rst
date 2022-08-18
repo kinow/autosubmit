@@ -34,7 +34,7 @@ be finished before launching the job that has the DEPENDENCIES attribute.
 
 The resulting workflow can be seen in Figure :numref:`simple`
 
-.. figure:: workflows/simple.png
+.. figure:: fig/simple.png
    :name: simple
    :width: 100%
    :align: center
@@ -75,7 +75,7 @@ member and chunk corresponding to running once, once per startdate, once per mem
 
 The resulting workflow can be seen in Figure :numref:`running` for a experiment with 2 startdates, 2 members and 2 chunks.
 
-.. figure:: workflows/running.png
+.. figure:: fig/running.png
    :name: running
    :width: 100%
    :align: center
@@ -123,7 +123,7 @@ The resulting workflow can be seen in Figure :numref:`dprevious`
    that dependency is redundant with the one on the previous sim
 
 
-.. figure:: workflows/dependencies_previous.png
+.. figure:: fig/dependencies_previous.png
    :name: dprevious
    :width: 100%
    :align: center
@@ -167,7 +167,7 @@ jobs to be finished. That is the case of the postprocess combine dependency on t
 
 The resulting workflow can be seen in Figure :numref:`dependencies`
 
-.. figure:: workflows/dependencies_running.png
+.. figure:: fig/dependencies_running.png
    :name: dependencies
    :width: 100%
    :align: center
@@ -212,7 +212,7 @@ an integer I for this attribute and the job will run only once for each I iterat
 
 The resulting workflow can be seen in Figure :numref:`frequency`
 
-.. figure:: workflows/frequency.png
+.. figure:: fig/frequency.png
    :name: frequency
    :width: 100%
    :align: center
@@ -250,7 +250,7 @@ of synchronization do you want. See the below examples with and without this par
 
 The resulting workflow can be seen in Figure :numref:`nosync`
 
-.. figure:: workflows/no-synchronize.png
+.. figure:: fig/no-synchronize.png
    :name: nosync
    :width: 100%
    :align: center
@@ -265,7 +265,7 @@ The resulting workflow can be seen in Figure :numref:`nosync`
 
 The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen in Figure :numref:`msynchronize`
 
-.. figure:: workflows/member-synchronize.png
+.. figure:: fig/member-synchronize.png
    :name: msynchronize
    :width: 100%
    :align: center
@@ -280,7 +280,7 @@ The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen 
 
 The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen in Figure :numref:`dsynchronize`
 
-.. figure:: workflows/date-synchronize.png
+.. figure:: fig/date-synchronize.png
    :name: dsynchronize
    :width: 100%
    :align: center
@@ -323,7 +323,7 @@ in the format [1:3,7,10] or [1,2,3]
 
 The resulting workflow can be seen in Figure :numref:`split`
 
-.. figure:: workflows/split.png
+.. figure:: fig/split.png
    :name: split
    :width: 100%
    :align: center
@@ -366,7 +366,7 @@ an integer N for this attribute and the job will run only after N chunks.
 
 The resulting workflow can be seen in Figure :numref:`delay`
 
-.. figure:: workflows/experiment_delay_doc.png
+.. figure:: fig/experiment_delay_doc.png
    :name: delay
    :width: 100%
    :align: center

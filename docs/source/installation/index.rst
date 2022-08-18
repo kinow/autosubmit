@@ -35,8 +35,76 @@ or download, unpack and:
 .. hint::
     To see the changelog, use ``autosubmit changelog``
 
+Examples
+========
+
+Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
+------------------------------------------------------------------------------
+
+.. code-block:: bash
+
+
+    # Update repositories
+    apt update
+
+    # Avoid interactive stuff
+    export DEBIAN_FRONTEND=noninteractive
+
+    # Dependencies
+    apt install wget curl python2 python-tk python2-dev graphviz -y -q
+
+    # Additional dependencies related with pycrypto
+    apt install build-essential libssl-dev libffi-dev -y -q
+
+    # Download get pip script and launch it
+    wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+    python2 get-pip.py
+
+    # Install autosubmit using pip
+    pip2 install autosubmit
+
+    # Check that we can execute autosubmit commands
+    autosubmit -h
+
+    # Configure
+    autosubmit configure
+
+    # Install
+    autosubmit install
+
+    # Get expid
+    autosubmit expid -H TEST -d "Test exp."
+
+    # Create with -np
+    # Since it was a new install the expid will be a000
+    autosubmit create a000 -np
+
+Sequence of instructions to install Autosubmit and its dependencies with conda.
+-------------------------------------------------------------------------------
+
+.. code-block:: bash
+
+    # Download conda
+    wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh./Miniconda3-py39_4.12.0-Linux-x86_64.sh
+    # Launch it
+    ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
+    # Download git
+    apt install git -y -q
+    # Download autosubmit
+    git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v3.14.0
+    cd autosubmit
+    # Create conda environment
+    conda env update -f environment.yml -n autosubmit python=2
+    # Activate env
+    source activate autosubmit
+    # Test autosubmit
+    autosubmit -v
+    # Configure autosubmitrc and install database as indicated in this doc
+
+
+################
 How to configure
-================
+################
 
 After installation, you have to configure database and path for Autosubmit.
 In order to use the default settings, just create a directory called `autosubmit` in your home directory before running the configure command.
@@ -115,70 +183,3 @@ From 3.14+ onwards, autosubmit commands can be tailored to run on specific machi
  * If no machines are defined, all machines are authorized.
 
 Now you are ready to use Autosubmit !
-
-
-Examples
-========
-
-Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
-------------------------------------------------------------------------------
-
-.. code-block:: bash
-
-
-    # Update repositories
-    apt update
-
-    # Avoid interactive stuff
-    export DEBIAN_FRONTEND=noninteractive
-
-    # Dependencies
-    apt install wget curl python2 python-tk python2-dev graphviz -y -q
-
-    # Additional dependencies related with pycrypto
-    apt install build-essential libssl-dev libffi-dev -y -q
-
-    # Download get pip script and launch it
-    wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
-    python2 get-pip.py
-
-    # Install autosubmit using pip
-    pip2 install autosubmit
-
-    # Check that we can execute autosubmit commands
-    autosubmit -h
-
-    # Configure
-    autosubmit configure
-
-    # Install
-    autosubmit install
-
-    # Get expid
-    autosubmit expid -H TEST -d "Test exp."
-
-    # Create with -np
-    # Since it was a new install the expid will be a000
-    autosubmit create a000 -np
-
-Sequence of instructions to install Autosubmit and its dependencies with conda.
--------------------------------------------------------------------------------
-
-.. code-block:: bash
-
-    # Download conda
-    wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh./Miniconda3-py39_4.12.0-Linux-x86_64.sh
-    # Launch it
-    ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
-    # Download git
-    apt install git -y -q
-    # Download autosubmit
-    git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v3.14.0
-    cd autosubmit
-    # Create conda environment
-    conda env update -f environment.yml -n autosubmit python=2
-    # Activate env
-    source activate autosubmit
-    # Test autosubmit
-    autosubmit -v
-    # Configure autosubmitrc and install database as indicated in this doc

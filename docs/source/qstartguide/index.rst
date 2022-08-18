@@ -87,7 +87,7 @@ Run and monitoring:
 
 While the experiment is running, it can be visualized via ``autosubmit monitor <expid>``.
 
-.. figure:: workflows/dummy.png
+.. figure:: dummy.png
    :name: dummy_workflow
    :width: 100%
    :align: center

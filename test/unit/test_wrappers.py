@@ -17,7 +17,7 @@ class TestWrappers(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # set up different workflows to be used in the test methods
+        # set up different unused_figs to be used in the test methods
         cls.workflows = dict()
         cls.workflows['basic'] = dict()
         cls.workflows['synchronize_date'] = dict()

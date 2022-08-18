@@ -155,7 +155,7 @@ In this workflow you can see an illustrated example of select_chunks used in an 
     WALLCLOCK = 0:30
     PROCESSORS = 768
 
-.. figure:: ../../workflows/select_chunks.png
+.. figure:: fig/select_chunks.png
    :name: simple
    :width: 100%
    :align: center
@@ -183,7 +183,7 @@ In this workflow you can see an illustrated example of SKIPPABLE parameter used 
     RUNNING = member
     #QUEUE = debug
 
-.. figure:: ../../workflows/skip.png
+.. figure:: fig/skip.png
    :name: simple
    :width: 100%
    :align: center
@@ -216,7 +216,7 @@ Weak dependencies, work like this way:
     RUNNING = chunk
     SYNCHRONIZE = member
 
-.. figure:: ../../workflows/Dashed.png
+.. figure:: fig/dashed.png
    :name: simple
    :width: 100%
    :align: center
@@ -267,7 +267,7 @@ Jobs_conf:
     RUNNING = chunk
     SYNCHRONIZE = member
 
-.. figure:: ../../workflows/Select_members.png
+.. figure:: fig/select_members.png
    :name: simple
    :width: 100%
    :align: center

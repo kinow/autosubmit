@@ -51,7 +51,7 @@ Example:
     RUNNING = chunk
     PROCESSORS = 10
 
-    .. figure:: ../../workflows/rerun.png
+    .. figure:: fig/rerun.png
        :name: rerun_result
        :align: center
        :alt: rerun_result
