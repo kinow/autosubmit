@@ -2,7 +2,7 @@ Autosubmit GUI
 ##############
 
 .. toctree::
-
+    :hidden:
    experiment/index
    tree/index
    graph/index
