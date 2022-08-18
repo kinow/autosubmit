@@ -1,6 +1,6 @@
-###############
-Troubleshooting
-###############
+###
+FAQ
+###
 
 How to change the job status stopping autosubmit
 ================================================
@@ -42,7 +42,7 @@ Other possible errors
 
 **I see the `database malformed` error on my experiment log.**
 
-*Explanation*: The latest version of autosubmit uses a database to efficiently track changes in the jobs of your experiment. It might happen that this small database gets corrupted.
+*Explanation*: The latest version of autosubmit uses a database to efficiently track changes in the jobs of your experiment. It could have happened that this small database got corrupted.
 
 *Solution*: run `autosubmit dbfix expid` where `expid` is the identifier of your experiment. This function will rebuild the database saving as much information as possible (usually all of it).
 
@@ -50,8 +50,7 @@ Other possible errors
 
 *Solution*: run `autosubmit pklfix expid`, it will restore the `backup` file if possible.
 
-##############################
-Frequent Questions and Answers
-##############################
+Error codes
+===========
 
-The latest version of **Autosubmit** implements a code system that guides you through the process of fixing some of the common problems you might find. Consequently, the **FAQ** section has been replaced by :ref:`faqnew`, where you will find the list of error codes, their descriptions, and solutions.
+The latest version of **Autosubmit** implements a code system that guides you through the process of fixing some of the common problems you might find. Consequently, the **FAQ** section has been replaced by :ref:`errorcodes`, where you will find the list of error codes, their descriptions, and solutions.

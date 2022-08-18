@@ -51,7 +51,7 @@ Welcome to autosubmit's documentation!
    /devguide/index
 
 .. toctree::
-   :caption: FAQ
+   :caption: Troubleshooting
    :maxdepth: 1
    :hidden:
 
