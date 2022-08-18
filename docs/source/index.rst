@@ -21,6 +21,7 @@ Welcome to autosubmit's documentation!
    /qstartguide/index
 
 .. toctree::
+   :caption: Installation
    :maxdepth: 1
    :hidden:
 
