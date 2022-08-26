@@ -2,6 +2,14 @@
 Usage
 #####
 
+.. toctree::
+   /userguide/create/index
+   /userguide/configure/index
+   /userguide/run/index
+   /userguide/manage/index
+   /userguide/monitor and check/index
+
+
 Command list
 ============
 

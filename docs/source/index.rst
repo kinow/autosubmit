@@ -32,7 +32,6 @@ Welcome to autosubmit's documentation!
    :maxdepth: 3
    :hidden:
 
-   /userguide/index
    /userguide/create/index
    /userguide/configure/index
    /userguide/run/index
