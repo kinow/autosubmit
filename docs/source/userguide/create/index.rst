@@ -3,6 +3,7 @@ How to create an experiment
 
 .. toctree::
     :hidden:
+    :titlesonly:
 
     create_testcase
     test_experiment

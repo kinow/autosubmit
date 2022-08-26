@@ -3,6 +3,7 @@ How to monitor the experiment
 
 .. toctree::
     :hidden:
+    :titlesonly:
 
     job_stats
     custom_stats

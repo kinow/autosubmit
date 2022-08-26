@@ -2,6 +2,7 @@
 
 .. toctree::
     :hidden:
+    :titlesonly:
 
     defining_workflows
     develop_a_project

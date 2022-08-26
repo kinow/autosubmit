@@ -3,6 +3,7 @@ How to run the experiment
 
 .. toctree::
     :hidden:
+    :titlesonly:
 
     run
     restart_exp
