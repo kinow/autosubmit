@@ -33,15 +33,11 @@ Welcome to autosubmit's documentation!
    :hidden:
 
    /userguide/index
-   /userguide/usage
-   /userguide/advanced_features/index
-   /userguide/archive/index
-   /userguide/configuration/index
-   /userguide/new_experiment/index
-   /userguide/run_modes/index
-   /userguide/stats/index
-   /userguide/workflow_recovery/index
-   /userguide/advanced_validation/index
+   /userguide/create/index
+   /userguide/configure/index
+   /userguide/run/index
+   /userguide/manage/index
+   /userguide/monitor and check/index
 
 .. toctree::
    :caption: Developer Guide
