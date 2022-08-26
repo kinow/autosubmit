@@ -2,14 +2,6 @@
 Creating Experiments
 ====================
 
-.. toctree::
-    :hidden:
-    :titlesonly:
-
-    new_experiment
-    create_testcase
-    test_experiment
-
 Create new experiment
 -------------------------
 
