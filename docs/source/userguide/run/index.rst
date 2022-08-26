@@ -1,20 +1,9 @@
-How to run the experiment
-=========================
+===================
+Running experiments
+===================
 
-.. toctree::
-    :hidden:
-    :titlesonly:
-
-    run
-    restart_exp
-    set_status
-    stop_experiment
-    run_members
-    rerun_partially
-    start_time
-    start_after
-    remote_dependencies
-    run_two_step
+Running Autosubmit
+-------------------
 
 Launch Autosubmit with the command:
 ::
@@ -81,3 +70,21 @@ Once you've already loaded / installed the Autosubmit version do you want:
 The most common problem when you change your Autosubmit version is the apparition of several Python errors.
 This is due to how Autosubmit saves internally the data, which can be incompatible between versions.
 The steps above represent the process to re-create (1) these internal data structures and to recover (2) the previous status of your experiment.
+
+
+Contents
+--------
+
+.. toctree::
+    :titlesonly:
+
+    run
+    restart_exp
+    set_status
+    stop_experiment
+    run_members
+    rerun_partially
+    start_time
+    start_after
+    remote_dependencies
+    run_two_step
