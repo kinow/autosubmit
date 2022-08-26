@@ -1,5 +1,17 @@
 How to monitor the experiment
 =============================
+
+.. toctree::
+    :hidden:
+
+    job_stats
+    custom_stats
+    describe
+    generate_cmd_files
+    visualize_groups
+    report
+
+
 To monitor the status of the experiment, use the command:
 ::
 

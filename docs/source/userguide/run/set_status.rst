@@ -1,7 +1,7 @@
 .. _setstatus:
 
-How to change the job status stopping autosubmit
-================================================
+How to change the job status
+============================
 
 This procedure allows you to modify the status of your jobs.
 

@@ -1,5 +1,20 @@
 How to run the experiment
 =========================
+
+.. toctree::
+    :hidden:
+
+    run
+    restart_exp
+    set_status
+    stop_experiment
+    run_members
+    rerun_partially
+    start_time
+    start_after
+    remote_dependencies
+    run_two_step
+
 Launch Autosubmit with the command:
 ::
 
@@ -48,7 +63,7 @@ More info on password-less ssh can be found at: http://www.linuxproblem.org/art_
 .. caution:: After launching Autosubmit, one must be aware of login expiry limit and policy (if applicable for any HPC) and renew the login access accordingly (by using token/key etc) before expiry.
 
 How to run an experiment that was created with another version
-==============================================================
+--------------------------------------------------------------
 
 .. important:: First of all you have to stop your Autosubmit instance related with the experiment
 

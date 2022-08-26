@@ -2,6 +2,13 @@
 Usage
 #####
 
+.. toctree::
+    create/index
+    configure/index
+    run/index
+    manage/index
+    monitor and check/index
+
 Command list
 ============
 
