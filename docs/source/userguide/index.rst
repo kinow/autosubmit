@@ -2,13 +2,6 @@
 Usage
 #####
 
-.. toctree::
-    create/index
-    configure/index
-    run/index
-    manage/index
-    monitor and check/index
-
 Command list
 ============
 
@@ -40,7 +33,7 @@ Command list
 
 
 Tutorials (How to)
-==================
+------------------
 
 * :ref:`new_experiment`
 

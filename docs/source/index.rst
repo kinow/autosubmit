@@ -29,7 +29,7 @@ Welcome to autosubmit's documentation!
 
 .. toctree::
    :caption: User Guide
-   :maxdepth: 2
+   :maxdepth: 3
    :hidden:
 
    /userguide/index
