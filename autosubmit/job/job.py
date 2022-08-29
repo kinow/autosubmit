@@ -623,15 +623,29 @@ class Job(object):
             lang = locale.getdefaultlocale()[1]
             if lang is None:
                 lang = 'UTF-8'
+        retries = 2
+        count = 0
+        success = False
+        error_message = ""
+        while count < retries or success:
+            try:
+                as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
+                as_conf.reload(first_load=True)
+                submitter = self._get_submitter(as_conf)
+                submitter.load_platforms(as_conf)
+                success = True
+            except BaseException as e:
+                error_message = str(e)
+                sleep(60 * 5)
+                pass
+            count = count + 1
+        if not success:
+            raise AutosubmitError(
+                "Couldn't load the autosubmit platforms, seems that the local platform has some issue\n:{0}".format(
+                    error_message), 6006)
+        platform = submitter.platforms[platform_name.lower()]
         try:
-            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            as_conf.reload(first_load=True)
-            submitter = self._get_submitter(as_conf)
-            submitter.load_platforms(as_conf)
-            platform = submitter.platforms[platform_name.lower()]
-
             platform.test_connection()
-
             max_logs = int(as_conf.get_retrials()) - fail_count
             last_log = int(as_conf.get_retrials()) - fail_count
             if self.wrapper_type is not None and self.wrapper_type == "vertical":
@@ -653,12 +667,7 @@ class Job(object):
 
         except BaseException as e:
             Log.printlog(
-                "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(str(e), self.name), 6001)
-            try:
-                platform.closeConnection()
-            except:
-                pass
-            return
+                "{0} \n Couldn't connect to the remote platform for {1} job err/out files. ".format(e.message, self.name), 6001)
         out_exist = False
         err_exist = False
         retries = 3
