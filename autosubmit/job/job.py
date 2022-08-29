@@ -628,11 +628,10 @@ class Job(object):
             as_conf.reload(first_load=True)
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
-            platform = submitter.platforms[platform_name]
-            try:
-                platform.test_connection()
-            except:
-                pass
+            platform = submitter.platforms[platform_name.lower()]
+
+            platform.test_connection()
+
             max_logs = int(as_conf.get_retrials()) - fail_count
             last_log = int(as_conf.get_retrials()) - fail_count
             if self.wrapper_type is not None and self.wrapper_type == "vertical":
@@ -652,7 +651,7 @@ class Job(object):
             else:
                 remote_logs = (self.script_name + ".out."+str(fail_count), self.script_name + ".err." + str(fail_count))
 
-        except Exception as e:
+        except BaseException as e:
             Log.printlog(
                 "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(str(e), self.name), 6001)
             try:
