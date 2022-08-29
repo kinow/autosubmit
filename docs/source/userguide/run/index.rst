@@ -1,8 +1,7 @@
-===================
 Running experiments
 ===================
 
-Running Autosubmit
+Run an experiment
 -------------------
 
 Launch Autosubmit with the command:
@@ -53,7 +52,7 @@ More info on password-less ssh can be found at: http://www.linuxproblem.org/art_
 .. caution:: After launching Autosubmit, one must be aware of login expiry limit and policy (if applicable for any HPC) and renew the login access accordingly (by using token/key etc) before expiry.
 
 How to run an experiment that was created with another version
---------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. important:: First of all you have to stop your Autosubmit instance related with the experiment
 
@@ -71,20 +70,276 @@ The most common problem when you change your Autosubmit version is the apparitio
 This is due to how Autosubmit saves internally the data, which can be incompatible between versions.
 The steps above represent the process to re-create (1) these internal data structures and to recover (2) the previous status of your experiment.
 
+How to run only selected members
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Contents
---------
+To run only a subset of selected members you can execute the command:
+::
 
-.. toctree::
-    :titlesonly:
+    autosubmit run EXPID -rm MEMBERS
 
-    run
-    restart_exp
-    set_status
-    stop_experiment
-    run_members
-    rerun_partially
-    start_time
-    start_after
-    remote_dependencies
-    run_two_step
+*EXPID* is the experiment identifier, the experiment you want to run.
+
+*MEMBERS* is the selected subset of members. Format `"member1 member2 member2"`, example: `"fc0 fc1 fc2"`.
+
+Then, your experiment will start running jobs belonging to those members only. If the experiment was previously running and autosubmit was stopped when some jobs belonging to other members (not the ones from your input) where running, those jobs will be tracked and finished in the new exclusive run.
+
+Furthermore, if you wish to run a sequence of only members execution; then, instead of running `autosubmit run -rm "member_1"` ... `autosubmit run -rm "member_n"`, you can make a bash file with that sequence and run the bash file. Example:
+::
+
+    #!/bin/bash
+    autosubmit run EXPID -rm MEMBER_1
+    autosubmit run EXPID -rm MEMBER_2
+    autosubmit run EXPID -rm MEMBER_3
+    ...
+    autosubmit run EXPID -rm MEMBER_N
+
+How to start an experiment at a given time
+------------------------------------------
+
+To start an experiment at a given time, use the command:
+::
+
+    autosubmit run EXPID -st INPUT
+
+*EXPID* is the experiment identifier
+
+*INPUT* is the time when your experiment will start. You can provide two formats:
+  * `H:M:S`: For example `15:30:00` will start your experiment at 15:30 in the afternoon of the present day.
+  * `yyyy-mm-dd H:M:S`: For example `2021-02-15 15:30:00` will start your experiment at 15:30 in the afternoon on February 15th.
+
+Then, your terminal will show a countdown for your experiment start.
+
+This functionality can be used together with other options supplied by the `run` command.
+
+The `-st` command has a long version `--start_time`.
+
+
+How to start an experiment after another experiment is finished
+---------------------------------------------------------------
+
+To start an experiment after another experiment is finished, use the command:
+::
+
+    autosubmit run EXPID -sa EXPIDB
+
+*EXPID* is the experiment identifier, the experiment you want to start.
+
+*EXPIDB* is the experiment identifier of the experiment you are waiting for before your experiment starts.
+
+.. warning:: Both experiments must be using Autosubmit version `3.13.0b` or later.
+
+Then, your terminal will show the current status of the experiment you are waiting for. The status format is `COMPLETED/QUEUING/RUNNING/SUSPENDED/FAILED`.
+
+This functionality can be used together with other options supplied by the `run` command.
+
+The `-sa` command has a long version `--start_after`.
+
+How to prepare an experiment to run in two independent job_list. (Priority jobs, Two-step-run)
+----------------------------------------------------------------------------------------------
+
+This feature allows to run an experiment in two separated steps without the need of do anything manually.
+
+To achieve this, you will have to use an special parameter called TWO_STEP_START in which you will put the list of the jobs that you want to run in an exclusive mode. These jobs will run until all of them finishes and once it finishes, the rest of the jobs will begun the execution.
+
+It can be activated through TWO_STEP_START and it is set on expdef_a02n.conf, under the [experiment] section.
+
+.. code-block:: ini
+
+    [experiment]
+    DATELIST = 20120101 20120201
+    MEMBERS = fc00[0-3]
+    CHUNKSIZEUNIT = day
+    CHUNKSIZE = 1
+    NUMCHUNKS = 10
+    CHUNKINI =
+    CALENDAR = standard
+    # To run before the rest of experiment:
+    TWO_STEP_START = <job_names&section,dates,member_or_chunk(M/C),chunk_or_member(C/M)>
+
+In order to be easier to use, there are Three  modes for use this feature: job_names and section,dates,member_or_chunk(M/C),chunk_or_member(C/M).
+
+* By using job_names alone, you will need to put all jobs names one by one divided by the char , .
+* By using section,dates,member_or_chunk(M/C),chunk_or_member(C/M). You will be able to select multiple jobs at once combining these filters.
+* Use both options, job_names and section,dates,member_or_chunk(M/C),chunk_or_member(C/M). You will have to put & between the two modes.
+
+There are 5 fields on TWO_STEP_START, all of them are optional but there are certain limitations:
+
+* **Job_name**: [Independent] List of job names, separated by ',' char. Optional, doesn't depend on any field. Separated from the rest of fields by '&' must be the first field if specified
+* **Section**:  [Independent] List of sections, separated by  ',' char. Optional, can be used alone. Separated from the rest of fields by ';'
+* **Dates**: [Depends on section] List of dates, separated by ',' char. Optional, but depends on Section field. Separated from the rest of fields by ';'
+* **member_or_chunk**: [Depends on Dates(OR)]  List of chunk or member, must start with C or M to indicate the filter type. Jobs are selected by [1,2,3..] or by a range [0-9] Optional, but depends on Dates field. Separated from the rest of fields by ';'
+* **chunk_or_member**: [Depends on Dates(OR)]  List of member or chunk, must start with M or C to indicate the filter type. Jobs are selected by [1,2,3..] or by a range [0-9] Optional, but depends on Dates field. Separated from the rest of fields by ';'
+
+Example
+~~~~~~~
+
+Guess the expdef configuration as follow:
+
+.. code-block:: ini
+
+    [experiment]
+    DATELIST = 20120101
+    MEMBERS = 00[0-1]
+    CHUNKSIZEUNIT = day
+    CHUNKSIZE = 1
+    NUMCHUNKS = 2
+    TWO_STEP_START = a02n_20120101_000_1_REDUCE&COMPILE_DA,SIM;20120101;c[1]
+
+Given this job_list ( jobs_conf has REMOTE_COMPILE(once),DA,SIM,REDUCE)
+
+['a02n_REMOTE_COMPILE', 'a02n_20120101_000_1_SIM', 'a02n_20120101_000_2_SIM', 'a02n_20120101_001_1_SIM', 'a02n_20120101_001_2_SIM', 'a02n_COMPILE_DA', 'a02n_20120101_1_DA', 'a02n_20120101_2_DA', 'a02n_20120101_000_1_REDUCE', 'a02n_20120101_000_2_REDUCE', 'a02n_20120101_001_1_REDUCE', 'a02n_20120101_001_2_REDUCE']
+
+The priority jobs will be ( check TWO_STEP_START from expdef conf):
+
+['a02n_20120101_000_1_SIM', 'a02n_20120101_001_1_SIM', 'a02n_COMPILE_DA', 'a02n_20120101_000_1_REDUCE']
+
+
+
+Finally, you can launch Autosubmit *run* in background and with ``nohup`` (continue running although the user who launched the process logs out).
+::
+
+    nohup autosubmit run cxxx &
+
+How to stop the experiment
+--------------------------
+
+You can stop Autosubmit by sending a signal to the process.
+To get the process identifier (PID) you can use the ps command on a shell interpreter/terminal.
+::
+
+    ps -ef | grep autosubmit
+    dbeltran  22835     1  1 May04 ?        00:45:35 autosubmit run cxxy
+    dbeltran  25783     1  1 May04 ?        00:42:25 autosubmit run cxxx
+
+To send a signal to a process you can use kill also on a terminal.
+
+To stop immediately experiment cxxx:
+::
+
+    kill -9 22835
+
+.. important:: In case you want to restart the experiment, you must follow the
+    :ref:`restart` procedure, explained below, in order to properly resynchronize all completed jobs.
+
+.. _restexp:
+
+.. _restart:
+
+How to restart the experiment
+-----------------------------
+
+This procedure allows you to restart an experiment. Autosubmit looks for the COMPLETED file for jobs that are considered active (SUBMITTED, QUEUING, RUNNING), UNKNOWN or READY.
+
+.. warning:: You can only restart the experiment if there are not active jobs. You can use -f flag to cancel running jobs automatically.
+
+You must execute:
+::
+
+    autosubmit recovery EXPID
+
+*EXPID* is the experiment identifier.
+
+Options:
+::
+
+    usage: autosubmit recovery [-h] [-np] [--all] [-s] [-group_by {date,member,chunk,split} -expand -expand_status] expid
+
+        expid       experiment identifier
+
+        -h, --help  show this help message and exit
+        -np, --noplot  omit plot
+        -f             Allows to perform the recovery even if there are active jobs
+        --all        Get all completed files to synchronize pkl
+        -s, --save  Save changes to disk
+        -group_by {date,member,chunk,split,automatic}
+                            criteria to use for grouping jobs
+        -expand,              list of dates/members/chunks to expand
+        -expand_status,       status(es) to expand
+        -nt                   --notransitive
+                                        prevents doing the transitive reduction when plotting the workflow
+        -nl                   --no_recover_logs
+                                        prevents the recovering of log files from remote platforms
+        -d                    --detail
+                                Shows Job List view in terminal
+
+Example:
+::
+
+    autosubmit recovery cxxx -s
+
+In order to understand more the grouping options, which are used for visualization purposes, please check :ref:`grouping`.
+
+
+.. hint:: When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file and rename the update file.
+
+The --all flag is used to synchronize all jobs of our experiment locally with the information available on the remote platform
+(i.e.: download the COMPLETED files we may not have). In case new files are found, the ``pkl`` will be updated.
+
+Example:
+::
+
+    autosubmit recovery cxxx --all -s
+
+How to rerun a part of the experiment
+-------------------------------------
+
+This procedure allows you to create automatically a new pickle with a list of jobs of the experiment to rerun.
+
+Using the ``expdef_<expid>.conf`` the ``create`` command will generate the rerun if the variable RERUN is set to TRUE and a RERUN_JOBLIST is provided.
+
+Additionally, you can have re-run only jobs that won't be include in the default job_list. In order to do that, you have to set RERUN_ONLY in the jobs conf of the corresponding job.
+
+::
+
+    autosubmit create cxxx
+
+It will read the list of jobs specified in the RERUN_JOBLIST and will generate a new plot.
+
+Example:
+::
+
+    vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
+
+.. code-block:: ini
+
+    ...
+
+    [rerun]
+    RERUN = TRUE
+    RERUN_JOBLIST = RERUN_TEST_INI;SIM[19600101[C:3]],RERUN_TEST_INI_chunks[19600101[C:3]]
+    ...
+
+    vi <experiments_directory>/cxxx/conf/jobs_cxxx.conf
+
+.. code-block:: ini
+
+    [PREPROCVAR]
+    FILE = templates/04_preproc_var.sh
+    RUNNING = chunk
+    PROCESSORS = 8
+
+    [RERUN_TEST_INI_chunks]
+    FILE = templates/05b_sim.sh
+    RUNNING = chunk
+    RERUN_ONLY = true
+
+    [RERUN_TEST_INI]
+    FILE = templates/05b_sim.sh
+    RUNNING = once
+    RERUN_ONLY = true
+
+    [SIM]
+    DEPENDENCIES = RERUN_TEST_INI RERUN_TEST_INI_chunks PREPROCVAR SIM-1
+    RUNNING = chunk
+    PROCESSORS = 10
+
+    .. figure:: fig/rerun.png
+       :name: rerun_result
+       :align: center
+       :alt: rerun_result
+
+
+::
+
+    nohup autosubmit run cxxx &
