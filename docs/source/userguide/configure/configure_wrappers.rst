@@ -1,6 +1,5 @@
-############
 Wrappers
-############
+========
 
 In order to understand the goal of this feature, please take a look at: https://earth.bsc.es/wiki/lib/exe/fetch.php?media=library:seminars:techniques_to_improve_the_throughput.pptx
 
@@ -15,7 +14,7 @@ When using the wrapper, it is useful to be able to visualize which packages are 
 So, when executing *autosubmit monitor cxxx*, a dashed box indicates the jobs that are wrapped together in the same job package.
 
 How to configure
-========================
+----------------
 
 In ``autosubmit_cxxx.conf``, regardless of the wrapper type, you need to make sure that the values of the variables **MAXWAITINGJOBS** and **TOTALJOBS** are increased according to the number of jobs expected to be waiting/running at the same time in your experiment.
 
@@ -44,7 +43,7 @@ It is only required for the vertical-mixed type (in which the specified job type
 By default, jobs of the same type will be wrapped together, as long as the constraints are satisfied.
 
 Number of jobs in a package
-***************************
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: ini
 
@@ -67,14 +66,14 @@ Number of jobs in a package
 
 
 Wrapper check time
-**********************
+~~~~~~~~~~~~~~~~~~
 
 It is possible to override the **SAFETYSLEEPTIME** for the wrapper, by using **CHECK_TIME_WRAPPER** and defining a time interval (in seconds) in which the wrapper internal jobs should be checked.
 
 .. important::  Note that the **numbers** shown in this documentation are examples. The actual values must be set according to the specific workflow, as well as the platform configurations.
 
 Vertical wrapper
-=======================
+----------------
 
 The vertical wrapper is more appropriate when there are many sequential jobs. To use it, set TYPE = vertical:
 
@@ -94,7 +93,7 @@ In order to be able to use the vertical wrapper, in ``platforms_cxxx.conf`` set 
 Remember to add to each job the corresponding WALLCLOCK time.
 
 Vertical with multiple sections
-===============================
+-------------------------------
 
 This is a mode of the vertical wrapper that allows jobs of different types to be wrapped together.
 Note that the solution considers the order of the sections defined in the ``jobs_cxxx.conf`` file, so the order of the sections given in **JOBS_IN_WRAPPER** is irrelevant.
@@ -113,15 +112,12 @@ Additionally, jobs are grouped within the corresponding date, member and chunk h
    :alt: vertical-mixed wrapper
 
 Horizontal wrapper
-==========================
+------------------
 
 The horizontal wrapper is more appropriate when there are multiple ensemble members that can be run in parallel.
 
 If the wrapped jobs have an mpirun call, they will need machine files to specify in which nodes each job will run.
 Different cases may need specific approaches when creating the machine files. For auto-ecearth use COMPONENTS instead of STANDARD.
-
-Horizontal wrapper
-**********************
 
 .. code-block:: ini
 
@@ -146,7 +142,7 @@ In order to be able to use the horizontal wrapper, in ``platforms_cxxx.conf`` se
    :alt: horizontally wrapped jobs
 
 Shared-memory Experiments
-*************************
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There is also the possibility of setting the option **METHOD** to SRUN in the wrapper directive (**ONLY** for vertical and vertical-horizontal wrappers).
 
@@ -159,13 +155,13 @@ This allows to form a wrapper with shared-memory paradigm instead of rely in mac
     METHOD = srun # default ASTHREAD
 
 Hybrid wrapper
-==========================
+--------------
 
 The hybrid wrapper is a wrapper that works both vertically and horizontally at the same time, meaning that members and chunks can be wrapped in one single job.
 Mixed approach using a combination of horizontal and vertical wrappers and the list of jobs is a list of lists.
 
 Horizontal-vertical
-===========================
+-------------------
 
 - There is a dependency between lists. Each list runs after the previous one finishes; the jobs within the list run in parallel at the same time
 - It is particularly suitable if there are jobs of different types in the list with different wall clocks, but dependencies between jobs of different lists; it waits for all the jobs in the list to finish before starting the next list
@@ -186,7 +182,7 @@ Horizontal-vertical
 
 
 Vertical-horizontal
-===========================
+-------------------
 
 - In this approach, each list is independent of each other and run in parallel; jobs within the list run one after the other
 - It is particularly suitable for running many sequential ensembles
@@ -206,7 +202,8 @@ Vertical-horizontal
    :alt: hybrid wrapper
 
 Multiple wrappers at once
-=========================
+-------------------------
+
 This is an special mode that allows you to use multiple **independent** wrappers on the same experiment. By using an special variable that allows to define subwrapper sections
 
 .. code-block:: ini
@@ -230,7 +227,7 @@ This is an special mode that allows you to use multiple **independent** wrappers
    :alt: multi wrapper
 
 Summary
-==========================
+-------
 
 In `autosubmit_cxxx.conf`:
 
