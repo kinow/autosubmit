@@ -1,5 +1,4 @@
-====================
-Creating Experiments
+Create an Experiment
 ====================
 
 Create new experiment
@@ -42,7 +41,7 @@ Example:
 
 Where the specified path should be complete, as something you would get when executing pwd, and also include the filename of your custom platforms content.
 
-Copying another experiment
+Copy another experiment
 --------------------------
 
 This option makes a copy of an existing experiment.
