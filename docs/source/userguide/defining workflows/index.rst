@@ -1,6 +1,5 @@
-
 Defining the workflow
----------------------
+=====================
 
 One of the most important step that you have to do when planning to use autosubmit for an experiment is the definition
 of the workflow the experiment will use. In this section you will learn about the workflow definition syntax so you will
@@ -12,7 +11,7 @@ be able to exploit autosubmit's full potential
 
 
 Simple workflow
-~~~~~~~~~~~~~~~
+---------------
 
 The simplest workflow that can be defined it is a sequence of two jobs, with the second one triggering at the end of
 the first. To define it, we define the two jobs and then add a DEPENDENCIES attribute on the second job referring to the
@@ -44,7 +43,7 @@ The resulting workflow can be seen in Figure :numref:`simple`
 
 
 Running jobs once per startdate, member or chunk
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 Autosubmit is capable of running ensembles made of various startdates and members. It also has the capability to
 divide member execution on different chunks.
@@ -131,8 +130,6 @@ The resulting workflow can be seen in Figure :numref:`dprevious`
 
    Example showing dependencies between sim jobs on different chunks.
 
-
-
 Dependencies between running levels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -174,7 +171,6 @@ The resulting workflow can be seen in Figure :numref:`dependencies`
    :alt: simple workflow plot
 
    Example showing dependencies between jobs running at different levels.
-
 
 Job frequency
 ~~~~~~~~~~~~~~~
@@ -219,7 +215,6 @@ The resulting workflow can be seen in Figure :numref:`frequency`
    :alt: simple workflow plot
 
    Example showing dependencies between jobs running at different frequencies.
-
 
 Job synchronize
 ~~~~~~~~~~~~~~~
@@ -331,7 +326,6 @@ The resulting workflow can be seen in Figure :numref:`split`
    :alt: simple workflow plot
 
    Example showing the job ASIM divided into 3 parts for each chunk.
-
 
 Job delay
 ~~~~~~~~~
