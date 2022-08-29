@@ -34,7 +34,10 @@ Welcome to autosubmit's documentation!
 
    /userguide/create/index
    /userguide/configure/index
+   /userguide/defining workflows/index
+   /userguide/wrappers/index.rst
    /userguide/run/index
+   /userguide/modifying workflows/index.rst
    /userguide/manage/index
    /userguide/monitor and check/index
 
