@@ -1,6 +1,6 @@
-#####################
+
 Defining the workflow
-#####################
+---------------------
 
 One of the most important step that you have to do when planning to use autosubmit for an experiment is the definition
 of the workflow the experiment will use. In this section you will learn about the workflow definition syntax so you will
@@ -12,7 +12,7 @@ be able to exploit autosubmit's full potential
 
 
 Simple workflow
----------------
+~~~~~~~~~~~~~~~
 
 The simplest workflow that can be defined it is a sequence of two jobs, with the second one triggering at the end of
 the first. To define it, we define the two jobs and then add a DEPENDENCIES attribute on the second job referring to the
@@ -44,7 +44,7 @@ The resulting workflow can be seen in Figure :numref:`simple`
 
 
 Running jobs once per startdate, member or chunk
-------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Autosubmit is capable of running ensembles made of various startdates and members. It also has the capability to
 divide member execution on different chunks.
@@ -91,7 +91,7 @@ Dependencies on autosubmit were introduced on the first example, but in this sec
 cases that will be very useful on your workflows.
 
 Dependencies with previous jobs
-_______________________________
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Autosubmit can manage dependencies between jobs that are part of different chunks, members or startdates. The next
 example will show how to make a simulation job wait for the previous chunk of the simulation. To do that, we add
@@ -134,7 +134,7 @@ The resulting workflow can be seen in Figure :numref:`dprevious`
 
 
 Dependencies between running levels
-___________________________________
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On the previous examples we have seen that when a job depends on a job on a higher level (a running chunk job depending
 on a member running job) all jobs wait for the higher running level job to be finished. That is the case on the ini sim dependency
@@ -177,7 +177,7 @@ The resulting workflow can be seen in Figure :numref:`dependencies`
 
 
 Job frequency
--------------
+~~~~~~~~~~~~~~~
 
 Some times you just don't need a job to be run on every chunk or member. For example, you may want to launch the postprocessing
 job after various chunks have completed. This behaviour can be achieved using the FREQUENCY attribute. You can specify
@@ -222,7 +222,7 @@ The resulting workflow can be seen in Figure :numref:`frequency`
 
 
 Job synchronize
--------------
+~~~~~~~~~~~~~~~
 
 For jobs running at chunk level, and this job has dependencies, you could want
 not to run a job for each experiment chunk, but to run once for all member/date dependencies, maintaining
@@ -289,7 +289,8 @@ The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen in
    Example showing dependencies between chunk jobs running with date synchronize.
 
 Job split
-------------------
+~~~~~~~~~
+
 For jobs running at chunk level, it may be useful to split each chunk into different parts.
 This behaviour can be achieved using the SPLITS attribute to specify the number of parts.
 It is possible to define dependencies to specific splits within [], as well as to a list/range of splits,
@@ -333,7 +334,7 @@ The resulting workflow can be seen in Figure :numref:`split`
 
 
 Job delay
-------------------
+~~~~~~~~~
 
 Some times you need a job to be run after a certain number of chunks. For example, you may want to launch the asim
 job after various chunks have completed. This behaviour can be achieved using the DELAY attribute. You can specify
@@ -373,3 +374,175 @@ The resulting workflow can be seen in Figure :numref:`delay`
    :alt: simple workflow with delay option
 
    Example showing the asim job starting only from chunk 3.
+
+Workflow examples:
+------------------
+
+Example 1:
+~~~~~~~~~~
+
+In this first example, you can see 3 jobs in which last job (POST) shows an example with select chunks:
+
+.. code-block:: ini
+
+    [INI]
+    FILE = templates/common/ini.tmpl.sh
+    RUNNING = member
+    WALLCLOCK = 00:30
+    QUEUE = debug
+    CHECK = true
+
+    [SIM]
+    FILE = templates/ecearth3/ecearth3.sim
+    DEPENDENCIES = INI
+    RUNNING = chunk
+    WALLCLOCK = 04:00
+    PROCESSORS = 1616
+    THREADS = 1
+
+    [POST]
+    FILE = templates/common/post.tmpl.sh
+    DEPENDENCIES =  SIM
+    RUNNING = chunk
+    WALLCLOCK = 01:00
+    QUEUE = Debug
+    check = true
+    # Then you can select the specific chunks of dependency SIM with one of those lines:
+
+    SELECT_CHUNKS = SIM*[1]*[3] # Will do the dependency of chunk 1 and chunk 3. While chunks 2,4  won't be linked.
+    SELECT_CHUNKS = SIM*[1:3] #Enables the dependency of chunk 1,2 and 3. While 4 won't be linked.
+    SELECT_CHUNKS = SIM*[1,3] #Enables the dependency of chunk 1 and 3. While 2 and 4 won't be linked
+    SELECT_CHUNKS = SIM*[1] #Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked
+
+Example 2: select_chunks
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this workflow you can see an illustrated example of select_chunks used in an actual workflow, to avoid an excess of information we only will see the configuration of a single job:
+
+.. code-block:: ini
+
+    [SIM]
+    FILE = templates/sim.tmpl.sh
+    DEPENDENCIES = INI SIM-1 POST-1 CLEAN-5
+    SELECT_CHUNKS = POST*[1]
+    RUNNING = chunk
+    WALLCLOCK = 0:30
+    PROCESSORS = 768
+
+.. figure:: fig/select_chunks.png
+   :name: simple
+   :width: 100%
+   :align: center
+   :alt: select_chunks_workflow
+
+Example 3: SKIPPABLE
+~~~~~~~~~~~~~~~~~~~~
+
+In this workflow you can see an illustrated example of SKIPPABLE parameter used in an dummy workflow.
+
+.. code-block:: ini
+
+    [SIM]
+    FILE = sim.sh
+    DEPENDENCIES = INI POST-1
+    WALLCLOCK = 00:15
+    RUNNING = chunk
+    QUEUE = debug
+    SKIPPABLE = TRUE
+
+    [POST]
+    FILE = post.sh
+    DEPENDENCIES = SIM
+    WALLCLOCK = 00:05
+    RUNNING = member
+    #QUEUE = debug
+
+.. figure:: fig/skip.png
+   :name: simple
+   :width: 100%
+   :align: center
+   :alt: skip_workflow
+
+Example 4: Weak dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this workflow you can see an illustrated example of weak dependencies.
+
+Weak dependencies, work like this way:
+
+* X job only has one parent. X job parent can have "COMPLETED or FAILED" as status for current job to run.
+* X job has more than one parent. One of the X job parent must have "COMPLETED" as status while the rest can be  "FAILED or COMPLETED".
+
+.. code-block:: ini
+
+    [GET_FILES]
+    FILE = templates/fail.sh
+    RUNNING = chunk
+
+    [IT]
+    FILE = templates/work.sh
+    RUNNING = chunk
+    QUEUE = debug
+
+    [CALC_STATS]
+    FILE = templates/work.sh
+    DEPENDENCIES = IT GET_FILES?
+    RUNNING = chunk
+    SYNCHRONIZE = member
+
+.. figure:: fig/dashed.png
+   :name: simple
+   :width: 100%
+   :align: center
+   :alt: dashed_workflow
+
+Example 5: Select Member
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+In this workflow you can see an illustrated example of select member. Using 4 members 1 datelist and 4 different job sections.
+
+Expdef:
+
+.. code-block:: ini
+
+    [experiment]
+    DATELIST = 19600101
+    MEMBERS = 00 01 02 03
+    CHUNKSIZE = 1
+    NUMCHUNKS = 2
+
+Jobs_conf:
+
+.. code-block:: ini
+
+    [SIM]
+    ...
+    RUNNING = chunk
+    QUEUE = debug
+
+    [DA]
+    ...
+    DEPENDENCIES = SIM
+    SELECT_MEMBERS = SIM*[0:2]
+    RUNNING = chunk
+    SYNCHRONIZE = member
+
+    [REDUCE]
+    ...
+    DEPENDENCIES = SIM
+    SELECT_MEMBERS = SIM*[3]
+    RUNNING = member
+    FREQUENCY = 4
+
+    [REDUCE_AN]
+    ...
+    FILE = templates/05b_sim.sh
+    DEPENDENCIES = DA
+    RUNNING = chunk
+    SYNCHRONIZE = member
+
+.. figure:: fig/select_members.png
+   :name: simple
+   :width: 100%
+   :align: center
+   :alt: select_members
