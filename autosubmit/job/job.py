@@ -627,7 +627,7 @@ class Job(object):
         count = 0
         success = False
         error_message = ""
-        while (count < retries) or success:
+        while (count < retries) or not success:
             try:
                 as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
                 as_conf.reload(first_load=True)
