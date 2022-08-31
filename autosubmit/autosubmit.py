@@ -2354,7 +2354,7 @@ class Autosubmit:
                             "{0} submission failed, some hold jobs failed to be held".format(platform.name), 6015)
                 except WrongTemplateException as e:
                     raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
-                        e.job_name), 7014, e.message)
+                        e.job_name), 7014, str(e))
                 except AutosubmitError as e:
                     raise
                 except AutosubmitCritical as e:
