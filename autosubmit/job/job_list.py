@@ -236,15 +236,14 @@ class JobList(object):
                     if jobc in self._job_list:
                         job.children.add(jobc)
 
-        try:
-            for wrapper_section in wrapper_jobs:
+        for wrapper_section in wrapper_jobs:
+            try:
                 if wrapper_jobs[wrapper_section] is not None and len(str(wrapper_jobs[wrapper_section])) > 0:
                     self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
                 else:
                     self._ordered_jobs_by_date_member[wrapper_section] = {}
-        except BaseException as e:
-            raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.conf".format(wrapper_section),7014,str(e))
-        pass
+            except BaseException as e:
+                raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.conf".format(wrapper_section),7014,str(e))
 
 
     @staticmethod

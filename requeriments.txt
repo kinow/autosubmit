@@ -24,3 +24,5 @@ coverage
 PyNaCl==1.4.0
 Pygments
 packaging==19
+typing>=3.7
+
