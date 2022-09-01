@@ -554,10 +554,10 @@ class AutosubmitConfig(object):
         """
         normalized_data =  dict()
         for key, val in data.items():
-            normalized_data[key.upper()] = val
+            normalized_data[str(key).upper()] = val
             if isinstance(val, collections.abc.Mapping ):
                 normalized_value = self.deep_normalize(data.get(key, {}))
-                normalized_data[key.upper()] = normalized_value
+                normalized_data[str(key).upper()] = normalized_value
 
         return normalized_data
 
