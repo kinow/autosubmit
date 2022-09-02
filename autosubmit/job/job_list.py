@@ -341,6 +341,8 @@ class JobList(object):
         :return: boolean
         """
         to_filter = []
+        if str(parent_value).lower() == "none":
+            return True
         if filter_value == "all":
             return True
         elif filter_value == "natural":
@@ -394,7 +396,7 @@ class JobList(object):
                 if filter_type.upper() == level_to_check.upper():
                     for filter_range in filter_data.keys():
                         if str(value_to_check) is None or str(filter_range).find(str(value_to_check)) != -1:
-                            current_filter = filter_data[filter_range]
+                            current_filter.update(filter_data[filter_range])
         return current_filter
     @staticmethod
     def _filter_current_job(current_job,relationships):
@@ -414,13 +416,15 @@ class JobList(object):
         if relationships is not None:
             filters_to_apply = JobList._check_relationship(relationships,"DATES_FROM",current_job.date)
             if len(filters_to_apply) > 0:
-                filters_to_apply_m = JobList._check_relationship(filters_to_apply,"MEMBERS_FROM",current_job.member)
-                if len(filters_to_apply_m) > 0:
-                    filters_to_apply = filters_to_apply_m
-                else:
-                    filters_to_apply_c = JobList._check_relationship(filters_to_apply,"CHUNKS_FROM",current_job.chunk)
-                    if len(filters_to_apply_c) > 0:
-                        filters_to_apply = filters_to_apply_c
+                for filter_number in range(0,len(filters_to_apply)):
+
+                    filters_to_apply_m = JobList._check_relationship(filters_to_apply[filter_number],"MEMBERS_FROM",current_job.member)
+                    if len(filters_to_apply_m) > 0:
+                        filters_to_apply = filters_to_apply_m
+                    else:
+                        filters_to_apply_c = JobList._check_relationship(filters_to_apply[filter_number],"CHUNKS_FROM",current_job.chunk)
+                        if len(filters_to_apply_c) > 0:
+                            filters_to_apply = filters_to_apply_c
             # Check Member then Chunk
             if len(filters_to_apply) == 0:
                 filters_to_apply = JobList._check_relationship(relationships,"MEMBERS_FROM",current_job.member)
@@ -503,12 +507,14 @@ class JobList(object):
 
             other_parents = dic_jobs.get_jobs(dependency.section, None, None, None)
             parents_jobs = dic_jobs.get_jobs(dependency.section, date, member, chunk)
+            natural_jobs = dic_jobs.get_jobs(dependency.section, date, member, None)
+
             all_parents = other_parents + parents_jobs
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply = JobList._filter_current_job(job,dependency.relationships)
             for parent in all_parents:
                 # Check if it is a natural relation based in autosubmit terms ( same date,member,chunk ).
-                if parent in parents_jobs:
+                if parent in natural_jobs:
                     natural_relationship = True
                 else:
                     natural_relationship = False
