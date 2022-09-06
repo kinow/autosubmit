@@ -174,7 +174,7 @@ Sequence of instructions to install Autosubmit and its dependencies with conda.
     # Download conda
     wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh
     # Launch it
-    chmod + x ; ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
+    chmod +x ./Miniconda3-py39_4.12.0-Linux-x86_64.sh ; ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
     # Download git
     apt install git -y -q
     # Download autosubmit
