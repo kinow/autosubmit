@@ -131,7 +131,7 @@ class TestDicJobs(TestCase):
         # assert
         self.dictionary._create_jobs_once.assert_not_called()
         self.dictionary._create_jobs_startdate.assert_not_called()
-        self.dictionary._create_jobs_member.assert_called_once_with(section, priority, frequency, Type.BASH, {},splits,excluded_list_m)
+        self.dictionary._create_jobs_member.assert_called_once_with(section, priority, frequency, Type.BASH, {},splits)
         self.dictionary._create_jobs_chunk.assert_not_called()
 
     def test_read_section_running_chunk_create_jobs_chunk(self):
@@ -163,7 +163,7 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_once.assert_not_called()
         self.dictionary._create_jobs_startdate.assert_not_called()
         self.dictionary._create_jobs_member.assert_not_called()
-        self.dictionary._create_jobs_chunk.assert_called_once_with(section, options["PRIORITY"], options["FREQUENCY"], Type.BASH, options["SYNCHRONIZE"], options["DELAY"], options["SPLITS"], {},excluded_chunks=[],excluded_members=[])
+        self.dictionary._create_jobs_chunk.assert_called_once_with(section, options["PRIORITY"], options["FREQUENCY"], Type.BASH, options["SYNCHRONIZE"], options["DELAY"], options["SPLITS"], {})
 
     def test_dic_creates_right_jobs_by_startdate(self):
         # arrange
