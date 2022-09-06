@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import shutil
+import numbers
 
 
 import os
@@ -260,7 +261,7 @@ class AutosubmitConfig(object):
         current_level=self.experiment_data.get(section[0],"")
         for param in section[1:]:
             if current_level:
-                if type(current_level) is dict:
+                if type(current_level) == dict:
                     current_level = current_level.get(param,d_value)
                 else:
                     if must_exists:
@@ -268,10 +269,10 @@ class AutosubmitConfig(object):
                             "[INDEX ERROR], {0} must exists. Check that {1} is an section that exists.".format(section_str,
                                                                                                                str(current_level)),
                             7014)
-        if not current_level and must_exists:
+        if current_level is None or ( not isinstance(current_level,numbers.Number) and len(current_level) == 0) and must_exists:
            raise AutosubmitCritical(
                "{0} must exists. Check that subsection {1} exists.".format(section_str, str(current_level)), 7014)
-        if not current_level or current_level == "":
+        if current_level is None or ( not isinstance(current_level,numbers.Number) and len(current_level) == 0):
             return d_value
         else:
             return current_level
@@ -1266,7 +1267,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
 
-        return self.get_section(['experiment', 'TWO_STEP_START'], "")
+        return self.get_section(['EXPERIMENT', 'TWO_STEP_START'], "")
 
     def get_rerun_jobs(self):
         """
@@ -1276,7 +1277,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
 
-        return self.get_section(['rerun', 'RERUN_JOBLIST'], "")
+        return self.get_section(['RERUN', 'RERUN_JOBLIST'], "")
 
     def get_file_project_conf(self):
         """
@@ -1285,7 +1286,7 @@ class AutosubmitConfig(object):
         :return: path to project config file
         :rtype: str
         """
-        return self.get_section(['project_files', 'FILE_PROJECT_CONF'])
+        return self.get_section(['PROJECT_FILES', 'FILE_PROJECT_CONF'])
 
     def get_file_jobs_conf(self):
         """
@@ -1294,7 +1295,7 @@ class AutosubmitConfig(object):
         :return: path to project config file
         :rtype: str
         """
-        return self.get_section(['project_files', 'FILE_JOBS_CONF'], "")
+        return self.get_section(['PROJECT_FILES', 'FILE_JOBS_CONF'], "")
 
     def get_git_project_origin(self):
         """
@@ -1303,7 +1304,7 @@ class AutosubmitConfig(object):
         :return: git origin
         :rtype: str
         """
-        return self.get_section(['git', 'PROJECT_ORIGIN'], "")
+        return self.get_section(['GIT', 'PROJECT_ORIGIN'], "")
 
     def get_git_project_branch(self):
         """
@@ -1312,7 +1313,7 @@ class AutosubmitConfig(object):
         :return: git branch
         :rtype: str
         """
-        return self.get_section(['git', 'PROJECT_BRANCH'], 'master')
+        return self.get_section(['GIT', 'PROJECT_BRANCH'], 'master')
 
     def get_git_project_commit(self):
         """
@@ -1321,7 +1322,7 @@ class AutosubmitConfig(object):
         :return: git commit
         :rtype: str
         """
-        return self.get_section(['git', 'PROJECT_COMMIT'], "")
+        return self.get_section(['GIT', 'PROJECT_COMMIT'], "")
 
     def get_git_remote_project_root(self):
         """
@@ -1330,7 +1331,7 @@ class AutosubmitConfig(object):
         :return: git commit
         :rtype: str
         """
-        return self.get_section(['git', 'REMOTE_CLONE_ROOT'], "")
+        return self.get_section(['GIT', 'REMOTE_CLONE_ROOT'], "")
 
     def get_submodules_list(self):
         """
@@ -1339,7 +1340,7 @@ class AutosubmitConfig(object):
         :return: submodules to load
         :rtype: list
         """
-        return self.get_section(['git', 'PROJECT_SUBMODULES'], "").split(" ")
+        return self.get_section(['GIT', 'PROJECT_SUBMODULES'], "").split(" ")
 
     def get_fetch_single_branch(self):
         """
@@ -1348,7 +1349,7 @@ class AutosubmitConfig(object):
         :return: fetch_single_branch(Y/N)
         :rtype: str
         """
-        return str(self.get_section(['git', 'FETCH_SINGLE_BRANCH'], "true")).lower()
+        return str(self.get_section(['GIT', 'FETCH_SINGLE_BRANCH'], "true")).lower()
 
     def get_project_destination(self):
         """
@@ -1358,7 +1359,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         try:
-            value = self.get_section(['project', 'PROJECT_DESTINATION'])
+            value = self.get_section(['PROJECT', 'PROJECT_DESTINATION'])
             if not value:
                 if self.get_project_type().lower() == "local":
                     value = os.path.split(self.get_local_project_path())[1]
@@ -1418,7 +1419,7 @@ class AutosubmitConfig(object):
         :return: subversion project url
         :rtype: str
         """
-        return self.get_section(['svn', 'PROJECT_URL'])
+        return self.get_section(['SVN', 'PROJECT_URL'])
 
     def get_svn_project_revision(self):
         """
@@ -1427,7 +1428,7 @@ class AutosubmitConfig(object):
         :return: revision for subversion project
         :rtype: str
         """
-        return self.get_section(['svn', 'PROJECT_REVISION'])
+        return self.get_section(['SVN', 'PROJECT_REVISION'])
 
     def get_local_project_path(self):
         """
@@ -1436,7 +1437,7 @@ class AutosubmitConfig(object):
         :return: path to local project
         :rtype: str
         """
-        return self.get_section(['local', 'PROJECT_PATH'])
+        return self.get_section(['LOCAL', 'PROJECT_PATH'])
 
     def get_date_list(self):
         """
@@ -1446,7 +1447,7 @@ class AutosubmitConfig(object):
         :rtype: list
         """
         date_list = list()
-        date_value = str(self.get_section(['experiment', 'DATELIST'],"20220401"))
+        date_value = str(self.get_section(['EXPERIMENT', 'DATELIST'],"20220401"))
         # Allows to use the old format for define a list.
         if type(date_value) is not list:
             if not date_value.startswith("["):
@@ -1481,7 +1482,7 @@ class AutosubmitConfig(object):
         :return: number of chunks
         :rtype: int
         """
-        return int(self.get_section(['experiment', 'NUMCHUNKS']))
+        return int(self.get_section(['EXPERIMENT', 'NUMCHUNKS']))
 
     def get_chunk_ini(self, default=1):
         """
@@ -1504,7 +1505,7 @@ class AutosubmitConfig(object):
         :return: Unit for the chunk length  Options: {hour, day, month, year}
         :rtype: str
         """
-        return self.get_section(['experiment', 'CHUNKSIZEUNIT'])
+        return self.get_section(['EXPERIMENT', 'CHUNKSIZEUNIT'])
 
     def get_chunk_size(self, default=1):
         """
@@ -1527,8 +1528,8 @@ class AutosubmitConfig(object):
         :rtype: list
         """
         member_list = list()
-        string = self.get_section(['experiment', 'MEMBERS']) if run_only == False else self.get_section(
-            ['experiment', 'RUN_ONLY_MEMBERS'], "")
+        string = str(self.get_section(['EXPERIMENT', 'MEMBERS'],"") if run_only == False else self.get_section(
+            ['EXPERIMENT', 'RUN_ONLY_MEMBERS'], ""))
         if not string:
             return member_list
         elif not string.startswith("["):
@@ -1578,7 +1579,7 @@ class AutosubmitConfig(object):
         :rtype: bool
         """
 
-        return str(self.get_section(['rerun', 'RERUN'])).lower()
+        return str(self.get_section(['RERUN', 'RERUN'])).lower()
 
 
 
@@ -1623,7 +1624,7 @@ class AutosubmitConfig(object):
         :return: version
         :rtype: str
         """
-        return str(self.get_section(['config', 'AUTOSUBMIT_VERSION'], ""))
+        return str(self.get_section(['CONFIG', 'AUTOSUBMIT_VERSION'], ""))
 
     def get_total_jobs(self):
         """
@@ -1641,7 +1642,7 @@ class AutosubmitConfig(object):
         :return: output type
         :rtype: string
         """
-        return self.get_section(['config', 'OUTPUT'], 'pdf')
+        return self.get_section(['CONFIG', 'OUTPUT'], 'pdf')
 
     def get_max_wallclock(self):
         """
@@ -1649,7 +1650,7 @@ class AutosubmitConfig(object):
 
         :rtype: str
         """
-        return self.get_section(['config', 'MAX_WALLCLOCK'], "")
+        return self.get_section(['CONFIG', 'MAX_WALLCLOCK'], "")
 
     def get_disable_recovery_threads(self, section):
         """
@@ -1667,7 +1668,7 @@ class AutosubmitConfig(object):
 
         :rtype: str
         """
-        return self.get_section(['config', 'MAX_PROCESSORS'], -1)
+        return self.get_section(['CONFIG', 'MAX_PROCESSORS'], -1)
 
     def get_max_waiting_jobs(self):
         """
@@ -1676,7 +1677,7 @@ class AutosubmitConfig(object):
         :return: main platforms
         :rtype: int
         """
-        return int(self.get_section(['config', 'MAXWAITINGJOBS'],-1))
+        return int(self.get_section(['CONFIG', 'MAXWAITINGJOBS'],-1))
 
     def get_default_job_type(self):
         """
@@ -1685,7 +1686,7 @@ class AutosubmitConfig(object):
         :return: default type such as bash, python, r...
         :rtype: str
         """
-        return self.get_section(['project_files', 'JOB_SCRIPTS_TYPE'], 'bash')
+        return self.get_section(['PROJECT_FILES', 'JOB_SCRIPTS_TYPE'], 'bash')
 
     def get_safetysleeptime(self):
         """
@@ -1694,7 +1695,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return int(self.get_section(['config', 'SAFETYSLEEPTIME'], 10))
+        return int(self.get_section(['CONFIG', 'SAFETYSLEEPTIME'], 10))
 
     def set_safetysleeptime(self, sleep_time):
         """
@@ -1714,7 +1715,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return self.get_section(['config', 'RETRIALS'],0)
+        return self.get_section(['CONFIG', 'RETRIALS'],0)
 
     def get_delay_retry_time(self):
         """
@@ -1723,7 +1724,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return self.get_section(['config', 'DELAY_RETRY_TIME'], -1)
+        return self.get_section(['CONFIG', 'DELAY_RETRY_TIME'], -1)
 
     def get_notifications(self):
         """
@@ -1799,7 +1800,7 @@ class AutosubmitConfig(object):
         :return: if notifications
         :rtype: string
         """
-        return self.get_section(['mail', 'NOTIFY_ON_REMOTE_FAIL'], True)
+        return self.get_section(['MAIL', 'NOTIFY_ON_REMOTE_FAIL'], True)
     def get_remote_dependencies(self):
         """
         Returns if the user has enabled the PRESUBMISSION configuration parameter from autosubmit's config file
@@ -1807,7 +1808,7 @@ class AutosubmitConfig(object):
         :return: if remote dependencies
         :rtype: string
         """
-        return str(self.get_section(['config', 'PRESUBMISSION'], "false")).lower()
+        return str(self.get_section(['CONFIG', 'PRESUBMISSION'], "false")).lower()
 
     def get_wrapper_type(self, wrapper={}):
         """
@@ -1886,7 +1887,7 @@ class AutosubmitConfig(object):
         :return: expression (or none)
         :rtype: string
         """
-        return str(self.get_section(['config', 'X11_JOBS'], "false")).lower()
+        return str(self.get_section(['CONFIG', 'X11_JOBS'], "false")).lower()
 
     def get_wrapper_queue(self, wrapper={}):
         """
@@ -2007,7 +2008,7 @@ class AutosubmitConfig(object):
         :return: if logs local copy
         :rtype: str
         """
-        return str(self.get_section(['storage', 'COPY_REMOTE_LOGS'], "true")).lower()
+        return str(self.get_section(['STORAGE', 'COPY_REMOTE_LOGS'], "true")).lower()
 
     def get_mails_to(self):
         """
@@ -2016,7 +2017,7 @@ class AutosubmitConfig(object):
         :return: mail address
         :rtype: [str]
         """
-        return  self.get_section(['mail', 'TO'], "")
+        return  self.get_section(['MAIL', 'TO'], "")
 
     def get_communications_library(self):
         """
@@ -2025,7 +2026,7 @@ class AutosubmitConfig(object):
         :return: communications library
         :rtype: str
         """
-        return self.get_section(['communications', 'API'], 'paramiko')
+        return self.get_section(['COMMUNICATIONS', 'API'], 'paramiko')
 
     def get_storage_type(self):
         """
@@ -2034,7 +2035,7 @@ class AutosubmitConfig(object):
         :return: communications library
         :rtype: str
         """
-        return self.get_section(['storage', 'TYPE'], 'pkl')
+        return self.get_section(['STORAGE', 'TYPE'], 'pkl')
 
     @staticmethod
     def is_valid_mail_address(mail_address):

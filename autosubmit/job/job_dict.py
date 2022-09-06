@@ -222,8 +222,6 @@ class DicJobs:
         for date in self._date_list:
             self._dic[section][date] = dict()
             for member in self._member_list:
-                if self._member_list.index(member) in excluded_members:
-                    continue
                 self._dic[section][date][member] = dict()
                 count = 0
                 for chunk in self._chunk_list:

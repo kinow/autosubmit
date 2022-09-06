@@ -926,7 +926,7 @@ class Job(object):
         parameters['FREQUENCY'] = self.frequency
         parameters['SYNCHRONIZE'] = self.synchronize
         parameters['PACKED'] = self.packed
-        if hasattr(self, 'retrials'):
+        if hasattr(self, 'RETRIALS'):
             parameters['RETRIALS'] = self.retrials
         if hasattr(self, 'delay_retrials'):
             parameters['DELAY_RETRIALS'] = self.delay_retrials
@@ -1002,9 +1002,9 @@ class Job(object):
         self.memory_per_task = str(as_conf.jobs_data[self.section].get("MEMORY_PER_TASK",""))
         self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK",None)
         self.wchunkinc = str(as_conf.jobs_data[self.section].get("WCHUNKINC",""))
-        if self.wallclock is None and job_platform.type not in ['ps',"local"]:
+        if self.wallclock is None and job_platform.type not in ['ps',"local","PS","LOCAL"]:
             self.wallclock = "01:59"
-        elif self.wallclock is None and job_platform.type in ['ps','local']:
+        elif self.wallclock is None and job_platform.type in ['ps','local',"PS","LOCAL"]:
             self.wallclock = "00:00"
         self.wchunkinc = as_conf.get_wchunkinc(self.section)
         # Increasing according to chunk

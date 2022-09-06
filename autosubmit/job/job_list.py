@@ -513,6 +513,8 @@ class JobList(object):
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply = JobList._filter_current_job(job,dependency.relationships)
             for parent in all_parents:
+                if parent.name == job.name:
+                    continue
                 # Check if it is a natural relation based in autosubmit terms ( same date,member,chunk ).
                 if parent in natural_jobs:
                     natural_relationship = True
