@@ -576,6 +576,21 @@ class AutosubmitConfig(object):
                 unified_config[key] = new_dict[key]
         return unified_config
 
+    def normalize_variables(self,data):
+        """
+        Apply some memory internal variables to normalize it format. (right now only dependencies)
+        """
+        data_fixed = data
+
+        for job, job_data in data.get("JOBS",{}).items():
+            aux_dependencies = dict()
+            dependencies = job_data.get("DEPENDENCIES",{})
+            if type(dependencies) == str:
+                for dependency in dependencies.split(" "):
+                    aux_dependencies[dependency] = None
+                dependencies = aux_dependencies
+            data_fixed["JOBS"][job]["DEPENDENCIES"] = dependencies
+        return data_fixed
     def unify_conf(self):
         '''
         Unifies all configuration files into a single dictionary. Custom files will be able to override the default configuration.
@@ -602,6 +617,7 @@ class AutosubmitConfig(object):
             #Parser loops in custom config
             self.deep_read_loops(self.experiment_data)
             self.parse_data_loops(self.experiment_data, self.data_loops)
+        self.normalize_variables(self.experiment_data)
         self.dynamic_variables = list(set(self.dynamic_variables))
 
     def parse_data_loops(self,exp_data,data_loops):

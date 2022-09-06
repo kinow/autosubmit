@@ -53,83 +53,6 @@ class DicJobs:
         self._dic = dict()
         self.experiment_data = experiment_data
 
-
-    def parse_relation(self, section,member=True, unparsed_option=[],called_from=""):
-        """
-        function to parse a list of chunks or members to be compressible for autosubmit member_list or chunk_list.
-
-        :param section: Which section is being parsed.
-        :type section: str
-        :param member: Is a member or chunk list?
-        :type member: bool
-        :param unparsed_option: List obtained from configuration files.
-        :type unparsed_option: list
-        :param called_from: Parameter used to show a more complete error message if something is not working correctly…
-        :type unparsed_option: str
-        """
-        parsed_list = []
-        offset = 1
-        if unparsed_option and len(unparsed_option) > 0:
-            if '-' in unparsed_option or ':' in unparsed_option:
-                start_end = [-1, -1]
-                count = 0
-                if '-' in unparsed_option:
-                    for location in unparsed_option.split('-'):
-                        location = location.strip('[').strip(']').strip(':')
-                        if location == "":
-                            location = "-1"
-                        start_end[count] = int(location)
-                        count = count + 1
-                elif ':' in unparsed_option:
-                    for location in unparsed_option.split(':'):
-                        location = location.strip('[').strip(']').strip(':')
-                        if location == "":
-                            location = "-1"
-                        start_end[count] = int(location)
-                        count = count + 1
-                if start_end[0] == -1 and start_end[1] == -1:
-                    raise AutosubmitCritical(
-                        "Wrong format for excluded_member parameter in section {0}\nindex was not found".format(
-                            section), 7000)
-                elif start_end[0] > -1 and start_end[1] == -1:
-                    if member:
-                        for member_number in range(int(start_end[0]), len(self._member_list)):
-                            parsed_list.append(member_number)
-                    else:
-                        for chunk in range(int(start_end[0]), len(self._chunk_list) + 1):  # chunk starts in 1
-                            parsed_list.append(chunk)
-                elif start_end[0] > -1 and start_end[1] > -1:
-                    for item in range(int(start_end[0]), int(start_end[1]) + offset):
-                        parsed_list.append(item)
-
-                elif start_end[0] == -1 and start_end[1] > -1:
-                    if member:
-                        for item in range(0, int(start_end[1]) + offset):  # include last element
-                            parsed_list.append(item)
-                    else:
-                        for item in range(1, int(start_end[1]) + offset):  # include last element
-                            parsed_list.append(item)
-                elif start_end[0] > start_end[1]:
-                    raise AutosubmitCritical(
-                        "Wrong format for {1} parameter in section {0}\nStart index is greater than ending index".format(
-                            section,called_from), 7011)
-                else:
-                    raise AutosubmitCritical(
-                        "Wrong format for {1} parameter in section {0}\nindex weren't found".format(
-                            section), 7011)
-            elif ',' in unparsed_option:
-                for item in unparsed_option.split(','):
-                    parsed_list.append(int(item.strip(": -[]")))
-            else:
-                try:
-                    for item in unparsed_option.split(" "):
-                        parsed_list.append(int(item.strip(": -[]")))
-                except BaseException as e:
-                    raise AutosubmitCritical(
-                        "Wrong format for {1} parameter in section {0}".format(section,called_from), 7011,
-                        str(e))
-            pass
-        return parsed_list
     def read_section(self, section, priority, default_job_type, jobs_data=dict()):
         """
         Read a section from jobs conf and creates all jobs for it
@@ -153,41 +76,13 @@ class DicJobs:
         elif running == 'date':
             self._create_jobs_startdate(section, priority, frequency, default_job_type, jobs_data,splits)
         elif running == 'member':
-            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits,self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", ""),"EXCLUDED_MEMBERS"))
+            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits)
         elif running == 'chunk':
             synchronize = str(parameters[section].get("SYNCHRONIZE", ""))
             delay = int(parameters[section].get("DELAY", -1))
-            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data,excluded_chunks=self.parse_relation(section,False,parameters[section].get( "EXCLUDED_CHUNKS", None),"EXCLUDED_CHUNKS"),excluded_members=self.parse_relation(section,True,parameters[section].get( "EXCLUDED_MEMBERS", ""),"EXCLUDED_MEMBERS"))
+            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data)
 
         pass
-
-    def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict(),splits=0):
-        """
-        Create jobs to be run once
-
-        :param section: section to read
-        :type section: str
-        :param priority: priority for the jobs
-        :type priority: int
-        """
-
-
-        if splits <= 0:
-            job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, -1)
-            self._dic[section] = job
-            self._jobs_list.graph.add_node(job.name)
-        else:
-            self._dic[section] = []
-        total_jobs = 1
-        while total_jobs <= splits:
-            job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, total_jobs)
-            self._dic[section].append(job)
-            self._jobs_list.graph.add_node(job.name)
-            total_jobs += 1
-        pass
-
-        #self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
-        #self._jobs_list.graph.add_node(self._dic[section].name)
 
     def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict(), splits=-1):
         """
@@ -218,9 +113,7 @@ class DicJobs:
                                             default_job_type, jobs_data, tmp_dic[section][date])
                     self._dic[section][date] = tmp_dic[section][date]
 
-
-
-    def _create_jobs_member(self, section, priority, frequency, default_job_type, jobs_data=dict(),splits=-1,excluded_members=[]):
+    def _create_jobs_member(self, section, priority, frequency, default_job_type, jobs_data=dict(),splits=-1):
         """
         Create jobs to be run once per member
 
@@ -239,16 +132,9 @@ class DicJobs:
         tmp_dic = dict()
         tmp_dic[section] = dict()
         for date in self._date_list:
-            tmp_dic[section][date] = dict()
             self._dic[section][date] = dict()
             count = 0
-            if splits > 0:
-                for member in self._member_list:
-                    if self._member_list.index(member) not in excluded_members:
-                        tmp_dic[section][date][member] = []
             for member in self._member_list:
-                if self._member_list.index(member)  in excluded_members:
-                    continue
                 count += 1
                 if count % frequency == 0 or count == len(self._member_list):
                     if splits <= 0:
@@ -259,9 +145,34 @@ class DicJobs:
                                                 default_job_type, jobs_data, tmp_dic[section][date][member])
                         self._dic[section][date][member] = tmp_dic[section][date][member]
 
+    def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict(),splits=0):
+        """
+        Create jobs to be run once
+
+        :param section: section to read
+        :type section: str
+        :param priority: priority for the jobs
+        :type priority: int
+        """
 
 
-    def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, delay=0, splits=0, jobs_data=dict(),excluded_chunks=[],excluded_members=[]):
+        if splits <= 0:
+            job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, -1)
+            self._dic[section] = job
+            self._jobs_list.graph.add_node(job.name)
+        else:
+            self._dic[section] = []
+        total_jobs = 1
+        while total_jobs <= splits:
+            job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, total_jobs)
+            self._dic[section].append(job)
+            self._jobs_list.graph.add_node(job.name)
+            total_jobs += 1
+        pass
+
+        #self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
+        #self._jobs_list.graph.add_node(self._dic[section].name)
+    def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, delay=0, splits=0, jobs_data=dict()):
         """
         Create jobs to be run once per chunk
 
@@ -282,8 +193,6 @@ class DicJobs:
             tmp_dic = dict()
             count = 0
             for chunk in self._chunk_list:
-                if chunk in excluded_chunks:
-                    continue
                 count += 1
                 if delay == -1 or delay < chunk:
                     if count % frequency == 0 or count == len(self._chunk_list):
@@ -318,8 +227,6 @@ class DicJobs:
                 self._dic[section][date][member] = dict()
                 count = 0
                 for chunk in self._chunk_list:
-                    if chunk in excluded_chunks:
-                        continue
                     count += 1
                     if delay == -1 or delay < chunk:
                         if count % frequency == 0 or count == len(self._chunk_list):
