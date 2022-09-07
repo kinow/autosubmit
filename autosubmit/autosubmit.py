@@ -2194,7 +2194,6 @@ class Autosubmit:
                 platform.open_submit_script()
             valid_packages_to_submit = [] # type: List[JobPackageBase]
             for package in packages_to_submit:
-
                 try:
                     # If called from inspect command or -cw
                     if only_wrappers or inspect:
