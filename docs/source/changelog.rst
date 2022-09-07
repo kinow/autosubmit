@@ -13,10 +13,10 @@ Mayor mentions:
  - All parameters, except for job related ones, have now an hierarchy.
  - An special key, FOR:, has been added. This key allows to create multiple jobs with almost the same configuration.
  - The configuration of autosubmit is now more flexible.
-- New command added, updatescripts. This command will update all the scripts and autosubmit configuration.
+- New command added, updateproj. This command will update all the scripts and autosubmit configuration.
 - Wrapper definition has changed.
 
-.. warning:: updatecripts may not translate all the scripts, we recommend to revise your scripts before run AS.
+.. warning:: updateproj may not translate all the scripts, we recommend to revise your scripts before run AS.
 
 Configuration changes
 ---------------------
