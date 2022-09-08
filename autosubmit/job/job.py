@@ -1016,7 +1016,7 @@ class Job(object):
         self.custom_directives = str(as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES",""))
         if self.custom_directives != '':
             self.custom_directives = json.loads(
-                as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES",""))
+                as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","").replace("\'", "\""))
             if job_platform.custom_directives != "":
                 self.custom_directives = self.custom_directives + \
                     json.loads(job_platform.custom_directives)

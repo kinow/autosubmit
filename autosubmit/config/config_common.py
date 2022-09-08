@@ -518,7 +518,8 @@ class AutosubmitConfig(object):
         :return: custom directives needed
         :rtype: str
         """
-        return str(self.get_section([section, 'CUSTOM_DIRECTIVES'],""))
+        directives = self.get_section([section, 'CUSTOM_DIRECTIVES'],"")
+        return directives
 
     def show_messages(self):
 
