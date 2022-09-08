@@ -82,6 +82,8 @@ class DicJobs:
             delay = int(parameters[section].get("DELAY", -1))
             self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data)
 
+
+
         pass
 
     def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict(), splits=-1):
@@ -353,6 +355,7 @@ class DicJobs:
         job.member = member
         job.chunk = chunk
         job.date_format = self._date_format
+        job.delete_when_orphan = str(parameters[section].get("DELETE_WHEN_ORPHAN", "true")).lower()
 
         if split > -1:
             job.split = split

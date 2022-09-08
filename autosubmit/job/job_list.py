@@ -153,6 +153,12 @@ class JobList(object):
             else:
                 self._ordered_jobs_by_date_member[wrapper_section] = {}
         pass
+    def _delete_orphan_jobs(self):
+        #todo add variable to control if the user want to launch jobs without dependencies
+        aux_job_list = self._job_list
+        for job in aux_job_list:
+            if len(job.dependencies) > 0 and not job.has_parents() and job.delete_when_orphan in ["true",True,1]:
+                self._job_list.remove(job)
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
                  default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True,jobs_data={},as_conf=""):
         """
@@ -213,6 +219,9 @@ class JobList(object):
         if show_log:
             Log.info("Adding dependencies...")
         self._add_dependencies(date_list, member_list,chunk_list, dic_jobs, self.graph)
+        if show_log:
+            Log.info("Looking for orphan jobs...")
+        self._delete_orphan_jobs()
         if show_log:
             Log.info("Removing redundant dependencies...")
         self.update_genealogy(
