@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import collections
-
+import copy
 import re
 import os
 import pickle
@@ -153,12 +153,15 @@ class JobList(object):
             else:
                 self._ordered_jobs_by_date_member[wrapper_section] = {}
         pass
-    def _delete_orphan_jobs(self):
-        #todo add variable to control if the user want to launch jobs without dependencies
-        aux_job_list = self._job_list
-        for job in aux_job_list:
-            if len(job.dependencies) > 0 and not job.has_parents() and job.delete_when_orphan in ["true",True,1]:
-                self._job_list.remove(job)
+    def _delete_edgeless_jobs(self):
+        jobs_to_delete = []
+        # indices to delete
+        for i, job in enumerate(self._job_list):
+            if ( ( len(job.dependencies) > 0 and not job.has_parents()) and not job.has_children()) and job.delete_when_edgeless in ["true",True,1]:
+                jobs_to_delete.append(job)
+        # delete jobs by indice
+        for i in jobs_to_delete:
+            self._job_list.remove(i)
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
                  default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True,jobs_data={},as_conf=""):
         """
@@ -219,9 +222,7 @@ class JobList(object):
         if show_log:
             Log.info("Adding dependencies...")
         self._add_dependencies(date_list, member_list,chunk_list, dic_jobs, self.graph)
-        if show_log:
-            Log.info("Looking for orphan jobs...")
-        self._delete_orphan_jobs()
+
         if show_log:
             Log.info("Removing redundant dependencies...")
         self.update_genealogy(
@@ -244,7 +245,9 @@ class JobList(object):
                 for jobc in job.children:
                     if jobc in self._job_list:
                         job.children.add(jobc)
-
+        if show_log:
+            Log.info("Looking for edgeless jobs...")
+        self._delete_edgeless_jobs()
         for wrapper_section in wrapper_jobs:
             try:
                 if wrapper_jobs[wrapper_section] is not None and len(str(wrapper_jobs[wrapper_section])) > 0:
@@ -404,7 +407,7 @@ class JobList(object):
             if isinstance(filter_data, collections.abc.Mapping):
                 if filter_type.upper() == level_to_check.upper():
                     for filter_range in filter_data.keys():
-                        if str(value_to_check) is None or str(filter_range).find(str(value_to_check)) != -1:
+                        if str(value_to_check) is None or str(filter_range).upper().find(str(value_to_check).upper()) != -1:
                             current_filter.update(filter_data[filter_range])
         return current_filter
     @staticmethod
@@ -497,8 +500,18 @@ class JobList(object):
     @staticmethod
     def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
                                  graph):
-        visited_parents = set()
-        other_parents   = set()
+        '''
+        Manage the dependencies of a job
+        :param dic_jobs:
+        :param job:
+        :param date_list:
+        :param member_list:
+        :param chunk_list:
+        :param dependencies_keys:
+        :param dependencies:
+        :param graph:
+        :return:
+        '''
         parsed_date_list = []
         for dat in date_list:
             parsed_date_list.append(date2str(dat))
@@ -521,6 +534,9 @@ class JobList(object):
             all_parents = other_parents + parents_jobs
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply = JobList._filter_current_job(job,dependency.relationships)
+            #debug
+            if len(filters_to_apply) > 0:
+                pass
             for parent in all_parents:
                 if parent.name == job.name:
                     continue

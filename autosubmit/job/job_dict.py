@@ -355,7 +355,7 @@ class DicJobs:
         job.member = member
         job.chunk = chunk
         job.date_format = self._date_format
-        job.delete_when_orphan = str(parameters[section].get("DELETE_WHEN_ORPHAN", "true")).lower()
+        job.delete_when_edgeless = str(parameters[section].get("DELETE_WHEN_EDGELESS", "true")).lower()
 
         if split > -1:
             job.split = split
