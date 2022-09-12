@@ -1795,50 +1795,6 @@ class Autosubmit:
                                 #TODO CHECK this before continue
                                 if job_list.job_package_map and job_id in job_list.job_package_map:
                                     wrapper_job,save = Autosubmit.manage_wrapper_job(as_conf,job_list,platform,job_id)
-                                    wrapper_job = job_list.job_package_map[job_id]
-                                    # Setting prev_status as an easy way to check status change for inner jobs
-                                    if as_conf.get_notifications() == 'true':
-                                        for inner_job in wrapper_job.job_list:
-                                            inner_job.prev_status = inner_job.status
-                                    check_wrapper = True
-                                    if wrapper_job.status == Status.RUNNING:
-                                        check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now(
-                                        ) - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
-                                    if check_wrapper:
-                                        Log.debug('Checking Wrapper {0}'.format(str(job_id)))
-                                        wrapper_job.checked_time = datetime.datetime.now()
-                                        # This is where wrapper will be checked on the slurm platform, update takes place.
-                                        try:
-                                            platform.check_job(wrapper_job,is_wrapper=True)
-                                        except BaseException as e:
-                                            job_list.save()
-                                            raise AutosubmitError("The communication with {0} went wrong while checking wrapper {1}\n{2}".format(platform.name,wrapper_job.id,str(e)))
-                                        #Log.info("FD 3Wrapper checked: {0}".format(log.fd_show.fd_table_status_str()))
-                                        try:
-                                            if wrapper_job.status != wrapper_job.new_status:
-                                                Log.info('Wrapper job ' + wrapper_job.name + ' changed from ' + str(
-                                                    Status.VALUE_TO_KEY[wrapper_job.status]) + ' to status ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
-                                                save = True
-                                        except:
-                                            raise AutosubmitCritical(
-                                                "Wrapper is in Unknown Status couldn't get wrapper parameters", 7050)
-
-                                        # New status will be saved and inner_jobs will be checked.
-                                        try:
-                                            wrapper_job.check_status(wrapper_job.new_status)
-                                        except:
-                                            job_list.save()
-                                            raise AutosubmitError("The communication with {0} went wrong while checking the inner_jobs of {1}\n{2}".format(platform.name,wrapper_job.id,str(e)))
-
-                                        # Erase from packages if the wrapper failed to be queued ( Hold Admin bug )
-                                        if wrapper_job.status == Status.WAITING:
-                                            for inner_job in wrapper_job.job_list:
-                                                inner_job.packed = False
-                                            job_list.job_package_map.pop(
-                                                job_id, None)
-                                            job_list.packages_dict.pop(
-                                                job_id, None)
-                                        save = True
 
                                     # Notifications e-mail
                                     if as_conf.get_notifications() == "true":
