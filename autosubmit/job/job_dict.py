@@ -392,9 +392,9 @@ class DicJobs:
         job.wallclock = parameters[section].get("WALLCLOCK", None)
         job.retrials = int(parameters[section].get( 'RETRIALS', 0))
         job.delay_retrials = int(parameters[section].get( 'DELAY_RETRY_TIME', -1))
-        if job.wallclock is None and job.platform_name.lower() != "local":
+        if job.wallclock is None and job.platform_name.upper() != "LOCAL":
             job.wallclock = "01:59"
-        elif job.wallclock is None and job.platform_name.lower() == "local":
+        elif job.wallclock is None and job.platform_name.upper() != "LOCAL":
             job.wallclock = "00:00"
         if job.retrials == -1:
             job.retrials = None

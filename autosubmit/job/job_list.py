@@ -550,7 +550,7 @@ class JobList(object):
                 if parent.name == job.name:
                     continue
                 # Check if it is a natural relation based in autosubmit terms ( same date,member,chunk ).
-                if parent in natural_jobs and (job.chunk is None or parent.chunk is None or parent.chunk < job.chunk):
+                if parent in natural_jobs and (job.chunk is None or parent.chunk is None or parent.chunk <= job.chunk):
                     natural_relationship = True
                 else:
                     natural_relationship = False

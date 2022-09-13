@@ -2710,7 +2710,7 @@ class Autosubmit:
                     for job in current_active_jobs:
                         if job.platform_name is None:
                             job.platform_name = hpcarch
-                        job.platform = submitter.platforms[job.platform_name.lower()]
+                        job.platform = submitter.platforms[job.platform_name]
                         platforms_to_test.add(job.platform)
                     for platform in platforms_to_test:
                         platform.test_connection()
@@ -4628,13 +4628,13 @@ class Autosubmit:
         if save:
             if job.status in [Status.SUBMITTED, Status.QUEUING, Status.HELD] and final_status not in [Status.QUEUING, Status.HELD, Status.SUSPENDED]:
                 job.hold = False
-                if job.platform_name and job.platform_name.lower() != "local":
+                if job.platform_name and job.platform_name.upper() != "LOCAL":
                     job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
             elif job.status in [Status.QUEUING, Status.RUNNING, Status.SUBMITTED] and final_status == Status.SUSPENDED:
-                if job.platform_name and job.platform_name.lower() != "local":
+                if job.platform_name and job.platform_name.upper() != "LOCAL":
                     job.platform.send_command("scontrol hold " + "{0}".format(job.id), ignore_log=True)
             elif final_status in [Status.QUEUING, Status.RUNNING] and (job.status == Status.SUSPENDED):
-                if job.platform_name and job.platform_name.lower() != "local":
+                if job.platform_name and job.platform_name.upper() != "LOCAL":
                     job.platform.send_command("scontrol release " + "{0}".format(job.id), ignore_log=True)
         job.status = final_status
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
@@ -4732,7 +4732,7 @@ class Autosubmit:
                 submitter.load_platforms(as_conf)
                 hpcarch = as_conf.get_platform()
                 for job in job_list.get_job_list():
-                    if job.platform_name is None or job.platform_name.lower() == "":
+                    if job.platform_name is None or job.platform_name.upper() == "":
                         job.platform_name = hpcarch
                     # noinspection PyTypeChecker
                     job.platform = submitter.platforms[job.platform_name]
@@ -5670,7 +5670,7 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.platform = platforms[job.platform_name.lower()]
+            job.platform = platforms[job.platform_name.upper()]
 
             if job.platform.get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED

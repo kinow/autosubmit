@@ -643,7 +643,7 @@ class Job(object):
             raise AutosubmitError(
                 "Couldn't load the autosubmit platforms, seems that the local platform has some issue\n:{0}".format(
                     error_message), 6006)
-        platform = submitter.platforms[platform_name.lower()]
+        platform = submitter.platforms[platform_name]
         try:
             platform.test_connection()
             max_logs = int(as_conf.get_retrials()) - fail_count
@@ -835,7 +835,7 @@ class Job(object):
             return True
         return False
 
-    def update_status(self, copy_remote_logs=False, failed_file=False):
+    def update_status(self, as_conf, failed_file=False):
         """
         Updates job status, checking COMPLETED file if needed
 
