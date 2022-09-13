@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# PYTHON_ARGCOMPLETE_OK
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 
@@ -69,7 +68,7 @@ from typing import Set
 #except Exception:
 dialog = None
 from time import sleep
-import argparse, argcomplete
+import argparse
 import subprocess
 import json
 import tarfile
@@ -587,7 +586,7 @@ class Autosubmit:
             subparser.add_argument('-v', '--update_version', action='store_true',
                                    default=False, help='Update experiment version')
             # update proj files
-            subparser = subparsers.add_parser('updateproj', description='Updates autosubmit 3 proj files to autosubmit 4')
+            subparser = subparsers.add_parser('upgrade', description='Updates autosubmit 3 proj files to autosubmit 4')
             subparser.add_argument('expid', help='experiment identifier')
 
             # Readme
@@ -595,7 +594,6 @@ class Autosubmit:
 
             # Changelog
             subparsers.add_parser('changelog', description='show changelog')
-            argcomplete.autocomplete(parser)
             args = parser.parse_args()
 
 
@@ -669,8 +667,8 @@ class Autosubmit:
             return Autosubmit.refresh(args.expid, args.model_conf, args.jobs_conf)
         elif args.command == 'updateversion':
             return Autosubmit.update_version(args.expid)
-        elif args.command == 'updateproj':
-            return Autosubmit.update_proj_scripts(args.expid)
+        elif args.command == 'upgrade':
+            return Autosubmit.upgrade_scripts(args.expid)
         elif args.command == 'archive':
             return Autosubmit.archive(args.expid, noclean=args.noclean, uncompress=args.uncompress)
         elif args.command == 'unarchive':
@@ -700,7 +698,7 @@ class Autosubmit:
         Log.set_console_level(console_level)
         expid_less = ["expid", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]
-        global_log_command = ["delete", "archive","updateproj"]
+        global_log_command = ["delete", "archive","upgrade"]
         if "offer" in args:
             if args.offer:
                 global_log_command.append("migrate")  # offer
@@ -3911,7 +3909,7 @@ class Autosubmit:
 
         return warn,sustituted
     @staticmethod
-    def update_proj_scripts(expid):
+    def upgrade_scripts(expid):
         def get_files(root_dir,extensions):
             all_files = []
             for ext in extensions:
