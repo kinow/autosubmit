@@ -3871,7 +3871,7 @@ class Autosubmit:
             if not backup_path.exists():
                 Log.info("Backup stored at {0}".format(backup_path))
                 shutil.copyfile(template_path, backup_path)
-            template_content = open(template_path).read()
+            template_content = open(template_path,'r',encoding=locale.getlocale()[1]).read()
             # Look for %_%
             variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
             variables = [variable[1:-1].upper() for variable in variables]
@@ -3969,12 +3969,15 @@ class Autosubmit:
         sustituted = ""
         Log.info("Looking for %_% variables inside templates")
         for section,value in as_conf.jobs_data.items():
-            template_path = root_dir / Path(value.get("FILE",""))
-            w,s = Autosubmit.update_old_script(template_path.parent,template_path,as_conf)
-            if w != "":
-                warn += "Warnings for: {0}\n{1}\n".format(template_path.name,w)
-            if s != "":
-                sustituted +="Variables changed for: {0}\n{1}\n".format(template_path.name,s)
+            try:
+                template_path = root_dir / Path(value.get("FILE",""))
+                w,s = Autosubmit.update_old_script(template_path.parent,template_path,as_conf)
+                if w != "":
+                    warn += "Warnings for: {0}\n{1}\n".format(template_path.name,w)
+                if s != "":
+                    sustituted +="Variables changed for: {0}\n{1}\n".format(template_path.name,s)
+            except BaseException as e:
+                Log.printlog("Couldn't read {0} template.\ntrace:{1}".format(template_path,section),Log.WARNING,str(e))
         if sustituted != "":
             Log.printlog(sustituted, Log.RESULT)
         if warn != "":
