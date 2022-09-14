@@ -5556,11 +5556,9 @@ class Autosubmit:
 
                 hpc = random.choice(test_platforms)
             if member is None:
-                member = random.choice(exp_parser.get(
-                    'experiment', 'MEMBERS').split(' '))
+                member = random.choice(str(as_conf.experiment_data['EXPERIMENT'].get('MEMBERS')).split(' '))
             if start_date is None:
-                start_date = random.choice(exp_parser.get(
-                    'experiment', 'DATELIST').split(' '))
+                start_date = random.choice(str(as_conf.experiment_data['EXPERIMENT'].get('DATELIST')).split(' '))
             if chunks is None:
                 chunks = 1
 
