@@ -788,7 +788,7 @@ class AutosubmitConfig(object):
         :return: True if everything is correct, False if it founds any error
         :rtype: bool
         """
-        parser_data = self._conf_parser.data
+        parser_data = self.experiment_data
         if parser_data["CONFIG"].get('AUTOSUBMIT_VERSION',-1.1) == -1.1:
             self.wrong_config["Autosubmit"] += [['config',
                                                  "AUTOSUBMIT_VERSION parameter not found"]]
@@ -843,7 +843,7 @@ class AutosubmitConfig(object):
         """
         Checks experiment's queues configuration file.
         """
-        parser_data = self._platforms_parser.data["PLATFORMS"]
+        parser_data = self.experiment_data["PLATFORMS"]
         main_platform_found = False
         if self.hpcarch == "LOCAL":
             main_platform_found = True
@@ -884,10 +884,9 @@ class AutosubmitConfig(object):
         :return: True if everything is correct, False if it founds any error
         :rtype: bool
         """
-        parser = self._jobs_parser
-        platforms = self._platforms_parser.data
-        for section in parser.data["JOBS"]:
-            section_data=parser.data["JOBS"][section]
+        parser = self.experiment_data
+        for section in parser["JOBS"]:
+            section_data=parser["JOBS"][section]
             section_file_path = section_data.get('FILE',"")
             if not section_file_path:
                 self.wrong_config["Jobs"] += [[section,
@@ -921,7 +920,7 @@ class AutosubmitConfig(object):
                             dependency = dependency.split('?')[0]
                         if '[' in dependency:
                             dependency = dependency[:dependency.find('[')]
-                        if dependency.upper() not in parser.data["JOBS"].keys():
+                        if dependency.upper() not in parser["JOBS"].keys():
                             self.warn_config["Jobs"].append(
                                 [section, "Dependency parameter is invalid, job {0} is not configured".format(dependency)])
             rerun_dependencies = section_data.get('RERUN_DEPENDENCIES',"").upper()
@@ -931,7 +930,7 @@ class AutosubmitConfig(object):
                         dependency = dependency.split('-')[0]
                     if '[' in dependency:
                         dependency = dependency[:dependency.find('[')]
-                    if dependency not in parser.data["JOBS"].keys():
+                    if dependency not in parser["JOBS"].keys():
                         self.warn_config["Jobs"] += [
                             [section, "RERUN_DEPENDENCIES parameter is invalid, job {0} is not configured".format(dependency)]]
             running_type = section_data.get('RUNNING', "once").lower()
@@ -951,7 +950,7 @@ class AutosubmitConfig(object):
         :return: True if everything is correct, False if it founds any error
         :rtype: bool
         """
-        parser = self._exp_parser.data
+        parser = self.experiment_data
         if not parser['DEFAULT'].get('EXPID',""):
             self.wrong_config["Expdef"] += [['DEFAULT',"Mandatory DEFAULT.EXPID parameter is invalid"]]
 
@@ -1068,15 +1067,19 @@ class AutosubmitConfig(object):
         any_file_changed = False
         # check if original_files has been edited
         for config_file in range(0,len(self._original_parser_files)):
-            if self._original_parser_files[config_file].name != self._proj_parser_file.name:
-                modified, self._original_parser_files_modtime[config_file] = self.file_modified(
-                    self._original_parser_files[config_file], self._original_parser_files_modtime[config_file])
-            else:
-                if self._proj_parser_file.exists():
+            try:
+                if self._original_parser_files[config_file].name != self._proj_parser_file.name:
                     modified, self._original_parser_files_modtime[config_file] = self.file_modified(
                         self._original_parser_files[config_file], self._original_parser_files_modtime[config_file])
-            if modified:
-                any_file_changed = True
+                else:
+                    if self._proj_parser_file.exists():
+                        modified, self._original_parser_files_modtime[config_file] = self.file_modified(
+                            self._original_parser_files[config_file], self._original_parser_files_modtime[config_file])
+                if modified:
+                    any_file_changed = True
+            except:
+                #Doesn't exists
+                pass
         # check if custom_files has been edited
         for config_file in range(0,len(self._custom_parser_files)):
             modified,self._custom_parser_files_modtime[config_file] = self.file_modified(self._custom_parser_files[config_file],self._custom_parser_files_modtime[config_file])
@@ -1089,16 +1092,29 @@ class AutosubmitConfig(object):
                     self.parser_factory, self._conf_parser_file)
                 self._platforms_parser = AutosubmitConfig.get_parser(
                     self.parser_factory, self._platforms_parser_file)
+
                 self._jobs_parser = AutosubmitConfig.get_parser(
                     self.parser_factory, self._jobs_parser_file)
                 self._exp_parser = AutosubmitConfig.get_parser(
                     self.parser_factory, self._exp_parser_file)
                 if first_load:
                     self._custom_parser = []
-                    self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
-                    self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
-                    self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
-                    self._platforms_parser.data = self.deep_normalize(self._platforms_parser.data)
+                    try:
+                        self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
+                    except:
+                        self._exp_parser.data = {}
+                    try:
+                        self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
+                    except:
+                        self._conf_parser.data = {}
+                    try:
+                        self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
+                    except:
+                        self._jobs_parser.data = {}
+                    try:
+                        self._platforms_parser.data = self.deep_normalize(self._platforms_parser.data)
+                    except:
+                        self._platforms_parser.data = {}
                     default_section = self._exp_parser.data.get("DEFAULT",None)
                     default_path = Path(self.basic_config.LOCAL_ROOT_DIR) / self.expid
                     custom_folder_path = default_path / "conf"
@@ -1111,9 +1127,11 @@ class AutosubmitConfig(object):
                     self._custom_parser_files_modtime = []
 
                     for f in custom_folder_path.rglob("*.yml"):
-                        if not f == self._proj_parser_file and not f.samefile(self._jobs_parser_file) and not f.samefile(
-                                self._platforms_parser_file) and not f.samefile(self._exp_parser_file) and not f.samefile(
-                                self._conf_parser_file):
+                        if not (self._proj_parser_file.exists() and f.samefile(self._proj_parser_file)) \
+                                and not (self._jobs_parser_file.exists() and f.samefile(self._jobs_parser_file)) \
+                                and not (self._platforms_parser_file.exists() and f.samefile(self._platforms_parser_file)) \
+                                and not (self._exp_parser_file.exists() and f.samefile(self._exp_parser_file)) \
+                                and not (self._conf_parser_file.exists() and f.samefile(self._conf_parser_file)):
                             self._custom_parser_files.append(f)
                             self._custom_parser_files_modtime.append(None)
 
@@ -2085,7 +2103,8 @@ class AutosubmitConfig(object):
         # For testing purposes
         if file_path == Path('/dummy/local/root/dir/a000/conf/') or file_path == Path('dummy/file/path'):
             parser.data = parser.load(file_path)
-
+            if parser.data is None:
+                parser.data = {}
             return parser
 
             # proj file might not be present
@@ -2093,6 +2112,8 @@ class AutosubmitConfig(object):
         if file_path.match("*proj*"):
             if file_path.exists():
                 parser.data = parser.load(file_path)
+                if parser.data is None:
+                    parser.data = {}
             #else:
                 #Log.warning( "{0} was not found. Some variables might be missing. If your experiment does not need a proj file, you can ignore this message.", file_path)
         else:
@@ -2100,8 +2121,10 @@ class AutosubmitConfig(object):
             try:
                 with open(file_path) as f:
                     parser.data = parser.load(f)
+                    if parser.data is None:
+                        parser.data = {}
             except IOError as exp:
-                raise
+                return parser
             except Exception as exp:
                 raise Exception(
                     "{}\n This file and the correctness of its content are necessary.".format(str(exp)))

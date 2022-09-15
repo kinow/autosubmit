@@ -367,7 +367,7 @@ class DicJobs:
         job_type = str(parameters[section].get( "TYPE", default_job_type)).lower()
 
         job.dependencies = parameters[section].get( "DEPENDENCIES", "")
-        if job.dependencies and type(job.dependencies) is not list:
+        if job.dependencies and type(job.dependencies) is not dict:
             job.dependencies = str(job.dependencies).split()
         if job_type == 'bash':
             job.type = Type.BASH

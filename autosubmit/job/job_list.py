@@ -580,6 +580,7 @@ class JobList(object):
                     continue
 
                 job.add_parent(parent)
+                #job.add_special_variables(parent.name,relationship)
                 JobList._add_edge(graph, job, parent)
 
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
