@@ -538,6 +538,15 @@ class JobList(object):
 
             other_parents = dic_jobs.get_jobs(dependency.section, None, None, None)
             parents_jobs = dic_jobs.get_jobs(dependency.section, date, member, chunk)
+            # Convert 2d list to 1d list if necessary
+            #aux_list = []
+            #if isinstance(parents_jobs, list):
+            #    for parent_list in parents_jobs:
+            #        if isinstance(parent_list, list):
+            #            aux_list.extend(parent_list)
+            #        else:
+            #            aux_list.append(parent_list)
+            #parents_jobs = aux_list
             natural_jobs = dic_jobs.get_jobs(dependency.section, date, member, None)
 
             all_parents = other_parents + parents_jobs
@@ -547,16 +556,6 @@ class JobList(object):
             if len(filters_to_apply) > 0:
                 pass
             for parent in all_parents:
-                if parent.name == job.name:
-                    continue
-                # Check if it is a natural relation based in autosubmit terms ( same date,member,chunk ).
-                if parent in natural_jobs and (job.chunk is None or parent.chunk is None or parent.chunk <= job.chunk):
-                    natural_relationship = True
-                else:
-                    natural_relationship = False
-                # Check if the current parent is a valid parent based on the dependencies set on expdef.conf
-                if not JobList._valid_parent(parent, member_list, parsed_date_list, chunk_list, natural_relationship,filters_to_apply):
-                    continue
                 # Generic for all dependencies
                 if dependency.delay == -1 or chunk > dependency.delay:
                     if isinstance(parent, list):
@@ -567,6 +566,19 @@ class JobList(object):
                         else:
                             if dependency.splits is not None and len(str(dependency.splits)) > 0:
                                 parent = [_parent for _parent in parent if _parent.split in dependency.splits]
+                # If splits is not None, the job is a list of jobs
+                if parent.name == job.name:
+                    continue
+                # Check if it is a natural relation based in autosubmit terms ( same date,member,chunk ).
+                if parent in natural_jobs and ((job.chunk is None or parent.chunk is None or parent.chunk <= job.chunk ) and parent.split <= job.split ) :
+                    natural_relationship = True
+                else:
+                    natural_relationship = False
+
+                # Check if the current parent is a valid parent based on the dependencies set on expdef.conf
+                if not JobList._valid_parent(parent, member_list, parsed_date_list, chunk_list, natural_relationship,filters_to_apply):
+                    continue
+
                 job.add_parent(parent)
                 JobList._add_edge(graph, job, parent)
 
