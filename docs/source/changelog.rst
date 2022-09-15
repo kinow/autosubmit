@@ -337,13 +337,15 @@ The DEPENDENCIES key is used to define the dependencies of a job. It can be used
         - DATES_TO: Links current selected tasks to the dependency tasks of the dates specified.
         - MEMBERS_TO: Links current selected tasks to the dependency tasks of the members specified.
         - CHUNKS_TO: Links current selected tasks to the dependency tasks of the chunks specified.
+    - Important keywords for [DATES|MEMBERS|CHUNKS]_TO:
+        - "natural": Will keep the default linkage.
+        - "all": Will link selected tasks of the dependency with current selected tasks.
+        - "none": Will unlink selected tasks of the dependency with current selected tasks.
+For the new format, consider that the priority is hierarchy and goes like this DATES_FROM -(includes)-> MEMBERS_FROM -(includes)-> CHUNKS_FROM.
 
-For the new format, consider that the priority is hierarchy and goes like this DATES_TO -(includes)-> MEMBERS_TO -(includes)-> CHUNKS_TO.
-
-- You can define a DATES_TO inside the DEPENDENCY.
-- You can define a MEMBERS_TO inside the DEPENDENCY and DEPENDENCY.DATES_TO.
-- You can define a CHUNKS_TO inside the DEPENDENCY, DEPENDENCY.DATES_TO, DEPENDENCY.MEMBERS_TO, DEPENDENCY.DATES_TO.MEMBERS_TO
-
+- You can define a DATES_FROM inside the DEPENDENCY.
+- You can define a MEMBERS_FROM inside the DEPENDENCY and DEPENDENCY.DATES_FROM.
+- You can define a CHUNKS_FROM inside the DEPENDENCY, DEPENDENCY.DATES_FROM, DEPENDENCY.MEMBERS_FROM, DEPENDENCY.DATES_FROM.MEMBERS_FROM
 
 For the examples, we will consider that our experiment has the following configuration:
 
