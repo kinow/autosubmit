@@ -15,6 +15,7 @@ Mayor mentions:
  - The configuration of autosubmit is now more flexible.
 - New command added, updateproj. This command will update all the scripts and autosubmit configuration.
 - Wrapper definition has changed.
+- Tasks dependencies system has changed.
 
 .. warning:: updateproj may not translate all the scripts, we recommend to revise your scripts before run AS.
 
@@ -320,3 +321,118 @@ One can use now the following configuration:
         WALLCLOCK: '00:05'
 
 .. warning:: Only the parameters that changes must be included inside the `FOR` key.
+
+DEPENDENCIES
+------------
+
+The DEPENDENCIES key is used to define the dependencies of a job. It can be used in the following ways:
+
+- Basic: The dependencies are a list of jobs, separated by " ", that runs before the current task is submitted.
+- New: The dependencies is a list of YAML sections, separated by "\n", that runs before the current job is submitted.
+    - For each dependency section, you can designate the following keywords to control the current job-affected tasks:
+        - DATES_FROM: Selects the job dates that you want to alter.
+        - MEMBERS_FROM: Selects the job members that you want to alter.
+        - CHUNKS_FROM: Selects the job chunks that you want to alter.
+    - For each dependency section and *_FROM keyword, you can designate the following keywords to control the destination of the dependency:
+        - DATES_TO: Links current selected tasks to the dependency tasks of the dates specified.
+        - MEMBERS_TO: Links current selected tasks to the dependency tasks of the members specified.
+        - CHUNKS_TO: Links current selected tasks to the dependency tasks of the chunks specified.
+
+For the new format, consider that the priority is hierarchy and goes like this DATES_TO -(includes)-> MEMBERS_TO -(includes)-> CHUNKS_TO.
+
+- You can define a DATES_TO inside the DEPENDENCY.
+- You can define a MEMBERS_TO inside the DEPENDENCY and DEPENDENCY.DATES_TO.
+- You can define a CHUNKS_TO inside the DEPENDENCY, DEPENDENCY.DATES_TO, DEPENDENCY.MEMBERS_TO, DEPENDENCY.DATES_TO.MEMBERS_TO
+
+
+For the examples, we will consider that our experiment has the following configuration:
+
+.. code-block:: yaml
+
+    EXPERIMENT:
+        DATELIST: 202201[01-02]
+        MEMBERS: FC1 FC2
+        NUMCHUNKS: 4
+Basic
+~~~~~
+
+.. code-block:: yaml
+
+  JOBS:
+    JOB_1:
+        FILE: job1.sh
+        RUNNING: chunk
+    JOB_2:
+        FILE: job2.sh
+        DEPENDENCIES: JOB_1
+        RUNNING: chunk
+    JOB_3:
+        FILE: job3.sh
+        DEPENDENCIES: JOB_2
+        RUNNING: chunk
+    SIM:
+        FILE: sim.sh
+        DEPENDENCIES: JOB_3 SIM-1
+        RUNNING: chunk
+    POST:
+        FILE: post.sh
+        DEPENDENCIES: SIM
+        RUNNING: chunk
+    TEST:
+        FILE: test.sh
+        DEPENDENCIES: POST
+        RUNNING: chunk
+
+New format
+~~~~~~~~~~
+
+.. code-block:: yaml
+
+  JOBS:
+    JOB_1:
+        FILE: job1.sh
+        RUNNING: chunk
+    JOB_2:
+        FILE: job2.sh
+        DEPENDENCIES:
+            JOB_1:
+                dates_to: "natural"
+                members_to: "natural"
+                chunks_to: "natural"
+        RUNNING: chunk
+    JOB_3:
+        FILE: job3.sh
+        DEPENDENCIES:
+            JOB_2:
+                dates_to: "natural"
+                members_to: "natural"
+                chunks_to: "natural"
+        RUNNING: chunk
+    SIM:
+        FILE: sim.sh
+        DEPENDENCIES:
+            JOB_3:
+                dates_to: "natural"
+                members_to: "natural"
+                chunks_to: "natural"
+            SIM-1:
+                dates_to: "natural"
+                members_to: "natural"
+                chunks_to: "natural"
+        RUNNING: chunk
+    POST:
+        FILE: post.sh
+        DEPENDENCIES:
+            SIM:
+                dates_to: "natural"
+                members_to: "natural"
+                chunks_to: "natural"
+        RUNNING: chunk
+    TEST:
+        FILE: test.sh
+        DEPENDENCIES:
+            POST:
+                dates_to: "natural"
+                members_to: "natural"
+                chunks_to: "natural"
+        RUNNING: chunk
