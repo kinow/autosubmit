@@ -1624,7 +1624,7 @@ class Autosubmit:
                         job_list.check_scripts(as_conf)
                     except Exception as e:
                         raise AutosubmitCritical(
-                            "Error while checking job templates", 7015, str(e))
+                            "Error while checking job templates", 7014, str(e))
                     Log.debug("Loading job packages")
                     try:
                         packages_persistence = JobPackagePersistence(os.path.join(
@@ -2332,7 +2332,7 @@ class Autosubmit:
             if not inspect:
                 job_list.save()
             if error_message != "":
-                raise AutosubmitCritical("Submission Failed due wrong configuration:{0}".format(error_message),7015)
+                raise AutosubmitCritical("Submission Failed due wrong configuration:{0}".format(error_message),7014)
         return save
 
     @staticmethod
