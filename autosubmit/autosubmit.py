@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+﻿#!/usr/bin/env python
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 
@@ -3824,7 +3824,7 @@ class Autosubmit:
         except (AutosubmitError,AutosubmitCritical):
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Download failed",7064,str(e))
+            raise AutosubmitCritical("  Download failed",7064,str(e))
         return True
 
     @staticmethod

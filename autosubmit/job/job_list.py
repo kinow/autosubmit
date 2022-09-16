@@ -23,7 +23,7 @@ import os
 import pickle
 import traceback
 import math
-
+import copy
 from time import localtime, strftime, mktime
 from shutil import move
 from autosubmit.job.job import Job
@@ -412,15 +412,18 @@ class JobList(object):
         :param value_to_check: can be a date, member or chunk.
         :return:
         """
+        optional = False
         current_filter = {}
         for filter_type, filter_data in relationships.items():
             if isinstance(filter_data, collections.abc.Mapping):
-                if filter_type.upper() == level_to_check.upper():
+                if filter_type.upper().find(level_to_check.upper()) != -1:
                     for filter_range in filter_data.keys():
                         if str(value_to_check) is None or str(filter_range).upper().find(str(value_to_check).upper()) != -1:
                             if filter_data[filter_range] is not None:
+                                if filter_type.find("?") != -1 or filter_range.find("?") != -1:
+                                    optional = True
                                 current_filter.update(filter_data[filter_range])
-        return current_filter
+        return current_filter,optional
     @staticmethod
     def _filter_current_job(current_job,relationships):
         '''
@@ -435,29 +438,29 @@ class JobList(object):
         # Third level can only be chunk.
         # If the filter is generic, it will be applied to all section jobs.
         # Check Date then Member or Chunk then Chunk
+        optional = False
         filters_to_apply = {}
-        if relationships is not None:
-            filters_to_apply = JobList._check_relationship(relationships,"DATES_FROM",date2str(current_job.date))
+        if relationships is not None and len(relationships) > 0:
+            filters_to_apply,optional = JobList._check_relationship(relationships,"DATES_FROM",date2str(current_job.date))
             if len(filters_to_apply) > 0:
                 for filter_number in range(0,len(filters_to_apply)):
-
-                    filters_to_apply_m = JobList._check_relationship(filters_to_apply[filter_number],"MEMBERS_FROM",current_job.member)
+                    filters_to_apply_m,optional = JobList._check_relationship(filters_to_apply[filter_number],"MEMBERS_FROM",current_job.member)
                     if len(filters_to_apply_m) > 0:
-                        filters_to_apply = filters_to_apply_m
+                        filters_to_apply,optional = filters_to_apply_m
                     else:
-                        filters_to_apply_c = JobList._check_relationship(filters_to_apply[filter_number],"CHUNKS_FROM",current_job.chunk)
+                        filters_to_apply_c,optional = JobList._check_relationship(filters_to_apply[filter_number],"CHUNKS_FROM",current_job.chunk)
                         if len(filters_to_apply_c) > 0:
                             filters_to_apply = filters_to_apply_c
             # Check Member then Chunk
             if len(filters_to_apply) == 0:
-                filters_to_apply = JobList._check_relationship(relationships,"MEMBERS_FROM",current_job.member)
+                filters_to_apply,optional = JobList._check_relationship(relationships,"MEMBERS_FROM",current_job.member)
                 if len(filters_to_apply) > 0:
-                    filters_to_apply_c = JobList._check_relationship(filters_to_apply,"CHUNKS_FROM",current_job.chunk)
+                    filters_to_apply_c,optional = JobList._check_relationship(filters_to_apply,"CHUNKS_FROM",current_job.chunk)
                     if len(filters_to_apply_c) > 0:
                         filters_to_apply = filters_to_apply_c
             #Check Chunk
             if len(filters_to_apply) == 0:
-                filters_to_apply = JobList._check_relationship(relationships,"CHUNKS_FROM",current_job.chunk)
+                filters_to_apply,optional = JobList._check_relationship(relationships,"CHUNKS_FROM",current_job.chunk)
             # Generic filter
             if len(filters_to_apply) == 0:
                 relationships.pop("CHUNKS_FROM",None)
@@ -466,31 +469,8 @@ class JobList(object):
                 filters_to_apply = relationships
 
 
-        return filters_to_apply
+        return filters_to_apply,optional
 
-    @staticmethod
-    def _check_special_dependencies_signs(job_name,section,dates,members,chunks):
-        """
-        Check if the job_name has special characters that need to be pre-processed.
-        :param job_name:
-        :param section:
-        :param dates:
-        :param members:
-        :param chunks:
-        :return: dictionary with the special characters and the values to replace.
-        """
-        special_chars = {}
-        # Check ? character and add it to a dictionary grouped by special character
-        special_chars["?"] = []
-        if section[-1] == "?":
-            special_chars["?"] = job_name
-        elif dates[-1] == "?":
-            special_chars["?"] = job_name
-        elif members[-1] == "?":
-            special_chars["?"] = job_name
-        elif chunks[-1] == "?":
-            special_chars["?"] = job_name
-        return special_chars
 
 
     @staticmethod
@@ -518,9 +498,7 @@ class JobList(object):
                 members_to = "none"
             elif chunks_to == "natural":
                 chunks_to = "none"
-            relationship_type = "natural"
-        else:
-            relationship_type = "natural"
+
 
         associative_list["dates"] = date_list
         associative_list["members"] = member_list
@@ -580,11 +558,13 @@ class JobList(object):
                 natural_jobs = dic_jobs.get_jobs(dependency.section, date, member,None)
             else:
                 natural_jobs = dic_jobs.get_jobs(dependency.section, date, member,chunk)
-
-
+            if dependency.sign in ['?']:
+                optional_section = True
+            else:
+                optional_section = False
             all_parents = other_parents + parents_jobs
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
-            filters_to_apply = JobList._filter_current_job(job,dependency.relationships)
+            filters_to_apply,optional_from = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
             if len(filters_to_apply) > 0:
                 print("Debug: job: {1} | filters_to_apply: {0}".format(str(filters_to_apply),job.name))
             for parent in all_parents:
@@ -612,13 +592,11 @@ class JobList(object):
                 if not valid:
                     continue
                 # If the parent is valid, add it to the graph
-                optional_from = False
-                if optional_to or optional_from:
-                    optional = True
                 job.add_parent(parent)
-                #job.add_special_variables(parent.name,relationship)
                 JobList._add_edge(graph, job, parent)
-
+                # Could be more variables in the future
+                if optional_to or optional_from or optional_section:
+                    job.add_edge_info(parent.name,special_variables={"optional":True})
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph, other_parents)
 
@@ -1772,7 +1750,7 @@ class JobList(object):
                             parent.status == Status.COMPLETED or parent.status == Status.SKIPPED or parent.status == Status.FAILED]
                     if len(tmp2) == len(job.parents):
                         for parent in job.parents:
-                            if parent.section + '?' not in job.dependencies and parent.status != Status.COMPLETED:
+                            if () and parent.status != Status.COMPLETED:
                                 job.status = Status.WAITING
                                 save = True
                                 Log.debug(
@@ -1811,7 +1789,7 @@ class JobList(object):
                             strong_dependencies_failure = False
                             weak_dependencies_failure = False
                             for parent in failed_ones:
-                                if parent.section+'?' in job.dependencies:
+                                if parent.name in job.edge_info and job.edge_info[job.name].get('optional', False):
                                     weak_dependencies_failure = True
                                 elif parent.section in job.dependencies:
                                     if parent.status not in [Status.COMPLETED,Status.SKIPPED]:
@@ -1828,7 +1806,7 @@ class JobList(object):
                     else:
                         if len(tmp3) == 1 and len(job.parents) == 1:
                             for parent in job.parents:
-                                if parent.section + '?' in job.dependencies:
+                                if parent.name in job.edge_info and job.edge_info[job.name].get('optional', False):
                                     job.status = Status.READY
                                     job.hold = False
                                     Log.debug(

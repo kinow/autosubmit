@@ -150,6 +150,8 @@ class Job(object):
         self.dependencies = []
         self.running = "once"
         self.start_time = None
+        self.edge_info = dict()
+
 
     def __getstate__(self):
         odict = self.__dict__
@@ -381,6 +383,20 @@ class Job(object):
         """
         self.children.add(new_child)
 
+    def add_edge_info(self,parent_name, special_variables):
+        """
+        Adds edge information to the job
+
+        :param parent_name: parent name
+        :type parent_name: str
+        :param special_variables: special variables
+        :type special_variables: dict
+        """
+        if parent_name not in self.edge_info:
+            self.edge_info[parent_name] = special_variables
+        else:
+            self.edge_info[parent_name].update(special_variables)
+        pass
     def delete_parent(self, parent):
         """
         Remove a parent from the job
@@ -1641,7 +1657,6 @@ class WrapperJob(Job):
         self.job_list = job_list
         # divide jobs in dictionary by state?
         self.wallclock = total_wallclock
-
         self.num_processors = num_processors
         self.running_jobs_start = OrderedDict()
         self._platform = platform
