@@ -520,9 +520,9 @@ class ParamikoPlatform(Platform):
                                     job_status = job.check_completion(over_wallclock=True)
                                 except:
                                     job_status = Status.FAILED
-            elif job_status in self.job_status['QUEUING'] and job.hold == "false":
+            elif job_status in self.job_status['QUEUING'] and (not job.hold or job.hold.lower() != "true"):
                 job_status = Status.QUEUING
-            elif job_status in self.job_status['QUEUING'] and job.hold == "true":
+            elif job_status in self.job_status['QUEUING'] and (job.hold or job.hold.lower() == "true"):
                 job_status = Status.HELD
             elif job_status in self.job_status['FAILED']:
                 job_status = Status.FAILED

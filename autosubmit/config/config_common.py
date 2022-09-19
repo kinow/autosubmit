@@ -554,13 +554,16 @@ class AutosubmitConfig(object):
         normalize a nested dictionary or similar mapping to uppercase.
         Modify ``source`` in place.
         """
-        normalized_data =  dict()
-        for key, val in data.items():
-            normalized_data[str(key).upper()] = val
-            if isinstance(val, collections.abc.Mapping ):
-                normalized_value = self.deep_normalize(data.get(key, {}))
-                normalized_data[str(key).upper()] = normalized_value
 
+        normalized_data =  dict()
+        try:
+            for key, val in data.items():
+                normalized_data[str(key).upper()] = val
+                if isinstance(val, collections.abc.Mapping ):
+                    normalized_value = self.deep_normalize(data.get(key, {}))
+                    normalized_data[str(key).upper()] = normalized_value
+        except:
+            pass
         return normalized_data
 
     def deep_update(self,unified_config, new_dict):
