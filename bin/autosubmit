@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# PYTHON_ARGCOMPLETE_OK
 
 # Copyright 2015 Earth Sciences Department, BSC-CNS
 
@@ -25,11 +24,9 @@ import traceback
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 sys.path.append(scriptdir)
 sys.path.append(os.path.normpath(os.path.join(scriptdir, os.pardir)))
-# noinspection PyUnresolvedReferences
-try:
-    from log.log import Log, AutosubmitCritical , AutosubmitError
-except:
-    pass
+
+from log.log import Log, AutosubmitCritical , AutosubmitError
+
 
 from autosubmit.autosubmit import Autosubmit
 

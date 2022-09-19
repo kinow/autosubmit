@@ -232,7 +232,7 @@ class JobPackager(object):
                         if wrapper_limits["max_h"] == -1:
                             wrapper_limits["max_h"] = wrapper_limits["max"]
                         if '&' not in section:
-                            dependencies_keys = self._as_config.jobs_data[section].get('DEPENDENCIES', "").upper()
+                            dependencies_keys = self._as_config.jobs_data[section].get('DEPENDENCIES', "")
                             wrapper_limits["max_by_section"][section] = wrapper_limits["max"]
                             wrapper_limits["min"] = min(self._as_config.jobs_data[section].get(
                                 "MIN_WRAPPED", 99999999), 0)
