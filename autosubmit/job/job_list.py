@@ -397,7 +397,7 @@ class JobList(object):
                     to_filter.append(value)
         else:
             to_filter.append(filter_value)
-        if str(parent_value) in to_filter:
+        if str(parent_value).upper() in str(to_filter).upper():
             return True
         else:
             return False
@@ -566,7 +566,10 @@ class JobList(object):
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply,optional_from = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
             if len(filters_to_apply) > 0:
-                print("Debug: job: {1} | filters_to_apply: {0}".format(str(filters_to_apply),job.name))
+                message = "Debug: job: {1} | filters_to_apply: {0}".format(str(filters_to_apply),job.name)
+                print(message)
+                if message.find("Debug: job: a002_TEST | filters_to_apply: {'MEMBERS_TO': 'FC1', 'CHUNK_TO': 4}") != -1:
+                    print("Debug")  # breakpoint
             for parent in all_parents:
                 # Generic for all dependencies
                 if dependency.delay == -1 or chunk > dependency.delay:
@@ -591,6 +594,8 @@ class JobList(object):
                 valid,optional_to = JobList._valid_parent(parent, member_list, parsed_date_list, chunk_list, natural_relationship,filters_to_apply)
                 if not valid:
                     continue
+                else:
+                    pass
                 # If the parent is valid, add it to the graph
                 job.add_parent(parent)
                 JobList._add_edge(graph, job, parent)

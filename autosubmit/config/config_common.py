@@ -592,7 +592,7 @@ class AutosubmitConfig(object):
             dependencies = job_data.get("DEPENDENCIES",{})
             if type(dependencies) == str:
                 for dependency in dependencies.split(" "):
-                    aux_dependencies[dependency] = None
+                    aux_dependencies[dependency] = {}
                 dependencies = aux_dependencies
             data_fixed["JOBS"][job]["DEPENDENCIES"] = dependencies
         return data_fixed
@@ -600,6 +600,10 @@ class AutosubmitConfig(object):
         '''
         Unifies all configuration files into a single dictionary. Custom files will be able to override the default configuration.
         '''
+        self._conf_parser.data = self.normalize_variables(self._conf_parser.data)
+        self._exp_parser.data = self.normalize_variables(self._exp_parser.data)
+        self._jobs_parser.data = self.normalize_variables(self._jobs_parser.data)
+        self._platforms_parser.data = self.normalize_variables(self._platforms_parser.data)
         self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
         self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
         self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
@@ -610,19 +614,21 @@ class AutosubmitConfig(object):
         self.experiment_data = self.deep_update(self.experiment_data,self._platforms_parser.data)
         if self._proj_parser_file.exists():
             self._proj_parser.data = self.deep_normalize(self._proj_parser.data)
+            self.normalize_variables(self._proj_parser.data)
             self.experiment_data = self.deep_update(self.experiment_data,self._proj_parser.data)
         #Check if there is "FOR" clausure (Recursive search)
         self.deep_read_loops(self.experiment_data)
         #Parse loops in original config
         self.parse_data_loops(self.experiment_data,self.data_loops)
+
         if len(self._custom_parser) > 0:
             for c_parser in self._custom_parser:
                 c_parser.data = self.deep_normalize(c_parser.data)
+                self.normalize_variables(c_parser.data)
                 self.experiment_data = self.deep_update(self.experiment_data,c_parser.data)
             #Parser loops in custom config
             self.deep_read_loops(self.experiment_data)
             self.parse_data_loops(self.experiment_data, self.data_loops)
-        self.normalize_variables(self.experiment_data)
         self.dynamic_variables = list(set(self.dynamic_variables))
 
     def parse_data_loops(self,exp_data,data_loops):
