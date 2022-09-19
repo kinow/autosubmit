@@ -150,6 +150,8 @@ class Job(object):
         self.dependencies = []
         self.running = "once"
         self.start_time = None
+        self.edge_info = dict()
+
 
     def __getstate__(self):
         odict = self.__dict__
@@ -381,6 +383,20 @@ class Job(object):
         """
         self.children.add(new_child)
 
+    def add_edge_info(self,parent_name, special_variables):
+        """
+        Adds edge information to the job
+
+        :param parent_name: parent name
+        :type parent_name: str
+        :param special_variables: special variables
+        :type special_variables: dict
+        """
+        if parent_name not in self.edge_info:
+            self.edge_info[parent_name] = special_variables
+        else:
+            self.edge_info[parent_name].update(special_variables)
+        pass
     def delete_parent(self, parent):
         """
         Remove a parent from the job
@@ -714,7 +730,7 @@ class Job(object):
                         while log_start <= max_logs:
                             try:
                                 if platform.get_stat_file_by_retrials(stat_file+str(max_logs)):
-                                    with open(os.path.join(tmp_path,stat_file+str(max_logs)), 'rb+') as f:
+                                    with open(os.path.join(tmp_path,stat_file+str(max_logs)), 'r+') as f:
                                         total_stats = [f.readline()[:-1],f.readline()[:-1],f.readline()[:-1]]
                                     try:
                                         total_stats[0] = float(total_stats[0])
@@ -1511,11 +1527,11 @@ class Job(object):
         if first_retrial:
             self.write_submit_time(enabled=True)
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-        f = open(path, 'ab')
+        f = open(path, 'a')
         if first_retrial:
-            f.write(b" " + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + b' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + b' ' + total_stats[2])
+            f.write(" " + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + ' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + ' ' + total_stats[2])
         else:
-            f.write(b'\n' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + b' ' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + b' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + b' ' + total_stats[2])
+            f.write('\n' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + ' ' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + ' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + ' ' + total_stats[2])
         out, err = self.local_logs
         path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
         # Launch first as simple non-threaded function
@@ -1641,7 +1657,6 @@ class WrapperJob(Job):
         self.job_list = job_list
         # divide jobs in dictionary by state?
         self.wallclock = total_wallclock
-
         self.num_processors = num_processors
         self.running_jobs_start = OrderedDict()
         self._platform = platform
