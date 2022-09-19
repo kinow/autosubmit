@@ -438,3 +438,57 @@ New format
                 members_to: "natural"
                 chunks_to: "natural"
         RUNNING: chunk
+
+Example 1: New format with specific dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: yaml
+
+    JOBS:
+        JOB_1:
+            FILE: job1.sh
+            RUNNING: chunk
+        JOB_2:
+            FILE: job2.sh
+            DEPENDENCIES:
+                JOB_1:
+                    dates_to: "natural"
+                    members_to: "natural"
+                    chunks_to: "natural"
+            RUNNING: chunk
+        JOB_3:
+            FILE: job3.sh
+            DEPENDENCIES:
+                JOB_2:
+                    dates_to: "natural"
+                    members_to: "natural"
+                    chunks_to: "natural"
+            RUNNING: chunk
+        SIM:
+            FILE: sim.sh
+            DEPENDENCIES:
+                JOB_3:
+                SIM-1:
+                SIM:
+                    MEMBERS_FROM:
+                      FC2:
+                        CHUNKS_FROM:
+                         1:
+                          dates_to: "all"
+                          members_to: "FC1"
+                          chunks_to: "4"
+            RUNNING: chunk
+        POST:
+            FILE: post.sh
+            DEPENDENCIES:
+                SIM:
+            RUNNING: chunk
+        TEST:
+            FILE: test.sh
+            DEPENDENCIES:
+                POST:
+                  members_to: "FC2"
+                  chunks_to: 4
+            RUNNING: once
+
+# too add img
