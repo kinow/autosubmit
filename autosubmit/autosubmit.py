@@ -3784,7 +3784,7 @@ class Autosubmit:
         """
         if not os.path.exists(BasicConfig.DB_PATH):
             Log.info("Creating autosubmit database...")
-            qry = resource_string('autosubmit.database', 'data/autosubmit.sql')
+            qry = resource_string('autosubmit.database', 'data/autosubmit.sql').decode(locale.getlocale()[1])
             if not create_db(qry):
                 raise AutosubmitCritical("Can not write database file", 7004)
             Log.result("Autosubmit database created successfully")
