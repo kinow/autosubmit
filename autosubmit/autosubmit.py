@@ -3952,11 +3952,14 @@ class Autosubmit:
         Log.info("Looking for %_% variables inside conf files")
         for f in get_files(root_dir,('*.yml','*.yaml','*.conf')):
             template_path = root_dir / Path(f).name
-            w,s = Autosubmit.update_old_script(root_dir,template_path,as_conf)
-            if w != "":
-                warn += "Warnings for: {0}\n{1}\n".format(template_path.name,w)
-            if s != "":
-                sustituted +="Variables changed for: {0}\n{1}\n".format(template_path.name,s)
+            try:
+                w,s = Autosubmit.update_old_script(root_dir,template_path,as_conf)
+                if w != "":
+                    warn += "Warnings for: {0}\n{1}\n".format(template_path.name,w)
+                if s != "":
+                    sustituted +="Variables changed for: {0}\n{1}\n".format(template_path.name,s)
+            except BaseException as e:
+                Log.printlog("Couldn't read {0} template.\ntrace:{1}".format(template_path,str(e)))
         if sustituted == "" and warn == "":
             pass
         else:
@@ -3977,7 +3980,7 @@ class Autosubmit:
                 if s != "":
                     sustituted +="Variables changed for: {0}\n{1}\n".format(template_path.name,s)
             except BaseException as e:
-                Log.printlog("Couldn't read {0} template.\ntrace:{1}".format(template_path,section),Log.WARNING,str(e))
+                Log.printlog("Couldn't read {0} template.\ntrace:{1}".format(template_path,str(e)))
         if sustituted != "":
             Log.printlog(sustituted, Log.RESULT)
         if warn != "":
