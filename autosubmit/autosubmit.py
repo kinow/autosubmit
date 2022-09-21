@@ -1719,7 +1719,8 @@ class Autosubmit:
                         exp_history.process_status_changes(job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())                        
                     except Exception as e:
                         # This error is important
-                        raise AutosubmitCritical("Error while processing historical database.", 7005, str(e))
+                        Log.printlog("Error while processing historical database.", 7005, str(e))
+
                     try:
                         ExperimentStatus(expid).set_as_running()
                     except Exception as e:
