@@ -596,6 +596,9 @@ class Autosubmit:
             subparsers.add_parser('changelog', description='show changelog')
             args = parser.parse_args()
 
+            if args.command is None:
+                parser.print_help()
+                parser.exit()
 
         except Exception as e:
             if type(e) is SystemExit: #todo check
