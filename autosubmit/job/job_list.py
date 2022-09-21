@@ -523,8 +523,6 @@ class JobList(object):
             parsed_parent_date = date2str(parent.date) if parent.date is not None else None
             # Apply all filters to look if this parent is an appropriated candidate for the current_job
             valid_dates   = JobList._apply_filter(parsed_parent_date, dates_to, associative_list["dates"], "dates")
-            if dates_to == "20120201" or dates_to == "20120101":
-                print(valid_dates)
             valid_members = JobList._apply_filter(parent.member, members_to, associative_list["members"],"members")
             valid_chunks  = JobList._apply_filter(parent.chunk, chunks_to, associative_list["chunks"], "chunks")
 

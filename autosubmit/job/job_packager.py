@@ -320,11 +320,22 @@ class JobPackager(object):
                                 elif self.wrapper_type[self.current_wrapper_section] == 'horizontal-vertical':
                                     min_v = len(p.jobs_lists)
                                     min_h = len(p.jobs_lists[0])
+                                    i = 0
                                     for list_of_jobs in p.jobs_lists[1:-1]:
                                         min_h = min(min_h, len(list_of_jobs))
-                                    for list_of_jobs in p.jobs_lists[:-1]:
-                                        if min_h != len(list_of_jobs):
+                                    for list_of_jobs in p.jobs_lists[:]:
+                                        i = i+1
+                                        if min_h != len(list_of_jobs) and i < len(p.jobs_lists):
                                             balanced = False
+                                        elif min_h != len(list_of_jobs) and i == len(p.jobs_lists):
+                                            for job in list_of_jobs:
+                                                job.packed = False
+                                                p.jobs.remove(job)
+                                                package = JobPackageSimple([job])
+                                                packages_to_submit.append(package)
+                                            p.jobs_lists = p.jobs_lists[:-1]
+
+
 
                                 elif self.wrapper_type[self.current_wrapper_section] == 'horizontal':
                                     min_h = len(p.jobs)
@@ -645,7 +656,7 @@ class JobPackager(object):
                     horizontal_packager.wrapper_limits["max_by_section"][section] = horizontal_packager.wrapper_limits["max_by_section"][section] - 1
         horizontal_packager.wrapper_limits["max"] = horizontal_packager.wrapper_limits["max"] - actual_wrapped_jobs
         for job in horizontal_package:
-            job_list = JobPackagerVerticalSimple([job], job.wallclock, horizontal_packager.wrapper_limits["max"],
+            job_list = JobPackagerVertical([job], job.wallclock, horizontal_packager.wrapper_limits["max"],
                                                  horizontal_packager.wrapper_limits,
                                                  self._platform.max_wallclock).build_vertical_package(job)
 
