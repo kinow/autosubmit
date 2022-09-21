@@ -600,14 +600,22 @@ class AutosubmitConfig(object):
         '''
         Unifies all configuration files into a single dictionary. Custom files will be able to override the default configuration.
         '''
-        self._conf_parser.data = self.normalize_variables(self._conf_parser.data)
-        self._exp_parser.data = self.normalize_variables(self._exp_parser.data)
-        self._jobs_parser.data = self.normalize_variables(self._jobs_parser.data)
-        self._platforms_parser.data = self.normalize_variables(self._platforms_parser.data)
-        self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
-        self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
-        self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
-        self._platforms_parser.data = self.deep_normalize(self._platforms_parser.data)
+        if self._conf_parser.data is not None and len(self._conf_parser.data) > 0:
+            self._conf_parser.data = self.normalize_variables(self._conf_parser.data)
+        if self._exp_parser.data is not None and len(self._exp_parser.data) > 0:
+            self._exp_parser.data = self.normalize_variables(self._exp_parser.data)
+        if self._jobs_parser.data is not None and len(self._jobs_parser.data) > 0:
+            self._jobs_parser.data = self.normalize_variables(self._jobs_parser.data)
+        if self._platforms_parser.data is not None and len(self._platforms_parser.data) > 0:
+            self._platforms_parser.data = self.normalize_variables(self._platforms_parser.data)
+        if self._conf_parser.data is not None and len(self._conf_parser.data) > 0:
+            self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
+        if self._exp_parser.data is not None and len(self._exp_parser.data) > 0:
+            self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
+        if self._jobs_parser.data is not None and len(self._jobs_parser.data) > 0:
+            self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
+        if self._platforms_parser.data is not None and len(self._platforms_parser.data) > 0:
+            self._platforms_parser.data = self.deep_normalize(self._platforms_parser.data)
         self.experiment_data = dict()
         self.experiment_data = self.deep_update(self._conf_parser.data,self._exp_parser.data)
         self.experiment_data = self.deep_update(self.experiment_data,self._jobs_parser.data)
@@ -1077,9 +1085,8 @@ class AutosubmitConfig(object):
         # check if original_files has been edited
         for config_file in range(0,len(self._original_parser_files)):
             try:
-                if self._original_parser_files[config_file].name != self._proj_parser_file.name:
-                    modified, self._original_parser_files_modtime[config_file] = self.file_modified(
-                        self._original_parser_files[config_file], self._original_parser_files_modtime[config_file])
+                if self._original_parser_files[config_file].name != self._proj_parser_file.name and self._original_parser_files[config_file].exists():
+                    modified, self._original_parser_files_modtime[config_file] = self.file_modified(self._original_parser_files[config_file], self._original_parser_files_modtime[config_file])
                 else:
                     if self._proj_parser_file.exists():
                         modified, self._original_parser_files_modtime[config_file] = self.file_modified(
@@ -1108,21 +1115,21 @@ class AutosubmitConfig(object):
                     self.parser_factory, self._exp_parser_file)
                 if first_load:
                     self._custom_parser = []
-                    try:
+                    if self._exp_parser.data is not None and len(self._exp_parser.data) > 0:
                         self._exp_parser.data = self.deep_normalize(self._exp_parser.data)
-                    except:
+                    else:
                         self._exp_parser.data = {}
-                    try:
+                    if self._conf_parser.data is not None and len(self._conf_parser.data) > 0:
                         self._conf_parser.data = self.deep_normalize(self._conf_parser.data)
-                    except:
+                    else:
                         self._conf_parser.data = {}
-                    try:
+                    if self._jobs_parser.data is not None and len(self._jobs_parser.data) > 0:
                         self._jobs_parser.data = self.deep_normalize(self._jobs_parser.data)
-                    except:
+                    else:
                         self._jobs_parser.data = {}
-                    try:
+                    if self._platforms_parser.data is not None and len(self._platforms_parser.data) > 0:
                         self._platforms_parser.data = self.deep_normalize(self._platforms_parser.data)
-                    except:
+                    else:
                         self._platforms_parser.data = {}
                     default_section = self._exp_parser.data.get("DEFAULT",None)
                     default_path = Path(self.basic_config.LOCAL_ROOT_DIR) / self.expid
@@ -2123,16 +2130,20 @@ class AutosubmitConfig(object):
                 parser.data = parser.load(file_path)
                 if parser.data is None:
                     parser.data = {}
+            else:
+                parser.data = {}
             #else:
                 #Log.warning( "{0} was not found. Some variables might be missing. If your experiment does not need a proj file, you can ignore this message.", file_path)
         else:
             # This block may rise an exception but all its callers handle it
             try:
+
                 with open(file_path) as f:
                     parser.data = parser.load(f)
                     if parser.data is None:
                         parser.data = {}
             except IOError as exp:
+                parser.data = {}
                 return parser
             except Exception as exp:
                 raise Exception(

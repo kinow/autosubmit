@@ -710,17 +710,17 @@ class Autosubmit:
         authorized = BasicConfig.ALLOWED_HOSTS
         message = "Command: {0} is not allowed to run in host: {1}.\n".format(args.command.upper(),host)
         message += "List of permissions as follows:Command | hosts \nAllowed hosts\n"
-        for command in BasicConfig.ALLOWED_HOSTS:
-            message += "   {0}:{1} \n".format(command,BasicConfig.ALLOWED_HOSTS[command])
+        for command in authorized:
+            message += "   {0}:{1} \n".format(command,authorized[command])
         message += "Denied hosts\n"
-        for command in BasicConfig.DENIED_HOSTS:
-            message += "   {0}:{1} \n".format(command,BasicConfig.DENIED_HOSTS[command])
+        for command in forbidden:
+            message += "   {0}:{1} \n".format(command,forbidden[command])
         message += "[Command: autosubmit {0}] is not allowed to run in [host: {1}].".format(args.command.upper(), host)
-        if args.command in BasicConfig.DENIED_HOSTS:
-            if 'all' in BasicConfig.DENIED_HOSTS[args.command] or host in BasicConfig.DENIED_HOSTS[args.command]:
+        if args.command in forbidden:
+            if 'all' in forbidden[args.command] or host in forbidden[args.command]:
                 raise AutosubmitCritical(message, 7071)
-        if args.command in BasicConfig.ALLOWED_HOSTS:
-            if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and host not in BasicConfig.ALLOWED_HOSTS[args.command]:
+        if args.command in authorized:
+            if 'all' not in authorized[args.command] and host not in authorized[args.command]:
                 raise AutosubmitCritical(message, 7071)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
@@ -3890,7 +3890,7 @@ class Autosubmit:
                     if list(new_key)[0].find("JOBS") > -1 or list(new_key)[0].find("PLATFORMS") > -1 :
                         pass
                     else:
-                        warn += "{0} couldn't translate to {1} since it contains multiple values\n".format(key, new_key)
+                        warn += "{0} couldn't translate to {1} since it is a duplicate variable. Please chose one of the keys value.\n".format(key, new_key)
                 else:
                     new_key = new_key.pop().upper()
                     sustituted += "{0} translated to {1}\n".format(key.upper(), new_key)
@@ -4123,9 +4123,9 @@ class Autosubmit:
                 else:
                     raise Exception("The sqldump file couldn't be created.")
             else:
-                raise Exception("The database file doesn't exist.")
+                raise Exception("The historical database file doesn't exist.")
         except Exception as exp:            
-            Log.critical(str(exp))
+            Log.warning(str(exp))
 
     @staticmethod
     def archive(expid, noclean=True, uncompress=True):
@@ -4409,13 +4409,16 @@ class Autosubmit:
                     except BaseException as e:
                         Log.printlog("Historic database seems corrupted, AS will repair it and resume the run",
                                      Log.INFO)
-                        Autosubmit.database_fix(expid)
-                        exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
-                                                        historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-                        exp_history.initialize_database()
-                        exp_history.create_new_experiment_run(as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(),
-                                                              as_conf.get_full_config_as_json(),
-                                                              job_list.get_job_list())
+                        try:
+                            Autosubmit.database_fix(expid)
+                            exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
+                                                            historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+                            exp_history.initialize_database()
+                            exp_history.create_new_experiment_run(as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(),
+                                                                  as_conf.get_full_config_as_json(),
+                                                                  job_list.get_job_list())
+                        except:
+                            Log.warning("Couldn't recover the Historical database, AS will continue without it, GUI may be affected")
                     if not noplot:
                         if group_by:
                             status = list()

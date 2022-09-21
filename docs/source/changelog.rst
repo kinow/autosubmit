@@ -352,7 +352,7 @@ For the examples, we will consider that our experiment has the following configu
 .. code-block:: yaml
 
     EXPERIMENT:
-        DATELIST: 202201[01-02]
+        DATELIST: 20220101
         MEMBERS: FC1 FC2
         NUMCHUNKS: 4
 Basic
@@ -439,8 +439,17 @@ New format
                 chunks_to: "natural"
         RUNNING: chunk
 
+.. figure:: ../../workflows/new_dependencies_0.png
+   :name: new_dependencies
+   :align: center
+   :alt: new_dependencies
+
 Example 1: New format with specific dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+In the following example, we want to launch the next member SIM after the last SIM chunk of the previous member is finished.
+
 
 .. code-block:: yaml
 
@@ -452,17 +461,11 @@ Example 1: New format with specific dependencies
             FILE: job2.sh
             DEPENDENCIES:
                 JOB_1:
-                    dates_to: "natural"
-                    members_to: "natural"
-                    chunks_to: "natural"
             RUNNING: chunk
         JOB_3:
             FILE: job3.sh
             DEPENDENCIES:
                 JOB_2:
-                    dates_to: "natural"
-                    members_to: "natural"
-                    chunks_to: "natural"
             RUNNING: chunk
         SIM:
             FILE: sim.sh
@@ -491,4 +494,12 @@ Example 1: New format with specific dependencies
                   chunks_to: 4
             RUNNING: once
 
-# too add img
+.. figure:: ../../workflows/new_dependencies_1.png
+   :name: new_dependencies
+   :align: center
+   :alt: new_dependencies
+
+Example 2: Monarch-DA with the new format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:

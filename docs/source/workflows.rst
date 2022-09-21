@@ -292,7 +292,6 @@ This behaviour can be achieved using the SPLITS attribute to specify the number 
 It is possible to define dependencies to specific splits within [], as well as to a list/range of splits,
 in the format [1:3,7,10] or [1,2,3]
 
-
 .. hint::
    This job parameter works with jobs with RUNNING parameter equals to 'chunk'.
 
