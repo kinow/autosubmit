@@ -1854,9 +1854,22 @@ class Autosubmit:
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
                         # Safe spot to store changes
-                        exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-                        if len(job_changes_tracker) > 0:
-                            exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                        try:
+                            exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
+                                                            historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+                            if len(job_changes_tracker) > 0:
+                                exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                        except BaseException as e:
+                            Log.printlog("Historic database seems corrupted, AS will repair it and resume the run",
+                                         Log.INFO)
+                            try:
+                                Autosubmit.database_fix(expid)
+                                exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
+                                                                historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+                                if len(job_changes_tracker) > 0:
+                                    exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                            except:
+                                Log.warning("Couldn't recover the Historical database, AS will continue without it, GUI may be affected")
                         job_changes_tracker = {}
                         if Autosubmit.exit:
                             job_list.save()
@@ -2027,8 +2040,16 @@ class Autosubmit:
                         raise AutosubmitCritical("There is a bug in the code, please contact via git",7070,str(e))
                 Log.result("No more jobs to run.")
                 # Updating job data header with current information when experiment ends
-                exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-                exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                try:
+                    exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+                    exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                except:
+                    try:
+                        Autosubmit.database_fix(expid)
+                        exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+                        exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                    except:
+                        Log.printlog()
                 # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
                 active_threads = True
