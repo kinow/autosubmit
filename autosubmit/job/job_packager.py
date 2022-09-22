@@ -328,12 +328,13 @@ class JobPackager(object):
                                         if min_h != len(list_of_jobs) and i < len(p.jobs_lists):
                                             balanced = False
                                         elif min_h != len(list_of_jobs) and i == len(p.jobs_lists):
-                                            for job in list_of_jobs:
-                                                job.packed = False
-                                                p.jobs.remove(job)
-                                                package = JobPackageSimple([job])
-                                                packages_to_submit.append(package)
-                                            p.jobs_lists = p.jobs_lists[:-1]
+                                            if balanced:
+                                                for job in list_of_jobs:
+                                                    job.packed = False
+                                                    p.jobs.remove(job)
+                                                    package = JobPackageSimple([job])
+                                                    packages_to_submit.append(package)
+                                                p.jobs_lists = p.jobs_lists[:-1]
 
 
 
@@ -356,7 +357,7 @@ class JobPackager(object):
                                     deadlock = True
                                     if deadlock: # Remaining jobs if chunk is the last one
                                         for job in p.jobs:
-                                            if job.running == "chunk" and job.chunk == int(job.parameters["EXPERIMENT.NUMCHUNKS"]):
+                                            if ( job.running == "chunk" and job.chunk == int(job.parameters["EXPERIMENT.NUMCHUNKS"]) ) and  balanced:
                                                 deadlock = False
                                                 break
                                     if not deadlock: # Submit package if deadlock has been liberated
@@ -489,6 +490,7 @@ class JobPackager(object):
                                                         message += "\nCheck your configuration: Only jobs_in_wrappers are active, check your jobs_in_wrapper dependencies."
                                                     if not balanced:
                                                         message += "\nPackages are not well balanced! (This is not the main cause of the Critical error)"
+
                                                     if len(self._jobs_list.get_in_queue()) == 0: # When there are not more posible jobs, autosubmit will stop the execution
                                                         raise AutosubmitCritical(message, 7014)
                                         else:

@@ -16,6 +16,19 @@ Mayor mentions:
 - New command added, updateproj. This command will update all the scripts and autosubmit configuration.
 - Wrapper definition has changed.
 - Tasks dependencies system has changed.
+- Added the parameter DELETE_WHEN_EDGELESS ( boolean ) to the section JOBS. This parameter allows to delete a job when it has no edges. ( default TRUE)
+
+.. warning::
+    The configuration language has changed. Please, check the new configuration file format.
+
+.. warning::
+    The wrapper definition has changed. Please, check the new wrapper definition.
+
+.. warning::
+    The tasks dependencies system has changed. Please, check the new tasks dependencies system.
+
+.. warning::
+    edgeless jobs are now deleted by default. Please, check the new parameter DELETE_WHEN_EDGELESS.
 
 .. warning:: updateproj may not translate all the scripts, we recommend to revise your scripts before run AS.
 
@@ -322,8 +335,8 @@ One can use now the following configuration:
 
 .. warning:: Only the parameters that changes must be included inside the `FOR` key.
 
-DEPENDENCIES
-------------
+NEW DEPENDENCIES
+----------------
 
 The DEPENDENCIES key is used to define the dependencies of a job. It can be used in the following ways:
 
@@ -338,8 +351,8 @@ The DEPENDENCIES key is used to define the dependencies of a job. It can be used
         - MEMBERS_TO: Links current selected tasks to the dependency tasks of the members specified.
         - CHUNKS_TO: Links current selected tasks to the dependency tasks of the chunks specified.
     - Important keywords for [DATES|MEMBERS|CHUNKS]_TO:
-        - "natural": Will keep the default linkage.
-        - "all": Will link selected tasks of the dependency with current selected tasks.
+        - "natural": Will keep the default linkage. Will link if it would be normally. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1.
+        - "all": Will link all selected tasks of the dependency with current selected tasks. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1, DA_FC00_CHUNK_2, DA_FC00_CHUNK_3...
         - "none": Will unlink selected tasks of the dependency with current selected tasks.
 For the new format, consider that the priority is hierarchy and goes like this DATES_FROM -(includes)-> MEMBERS_FROM -(includes)-> CHUNKS_FROM.
 
@@ -439,7 +452,7 @@ New format
                 chunks_to: "natural"
         RUNNING: chunk
 
-.. figure:: ../../workflows/new_dependencies_0.png
+.. figure:: ../workflows/new_dependencies_0.png
    :name: new_dependencies
    :align: center
    :alt: new_dependencies
@@ -494,24 +507,27 @@ In the following example, we want to launch the next member SIM after the last S
                   chunks_to: 4
             RUNNING: once
 
-.. figure:: ../../workflows/new_dependencies_1.png
+.. figure:: ../workflows/new_dependencies_1.png
    :name: new_dependencies
    :align: center
    :alt: new_dependencies
 
-Example 2: Monarch-DA with the new format
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example 2: Crossdate wrappers using the the new dependencies
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: yaml
 
     experiment:
       DATELIST: 20120101 20120201
-      MEMBERS: "000 001 002 003"
+      MEMBERS: "000 001"
       CHUNKSIZEUNIT: day
       CHUNKSIZE: '1'
-      NUMCHUNKS: '4'
-    PROJECT:
-     PROJECT_TYPE: none
+      NUMCHUNKS: '3'
+    wrappers:
+        wrapper_simda:
+            TYPE: "horizontal-vertical"
+            JOBS_IN_WRAPPER: "SIM DA"
+
     JOBS:
       LOCAL_SETUP:
         FILE: templates/local_setup.sh
@@ -544,9 +560,6 @@ Example 2: Monarch-DA with the new format
           REMOTE_COMPILE:
           SIM-1:
           DA-1:
-    #        CHUNKS_FROM:
-    #         2:
-    #          CHUNKS_TO: 1
         RUNNING: chunk
         PROCESSORS: '68'
         WALLCLOCK: 00:12
@@ -586,36 +599,8 @@ Example 2: Monarch-DA with the new format
         WALLCLOCK: 00:12
         PROCESSORS: '256'
         NOTIFY_ON: FAILED
-      REDUCE:
-        FILE: templates/07_reduce.sh
-        DEPENDENCIES: SIM DA REDUCE-1
-        RUNNING: chunk
-        WALLCLOCK: 00:10
-        NOTIFY_ON: FAILED
-      ARCHIVE:
-        FILE: templates/06_archive.sh
-        DEPENDENCIES: REDUCE
-        PLATFORM: marenostrum_archive
-        RUNNING: chunk
-        WALLCLOCK: 01:00
-        NOTIFY_ON: FAILED
-      ARCHIVE_REDUCE:
-        FILE: templates/06c_archive_reduce.sh
-        DEPENDENCIES: REDUCE
-        PLATFORM: marenostrum_archive
-        RUNNING: chunk
-        SYNCHRONIZE: member
-        WALLCLOCK: 01:00
-        NOTIFY_ON: FAILED
-      CLEAN:
-        FILE: templates/08_clean.sh
-        DEPENDENCIES: REDUCE+1 ARCHIVE ARCHIVE_REDUCE
-        PLATFORM: marenostrum_archive
-        RUNNING: chunk
-        WALLCLOCK: 00:10
-        NOTIFY_ON: FAILED
 
-.. figure:: ../../workflows/monarch-da.png
-   :name: new_dependencies
+.. figure:: ../workflows/monarch-da.png
+   :name: crossdate-example
    :align: center
-   :alt: new_dependencies
+   :alt: crossdate-example
