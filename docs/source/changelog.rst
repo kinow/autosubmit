@@ -335,8 +335,8 @@ One can use now the following configuration:
 
 .. warning:: Only the parameters that changes must be included inside the `FOR` key.
 
-NEW DEPENDENCIES
-----------------
+Dependencies rework
+-------------------
 
 The DEPENDENCIES key is used to define the dependencies of a job. It can be used in the following ways:
 
@@ -452,7 +452,7 @@ New format
                 chunks_to: "natural"
         RUNNING: chunk
 
-.. figure:: ../workflows/new_dependencies_0.png
+.. figure:: workflows/new_dependencies_0.png
    :name: new_dependencies
    :align: center
    :alt: new_dependencies
@@ -507,7 +507,7 @@ In the following example, we want to launch the next member SIM after the last S
                   chunks_to: 4
             RUNNING: once
 
-.. figure:: ../workflows/new_dependencies_1.png
+.. figure:: workflows/new_dependencies_1.png
    :name: new_dependencies
    :align: center
    :alt: new_dependencies
@@ -600,7 +600,7 @@ Example 2: Crossdate wrappers using the the new dependencies
         PROCESSORS: '256'
         NOTIFY_ON: FAILED
 
-.. figure:: ../workflows/monarch-da.png
+.. figure:: workflows/monarch-da.png
    :name: crossdate-example
    :align: center
    :alt: crossdate-example
