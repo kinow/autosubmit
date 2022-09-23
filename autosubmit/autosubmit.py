@@ -62,6 +62,7 @@ import locale
 from distutils.util import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from typing import Set
+import sqlite3
 
 #try:
 #    import pythondialog as dialog
@@ -75,6 +76,7 @@ import tarfile
 import time
 import copy
 import os
+import glob
 import pwd
 import sys
 import shutil
@@ -1716,11 +1718,14 @@ class Autosubmit:
                         # Historical Database: Can create a new run if there is a difference in the number of jobs or if the current run does not exist.
                         exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                         exp_history.initialize_database()
-                        exp_history.process_status_changes(job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())                        
+                        exp_history.process_status_changes(job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())
+                        Autosubmit.database_backup(expid)
                     except Exception as e:
-                        # This error is important
-                        Log.printlog("Error while processing historical database.", 7005, str(e))
-
+                        try:
+                            Autosubmit.database_fix(expid)
+                            # This error is important
+                        except:
+                            pass
                     try:
                         ExperimentStatus(expid).set_as_running()
                     except Exception as e:
@@ -1859,6 +1864,7 @@ class Autosubmit:
                                                             historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                             if len(job_changes_tracker) > 0:
                                 exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                                Autosubmit.database_backup(expid)
                         except BaseException as e:
                             Log.printlog("Historic database seems corrupted, AS will repair it and resume the run",
                                          Log.INFO)
@@ -1868,6 +1874,7 @@ class Autosubmit:
                                                                 historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                                 if len(job_changes_tracker) > 0:
                                     exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                                    Autosubmit.database_backup(expid)
                             except:
                                 Log.warning("Couldn't recover the Historical database, AS will continue without it, GUI may be affected")
                         job_changes_tracker = {}
@@ -2043,13 +2050,12 @@ class Autosubmit:
                 try:
                     exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                     exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                    Autosubmit.database_backup(expid)
                 except:
                     try:
                         Autosubmit.database_fix(expid)
-                        exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-                        exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
                     except:
-                        Log.printlog()
+                        pass
                 # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
                 active_threads = True
@@ -4092,6 +4098,17 @@ class Autosubmit:
             raise
 
     @staticmethod
+    def database_backup(expid):
+        try:
+            database_path= os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
+            backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.sql".format(expid))
+            command = "sqlite3 {0} .dump > {1} ".format(database_path, backup_path)
+            Log.info("Backing up jobs_data...")
+            subprocess.call(command, shell=True)
+            Log.result("Jobs_data database backup completed.")
+        except BaseException as e:
+            Log.info("Jobs_data database backup failed.")
+    @staticmethod
     def database_fix(expid):
         """
         Database methods. Performs a sql dump of the database and restores it.
@@ -4103,52 +4120,31 @@ class Autosubmit:
         """     
         os.umask(0) # Overrides user permissions
         current_time = int(time.time())
+        corrupted_db_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}_corrupted.db".format(expid))
+
         database_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
-        database_backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}_{1}.db".format(expid, str(current_time)))
-        dump_file_name = 'job_data_{0}_{1}.sql'.format(expid, current_time)
+        database_backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.sql".format(expid))
+        dump_file_name = 'job_data_{0}.sql'.format(expid, current_time)
         dump_file_path = os.path.join(BasicConfig.JOBDATA_DIR, dump_file_name)
-        bash_command = 'sqlite3 {0} .dump > {1}'.format(database_path, dump_file_path)        
+        bash_command = 'cat {1} | sqlite3 {0}'.format(database_path, dump_file_path)
         try:
-            if os.path.exists(database_path):
+            if  os.path.exists(database_path):
+                result = os.popen("mv {0} {1}".format(database_path, corrupted_db_path)).read()
+                time.sleep(10)
+                Log.info("Original database moved.")
+            try:
+                exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
+                                                historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+                exp_history.initialize_database()
+                Log.info("Restoring from sql")
                 result = os.popen(bash_command).read()
-                if result is not None and os.path.exists(dump_file_path):
-                    Log.info("sqldump {0} created".format(dump_file_path))
-                    Log.info(
-                        "Backing up original database {0}".format(database_path))
-                    result = os.popen("mv {0} {1}".format(database_path, database_backup_path)).read()
-                    time.sleep(10)
-                    if result is not None and not os.path.exists(database_path):
-                        Log.info("Original database moved.")
-                        Log.info("Restoring from sqldump")     
-                        HUtils.create_file_with_full_permissions(database_path)                 
-                        result = os.popen("cat {0} | sqlite3 {1}".format(
-                            dump_file_path, database_path)).read()
-                        time.sleep(10)
-                        if result is not None and os.path.exists(database_path):
-                            Log.info(
-                                "Database {0} restored.".format(database_path))
-                            Log.info("Deleting sqldump.")
-                            result = os.popen(
-                                "rm {0}".format(dump_file_path)).read()
-                            sleep(5)
-                            if result is not None and not os.path.exists(dump_file_path):
-                                ExperimentHistory(expid).initialize_database()
-                                Log.info("sqldump file deleted.")
-                                Log.result(
-                                    "The database {0} has been fixed.".format(database_path))
-                            else:
-                                raise Exception(
-                                    "The sqldump file could not be removed.")
-                        else:
-                            raise Exception(
-                                "It was not possible to restore the sqldump file.")
-                    else:
-                        raise Exception(
-                            "It was not possible to delete the original database.")
-                else:
-                    raise Exception("The sqldump file couldn't be created.")
-            else:
-                raise Exception("The historical database file doesn't exist.")
+            except:
+                Log.warning("It was not possible to restore the jobs_data.db file... , a new blank db will be created")
+                result = os.popen("rm {0}".format(database_path)).read()
+
+                exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
+                                                historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+                exp_history.initialize_database()
         except Exception as exp:            
             Log.warning(str(exp))
 
@@ -4431,17 +4427,12 @@ class Autosubmit:
                         exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                         exp_history.initialize_database()
                         exp_history.create_new_experiment_run(as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), as_conf.get_full_config_as_json(), job_list.get_job_list())
+                        Autosubmit.database_backup(expid)
                     except BaseException as e:
                         Log.printlog("Historic database seems corrupted, AS will repair it and resume the run",
                                      Log.INFO)
                         try:
                             Autosubmit.database_fix(expid)
-                            exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
-                                                            historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-                            exp_history.initialize_database()
-                            exp_history.create_new_experiment_run(as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(),
-                                                                  as_conf.get_full_config_as_json(),
-                                                                  job_list.get_job_list())
                         except:
                             Log.warning("Couldn't recover the Historical database, AS will continue without it, GUI may be affected")
                     if not noplot:
@@ -5197,6 +5188,7 @@ class Autosubmit:
                     exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                     exp_history.initialize_database()
                     exp_history.process_status_changes(job_list.get_job_list(), chunk_unit=as_conf.get_chunk_size_unit(), chunk_size=as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())
+                    Autosubmit.database_backup(expid)
                 else:
                     Log.printlog(
                         "Changes NOT saved to the JobList!!!!:  use -s option to save", 3000)
