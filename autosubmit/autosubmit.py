@@ -4103,11 +4103,11 @@ class Autosubmit:
             database_path= os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
             backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.sql".format(expid))
             command = "sqlite3 {0} .dump > {1} ".format(database_path, backup_path)
-            Log.info("Backing up jobs_data...")
+            Log.debug("Backing up jobs_data...")
             subprocess.call(command, shell=True)
-            Log.result("Jobs_data database backup completed.")
+            Log.debug("Jobs_data database backup completed.")
         except BaseException as e:
-            Log.info("Jobs_data database backup failed.")
+            Log.debug("Jobs_data database backup failed.")
     @staticmethod
     def database_fix(expid):
         """
