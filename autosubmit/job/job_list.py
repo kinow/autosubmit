@@ -574,13 +574,13 @@ class JobList(object):
             all_parents = other_parents + parents_jobs
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply,optional_from = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
-            if len(filters_to_apply) > 0:
-                message = "Debug: job: {1} | filters_to_apply: {0}".format(str(filters_to_apply),job.name)
-                print(message)
-                if message.find("Debug: job: a002_TEST | filters_to_apply: {'MEMBERS_TO': 'FC1', 'CHUNK_TO': 4}") != -1:
-                    print("Debug")  # breakpoint
-            else:
-                filters_to_apply.append({"DATES_TO": "natural", "MEMBERS_TO": "natural", "CHUNKS_TO": "natural"})
+            #if len(filters_to_apply) > 0:
+            #    message = "Debug: job: {1} | filters_to_apply: {0}".format(str(filters_to_apply),job.name)
+            #    print(message)
+            #    if message.find("Debug: job: a002_TEST | filters_to_apply: {'MEMBERS_TO': 'FC1', 'CHUNK_TO': 4}") != -1:
+            #        print("Debug")  # breakpoint
+            #else:
+            #    filters_to_apply.append({"DATES_TO": "natural", "MEMBERS_TO": "natural", "CHUNKS_TO": "natural"})
             for parent in all_parents:
                 # Generic for all dependencies
                 if dependency.delay == -1 or chunk > dependency.delay:
