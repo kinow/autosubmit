@@ -827,7 +827,15 @@ class Autosubmit:
         # Read eadmin user uid
         owner = False
         eadmin = False
-        id_eadmin = os.popen('id -u eadmin').read().strip()
+        #execute a id -u eadmin and supress error message
+        FNULL = open(os.devnull, 'w')
+        id_eadmin = subprocess.call(['id','-u', 'eadmin'],
+                                  stdout=FNULL,
+                                  stderr=subprocess.STDOUT)
+
+
+
+        #id_eadmin = subprocess.Popen('id -u eadmin',stdout=fp)
         ret = False
         # Handling possible failure of retrieval of current owner data
         currentOwner_id = 0
