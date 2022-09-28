@@ -4320,7 +4320,7 @@ class Autosubmit:
                 if os.path.exists(os.path.join(as_conf.get_project_dir(), as_conf.get_file_jobs_conf())):
                     if os.path.exists(jobs_destiny):
                         if force_jobs_conf:
-                            os.rename(jobs_destiny,jobs_destiny+"_backup")
+                            os.rename(jobs_destiny,str(jobs_destiny) + "_backup")
                         else:
                             copy = False
                     if copy:
