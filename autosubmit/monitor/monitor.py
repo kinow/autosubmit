@@ -19,6 +19,7 @@
 import datetime
 import os
 import time
+import sys
 from os import path
 from os import chdir
 from os import listdir
@@ -337,10 +338,22 @@ class Monitor:
 
             if show and output_format != "txt":
                 try:
-                    subprocess.check_output(['xdg-open', output_file])
+                    if sys.platform != "linux":
+                        try:
+                            subprocess.check_output(["open", output_file])
+                        except:
+                            try:
+                                subprocess.check_output(["xdg-open", output_file])
+                            except:
+                                subprocess.check_output(["mimeopen", output_file])
+                    else:
+                        try:
+                            subprocess.check_output(["xdg-open", output_file])
+                        except:
+                            subprocess.check_output(["mimeopen", output_file])
+
                 except subprocess.CalledProcessError:
-                    raise AutosubmitCritical(
-                        'File {0} could not be opened'.format(output_file), 7068)
+                    Log.printlog('File {0} could not be opened, only the txt option will show'.format(output_file), 7068)
         except AutosubmitCritical:
             raise
         except BaseException as e:
@@ -458,10 +471,23 @@ class Monitor:
         Log.result('Stats created at {0}', output_complete_path)
         if show:
             try:
-                subprocess.check_call(['xdg-open', output_complete_path])
+                if sys.platform != "linux":
+                    try:
+                        subprocess.check_output(["open", output_complete_path])
+                    except:
+                        try:
+                            subprocess.check_output(["xdg-open", output_complete_path])
+                        except:
+                            subprocess.check_output(["mimeopen", output_complete_path])
+                else:
+                    try:
+                        subprocess.check_output(["xdg-open", output_complete_path])
+                    except:
+                        subprocess.check_output(["mimeopen", output_complete_path])
+
             except subprocess.CalledProcessError:
-                raise AutosubmitCritical(
-                    'File {0} could not be opened'.format(output_complete_path), 7068)
+                Log.printlog('File {0} could not be opened, only the txt option will show'.format(output_complete_path), 7068)
+
 
     @staticmethod
     def clean_plot(expid):

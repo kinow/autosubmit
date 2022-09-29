@@ -494,9 +494,9 @@ class JobList(object):
         :return:
         '''
         #check if current_parent is listed on dependency.relationships
+        optional = False
         for filter in filters_to_apply:
             associative_list = {}
-            optional = False
             dates_to = str(filter.get("DATES_TO", "natural")).lower()
             members_to = str(filter.get("MEMBERS_TO", "natural")).lower()
             chunks_to = str(filter.get("CHUNKS_TO", "natural")).lower()
