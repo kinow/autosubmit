@@ -1083,6 +1083,9 @@ class ParamikoPlatform(Platform):
         if hasattr(self.header, 'get_queue_directive'):
             header = header.replace(
                 '%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
+        if hasattr(self.header, 'get_partition_directive'):
+            header = header.replace(
+                '%PARTITION_DIRECTIVE%', self.header.get_partition_directive(job))
         if hasattr(self.header, 'get_tasks_per_node'):
             header = header.replace(
                 '%TASKS_PER_NODE_DIRECTIVE%', self.header.get_tasks_per_node(job))

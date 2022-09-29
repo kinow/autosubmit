@@ -39,6 +39,20 @@ class SlurmHeader(object):
         else:
             return "SBATCH --qos={0}".format(job.parameters['CURRENT_QUEUE'])
 
+    def get_partition_directive(self, job):
+        """
+        Returns partition directive for the specified job
+
+        :param job: job to create partition directive for
+        :type job: Job
+        :return: partition directive
+        :rtype: str
+        """
+        # There is no partition, so directive is empty
+        if job.parameters.get('PARTITION',"") == '':
+            return ""
+        else:
+            return "SBATCH --partition={0}".format(job.parameters['PARTITION'])
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def get_account_directive(self, job):
         """
@@ -126,6 +140,7 @@ class SlurmHeader(object):
 ###############################################################################
 #
 #%QUEUE_DIRECTIVE%
+#%PARTITION_DIRECTIVE%
 #%ACCOUNT_DIRECTIVE%
 #%MEMORY_DIRECTIVE%
 
@@ -148,6 +163,7 @@ class SlurmHeader(object):
 ###############################################################################
 #
 #%QUEUE_DIRECTIVE%
+#%PARTITION_DIRECTIVE%
 #%ACCOUNT_DIRECTIVE%
 #%MEMORY_DIRECTIVE%
 #%MEMORY_PER_TASK_DIRECTIVE%
