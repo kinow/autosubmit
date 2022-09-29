@@ -590,11 +590,16 @@ class AutosubmitConfig(object):
         for job, job_data in data.get("JOBS",{}).items():
             aux_dependencies = dict()
             dependencies = job_data.get("DEPENDENCIES",{})
+            custom_directives = job_data.get("CUSTOM_DIRECTIVES","")
             if type(dependencies) == str:
                 for dependency in dependencies.split(" "):
                     aux_dependencies[dependency] = {}
                 dependencies = aux_dependencies
+            if type(custom_directives) != str:
+                data_fixed["JOBS"][job]["CUSTOM_DIRECTIVES"] = str(custom_directives)
             data_fixed["JOBS"][job]["DEPENDENCIES"] = dependencies
+
+
         return data_fixed
     def unify_conf(self):
         '''

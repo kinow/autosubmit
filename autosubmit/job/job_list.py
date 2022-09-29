@@ -574,7 +574,6 @@ class JobList(object):
             all_parents = other_parents + parents_jobs
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply,optional_from = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
-
             filters_to_apply.append({"DATES_TO": "natural", "MEMBERS_TO": "natural", "CHUNKS_TO": "natural"})
             for parent in all_parents:
                 # Generic for all dependencies
