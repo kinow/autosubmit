@@ -3,7 +3,7 @@ DeFault:
   HPCARCH: 'marenostrum4'
 experiment:
   DATELIST: 20220401
-  MEMBERS: fc0
+  MEMBERS: "fc0"
   CHUNKSIZEUNIT: month
   CHUNKSIZE: 4
   NUMCHUNKS: 2

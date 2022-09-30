@@ -4,11 +4,10 @@ confIg:
   TOTALJOBS: 20
   SAFETYSLEEPTIME: 10
   RETRIALS: 0
-  PRESUBMISSION: 'true'
-wrappers:
-  wrapper_sim:
-    TYPE: "vertical"
-    JOBS_IN_WRAPPER: "SIM"
+#wrappers:
+#  wrapper_sim:
+#    TYPE: "vertical"
+#    JOBS_IN_WRAPPER: "SIM"
 mail:
   NOTIFICATIONS: False
   TO:

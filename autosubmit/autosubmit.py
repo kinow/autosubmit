@@ -3333,13 +3333,13 @@ class Autosubmit:
                 Log.info("Gathering all parameters (all keys are on upper_case)")
                 parameter_output = '{0}_parameter_list_{1}.txt'.format(expid,
                                                                        datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
+
                 parameter_file = open(os.path.join(
-                    tmp_path, parameter_output), 'w').close()
-                parameter_file = open(os.path.join(
-                    tmp_path, parameter_output), 'a')
+                    tmp_path, parameter_output), 'w')
                 for key, value in exp_parameters.items():
                     if value is not None and len(str(value)) > 0:
-                        parameter_file.write(key + "=" + str(value) + "\n")
+                        full_value = key + "=" + str(value) + "\n"
+                        parameter_file.write(full_value)
                     else:
                         if placeholders:
                             parameter_file.write(
@@ -3351,7 +3351,7 @@ class Autosubmit:
                     for key in performance_metrics:
                         parameter_file.write("{0} = {1}\n".format(
                             key, performance_metrics.get(key, "-")))
-                    parameter_file.close()
+                parameter_file.close()
 
                 os.chmod(os.path.join(tmp_path, parameter_output), 0o755)
                 Log.result("A list of all parameters has been written on {0}".format(
