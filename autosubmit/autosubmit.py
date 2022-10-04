@@ -2281,11 +2281,11 @@ class Autosubmit:
                                     platform.cancel_job(id)
                             jobs_id = None
                             platform.connected = False
-                            if e.trace is not None and len(str(e.trace)) > 0 :
-                                has_trace_bad_parameters = e.trace.lower().find("bad parameters") != -1
+                            if e.trace is not None:
+                                has_trace_bad_parameters = str(e.trace).lower().find("bad parameters") != -1
                             else:
                                 has_trace_bad_parameters = False
-                            if has_trace_bad_parameters or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1 or e.message.lower().find("scheduler is not installed") != -1:
+                            if has_trace_bad_parameters or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1 or e.message.lower().find("scheduler is not installed") != -1 or e.message.lower().find("failed") != -1 or e.message.lower().find("not available") != -1:
                                 error_msg = ""
                                 for package_tmp in valid_packages_to_submit:
                                     for job_tmp in package_tmp.jobs:
@@ -2296,9 +2296,10 @@ class Autosubmit:
                                 else:
                                     error_message+="\ncheck that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
                                             error_msg[:-1], platform.name)
-                                raise AutosubmitCritical(error_message,7014,e.message+"\n"+e.trace)
-                        except AutosubmitCritical as e:
-                            raise
+
+                                if e.trace is None:
+                                    e.trace = ""
+                                raise AutosubmitCritical(error_message,7014,e.message+"\n"+str(e.trace))
                         except IOError as e:
                             raise AutosubmitError(
                                 "IO issues ", 6016, e.message)
