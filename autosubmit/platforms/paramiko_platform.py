@@ -49,7 +49,10 @@ class ParamikoPlatform(Platform):
         self._ftpChannel = None
         self.transport = None
         self.channels = {}
-        self.poller = select.poll()
+        if sys.platform != "linux":
+            self.poller = select.kqueue()
+        else:
+            self.poller = select.poll()
         self._header = None
         self._wrapper = None
         self.remote_log_dir = ""
@@ -90,7 +93,10 @@ class ParamikoPlatform(Platform):
         self._ftpChannel = None
         self.transport = None
         self.channels = {}
-        self.poller = select.poll()
+        if sys.platform != "linux":
+            self.poller = select.kqueue()
+        else:
+            self.poller = select.poll()
         display = os.getenv('DISPLAY')
         if display is None:
             display = "localhost:0"
@@ -743,7 +749,10 @@ class ParamikoPlatform(Platform):
         self.transport.accept()
         while not session.exit_status_ready():
             try:
-                poll = self.poller.poll()  # poll issues if multiple jobs requesting x11
+                if sys.platform != "linux":
+                    self.poller = self.poller.kqueue()
+                else:
+                    self.poller = self.poller.poll()
                 # accept subsequent x11 connections if any
                 if len(self.transport.server_accepts) > 0:
                     self.transport.accept()

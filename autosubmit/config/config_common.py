@@ -41,6 +41,8 @@ import datetime
 import copy
 from datetime import datetime, timedelta
 from pathlib import Path
+from autosubmit.database.db_common import update_experiment_descrip_version
+
 
 class AutosubmitConfig(object):
     """

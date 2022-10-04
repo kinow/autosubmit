@@ -730,6 +730,9 @@ class Autosubmit:
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             as_conf.reload(first_load = True)
+            if len(as_conf.experiment_data) == 0:
+                if args.command not in ["expid","upgrade"]:
+                    raise AutosubmitCritical("Experiment {0} has no yml data. Please, if you really wish to use AS 4 prompt:\nautosubmit upgrade {0}".format(expid), 7012)
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
@@ -737,9 +740,9 @@ class Autosubmit:
                 raise AutosubmitCritical("Experiment does not exist", 7012)
             # delete is treated differently
             if args.command not in ["monitor", "describe", "delete", "report", "stats", "dbfix"]:
-                owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=True) #fastlook
+                owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=True)
             else:
-                owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=False) #fastlook
+                owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=False)
 
             if not os.path.exists(tmp_path):
                 os.mkdir(tmp_path)
@@ -3960,6 +3963,7 @@ class Autosubmit:
             Log.result("Completed check for {0}".format(template_path))
 
         return warn,sustituted
+
     @staticmethod
     def upgrade_scripts(expid):
         def get_files(root_dir,extensions):
@@ -4037,6 +4041,9 @@ class Autosubmit:
             Log.printlog(sustituted, Log.RESULT)
         if warn != "":
             Log.printlog(warn,Log.ERROR)
+        Log.info("Changing {0} experiment version from {1} to {2}",
+                 expid, as_conf.get_version(), Autosubmit.autosubmit_version)
+        as_conf.set_version(Autosubmit.autosubmit_version)
 
 
     @staticmethod
