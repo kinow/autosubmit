@@ -1897,7 +1897,7 @@ class Autosubmit:
                         # No need to wait until the remote platform reconnection
                         recovery = False
                         as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-                        consecutive_retrials = 0
+                        consecutive_retrials = 1
                         failed_names = {}
                         Log.info("Storing failed job count...")
                         try:

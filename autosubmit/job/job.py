@@ -623,10 +623,10 @@ class Job(object):
                         str(e), self.name))
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {1}".format(
-                e.message, self.name), 6001)
+                str(e), self.name), 6001)
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
-                e.message, self.name), 6001)
+                str(e), self.name), 6001)
         return
 
     @threaded
@@ -683,7 +683,7 @@ class Job(object):
 
         except BaseException as e:
             Log.printlog(
-                "{0} \n Couldn't connect to the remote platform for {1} job err/out files. ".format(e.message, self.name), 6001)
+                "{0} \n Couldn't connect to the remote platform for {1} job err/out files. ".format(str(e), self.name), 6001)
         out_exist = False
         err_exist = False
         retries = 3

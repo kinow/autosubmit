@@ -776,7 +776,7 @@ class AutosubmitConfig(object):
             self.reload(first_load)
         except IOError as e:
             raise AutosubmitError(
-                "I/O Issues con config files", 6016, e.message)
+                "I/O Issues con config files", 6016, str(e))
         except (AutosubmitCritical, AutosubmitError) as e:
             raise
         except BaseException as e:
