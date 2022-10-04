@@ -881,6 +881,16 @@ class Autosubmit:
         :return: True if succesfully deleted, False otherwise
         :rtype: boolean
         """
+        message = "The {0} experiment was removed from the local disk and from the database.".format(expid_delete)
+        message+= " Note that this action does not delete any data written by the experiment.\n"
+        message+= "Complete list of files/directories deleted:\n"
+        for root, dirs, files in os.walk(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)):
+            for dir in dirs:
+                message += os.path.join(root, dir) + "\n"
+        message += os.path.join(BasicConfig.LOCAL_ROOT_DIR, BasicConfig.STRUCTURES_DIR,
+                                "structure_{0}.db".format(expid_delete)) + "\n"
+        message += os.path.join(BasicConfig.LOCAL_ROOT_DIR, BasicConfig.JOBDATA_DIR,
+                                "job_data_{0}.db".format(expid_delete)) + "\n"
         owner,eadmin,currentOwner = Autosubmit._check_ownership(expid_delete)
         if expid_delete == '' or expid_delete is None and not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR,expid_delete)):
             Log.printlog("Experiment directory does not exist.",Log.WARNING)
@@ -928,6 +938,7 @@ class Autosubmit:
                     else:
                         raise AutosubmitCritical(
                             'Current user is not the owner of the experiment. {0} can not be deleted!'.format(expid_delete), 7012)
+                Log.printlog(message, Log.RESULT)
             except Exception as e:
                 # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
                 error_message += "Couldn't delete the experiment".format(str(e))
