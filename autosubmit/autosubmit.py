@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python
+#!/usr/bin/env python
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 
