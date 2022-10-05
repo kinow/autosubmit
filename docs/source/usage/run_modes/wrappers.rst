@@ -14,34 +14,6 @@ At the moment there are 4 types of wrappers that can be used depending on the ex
 When using the wrapper, it is useful to be able to visualize which packages are being created.
 So, when executing *autosubmit monitor cxxx*, a dashed box indicates the jobs that are wrapped together in the same job package.
 
-How to configure
-========================
-
-In ``autosubmit_cxxx.conf``, regardless of the wrapper type, you need to make sure that the values of the variables **MAXWAITINGJOBS** and **TOTALJOBS** are increased according to the number of jobs expected to be waiting/running at the same time in your experiment.
-
-For example:
-
-.. code-block:: ini
-
-    [config]
-    EXPID = ....
-    AUTOSUBMIT_VERSION = 3.13.0
-    ...
-
-    MAXWAITINGJOBS = 100
-    TOTALJOBS = 100
-    ...
-
-and below the [config] block, add the wrapper directive, indicating the wrapper type:
-
-.. code-block:: ini
-
-    [wrapper]
-    TYPE =
-
-You can also specify which job types should be wrapped. This can be done using the **JOBS_IN_WRAPPER** parameter.
-It is only required for the vertical-mixed type (in which the specified job types will be wrapped together), so if nothing is specified, all jobs will be wrapped.
-By default, jobs of the same type will be wrapped together, as long as the constraints are satisfied.
 
 Number of jobs in a package
 ***************************
@@ -57,7 +29,7 @@ Number of jobs in a package
 
 - **MAX_WRAPPED** can be defined in ``jobs_cxxx.conf`` in order to limit the number of jobs wrapped for the corresponding job section
     - If not defined, it considers the **MAX_WRAPPED** defined under [wrapper] in ``autosubmit_cxxx.conf``
-        - If **MAX_WRAPPED** is not defined, then **TOTALJOBS** is used by default
+        - If **MAX_WRAPPED** is not defined, then the max_wallclock of the platform will be final factor.
 - **MIN_WRAPPED** can be defined in ``autosubmit_cxxx.conf`` in order to limit the minimum number of jobs that a wrapper can contain
     - If not defined, it considers that **MIN_WRAPPED** is 2.
     - If **POLICY** is flexible and it is not possible to wrap **MIN_WRAPPED** or more tasks, these tasks will be submitted as individual jobs, as long as the condition is not satisfied.
@@ -241,7 +213,7 @@ In `autosubmit_cxxx.conf`:
     # JOBS_IN_WRAPPER = Sections that should be wrapped together ex SIM
     # METHOD : Select between MACHINESFILES or Shared-Memory.
     # MIN_WRAPPED set the minim  number of jobs that should be included in the wrapper. DEFAULT = 2
-    # MAX_WRAPPED set the maxim  number of jobs that should be included in the wrapper. DEFAULT = TOTALJOBS
+    # MAX_WRAPPED set the maxim  number of jobs that should be included in the wrapper. DEFAULT = 99999999999
     # Policy : Select the behaviour of the inner jobs Strict/Flexible/Mixed
     # EXTEND_WALLCLOCK: Allows to extend the wallclock by the max wallclock of the horizontal package (max inner job). Values are integer units (0,1,2)
     # RETRIALS : Enables a retrial mechanism for vertical wrappers, or default retrial mechanism for the other wrappers
@@ -250,7 +222,7 @@ In `autosubmit_cxxx.conf`:
     TYPE = Vertical #REQUIRED
     JOBS_IN_WRAPPER = SIM # Job types (as defined in jobs_cxxx.conf) separated by space. REQUIRED only if vertical-mixed
     MIN_WRAPPED = 2
-    MAX_WRAPPED = 9999 # OPTIONAL. Integer value, overrides TOTALJOBS
+    MAX_WRAPPED = 999999 # OPTIONAL. Integer value.
     CHECK_TIME_WRAPPER = # OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME
     POLICY = flexible # OPTIONAL, Wrapper policy, mixed, flexible, strict
     QUEUE = bsc_es # If not specified, queue will be the same of the first SECTION specified on JOBS_IN_WRAPPER
