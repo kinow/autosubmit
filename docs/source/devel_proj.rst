@@ -700,3 +700,46 @@ The custom directives can be used for multiple parameters at the same time using
     MAX_PROCESSORS = 80
     # test [40] / small [40] // large [40]
     PROCESSORS_PER_NODE = 40
+
+Controling the number of active concurrent tasks in an experiment
+----------------------------------------------------------------------
+
+In some cases, you may want to control the number of concurrent tasks/jobs that can be active in an experiment.
+
+To set the maximum number of concurrent tasks/jobs, you can use the ``TOTAL_JOBS`` and ``MAX_WAITING_JOBS`` variable in the ``conf/autosubmit_cxxx.conf`` file.
+
+    vi <expid>/conf/autosubmit_cxxx.conf
+
+.. code-block:: ini
+
+    # Controls the maximum number of submitted,waiting and running tasks
+    TOTAL_JOBS = 10
+    # Controls the maximum number of submitted and waiting tasks
+    MAX_WAITING_JOBS = 10
+
+To control the number of jobs included in a wrapper, you can use the `MAX_WRAPPED_JOBS` and `MIN_WRAPPED_JOBS` variables in the ``conf/autosubmit_cxxx.conf`` file.
+
+Note that a wrapped job is counted as a single job regardless of the number of tasks it contains. Therefore, `TOTAL_JOBS` and `MAX_WAITING_JOBS` won't have an impact inside a wrapper.
+
+    vi <expid>/conf/autosubmit_cxxx.conf
+
+.. code-block:: ini
+
+    [wrapper]
+    TYPE = <ANY>
+    MIN_WRAPPED = 2 # Minium amount of jobs that will be wrapped together in any given time.
+    MIN_WRAPPED_H = 2 # Same as above but only for the horizontal packages.
+    MIN_WRAPPED_V = 2 # Same as above but only for the vertical packages.
+    MAX_WRAPPED = 99999 # Maximum amount of jobs that will be wrapped together in any given time.
+    MAX_WRAPPED_H = 99999 # Same as above but only for the horizontal packages.
+    MAX_WRAPPED_V = 99999 # Same as above but only for the vertical packages.
+
+- **MAX_WRAPPED** can be defined in ``jobs_cxxx.conf`` in order to limit the number of jobs wrapped for the corresponding job section
+    - If not defined, it considers the **MAX_WRAPPED** defined under [wrapper] in ``autosubmit_cxxx.conf``
+        - If **MAX_WRAPPED** is not defined, then the max_wallclock of the platform will be final factor.
+- **MIN_WRAPPED** can be defined in ``autosubmit_cxxx.conf`` in order to limit the minimum number of jobs that a wrapper can contain
+    - If not defined, it considers that **MIN_WRAPPED** is 2.
+    - If **POLICY** is flexible and it is not possible to wrap **MIN_WRAPPED** or more tasks, these tasks will be submitted as individual jobs, as long as the condition is not satisfied.
+    - If **POLICY** is mixed and there are failed jobs inside a wrapper, these jobs will be submitted as individual jobs.
+    - If **POLICY** is strict and it is not possible to wrap **MIN_WRAPPED** or more tasks, these tasks will not be submitted until there are enough tasks to build a package.
+    - strict and mixed policies can cause **deadlocks**.
