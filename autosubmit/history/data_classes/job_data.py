@@ -56,10 +56,12 @@ class JobData(object):
           platform) > 0 else "NA"
       self.job_id = job_id if job_id else 0
       #TODO jobs_data wilmer did this part... need to check that is loading yaml.
-      #try:
-      #    self.extra_data_parsed = loads(extra_data)
-      #except Exception as exp:
       self.extra_data_parsed = {} # Fail fast
+      try:
+          if extra_data != "":
+            self.extra_data_parsed = loads(extra_data)
+      except Exception as exp:
+          self.extra_data_parsed = {} # Fail fast
       self.extra_data = extra_data
       self.nnodes = nnodes
       self.run_id = run_id
