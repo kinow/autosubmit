@@ -425,6 +425,9 @@ class JobList(object):
                                     optional = True
                                 current_filter.update(filter_data[filter_range])
                 filters.append(current_filter)
+        # Normalize the filter return
+        if len(filters) == 0:
+            filters = [{}]
         return filters,optional
     @staticmethod
     def _filter_current_job(current_job,relationships):
@@ -445,7 +448,7 @@ class JobList(object):
         # this should be a list
         if relationships is not None and len(relationships) > 0:
             filters_to_apply,optional = JobList._check_relationship(relationships,"DATES_FROM",date2str(current_job.date))
-            if len(filters_to_apply) > 0:
+            if len(filters_to_apply[0]) > 0:
                 for filter_number in range(0, len(filters_to_apply)):
                     if "MEMBERS_FROM" in filters_to_apply[filter_number]:
                         filters_to_apply_m,optional = JobList._check_relationship(filters_to_apply[filter_number],"MEMBERS_FROM",current_job.member)
@@ -458,17 +461,17 @@ class JobList(object):
                     elif "CHUNKS_FROM" in filters_to_apply[filter_number]:
                         filters_to_apply,optional = JobList._check_relationship(filters_to_apply[filter_number],"CHUNKS_FROM",current_job.chunk)
             # Check Member then Chunk
-            if len(filters_to_apply) == 0:
+            if len(filters_to_apply[0]) == 0:
                 filters_to_apply,optional = JobList._check_relationship(relationships,"MEMBERS_FROM",current_job.member)
                 if len(filters_to_apply) > 0 and ( "CHUNKS_FROM" in filters_to_apply):
                     filters_to_apply_c,optional = JobList._check_relationship(filters_to_apply,"CHUNKS_FROM",current_job.chunk)
                     if len(filters_to_apply_c) > 0:
                         filters_to_apply = filters_to_apply_c
             #Check Chunk
-            if len(filters_to_apply) == 0:
+            if len(filters_to_apply[0]) == 0:
                 filters_to_apply,optional = JobList._check_relationship(relationships,"CHUNKS_FROM",current_job.chunk)
             # Generic filter
-            if len(filters_to_apply) == 0:
+            if len(filters_to_apply[0]) == 0:
                 relationships.pop("CHUNKS_FROM",None)
                 relationships.pop("MEMBERS_FROM",None)
                 relationships.pop("DATES_FROM",None)
@@ -574,7 +577,8 @@ class JobList(object):
             all_parents = other_parents + parents_jobs
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply,optional_from = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
-            filters_to_apply.append({"DATES_TO": "natural", "MEMBERS_TO": "natural", "CHUNKS_TO": "natural"})
+            if len(filters_to_apply) == 0:
+                filters_to_apply.append({"DATES_TO": "natural", "MEMBERS_TO": "natural", "CHUNKS_TO": "natural"})
             for parent in all_parents:
                 # Generic for all dependencies
                 if dependency.delay == -1 or chunk > dependency.delay:
