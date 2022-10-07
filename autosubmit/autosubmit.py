@@ -774,18 +774,19 @@ class Autosubmit:
                     force_update_version = args.update_version
                 else:
                     force_update_version = False
-                if force_update_version:
-                    if as_conf.get_version() != Autosubmit.autosubmit_version:
-                        Log.info("The {2} experiment {0} version is being updated to {1} for match autosubmit version",
-                                 as_conf.get_version(), Autosubmit.autosubmit_version, expid)
-                        as_conf.set_version(Autosubmit.autosubmit_version)
-                else:
-                    if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
-                        raise AutosubmitCritical(
-                            "Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
-                            "Or with the -v parameter: autosubmit {3} {2} -v ".format(as_conf.get_version(),
-                                                                                      Autosubmit.autosubmit_version, expid,args.command),
-                            7067)
+                if args.command not in ["upgrade","updateversion"]:
+                    if force_update_version:
+                        if as_conf.get_version() != Autosubmit.autosubmit_version:
+                            Log.info("The {2} experiment {0} version is being updated to {1} for match autosubmit version",
+                                     as_conf.get_version(), Autosubmit.autosubmit_version, expid)
+                            as_conf.set_version(Autosubmit.autosubmit_version)
+                    else:
+                        if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
+                            raise AutosubmitCritical(
+                                "Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
+                                "Or with the -v parameter: autosubmit {3} {2} -v ".format(as_conf.get_version(),
+                                                                                          Autosubmit.autosubmit_version, expid,args.command),
+                                7067)
         else:
             if expid == 'None':
                 exp_id = ""
