@@ -188,15 +188,15 @@ class ExperimentHistory():
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())  
 
-  def process_status_changes(self, job_list=None, chunk_unit="NA", chunk_size=0, current_config=""):
+  def process_status_changes(self, job_list=None, chunk_unit="NA", chunk_size=0, current_config="",create=False):
     """ Detect status differences between job_list and current job_data rows, and update. Creates a new run if necessary. """
     try:
       current_experiment_run_dc = self.manager.get_experiment_run_dc_with_max_id()      
       update_these_changes = self._get_built_list_of_changes(job_list)
-      should_create_new_run = self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc, chunk_unit, chunk_size)
+      should_create_new_run = self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc, chunk_unit, chunk_size,create)
       if len(update_these_changes) > 0 and should_create_new_run == False:
         self.manager.update_many_job_data_change_status(update_these_changes)
-      if should_create_new_run:        
+      if should_create_new_run:
         return self.create_new_experiment_run(chunk_unit, chunk_size, current_config, job_list)
       return self.update_counts_on_experiment_run_dc(current_experiment_run_dc, job_list)
     except Exception as exp:
@@ -215,11 +215,14 @@ class ExperimentHistory():
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
   
-  def should_we_create_a_new_run(self, job_list, changes_count, current_experiment_run_dc, new_chunk_unit, new_chunk_size):
-    if len(job_list) != current_experiment_run_dc.total:
-      return True
-    if changes_count > int(self._get_date_member_completed_count(job_list)):
-      return True
+  def should_we_create_a_new_run(self, job_list, changes_count, current_experiment_run_dc, new_chunk_unit, new_chunk_size,create=False):
+    if create:
+        return True
+    elif not create and self.expid[0].lower() == "t":
+        if len(job_list) != current_experiment_run_dc.total:
+          return True
+        if changes_count > int(self._get_date_member_completed_count(job_list)):
+          return True
     return self._chunk_config_has_changed(current_experiment_run_dc, new_chunk_unit, new_chunk_size)
   
   def _chunk_config_has_changed(self, current_exp_run_dc, new_chunk_unit, new_chunk_size):
@@ -272,15 +275,16 @@ class ExperimentHistory():
 
   def detect_changes_in_job_list(self, job_list):
     """ Detect changes in job_list compared to the current contents of job_data table. Returns a list of JobData data classes where the status of each item is the new status."""
-    job_name_to_job = {job.name: job for job in job_list}    
+    job_name_to_job = {str(job.name): job for job in job_list}
     current_job_data_dcs = self.manager.get_all_last_job_data_dcs()
     differences = []
     for job_dc in current_job_data_dcs:
-      if job_dc.job_name in job_name_to_job and job_dc.status != job_name_to_job[job_dc.job_name].status_str:
-        if not (job_dc.status in ["COMPLETED", "FAILED"] and job_name_to_job[job_dc.job_name].status_str in ["WAITING", "READY"]):
-           # If the job is not changing from a finalized status to a starting status
-          job_dc.status = job_name_to_job[job_dc.job_name].status_str
-          differences.append(job_dc)
+      if job_dc.job_name in job_name_to_job:
+          if job_dc.status != job_name_to_job[job_dc.job_name].status_str:
+            if not (job_dc.status in ["COMPLETED", "FAILED"] and job_name_to_job[job_dc.job_name].status_str in ["WAITING", "READY"]):
+              # If the job is not changing from a finalized status to a starting status
+              job_dc.status = job_name_to_job[job_dc.job_name].status_str
+              differences.append(job_dc)
     return differences
 
   def _get_defined_rowtype(self, code):  
