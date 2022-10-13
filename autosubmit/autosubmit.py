@@ -4328,7 +4328,7 @@ class Autosubmit:
                 if os.path.exists(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf())):
                     if os.path.exists(project_destiny):
                         if force_model_conf:
-                            os.rename(project_destiny,project_destiny+"_backup")
+                            os.rename(project_destiny,str(project_destiny) + "_backup")
                         else:
                             copy = False
                     if copy:
