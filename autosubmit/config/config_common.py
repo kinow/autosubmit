@@ -1854,7 +1854,9 @@ class AutosubmitConfig(object):
         :return: if remote dependencies
         :rtype: string
         """
-        return str(self.get_section(['CONFIG', 'PRESUBMISSION'], "false")).lower()
+        # Disabled, forced to "false" not working anymore in newer slurm versions.
+        return "false"
+        #return str(self.get_section(['CONFIG', 'PRESUBMISSION'], "false")).lower()
 
     def get_wrapper_type(self, wrapper={}):
         """

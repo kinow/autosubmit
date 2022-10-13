@@ -166,6 +166,8 @@ class JobPackageBase(object):
                     Lhandle.append(self.check_scripts(self.jobs[i:i + chunksize], configuration, parameters, only_generate, hold))
                 for dataThread in Lhandle:
                     dataThread.join()
+        except AutosubmitCritical : #Raise the intended message
+            raise
         except BaseException as e: #should be IOERROR
             raise AutosubmitCritical(
                 "Error on {1}, template [{0}] still does not exists in running time(check=on_submission actived) ".format(job.file,job.name), 7014)

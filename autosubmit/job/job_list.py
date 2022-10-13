@@ -2050,18 +2050,18 @@ class JobList(object):
                 stage += 1
                 Log.info("{} of {} checked".format(count, len(self._job_list)))
 
-            show_logs = job.check_warnings
+            show_logs = str(job.check_warnings).lower()
             if job.check == 'on_submission':
                 Log.info(
                     'Template {0} will be checked in running time'.format(job.section))
                 continue
-            elif not job.check:
+            elif job.check == "true":
                 Log.info(
                     'Template {0} will not be checked'.format(job.section))
                 continue
             else:
                 if job.section in self.sections_checked:
-                    show_logs = False
+                    show_logs = "false"
             if not job.check_script(as_conf, self.parameters, show_logs):
                 out = False
             self.sections_checked.add(job.section)

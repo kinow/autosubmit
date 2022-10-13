@@ -1357,7 +1357,7 @@ class Job(object):
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
         return script_name
 
-    def check_script(self, as_conf, parameters, show_logs=False):
+    def check_script(self, as_conf, parameters, show_logs="false"):
         """
         Checks if script is well-formed
 
@@ -1382,12 +1382,12 @@ class Job(object):
             # Check if the variables in the templates are defined in the configurations
             if not out:
                 self.undefined_variables = set(variables) - set(parameters)
-                if show_logs:
+                if show_logs != "false":
                     Log.printlog("The following set of variables to be substituted in template script is not part of parameters set, and will be replaced by a blank value: {0}".format(
                         self.undefined_variables), 6013)
 
             # Check which variables in the proj.yml are not being used in the templates
-            if show_logs:
+            if show_logs != "false":
                 if not set(variables).issuperset(set(parameters)):
                     Log.printlog("The following set of variables are not being used in the templates: {0}".format(
                         str(set(parameters) - set(variables))), 6013)
