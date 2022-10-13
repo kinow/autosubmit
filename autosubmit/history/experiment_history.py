@@ -218,7 +218,7 @@ class ExperimentHistory():
   def should_we_create_a_new_run(self, job_list, changes_count, current_experiment_run_dc, new_chunk_unit, new_chunk_size,create=False):
     if create:
         return True
-    elif not create and self.expid[0].lower() == "t":
+    elif not create and self.expid[0].lower() != "t":
         if len(job_list) != current_experiment_run_dc.total:
           return True
         if changes_count > int(self._get_date_member_completed_count(job_list)):
