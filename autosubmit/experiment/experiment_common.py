@@ -58,7 +58,7 @@ def new_experiment(description, version, test=False, operational=False):
         else:
             new_name = 'a000'
     else:
-        new_name = next_experiment_id(last_exp_name)
+        new_name = last_exp_name
         if new_name == '':
             return ''
     while db_common.check_experiment_exists(new_name, False):
