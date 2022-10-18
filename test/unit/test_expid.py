@@ -31,21 +31,21 @@ class TestExpid(TestCase):
 
     @patch('autosubmit.experiment.experiment_common.db_common')
     def test_create_new_experiment_with_previous_one(self, db_common_mock):
-        current_experiment_id = "a006"
+        current_experiment_id = "a007"
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version)
         self.assertEqual("a007", experiment_id)
 
     @patch('autosubmit.experiment.experiment_common.db_common')
     def test_create_new_test_experiment_with_previous_one(self, db_common_mock):
-        current_experiment_id = "t0ab"
+        current_experiment_id = "t0ac"
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version, True)
         self.assertEqual("t0ac", experiment_id)
 
     @patch('autosubmit.experiment.experiment_common.db_common')
     def test_create_new_operational_experiment_with_previous_one(self, db_common_mock):
-        current_experiment_id = "o112"
+        current_experiment_id = "o113"
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version, False, True)
         self.assertEqual("o113", experiment_id)
