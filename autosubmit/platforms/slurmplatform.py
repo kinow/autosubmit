@@ -103,6 +103,25 @@ class SlurmPlatform(ParamikoPlatform):
             raise
         except Exception as e:
             raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, str(e))
+    def check_remote_log_dir(self):
+        """
+        Creates log dir on remote host
+        """
+
+        try:
+            # Test if remote_path exists
+            self._ftpChannel.chdir(self.remote_log_dir)
+        except IOError as e:
+            try:
+                if self.send_command(self.get_mkdir_cmd()):
+                    Log.debug('{0} has been created on {1} .',
+                              self.remote_log_dir, self.host)
+                else:
+                    raise AutosubmitError("SFTP session not active ", 6007, "Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host)".format(
+                        self.remote_log_dir, self.host))
+            except BaseException as e:
+                raise AutosubmitError(
+                    "SFTP session not active ", 6007, str(e))
 
     def update_cmds(self):
         """

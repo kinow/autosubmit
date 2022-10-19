@@ -1184,32 +1184,17 @@ class ParamikoPlatform(Platform):
         Creates log dir on remote host
         """
 
-        if self.type == "slurm":
-            try:
-                # Test if remote_path exists
-                self._ftpChannel.chdir(self.remote_log_dir)
-            except IOError as e:
-                try:
-                    if self.send_command(self.get_mkdir_cmd()):
-                        Log.debug('{0} has been created on {1} .',
-                                  self.remote_log_dir, self.host)
-                    else:
-                        raise AutosubmitError("SFTP session not active ", 6007, "Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host)".format(
-                            self.remote_log_dir, self.host))
-                except BaseException as e:
-                    raise AutosubmitError(
-                        "SFTP session not active ", 6007, str(e))
-        else:
-            try:
-                if self.send_command(self.get_mkdir_cmd()):
-                    Log.debug('{0} has been created on {1} .',
-                              self.remote_log_dir, self.host)
-                else:
-                    Log.debug('Could not create the DIR {0} to HPC {1}'.format(
-                        self.remote_log_dir, self.host))
-            except BaseException as e:
-                raise AutosubmitError("Couldn't send the file {0} to HPC {1}".format(
-                    self.remote_log_dir, self.host), 6004, str(e))
+
+        try:
+            if self.send_command(self.get_mkdir_cmd()):
+                Log.debug('{0} has been created on {1} .',
+                          self.remote_log_dir, self.host)
+            else:
+                Log.debug('Could not create the DIR {0} to HPC {1}'.format(
+                    self.remote_log_dir, self.host))
+        except BaseException as e:
+            raise AutosubmitError("Couldn't send the file {0} to HPC {1}".format(
+                self.remote_log_dir, self.host), 6004, str(e))
 
 
 class ParamikoPlatformException(Exception):
