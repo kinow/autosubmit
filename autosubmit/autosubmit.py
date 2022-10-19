@@ -3928,7 +3928,7 @@ class Autosubmit:
                 shutil.copyfile(template_path, backup_path)
             template_content = open(template_path,'r',encoding=locale.getlocale()[1]).read()
             # Look for %_%
-            variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
+            variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template_content)
             variables = [variable[1:-1].upper() for variable in variables]
             results = {}
             # Change format

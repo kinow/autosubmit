@@ -1169,7 +1169,7 @@ class Job(object):
         self.dependencies = parameters['DEPENDENCIES']
 
         if len(self.export) > 0:
-            variables = re.findall('%(?<!%%)\w+%(?!%%)', self.export)
+            variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', self.export)
             if len(variables) > 0:
                 variables = [variable[1:-1] for variable in variables]
                 for key in variables:
@@ -1373,7 +1373,7 @@ class Job(object):
         parameters = self.update_parameters(as_conf, parameters)
         template_content = self.update_content(as_conf)
         if template_content is not False:
-            variables = re.findall('%(?<!%%)\w.+%(?!%%)', template_content)
+            variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template_content)
             variables = [variable[1:-1] for variable in variables]
             out = set(parameters).issuperset(set(variables))
 

@@ -2055,7 +2055,7 @@ class JobList(object):
                 Log.info(
                     'Template {0} will be checked in running time'.format(job.section))
                 continue
-            elif job.check != "true":
+            elif job.check == "false":
                 Log.info(
                     'Template {0} will not be checked'.format(job.section))
                 continue
