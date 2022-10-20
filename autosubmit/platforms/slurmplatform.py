@@ -27,6 +27,7 @@ from typing import List, Union
 from xml.dom.minidom import parseString
 
 from autosubmit.job.job_common import Status, parse_output_number
+from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
@@ -40,6 +41,7 @@ class SlurmPlatform(ParamikoPlatform):
     :param expid: experiment's identifier
     :type expid: str
     """
+
 
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
@@ -62,6 +64,114 @@ class SlurmPlatform(ParamikoPlatform):
             tmp_path, config.LOCAL_ASLOG_DIR, "submit_" + self.name + ".sh")
         self._submit_script_file = open(self._submit_script_path, 'wb').close()
 
+    def process_batch_ready_jobs(self,valid_packages_to_submit,failed_packages,error_message="",hold=False):
+        """
+        Retrieve multiple jobs identifiers.
+        :param valid_packages_to_submit:
+        :param failed_packages:
+        :param error_message:
+        :param hold:
+        :return:
+        """
+        try:
+            valid_packages_to_submit = [ package for package in valid_packages_to_submit if package.x11 != True]
+            if len(valid_packages_to_submit) > 0:
+                try:
+                    jobs_id = self.submit_Script(hold=hold)
+                except AutosubmitError as e:
+                    jobnames = [job.name for job in valid_packages_to_submit[0].jobs]
+                    for jobname in jobnames:
+                        jobid = self.get_jobid_by_jobname(jobname)
+                        #cancel bad submitted job if jobid is encountered
+                        for id in jobid:
+                            self.cancel_job(id)
+                    jobs_id = None
+                    self.connected = False
+                    if e.trace is not None:
+                        has_trace_bad_parameters = str(e.trace).lower().find("bad parameters") != -1
+                    else:
+                        has_trace_bad_parameters = False
+                    if has_trace_bad_parameters or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1 or e.message.lower().find("scheduler is not installed") != -1 or e.message.lower().find("failed") != -1 or e.message.lower().find("not available") != -1:
+                        error_msg = ""
+                        for package_tmp in valid_packages_to_submit:
+                            for job_tmp in package_tmp.jobs:
+                                if job_tmp.section not in error_msg:
+                                    error_msg += job_tmp.section + "&"
+                        if has_trace_bad_parameters:
+                            error_message+="Check job and queue specified in jobs.conf. Sections that could be affected: {0}".format(error_msg[:-1])
+                        else:
+                            error_message+="\ncheck that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
+                                    error_msg[:-1], self.name)
+
+                        if e.trace is None:
+                            e.trace = ""
+                        raise AutosubmitCritical(error_message,7014,e.message+"\n"+str(e.trace))
+                except IOError as e:
+                    raise AutosubmitError(
+                        "IO issues ", 6016, e.message)
+                except BaseException as e:
+                    if e.message.find("scheduler") != -1:
+                        raise AutosubmitCritical("Are you sure that [{0}] scheduler is the correct type for platform [{1}]?.\n Please, double check that {0} is loaded for {1} before autosubmit launch any job.".format(platform.type.upper(),platform.name.upper()),7070)
+                    raise AutosubmitError(
+                        "Submission failed, this can be due a failure on the platform", 6015, str(e))
+                if jobs_id is None or len(jobs_id) <= 0:
+                    raise AutosubmitError(
+                        "Submission failed, this can be due a failure on the platform", 6015,"Jobs_id {0}".format(jobs_id))
+                i = 0
+                if hold:
+                    sleep(10)
+                for package in valid_packages_to_submit:
+                    if hold:
+                        retries = 5
+                        package.jobs[0].id = str(jobs_id[i])
+                        try:
+                            can_continue = True
+                            while can_continue and retries > 0:
+                                cmd = package.jobs[0].platform.get_queue_status_cmd(jobs_id[i])
+                                package.jobs[0].platform.send_command(cmd)
+                                queue_status = package.jobs[0].platform._ssh_output
+                                reason = package.jobs[0].platform.parse_queue_reason(queue_status, jobs_id[i])
+                                if reason == '(JobHeldAdmin)':
+                                    can_continue = False
+                                elif reason == '(JobHeldUser)':
+                                    can_continue = True
+                                else:
+                                    can_continue = False
+                                    sleep(5)
+                                retries = retries - 1
+                            if not can_continue:
+                                package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
+                                i = i + 1
+                                continue
+                            if not self.hold_job(package.jobs[0]):
+                                i = i + 1
+                                continue
+                        except Exception as e:
+                            failed_packages.append(jobs_id)
+                            continue
+                    for job in package.jobs:
+                        job.hold = hold
+                        job.id = str(jobs_id[i])
+                        job.status = Status.SUBMITTED
+                        job.write_submit_time(hold=hold)
+                    i += 1
+            save = True
+            if len(failed_packages) > 0:
+                for job_id in failed_packages:
+                    package.jobs[0].platform.send_command(
+                        package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
+                raise AutosubmitError("{0} submission failed, some hold jobs failed to be held".format(self.name), 6015)
+        except WrongTemplateException as e:
+            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
+                e.job_name), 7014, str(e))
+        except AutosubmitError as e:
+            raise
+        except AutosubmitCritical as e:
+            raise
+        except Exception as e:
+            raise AutosubmitError("{0} submission failed".format(self.name), 6015, str(e))
+        return save,valid_packages_to_submit
+
     def open_submit_script(self):
         self._submit_script_file = open(self._submit_script_path, 'wb').close()
         self._submit_script_file = open(self._submit_script_path, 'ab')
@@ -70,6 +180,37 @@ class SlurmPlatform(ParamikoPlatform):
         self._submit_script_file.close()
         os.chmod(self._submit_script_path, 0o750)
         return os.path.join(self.config.LOCAL_ASLOG_DIR, os.path.basename(self._submit_script_path))
+
+    def submit_job(self, job, script_name, hold=False, export="none"):
+        """
+        Submit a job from a given job object.
+
+        :param job: job object
+        :type job: autosubmit.job.job.Job
+        :param script_name: job script's name
+        :rtype scriptname: str
+        :param hold: send job hold
+        :type hold: boolean
+        :return: job id for the submitted job
+        :rtype: int
+        """
+        if job is None or not job:
+            x11 = False
+        else:
+            x11 = job.x11
+        if not x11:
+            self.get_submit_cmd(script_name, job, hold=hold, export=export)
+            return None
+        else:
+            cmd = self.get_submit_cmd(script_name, job, hold=hold, export=export)
+            if cmd is None:
+                return None
+            if self.send_command(cmd,x11=x11):
+                job_id = self.get_submitted_job_id(self.get_ssh_output(),x11=x11)
+                Log.debug("Job ID: {0}", job_id)
+                return int(job_id)
+            else:
+                return None
 
     def submit_Script(self, hold=False):
         # type: (bool) -> Union[List[str], str]

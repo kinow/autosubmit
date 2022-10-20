@@ -1,11 +1,12 @@
 import locale
 import os
 
-from log.log import Log
 import traceback
 from autosubmit.job.job_common import Status
 from typing import List, Union
 
+from autosubmit.job.job_exceptions import WrongTemplateException
+from log.log import AutosubmitCritical, AutosubmitError, Log
 
 class Platform(object):
     """
@@ -49,6 +50,121 @@ class Platform(object):
         self._allow_arrays = False
         self._allow_wrappers = False
         self._allow_python_jobs = True
+
+    def get_multiple_jobids(self,job_list,valid_packages_to_submit,failed_packages,error_message="",hold=False):
+        return False,valid_packages_to_submit
+        #raise NotImplementedError
+
+
+    def submit_ready_jobs(self, as_conf, job_list, platforms_to_test, packages_persistence, packages_to_submit,
+                          inspect=False, only_wrappers=False, hold=False):
+
+        # type: (AutosubmitConfig, JobList, Set[Platform], JobPackagePersistence, bool, bool, bool) -> bool
+        """
+        Gets READY jobs and send them to the platforms if there is available space on the queues
+
+        :param as_conf: autosubmit config object \n
+        :type as_conf: AutosubmitConfig object  \n
+        :param job_list: job list to check  \n
+        :type job_list: JobList object  \n
+        :param platforms_to_test: platforms used  \n
+        :type platforms_to_test: set of Platform Objects, e.g. SgePlatform(), LsfPlatform().  \n
+        :param packages_persistence: Handles database per experiment. \n
+        :type packages_persistence: JobPackagePersistence object \n
+        :param inspect: True if coming from generate_scripts_andor_wrappers(). \n
+        :type inspect: Boolean \n
+        :param only_wrappers: True if it comes from create -cw, False if it comes from inspect -cw. \n
+        :type only_wrappers: Boolean \n
+        :return: True if at least one job was submitted, False otherwise \n
+        :rtype: Boolean
+        """
+        save = False
+        failed_packages = list()
+        error_message = ""
+        if not inspect:
+            job_list.save()
+        if not hold:
+            Log.debug("\nJobs ready for {1}: {0}", len(
+                job_list.get_ready(self, hold=hold)), self.name)
+            ready_jobs = job_list.get_ready(self, hold=hold)
+        else:
+            Log.debug("\nJobs prepared for {1}: {0}", len(
+                job_list.get_prepared(self)), self.name)
+        if not inspect:
+            self.open_submit_script()
+        valid_packages_to_submit = []  # type: List[JobPackageBase]
+        for package in packages_to_submit:
+            try:
+                # If called from inspect command or -cw
+                if only_wrappers or inspect:
+                    if hasattr(package, "name"):
+                        job_list.packages_dict[package.name] = package.jobs
+                        from ..job.job import WrapperJob
+                        wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.READY, 0,
+                                                 package.jobs,
+                                                 package._wallclock, package._num_processors,
+                                                 package.platform, as_conf, hold)
+                        job_list.job_package_map[package.jobs[0].id] = wrapper_job
+                        packages_persistence.save(
+                            package.name, package.jobs, package._expid, inspect)
+                    for innerJob in package._jobs:
+                        # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
+                        innerJob.status = Status.COMPLETED
+
+                # If called from RUN or inspect command
+                if not only_wrappers:
+                    try:
+                        package.submit(as_conf, job_list.parameters, inspect, hold=hold)
+                        save = True
+                        if not inspect:
+                            job_list.save()
+                        valid_packages_to_submit.append(package)
+                        # Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str(open()))
+                    except (IOError, OSError):
+                        if package.jobs[0].id != 0:
+                            failed_packages.append(package.jobs[0].id)
+                        continue
+                    except AutosubmitError as e:
+                        if package.jobs[0].id != 0:
+                            failed_packages.append(package.jobs[0].id)
+                        self.connected = False
+                        if e.message.lower().find("bad parameters") != -1 or e.message.lower().find(
+                                "scheduler is not installed") != -1:
+                            error_msg = ""
+                            for package_tmp in valid_packages_to_submit:
+                                for job_tmp in package_tmp.jobs:
+                                    if job_tmp.section not in error_msg:
+                                        error_msg += job_tmp.section + "&"
+                            for job_tmp in package.jobs:
+                                if job_tmp.section not in error_msg:
+                                    error_msg += job_tmp.section + "&"
+                            if e.message.lower().find("bad parameters") != -1:
+                                error_message += "\ncheck job and queue specified in jobs.conf. Sections that could be affected: {0}".format(
+                                    error_msg[:-1])
+                            else:
+                                error_message += "\ncheck that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
+                                    error_msg[:-1], self.name)
+
+                    except WrongTemplateException as e:
+                        raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
+                            e.job_name), 7014, e.message)
+                    except AutosubmitCritical:
+                        raise
+                    except Exception as e:
+                        self.connected = False
+                        raise AutosubmitError(
+                            "{0} submission failed. May be related to running a job with check=on_submission and another that affect this job template".format(
+                                self.name), 6015, str(e))
+            except WrongTemplateException as e:
+                raise AutosubmitCritical(
+                    "Invalid parameter substitution in {0} template".format(e.job_name), 7014)
+            except AutosubmitCritical as e:
+                raise AutosubmitCritical(e.message, e.code, e.trace)
+            except AutosubmitError as e:
+                raise
+            except Exception as e:
+                raise
+        return save, failed_packages, error_message, valid_packages_to_submit
 
     @property
     def serial_platform(self):

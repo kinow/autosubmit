@@ -431,20 +431,16 @@ class ParamikoPlatform(Platform):
             x11 = False
         else:
             x11 = job.x11
-        if self.type == 'slurm' and not x11:
-            self.get_submit_cmd(script_name, job, hold=hold, export=export)
-            return None
-        else:
 
-            cmd = self.get_submit_cmd(script_name, job, hold=hold, export=export)
-            if cmd is None:
-                return None
-            if self.send_command(cmd,x11=x11):
-                job_id = self.get_submitted_job_id(self.get_ssh_output(),x11=job.x11)
-                Log.debug("Job ID: {0}", job_id)
-                return int(job_id)
-            else:
-                return None
+        cmd = self.get_submit_cmd(script_name, job, hold=hold, export=export)
+        if cmd is None:
+            return None
+        if self.send_command(cmd,x11=x11):
+            job_id = self.get_submitted_job_id(self.get_ssh_output(),x11=job.x11)
+            Log.debug("Job ID: {0}", job_id)
+            return int(job_id)
+        else:
+            return None
 
     def check_job_energy(self, job_id):
         """
@@ -1149,7 +1145,9 @@ class ParamikoPlatform(Platform):
             self.transport.close()
             self.transport.stop_thread()
             try:
-                self.transport.sys.exit(0)
+                del self._ssh
+                del self._ftpChannel
+                del self.transport
             except:
                 pass
 

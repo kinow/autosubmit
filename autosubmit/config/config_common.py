@@ -129,15 +129,6 @@ class AutosubmitConfig(object):
         """
         return self._platforms_parser_file
 
-    #@property
-    #def experiment_data(self):
-    #    """
-    #    Returns all data of the experiment
-    #    :return: platforms config file's name
-    #    :rtype: str
-    #    """
-    #    return self._experiment_data
-
     @property
     def unified_data(self):
         return self.experiment_data

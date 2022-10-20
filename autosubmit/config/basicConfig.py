@@ -79,7 +79,6 @@ class BasicConfig:
         if not os.path.isfile(file_path):
             return
         #Log.debug('Reading config from ' + file_path)
-        #TODO autosubmitrc is still in ini :(
         parser = SafeConfigParser()
         parser.optionxform = str
         parser.read(file_path)

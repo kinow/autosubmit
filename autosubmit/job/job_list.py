@@ -29,6 +29,7 @@ from shutil import move
 from autosubmit.job.job import Job
 from autosubmit.job.job_package_persistence import JobPackagePersistence
 from autosubmit.job.job_dict import DicJobs
+from autosubmit.job.job_packages import JobPackageThread
 from autosubmit.job.job_utils import Dependency
 from autosubmit.job.job_common import Status, bcolors
 from bscearth.utils.date import date2str, parse_date
@@ -2032,6 +2033,21 @@ class JobList(object):
                 out = False
         return out
 
+    def save_wrappers(self,packages_to_save,failed_packages,as_conf,packages_persistence,hold=False,inspect=False):
+        for package in packages_to_save:
+            if package.jobs[0].id not in failed_packages:
+                if hasattr(package, "name"):
+                    self.packages_dict[package.name] = package.jobs
+                    from ..job.job import WrapperJob
+                    wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0,
+                                             package.jobs,
+                                             package._wallclock, package._num_processors,
+                                             package.platform, as_conf, hold)
+                    self.job_package_map[package.jobs[0].id] = wrapper_job
+                    if isinstance(package, JobPackageThread):
+                        # Saving only when it is a real multi job package
+                        packages_persistence.save(
+                            package.name, package.jobs, package._expid, inspect)
     def check_scripts(self, as_conf):
         """
         When we have created the scripts, all parameters should have been substituted.
