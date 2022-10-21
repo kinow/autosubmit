@@ -42,7 +42,7 @@ import copy
 from datetime import datetime, timedelta
 from pathlib import Path
 from autosubmit.database.db_common import update_experiment_descrip_version
-
+import locale
 
 class AutosubmitConfig(object):
     """
@@ -1793,7 +1793,7 @@ class AutosubmitConfig(object):
             Log.info("Backup stored at {0}".format(backup_path))
             shutil.copyfile(ini_file, backup_path)
         # Read key=value property configs in python dictionary
-        content = open(input_file,'r').read()
+        content = open(input_file,'r',encoding=locale.getlocale()[1]).read()
         regex = r"\=( )*\[[\[\]\'_0-9.\"#A-Za-z \-,]*\]"
 
         matches = re.finditer(regex, content)
