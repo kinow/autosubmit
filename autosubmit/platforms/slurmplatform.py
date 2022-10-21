@@ -108,10 +108,10 @@ class SlurmPlatform(ParamikoPlatform):
                         raise AutosubmitCritical(error_message,7014,e.message+"\n"+str(e.trace))
                 except IOError as e:
                     raise AutosubmitError(
-                        "IO issues ", 6016, e.message)
+                        "IO issues ", 6016, str(e))
                 except BaseException as e:
-                    if e.message.find("scheduler") != -1:
-                        raise AutosubmitCritical("Are you sure that [{0}] scheduler is the correct type for platform [{1}]?.\n Please, double check that {0} is loaded for {1} before autosubmit launch any job.".format(platform.type.upper(),platform.name.upper()),7070)
+                    if str(e).find("scheduler") != -1:
+                        raise AutosubmitCritical("Are you sure that [{0}] scheduler is the correct type for platform [{1}]?.\n Please, double check that {0} is loaded for {1} before autosubmit launch any job.".format(self.type.upper(),self.name.upper()),7070)
                     raise AutosubmitError(
                         "Submission failed, this can be due a failure on the platform", 6015, str(e))
                 if jobs_id is None or len(jobs_id) <= 0:

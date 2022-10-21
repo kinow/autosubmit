@@ -2025,10 +2025,10 @@ class Autosubmit:
                                 Log.result("Recover of job_list has fail {0}".format(e.message))
                             except IOError as e:
                                 recovery = False
-                                Log.result("Recover of job_list has fail {0}".format(e.message))
+                                Log.result("Recover of job_list has fail {0}".format(str(e)))
                             except BaseException as e:
                                 recovery = False
-                                Log.result("Recover of job_list has fail {0}".format(e.message))
+                                Log.result("Recover of job_list has fail {0}".format(str(e)))
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
                         mail_notify = True

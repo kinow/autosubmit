@@ -218,10 +218,10 @@ class LocalPlatform(ParamikoPlatform):
             return True
         except IOError as e:
             raise AutosubmitError('File {0} does not exists, something went wrong with the platform'.format(
-                path_root), 6004, e.message)
+                path_root), 6004, str(e))
             if must_exist:
                 raise AutosubmitError("File {0} does not exists".format(
-                    os.path.join(path_root,src)), 6004, e.message)
+                    os.path.join(path_root,src)), 6004, str(e))
             else:
                 Log.debug("File {0} doesn't exists ".format(path_root))
                 return False

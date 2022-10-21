@@ -395,10 +395,10 @@ class ParamikoPlatform(Platform):
 
         except IOError as e:
             if str(e) in "Garbage":
-                raise AutosubmitError('File {0} does not exists, something went wrong with the platform'.format(os.path.join(path_root,src)), 6004, e.message)
+                raise AutosubmitError('File {0} does not exists, something went wrong with the platform'.format(os.path.join(path_root,src)), 6004, str(e))
             if must_exist:
                 raise AutosubmitError("File {0} does not exists".format(
-                    os.path.join(path_root,src)), 6004, e.message)
+                    os.path.join(path_root,src)), 6004, str(e))
             else:
                 Log.debug("File {0} doesn't exists ".format(path_root))
                 return False
@@ -408,7 +408,7 @@ class ParamikoPlatform(Platform):
                     os.path.join(self.get_files_path(), src)), 6004, str(e))
             if must_exist:
                 raise AutosubmitError("File {0} does not exists".format(
-                    os.path.join(self.get_files_path(), src)), 6004, e.message)
+                    os.path.join(self.get_files_path(), src)), 6004, str(e))
             else:
                 Log.printlog("Log file couldn't be moved: {0}".format(
                     os.path.join(self.get_files_path(), src)), 5001)
@@ -928,7 +928,7 @@ class ParamikoPlatform(Platform):
         except AutosubmitError as e:
             raise
         except IOError as e:
-            raise AutosubmitError(e.message,6016)
+            raise AutosubmitError(str(e),6016)
         except BaseException as e:
             raise AutosubmitError('Command {0} in {1} warning: {2}'.format(
                 command, self.host, '\n'.join(stderr_readlines)), 6005, str(e))
