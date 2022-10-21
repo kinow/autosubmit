@@ -55,6 +55,8 @@ class Platform(object):
         return False,valid_packages_to_submit
         #raise NotImplementedError
 
+    def process_batch_ready_jobs(self, valid_packages_to_submit, failed_packages, error_message="", hold=False):
+        return True, valid_packages_to_submit
 
     def submit_ready_jobs(self, as_conf, job_list, platforms_to_test, packages_persistence, packages_to_submit,
                           inspect=False, only_wrappers=False, hold=False):

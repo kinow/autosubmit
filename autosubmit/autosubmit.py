@@ -2186,17 +2186,18 @@ class Autosubmit:
         try:
             for platform in platforms_to_test:
                 packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
-                save_1, failed_packages, error_message, valid_packages_to_submit = platform.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,packages_to_submit, inspect=False,only_wrappers=False, hold=False)
+                save_1, failed_packages, error_message, valid_packages_to_submit = platform.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,packages_to_submit, inspect=inspect,only_wrappers=only_wrappers, hold=hold)
                 # Jobs that are being retrieved in batch. Right now, only avaliable for slurm platforms.
                 if not inspect and len(valid_packages_to_submit) > 0 :
                     job_list.save()
+                save_2 = False
                 if platform.type == "slurm" and not inspect and not only_wrappers: # return to ==
                     # Process the script generated in submit_ready_jobs
-                    save_2,valid_packages_to_submit = platform.process_batch_ready_jobs(valid_packages_to_submit,failed_packages,error_message="",hold=False)
+                    save_2,valid_packages_to_submit = platform.process_batch_ready_jobs(valid_packages_to_submit,failed_packages,error_message="",hold=hold)
                     if not inspect and len(valid_packages_to_submit) > 0 :
                         job_list.save()
                 # Save wrappers(jobs that has the same id) to be visualized and checked in other parts of the code
-                job_list.save_wrappers(valid_packages_to_submit,failed_packages,as_conf,packages_persistence,hold=False,inspect=False)
+                job_list.save_wrappers(valid_packages_to_submit,failed_packages,as_conf,packages_persistence,hold=hold,inspect=inspect)
                 if error_message != "":
                     raise AutosubmitCritical("Submission Failed due wrong configuration:{0}".format(error_message),7014)
             if save_1 or save_2:

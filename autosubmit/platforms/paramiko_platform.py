@@ -922,7 +922,7 @@ class ParamikoPlatform(Platform):
             return True
         except AttributeError as e:
             raise AutosubmitError(
-                'Session not active: {0}'.format(e.message), 6005)
+                'Session not active: {0}'.format(str(e)), 6005)
         except AutosubmitCritical as e:
             raise
         except AutosubmitError as e:

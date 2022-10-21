@@ -96,6 +96,8 @@ class Job(object):
         self.wallclock = None # type: str
         self.wchunkinc = None
         self.tasks = '1'
+        self.default_parameters = {'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
+                              'M': '%M%', 'M_': '%M_%', 'm': '%m%', 'm_': '%m_%'}
         self.threads = '1'
         self.processors = '1'
         self.memory = ''
@@ -1368,6 +1370,7 @@ class Job(object):
         if template_content is not False:
             variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template_content)
             variables = [variable[1:-1] for variable in variables]
+            variables = [variable for variable in variables if variable not in self.default_parameters]
             out = set(parameters).issuperset(set(variables))
 
             # Check if the variables in the templates are defined in the configurations
