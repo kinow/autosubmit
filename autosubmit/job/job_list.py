@@ -1439,6 +1439,7 @@ class JobList(object):
         :return: active jobs
         :rtype: list
         """
+
         active = self.get_in_queue(platform) + self.get_ready(
             platform=platform, hold=True) + self.get_ready(platform=platform, hold=False) + self.get_delayed(platform=platform)
         tmp = [job for job in active if job.hold and not (job.status ==
@@ -1708,7 +1709,7 @@ class JobList(object):
         write_log_status = False
         if not first_time:
             for job in self.get_failed():
-                if not hasattr(job, 'retrials') or job.retrials is None:
+                if self.jobs_data[job.section].get("RETRIALS",None) is None:
                     retrials = as_conf.get_retrials()
                 else:
                     retrials = job.retrials
@@ -1717,15 +1718,15 @@ class JobList(object):
                     tmp = [
                         parent for parent in job.parents if parent.status == Status.COMPLETED]
                     if len(tmp) == len(job.parents):
-                        if "+" == job.delay_retrials[0] or "*" == job.delay_retrials[0]:
+                        if "+" == str(job.delay_retrials)[0] or "*" == str(job.delay_retrials)[0]:
                             aux_job_delay = int(job.delay_retrials[1:])
                         else:
                             aux_job_delay = int(job.delay_retrials)
 
-                        if not hasattr(job, 'delay_retrials') or aux_job_delay <= 0:
-                            delay_retry_time = as_conf.get_delay_retry_time()
+                        if self.jobs_data[job.section].get("DELAY_RETRY_TIME",None) or aux_job_delay <= 0:
+                            delay_retry_time = str(as_conf.get_delay_retry_time())
                         else:
-                            delay_retry_time = job.retry_delay
+                            delay_retry_time = (job.retry_delay)
                         if "+" in delay_retry_time:
                             retry_delay = job.fail_count * int(delay_retry_time[:-1]) + int(delay_retry_time[:-1])
                         elif "*" in delay_retry_time:

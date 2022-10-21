@@ -1113,8 +1113,10 @@ class Autosubmit:
                                     open(os.path.join(dir_exp_id, "conf",
                                                       new_filename), 'w').write(sep.join(content))
                                     if filename.endswith("conf"):
-                                        AutosubmitConfig.ini_to_yaml(os.path.join(dir_exp_id,"conf"),os.path.join(os.path.join(dir_exp_id,"conf"),new_filename))
-
+                                        try:
+                                            AutosubmitConfig.ini_to_yaml(os.path.join(dir_exp_id,"conf"),os.path.join(os.path.join(dir_exp_id,"conf"),new_filename))
+                                        except BaseException as e:
+                                            Log.warning("Couldn't convert conf file to yml: {0}", new_filename)
                             if filename in conf_copy_filter_folder:
                                 if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                     new_filename = filename.split(
@@ -1875,6 +1877,7 @@ class Autosubmit:
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
+
 
                         if as_conf.get_remote_dependencies() == "true" and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
@@ -3806,12 +3809,19 @@ class Autosubmit:
                     parser = factory.create_parser()
                     parser.load(Path(f))
                 except BaseException as e:
-                    AutosubmitConfig.ini_to_yaml(f.parent,Path(f))
+                    try:
+                        AutosubmitConfig.ini_to_yaml(f.parent,Path(f))
+                    except BaseException:
+                        Log.warning("Couldn't convert conf file to yml: {0}", f.parent)
+
             # Converts all ini into yaml
             Log.info("Converting all .conf files into .yml.")
             for f in folder.rglob("*.conf"):
                 if not Path(f.stem +".yml").exists():
-                    AutosubmitConfig.ini_to_yaml(Path(f).parent,Path(f))
+                    try:
+                        AutosubmitConfig.ini_to_yaml(Path(f).parent,Path(f))
+                    except:
+                        Log.warning("Couldn't convert conf file to yml: {0}", Path(f).parent)
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
 
             # Load current variables

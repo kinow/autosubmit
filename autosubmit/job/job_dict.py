@@ -391,7 +391,7 @@ class DicJobs:
         job.memory_per_task = str(parameters[section].get("MEMORY_PER_TASK", ""))
         job.wallclock = parameters[section].get("WALLCLOCK", None)
         job.retrials = int(parameters[section].get( 'RETRIALS', 0))
-        job.delay_retrials = int(parameters[section].get( 'DELAY_RETRY_TIME', -1))
+        job.delay_retrials = int(parameters[section].get( 'DELAY_RETRY_TIME', "-1"))
         if job.wallclock is None and job.platform_name.upper() != "LOCAL":
             job.wallclock = "01:59"
         elif job.wallclock is None and job.platform_name.upper() != "LOCAL":

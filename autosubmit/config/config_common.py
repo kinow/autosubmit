@@ -1761,7 +1761,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return self.get_section(['CONFIG', 'DELAY_RETRY_TIME'], -1)
+        return self.get_section(['CONFIG', 'DELAY_RETRY_TIME'], "-1")
 
     def get_notifications(self):
         """
@@ -1793,6 +1793,7 @@ class AutosubmitConfig(object):
             Log.info("Backup stored at {0}".format(backup_path))
             shutil.copyfile(ini_file, backup_path)
         # Read key=value property configs in python dictionary
+
         content = open(input_file,'r',encoding=locale.getlocale()[1]).read()
         regex = r"\=( )*\[[\[\]\'_0-9.\"#A-Za-z \-,]*\]"
 
@@ -1804,7 +1805,7 @@ class AutosubmitConfig(object):
             regex_sub = match.group()
             content = re.sub(re.escape(regex_sub),subs_string, content)
 
-        open(input_file,'w').write(content)
+        open(input_file,'w',encoding=locale.getlocale()[1]).write(content)
         config_dict = ConfigObj(input_file,stringify=True,list_values=False,interpolation=False,unrepr=False )
 
 
@@ -1827,7 +1828,7 @@ class AutosubmitConfig(object):
         else:
             final_dict = yaml_dict
             # Write resultant dictionary to the yaml file
-        yaml_file = open(input_file, 'w')
+        yaml_file = open(input_file, 'w',encoding=locale.getlocale()[1])
         yaml.dump(final_dict, yaml_file, Dumper=yaml.RoundTripDumper)
         ini_file.rename(Path(root_dir, ini_file.stem+".yml"))
     def get_notifications_crash(self):
