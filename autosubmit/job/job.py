@@ -1216,9 +1216,9 @@ class Job(object):
                 if as_conf.get_remote_dependencies() == "true":
                     if self.type == Type.BASH:
                         template = 'sleep 5' + "\n"
-                    elif self.type == Type.PYTHON:
+                    elif self.type == Type.PYTHON2:
                         template = 'time.sleep(5)' + "\n"
-                    elif self.type == Type.PYTHON3:
+                    elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
                         template = 'time.sleep(5)' + "\n"
                     elif self.type == Type.R:
                         template = 'Sys.sleep(5)' + "\n"
@@ -1227,10 +1227,10 @@ class Job(object):
             else:
                 if self.type == Type.BASH:
                     template = 'sleep 5'
-                elif self.type == Type.PYTHON:
-                    template = 'time.sleep(5)'
-                elif self.type == Type.PYTHON3:
-                    template = 'time.sleep(5)'
+                elif self.type == Type.PYTHON2:
+                    template = 'time.sleep(5)' + "\n"
+                elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
+                    template = 'time.sleep(5)' + "\n"
                 elif self.type == Type.R:
                     template = 'Sys.sleep(5)'
                 else:
@@ -1240,10 +1240,10 @@ class Job(object):
 
         if self.type == Type.BASH:
             snippet = StatisticsSnippetBash
-        elif self.type == Type.PYTHON or self.type == Type.PYTHON2:
-            snippet = StatisticsSnippetPython("2")
-        elif self.type == Type.PYTHON3:
+        elif self.type == Type.PYTHON or self.type == Type.PYTHON3:
             snippet = StatisticsSnippetPython("3")
+        elif self.type == Type.PYTHON2:
+            snippet = StatisticsSnippetPython("2")
         elif self.type == Type.R:
             snippet = StatisticsSnippetR
         else:

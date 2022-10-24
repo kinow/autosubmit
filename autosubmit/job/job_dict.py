@@ -371,10 +371,10 @@ class DicJobs:
             job.dependencies = str(job.dependencies).split()
         if job_type == 'bash':
             job.type = Type.BASH
-        elif job_type == 'python' or job_type == 'python2':
-            job.type = Type.PYTHON2
-        elif job_type == 'python3':
+        elif job_type == 'python' or job_type == 'python3':
             job.type = Type.PYTHON3
+        elif job_type == 'python2':
+            job.type = Type.PYTHON2
         elif job_type == 'r':
             job.type = Type.R
         job.executable = str(parameters[section].get( "EXECUTABLE", ""))
