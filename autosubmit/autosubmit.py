@@ -4600,7 +4600,7 @@ class Autosubmit:
                     if section_validation_error == False:
                         if len(str(filter_section).strip()) > 0:
                             if len(filter_section.split()) > 0:
-                                jobSections = as_conf.get_jobs_sections()
+                                jobSections = as_conf.jobs_data
                                 for section in filter_section.split():
                                     # print(section)
                                     # Provided section is not an existing section or it is not the keyword 'Any'
@@ -4692,7 +4692,7 @@ class Autosubmit:
                     fc_filter_is_correct = True
                     selected_sections = filter_chunks.split(",")[1:]
                     selected_formula = filter_chunks.split(",")[0]
-                    current_sections = as_conf.get_jobs_sections()
+                    current_sections = as_conf.jobs_data
                     fc_deserializedJson = object()
                     # Starting Validation
                     if len(str(selected_sections).strip()) == 0:
@@ -4722,8 +4722,7 @@ class Autosubmit:
                     # If everything is fine until this point
                     if fc_filter_is_correct == True:
                         # Retrieve experiment data
-                        current_dates = as_conf._exp_parser.get_option(
-                            'experiment', 'DATELIST', '').split()
+                        current_dates = as_conf.experiment_data["EXPERIMENT"]["DATELIST"].split()
                         current_members = as_conf.get_member_list()
                         # Parse json
                         try:
@@ -4830,7 +4829,7 @@ class Autosubmit:
                                 break
                             # Validating existing sections
                             # Retrieve experiment data
-                            current_sections = as_conf.get_jobs_sections()
+                            current_sections = as_conf.jobs_data
                             if section not in current_sections and section != "Any":
                                 filter_is_correct = False
                                 validation_message += "\n\tSection " + \
@@ -4844,8 +4843,7 @@ class Autosubmit:
                     # If everything is fine until this point
                     if filter_is_correct == True:
                         # Retrieve experiment data
-                        current_dates = as_conf._exp_parser.get_option(
-                            'experiment', 'DATELIST', '').split()
+                        current_dates = as_conf.experiment_data["EXPERIMENT"]["DATELIST"].split()
                         current_members = as_conf.get_member_list()
                         # Parse json
                         try:
@@ -5441,7 +5439,7 @@ class Autosubmit:
                     YAMLParserFactory(), as_conf.platforms_file)
                 test_platforms = list()
                 for section in platforms_parser.sections():
-                    if platforms_parser.get_option(section, 'TEST_SUITE', 'false').lower() == 'true':
+                    if as_conf.experiment_data["PLATFORMS"][section].get('TEST_SUITE', 'false').lower() == 'true':
                         test_platforms.append(section)
                 if len(test_platforms) == 0:
                     raise AutosubmitCritical(

@@ -320,12 +320,16 @@ class JobList(object):
                     distance = int(key_split[1])
 
             if '[' in section:
-                section_name = section[0:section.find("[")]
-                splits_section = int(
-                    dic_jobs.get_option(section_name, 'SPLITS', -1))
-                splits = JobList._calculate_splits_dependencies(
-                    section, splits_section)
-                section = section_name
+                #Todo check what is this because we never enter this
+                try:
+                    section_name = section[0:section.find("[")]
+                    splits_section = int(
+                        dic_jobs.experiment_data["JOBS"][section_name].get('SPLITS', -1))
+                    splits = JobList._calculate_splits_dependencies(
+                        section, splits_section)
+                    section = section_name
+                except:
+                    pass
             if parameters.get(section,None) is None:
                 Log.printlog("WARNING: SECTION {0} is not defined in jobs.conf".format(section))
                 continue

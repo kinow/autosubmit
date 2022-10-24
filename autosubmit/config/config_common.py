@@ -202,17 +202,6 @@ class AutosubmitConfig(object):
                                      self.get_project_destination())
         return dir_templates
 
-    def get_wallclock(self, section):
-        """
-        Gets wallclock for the given job type
-        :param section: job type
-        :type section: str
-        :return: wallclock time
-        :rtype: str
-        """
-        return self._jobs_parser.get_option(section, "WALLCLOCK" , None)
-
-
     def get_export(self, section):
         """
         Gets command line for being submitted with
@@ -2031,14 +2020,6 @@ class AutosubmitConfig(object):
         """
         return self.get_section([section, 'EXPORT'], "")
 
-    def get_jobs_sections(self):
-        """
-        Returns the list of sections defined in the job's config file
-
-        :return: sections
-        :rtype: list
-        """
-        return self._jobs_parser.sections()
 
     def get_copy_remote_logs(self):
         """
