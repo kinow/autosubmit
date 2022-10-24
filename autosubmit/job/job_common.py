@@ -121,6 +121,7 @@ class StatisticsSnippetBash:
                     export LC_ALL=$locale_to_set
                 else
                     export LC_ALL=C
+                fi 
             fi
             
             set -xuve
