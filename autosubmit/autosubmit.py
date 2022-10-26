@@ -63,6 +63,8 @@ import locale
 from distutils.util import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from typing import Set
+from autosubmit.database.db_common import update_experiment_descrip_version
+
 import sqlite3
 
 #try:
@@ -702,6 +704,7 @@ class Autosubmit:
     @staticmethod
     def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
         Log.set_console_level(console_level)
+
         expid_less = ["expid", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]
         global_log_command = ["delete", "archive","upgrade"]
@@ -784,6 +787,8 @@ class Autosubmit:
                             Log.info("The {2} experiment {0} version is being updated to {1} for match autosubmit version",
                                      as_conf.get_version(), Autosubmit.autosubmit_version, expid)
                             as_conf.set_version(Autosubmit.autosubmit_version)
+                            update_experiment_descrip_version(self.expid, version=Autosubmit.autosubmit_version)
+
                     else:
                         if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
                             raise AutosubmitCritical(
@@ -819,6 +824,7 @@ class Autosubmit:
         except:
             Log.info("Locale C.utf8 is not found, using '{0}' as fallback".format("C"))
             locale.setlocale(locale.LC_ALL, 'C')
+
         Log.info(
             "Autosubmit is running with {0}", Autosubmit.autosubmit_version)
 
@@ -3729,6 +3735,8 @@ class Autosubmit:
         Log.info("Changing {0} experiment version from {1} to  {2}",
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
+        update_experiment_descrip_version(self.expid, version=Autosubmit.autosubmit_version)
+
         return True
 
     @staticmethod
@@ -3883,6 +3891,7 @@ class Autosubmit:
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
 
+        update_experiment_descrip_version(self.expid, version=Autosubmit.autosubmit_version)
 
     @staticmethod
     def pkl_fix(expid):
@@ -5167,6 +5176,7 @@ class Autosubmit:
         """
         as_conf = AutosubmitConfig(exp_id, BasicConfig, YAMLParserFactory())
         as_conf.set_version(autosubmit_version)
+        update_experiment_descrip_version(self.expid, version=Autosubmit.autosubmit_version)
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
 
