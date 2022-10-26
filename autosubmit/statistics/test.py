@@ -26,7 +26,7 @@ class TestStatistics(unittest.TestCase):
     BasicConfig.read()
     path_structure = BasicConfig.STRUCTURES_DIR
     path_local_root = BasicConfig.LOCAL_ROOT_DIR
-    as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+    as_conf = AutosubmitConfig(expid)
     as_conf.reload(first_load=True)
     job_list = Autosubmit.load_job_list(expid, as_conf, False)
     jobs_considered = [job for job in job_list.get_job_list() if job.status not in [
