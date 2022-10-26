@@ -2,8 +2,8 @@ import unittest
 from autosubmit.statistics.statistics import Statistics
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_utils import SubJobManager, SubJob
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.config_common import AutosubmitConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from bscearth.utils.config_parser import ConfigParserFactory
 from autosubmit.autosubmit import Autosubmit
 from autosubmit.job.job_list import JobList

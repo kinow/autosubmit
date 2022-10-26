@@ -31,7 +31,8 @@ from .notifications.notifier import Notifier
 from .notifications.mail_notifier import MailNotifier
 from bscearth.utils.date import date2str
 from pathlib import Path
-from .config.yaml_parser import YAMLParserFactory
+from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
+
 try:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
@@ -56,8 +57,8 @@ from .job.job_utils import SubJob, SubJobManager
 from .job.job import Job
 from .git.autosubmit_git import AutosubmitGit
 from .job.job_common import Status
-from .config.config_common import AutosubmitConfig
-from .config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 import locale
 from distutils.util import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical

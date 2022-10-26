@@ -34,11 +34,11 @@ import autosubmit.helpers.utils as HelperUtils
 
 from autosubmit.job.job_common import Status
 from autosubmit.job.job import Job
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.config_common import AutosubmitConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 
 from log.log import Log, AutosubmitCritical
-from autosubmit.config.yaml_parser import YAMLParserFactory
+from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
 
 from .diagram import create_bar_diagram
 from typing import Dict, List

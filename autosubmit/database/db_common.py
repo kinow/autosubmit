@@ -26,7 +26,7 @@ import multiprocessing
 
 from log.log import Log, AutosubmitCritical
 Log.get_logger("Autosubmit")
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 
 CURRENT_DATABASE_VERSION = 1
 TIMEOUT = 10

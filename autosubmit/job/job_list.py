@@ -39,8 +39,8 @@ from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
 from log.log import AutosubmitCritical, AutosubmitError, Log
 from threading import Thread
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.config_common import AutosubmitConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from autosubmit.helpers.data_transfer import JobRow
 from typing import List, Dict
 import log.fd_show

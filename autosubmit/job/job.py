@@ -32,12 +32,12 @@ import copy
 
 import locale
 
-from autosubmit.config.config_common import AutosubmitConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from autosubmit.job.job_common import Status, Type, increase_wallclock_by_chunk
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.job.job_utils import get_job_package_code
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 from autosubmit.history.experiment_history import ExperimentHistory
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
@@ -47,7 +47,7 @@ from log.log import Log, AutosubmitCritical, AutosubmitError
 from typing import List, Union
 from functools import reduce
 Log.get_logger("Autosubmit")
-from ..config.yaml_parser import YAMLParserFactory
+from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
 
 # A wrapper for encapsulate threads , TODO: Python 3+ to be replaced by the < from concurrent.futures >
 

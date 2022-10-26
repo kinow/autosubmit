@@ -25,7 +25,7 @@ from .experiment_history_db_manager import ExperimentHistoryDbManager
 from .experiment_status_db_manager import ExperimentStatusDbManager
 from autosubmit.history.data_classes.experiment_run import ExperimentRun
 from autosubmit.history.data_classes.job_data import JobData
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 import autosubmit.history.utils as HUtils
 EXPID_TT00_SOURCE = "test_database.db~"
 EXPID_TT01_SOURCE = "test_database_no_run.db~"

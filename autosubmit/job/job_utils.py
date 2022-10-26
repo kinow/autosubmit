@@ -25,7 +25,7 @@ from networkx import DiGraph
 from networkx import dfs_edges
 from networkx import NetworkXError
 from autosubmit.job.job_package_persistence import JobPackagePersistence
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 from typing import Dict
 
 

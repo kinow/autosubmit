@@ -2,7 +2,7 @@ from unittest import TestCase
 from mock import Mock
 from autosubmit.job.job_list import JobList
 from bscearth.utils.date import parse_date, date2str
-from autosubmit.config.yaml_parser import YAMLParserFactory
+from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
 from autosubmit.job.job_list_persistence import JobListPersistenceDb
 from autosubmit.job.job_common import Status
 from random import randrange

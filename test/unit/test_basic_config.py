@@ -4,7 +4,7 @@ import os
 from mock import Mock
 from mock import patch
 
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 
 '''
     This class has a static private (__named) method which is impossible to be tested.
