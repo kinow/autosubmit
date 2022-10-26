@@ -3890,7 +3890,6 @@ class Autosubmit:
         Log.info("Changing {0} experiment version from {1} to {2}",
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
-
         update_experiment_descrip_version(expid, version=Autosubmit.autosubmit_version)
 
     @staticmethod
