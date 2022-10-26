@@ -19,8 +19,8 @@
 
 from log.log import AutosubmitCritical, Log
 from time import sleep
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.config_common import AutosubmitConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from autosubmit.history.experiment_history import ExperimentHistory
 from autosubmit.database.db_common import check_experiment_exists
 import datetime

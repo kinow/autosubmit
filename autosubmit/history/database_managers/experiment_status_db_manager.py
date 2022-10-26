@@ -21,7 +21,7 @@ import os
 import textwrap
 import time
 from .database_manager import DatabaseManager, DEFAULT_LOCAL_ROOT_DIR
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 import autosubmit.history.utils as HUtils
 from . import database_models as Models
 

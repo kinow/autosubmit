@@ -23,7 +23,7 @@ from shutil import rmtree
 import subprocess
 import shutil
 #from autosubmit import Autosubmit
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 from time import time
 from log.log import Log, AutosubmitCritical, AutosubmitError
 Log.get_logger("Autosubmit")

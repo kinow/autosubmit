@@ -6,7 +6,7 @@ from autosubmit.job.job import Job
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_utils import Dependency
-from autosubmit.config.yaml_parser import YAMLParserFactory
+from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
 from autosubmit.job.job_list_persistence import JobListPersistenceDb
 from autosubmit.job.job_common import Status
 from random import randrange

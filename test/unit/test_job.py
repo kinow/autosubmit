@@ -1,7 +1,7 @@
 from unittest import TestCase
 import os
 import sys
-from autosubmit.config.config_common import AutosubmitConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from autosubmit.job.job_common import Status
 from autosubmit.job.job import Job
 from autosubmit.platforms.platform import Platform

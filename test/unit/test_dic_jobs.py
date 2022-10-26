@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from mock import Mock
 import math
-from autosubmit.config.yaml_parser import YAMLParserFactory
+from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.job.job_dict import DicJobs

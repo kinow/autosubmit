@@ -25,7 +25,7 @@ import subprocess
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.local_header import LocalHeader
 
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 from time import sleep
 from log.log import Log, AutosubmitError, AutosubmitCritical
 

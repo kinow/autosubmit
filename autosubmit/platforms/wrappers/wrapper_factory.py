@@ -20,7 +20,7 @@
 from autosubmit.platforms.wrappers.wrapper_builder import WrapperDirector, PythonVerticalWrapperBuilder, \
     PythonHorizontalWrapperBuilder, PythonHorizontalVerticalWrapperBuilder, PythonVerticalHorizontalWrapperBuilder, \
     BashHorizontalWrapperBuilder, BashVerticalWrapperBuilder, SrunHorizontalWrapperBuilder,SrunVerticalHorizontalWrapperBuilder
-from autosubmit.config.config_common import AutosubmitConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 
 
 class WrapperFactory(object):

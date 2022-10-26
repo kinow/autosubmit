@@ -26,7 +26,7 @@ from .data_classes.job_data import JobData
 from .data_classes.experiment_run import ExperimentRun
 from .platform_monitor.slurm_monitor import SlurmMonitor
 from .internal_logging import Logging
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 
 SECONDS_WAIT_PLATFORM = 60
 

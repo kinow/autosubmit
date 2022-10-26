@@ -2,7 +2,7 @@ import os
 import pwd
 
 from log.log import Log, AutosubmitCritical
-from autosubmit.config.basicConfig import BasicConfig
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 from typing import Tuple
 
 def check_experiment_ownership(expid, basic_config, raise_error=False, logger=None):
