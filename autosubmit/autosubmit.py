@@ -787,7 +787,7 @@ class Autosubmit:
                             Log.info("The {2} experiment {0} version is being updated to {1} for match autosubmit version",
                                      as_conf.get_version(), Autosubmit.autosubmit_version, expid)
                             as_conf.set_version(Autosubmit.autosubmit_version)
-                            update_experiment_descrip_version(self.expid, version=Autosubmit.autosubmit_version)
+                            update_experiment_descrip_version(expid, version=Autosubmit.autosubmit_version)
 
                     else:
                         if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
@@ -3735,7 +3735,7 @@ class Autosubmit:
         Log.info("Changing {0} experiment version from {1} to  {2}",
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
-        update_experiment_descrip_version(self.expid, version=Autosubmit.autosubmit_version)
+        update_experiment_descrip_version(expid, version=Autosubmit.autosubmit_version)
 
         return True
 
@@ -3838,7 +3838,7 @@ class Autosubmit:
                     except:
                         Log.warning("Couldn't convert conf file to yml: {0}", Path(f).parent)
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-
+            as_conf.reload(first_load=True)
             # Load current variables
             as_conf.check_conf_files()
             # Load current parameters ( this doesn't read job parameters)
@@ -3891,7 +3891,7 @@ class Autosubmit:
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
 
-        update_experiment_descrip_version(self.expid, version=Autosubmit.autosubmit_version)
+        update_experiment_descrip_version(expid, version=Autosubmit.autosubmit_version)
 
     @staticmethod
     def pkl_fix(expid):
@@ -5176,7 +5176,7 @@ class Autosubmit:
         """
         as_conf = AutosubmitConfig(exp_id, BasicConfig, YAMLParserFactory())
         as_conf.set_version(autosubmit_version)
-        update_experiment_descrip_version(self.expid, version=Autosubmit.autosubmit_version)
+        update_experiment_descrip_version(expid, version=Autosubmit.autosubmit_version)
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
 
