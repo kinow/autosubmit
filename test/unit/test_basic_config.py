@@ -26,7 +26,7 @@ class TestBasicConfig(TestCase):
 
     def test_read_makes_the_right_method_calls(self):
         # arrange
-        with patch('autosubmit.config.basicConfig.BasicConfig._update_config', Mock()):
+        with patch('autosubmitconfigparser.config.basicconfig.BasicConfig._update_config', Mock()):
             # act
             BasicConfig.read()
             # assert
