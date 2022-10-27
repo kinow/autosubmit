@@ -149,7 +149,7 @@ class ParamikoPlatform(Platform):
                         "First connection to {0} is failed, check host configuration or try another login node ".format(self.host), 7050,str(e))
             while self.connected is False and retry < retries:
                 try:
-                    self.connect(True)
+                      self.connect(True)
                 except:
                     pass
                 retry += 1
@@ -211,8 +211,12 @@ class ParamikoPlatform(Platform):
                 self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
                                   key_filename=self._host_config_id, sock=self._proxy, timeout=120 , banner_timeout=120)
             else:
-                self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                  key_filename=self._host_config_id, timeout=120 , banner_timeout=120)
+                try:
+                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
+                                      key_filename=self._host_config_id, timeout=120 , banner_timeout=120)
+                except:
+                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
+                                      key_filename=self._host_config_id, timeout=120 , banner_timeout=120,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
             self.transport = self._ssh.get_transport()
             #self.transport = paramiko.Transport((self._host_config['hostname'], 22))
             #self.transport.connect(username=self.user)
