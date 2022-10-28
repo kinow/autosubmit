@@ -557,7 +557,7 @@ class ParamikoPlatform(Platform):
         :param job_list: list of jobs
         :type job_list: list
         :param as_conf: autosubmit configuration
-        :type as_conf: autosubmit.config.config.Config
+        :type as_conf: autosubmitconfigparser.config.config.Config
         :param retries: retries
         :type retries: int
         :return: list of jobs with their status

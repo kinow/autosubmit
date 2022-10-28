@@ -46,7 +46,7 @@ class AutosubmitGit:
         Function to clean space on BasicConfig.LOCAL_ROOT_DIR/git directory.
 
         :param as_conf: experiment configuration
-        :type as_conf: autosubmit.config.AutosubmitConfig
+        :type as_conf: autosubmitconfigparser.config.AutosubmitConfig
         """
         proj_dir = os.path.join(
             BasicConfig.LOCAL_ROOT_DIR, as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
@@ -87,7 +87,7 @@ class AutosubmitGit:
         Function to check uncommited changes
 
         :param as_conf: experiment configuration
-        :type as_conf: autosubmit.config.AutosubmitConfig
+        :type as_conf: autosubmitconfigparser.config.AutosubmitConfig
         """
         proj_dir = os.path.join(
             BasicConfig.LOCAL_ROOT_DIR, as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
@@ -125,7 +125,7 @@ class AutosubmitGit:
         Clones a specified git repository on the project folder
 
         :param as_conf: experiment configuration
-        :type as_conf: autosubmit.config.AutosubmitConfig
+        :type as_conf: autosubmitconfigparser.config.AutosubmitConfig
         :param force: if True, it will overwrite any existing clone
         :type force: bool
         :param hpcarch: current main platform

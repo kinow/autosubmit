@@ -7,11 +7,11 @@ How to install
 
 The Autosubmit code is maintained in *PyPi*, the main source for python packages.
 
-- Pre-requisites: bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk(tkinter in centOS), python2-dev, graphviz >= 2.41, pip2
+- Pre-requisites: bash, python3, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk(tkinter in centOS), python2-dev, graphviz >= 2.41, pip3
 
 .. important:: (SYSTEM) Graphviz version must be >= 2.38 except 2.40(not working). You can check the version using dot -v.
 
-- Python dependencies: argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, python2-pythondialog, portalocker, requests, typing, six >= 1.10
+- Python dependencies: configobj>=5.0.6, argparse>=1.4.0 , python-dateutil>=2.8.2, matplotlib==3.4.3, numpy==1.21.6, py3dotplus>=1.1.0, pyparsing>=3.0.7, paramiko>=2.9.2, mock>=4.0.3, six>=1.10,  portalocker>=2.3.2, networkx==2.6.3, requests>=2.27.1, bscearth.utils>=0.5.2, cryptography>=36.0.1, setuptools>=60.8.2, xlib>=0.21, pip>=22.0.3, ruamel.yaml, pythondialog, pytest, nose, coverage, PyNaCl==1.4.0, six>=1.10.0, requests, xlib, Pygments, packaging==19, typing>=3.7, autosubmitconfigparser
 
 .. important:: dot -v command should contain "dot",pdf,png,svg,xlib  in device section.
 
@@ -138,17 +138,15 @@ Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
     export DEBIAN_FRONTEND=noninteractive
 
     # Dependencies
-    apt install wget curl python2 python-tk python2-dev graphviz -y -q
+    apt install wget curl python3 python3-tk python3-dev graphviz -y -q
 
     # Additional dependencies related with pycrypto
     apt install build-essential libssl-dev libffi-dev -y -q
 
-    # Download get pip script and launch it
-    wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
-    python2 get-pip.py
+
 
     # Install autosubmit using pip
-    pip2 install autosubmit
+    pip3 install autosubmit
 
     # Check that we can execute autosubmit commands
     autosubmit -h
@@ -178,10 +176,10 @@ Sequence of instructions to install Autosubmit and its dependencies with conda.
     # Download git
     apt install git -y -q
     # Download autosubmit
-    git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v3.14.0
+    git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v4.0.0b
     cd autosubmit
     # Create conda environment
-    conda env update -f environment.yml -n autosubmit python=2
+    conda env update -f environment.yml -n autosubmit python=3
     # Activate env
     source activate autosubmit
     # Test autosubmit

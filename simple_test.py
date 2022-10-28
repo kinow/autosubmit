@@ -6,7 +6,7 @@
 # import inspect
 # sys.path.insert(0, os.path.abspath('.'))
 # from autosubmit.autosubmit import Autosubmit
-# from autosubmit.config.config_common import AutosubmitConfig, BasicConfig
+# from autosubmitconfigparser.config.config_common import AutosubmitConfig, BasicConfig
 # from bscearth.utils.config_parser import ConfigParserFactory
 # from autosubmit.job.job_list import JobList
 # from autosubmit.database.db_jobdata import JobDataStructure

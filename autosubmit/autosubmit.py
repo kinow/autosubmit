@@ -1003,9 +1003,9 @@ class Autosubmit:
                     Log.info("Copying config files...")
 
                     # autosubmit config and experiment copied from AS.
-                    files = resource_listdir('autosubmit.config', 'files')
+                    files = resource_listdir('autosubmitconfigparser.config', 'files')
                     for filename in files:
-                        if resource_exists('autosubmit.config', 'files/' + filename):
+                        if resource_exists('autosubmitconfigparser.config', 'files/' + filename):
                             index = filename.index('.')
                             new_filename = filename[:index] + \
                                 "_" + exp_id + filename[index:]
@@ -1018,7 +1018,7 @@ class Autosubmit:
                                     BasicConfig.DEFAULT_JOBS_CONF, filename),'rb').read()
                             else:
                                 content = resource_string(
-                                    'autosubmit.config', 'files/' + filename)
+                                    'autosubmitconfigparser.config', 'files/' + filename)
 
                             # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
                             if filename.startswith("platforms") and os.path.isfile(BasicConfig.CUSTOM_PLATFORMS_PATH):
@@ -5175,7 +5175,7 @@ class Autosubmit:
         """
         as_conf = AutosubmitConfig(exp_id, BasicConfig, YAMLParserFactory())
         as_conf.set_version(autosubmit_version)
-        update_experiment_descrip_version(expid, version=Autosubmit.autosubmit_version)
+        update_experiment_descrip_version(exp_id, version=Autosubmit.autosubmit_version)
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
 
