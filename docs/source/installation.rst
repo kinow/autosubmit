@@ -143,8 +143,6 @@ Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
     # Additional dependencies related with pycrypto
     apt install build-essential libssl-dev libffi-dev -y -q
 
-
-
     # Install autosubmit using pip
     pip3 install autosubmit
 
@@ -158,12 +156,14 @@ Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
     autosubmit install
 
     # Get expid
-    autosubmit expid -H TEST -d "Test exp."
+    autosubmit expid -H "local" -d "Test exp in local"
 
-    # Create with -np
+    # Create with
     # Since it was a new install the expid will be a000
-    autosubmit create a000 -np
+    autosubmit create a000
 
+    # run
+    autosubmit run a000
 Sequence of instructions to install Autosubmit and its dependencies with conda.
 -------------------------------------------------------------------------------
 

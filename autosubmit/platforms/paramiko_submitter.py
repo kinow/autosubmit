@@ -184,6 +184,8 @@ class ParamikoSubmitter(Submitter):
             remote_platform.scratch_free_space = str(platform_data[section].get('SCRATCH_FREE_SPACE', False)).lower()
             try:
                 remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,remote_platform.user, remote_platform.expid)
+                remote_platform.update_cmds()
+
                 platforms[section] = remote_platform
             except:
                 raise_message = "Error in platform.conf: SCRATCH_DIR, PROJECT, USER, EXPID must be defined for platform {0}".format(section)
