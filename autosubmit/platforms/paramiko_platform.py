@@ -208,8 +208,13 @@ class ParamikoPlatform(Platform):
             if 'proxycommand' in self._host_config:
                 self._proxy = paramiko.ProxyCommand(
                     self._host_config['proxycommand'])
-                self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                  key_filename=self._host_config_id, sock=self._proxy, timeout=120 , banner_timeout=120)
+                try:
+                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
+                                      key_filename=self._host_config_id, sock=self._proxy, timeout=120 , banner_timeout=120)
+                except:
+                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
+                                      key_filename=self._host_config_id, sock=self._proxy, timeout=120,
+                                      banner_timeout=120,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
             else:
                 try:
                     self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
