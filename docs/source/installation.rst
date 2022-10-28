@@ -179,7 +179,7 @@ Sequence of instructions to install Autosubmit and its dependencies with conda.
     git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v4.0.0b
     cd autosubmit
     # Create conda environment
-    conda env update -f environment.yml -n autosubmit python=3
+    conda env update -f environment.yml -n autosubmit python=3.7
     # Activate env
     source activate autosubmit
     # Test autosubmit
