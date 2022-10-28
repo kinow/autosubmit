@@ -34,6 +34,7 @@ setup(
     version=version,
     description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse '
                 'Supercomputing Environments',
+    long_description=open('README_PIP.md').read(),
     author='Daniel Beltran Mora',
     author_email='daniel.beltran@bsc.es',
     url='http://www.bsc.es/projects/earthscience/autosubmit/',
