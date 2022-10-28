@@ -564,6 +564,7 @@ class ParamikoPlatform(Platform):
         :rtype: list
 
         """
+        job_status = Status.UNKNOWN
         remote_logs = as_conf.get_copy_remote_logs()
         job_list_cmd = ""
         for job,job_prev_status in job_list:
