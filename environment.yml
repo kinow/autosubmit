@@ -3,6 +3,7 @@ channels:
   - conda-forge
 
 dependencies:
+- python=3.7.3
 - nose
 - nose-cov
 - paramiko
@@ -15,7 +16,6 @@ dependencies:
 - mock
 - portalocker
 - networkx
-- python=3.7.3
 - pip:
   - autosubmitconfigparser==0.0.4
   - argparse>=1.4.0
