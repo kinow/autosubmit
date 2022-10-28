@@ -32,8 +32,7 @@ setup(
     license='GNU GPL v3',
     platforms=['GNU/Linux Debian'],
     version=version,
-    description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse '
-                'Supercomputing Environments',
+    description='Autosubmit is a Python-based workflow manager to create, manage and monitor complex tasks involving different substeps, such as scientific computational experiments. These workflows may involve multiple computing systems for their completion, from HPCs to post-processing clusters or workstations. Autosubmit can orchestrate all the tasks integrating the workflow by managing their dependencies, interfacing with all the platforms involved, and handling eventual errors.',
     long_description=open('README_PIP.md').read(),
     author='Daniel Beltran Mora',
     author_email='daniel.beltran@bsc.es',
