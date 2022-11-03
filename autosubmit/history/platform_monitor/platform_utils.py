@@ -32,7 +32,7 @@ def parse_output_number(string_number):
     :rtype: float
     """    
     number = 0.0
-    if (string_number):
+    if string_number:
         last_letter = string_number.strip()[-1]
         multiplier = 1.0
         if last_letter == "G":
@@ -53,13 +53,13 @@ def parse_output_number(string_number):
             pass        
     return number
 
-def try_parse_time_to_timestamp(input):
+def try_parse_time_to_timestamp(input_):
   """ 
   Receives a string in format "%Y-%m-%dT%H:%M:%S" and tries to parse it to timestamp.
   """
   try:
-    return int(mktime(datetime.strptime(input, SLURM_DATETIME_FORMAT).timetuple()))
-  except:
+    return int(mktime(datetime.strptime(input_, SLURM_DATETIME_FORMAT).timetuple()))
+  except Exception as e:
     return 0
 
 def read_example(example_name):

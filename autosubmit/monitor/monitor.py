@@ -52,6 +52,9 @@ class Monitor:
                                                 'salmon'), (Status.QUEUING, 'pink'), (Status.RUNNING, 'green'),
                    (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.DELAYED,'lightcyan') ,(Status.SUSPENDED, 'orange'), (Status.SKIPPED, 'lightyellow')])
 
+    def __init__(self):
+        self.nodes_ploted = None
+
     @staticmethod
     def color_status(status):
         """
@@ -93,6 +96,9 @@ class Monitor:
         """
         Create graph from joblist
 
+        :param hide_groups:
+        :param groups:
+        :param packages:
         :param expid: experiment's identifier
         :type expid: str
         :param joblist: joblist to plot
@@ -287,6 +293,10 @@ class Monitor:
         """
         Plots graph for joblist and stores it in a file
 
+        :param hide_groups:
+        :param groups:
+        :param packages:
+        :param path:
         :param expid: experiment's identifier
         :type expid: str
         :param joblist: list of jobs to plot
@@ -298,6 +308,7 @@ class Monitor:
         :param job_list_object: Object that has the main txt generation method
         :type job_list_object: JobList object
         """
+        message = ""
         try:
             Log.info('Plotting...')
             now = time.localtime()
@@ -341,15 +352,15 @@ class Monitor:
                     if sys.platform != "linux":
                         try:
                             subprocess.check_output(["open", output_file])
-                        except:
+                        except Exception as e:
                             try:
                                 subprocess.check_output(["xdg-open", output_file])
-                            except:
+                            except Exception as e:
                                 subprocess.check_output(["mimeopen", output_file])
                     else:
                         try:
                             subprocess.check_output(["xdg-open", output_file])
-                        except:
+                        except Exception as e:
                             subprocess.check_output(["mimeopen", output_file])
 
                 except subprocess.CalledProcessError:
@@ -362,7 +373,7 @@ class Monitor:
                 message += "\n"+str(e)
                 if "GraphViz" in message:
                     message= "Graphviz is not installed. Autosubmit need this system package in order to plot the workflow."
-            except:
+            except Exception as e:
                 pass
 
             Log.printlog("{0}\nSpecified output doesn't have an available viewer installed or graphviz is not installed. The output was only written in txt".format(message),7014)
@@ -371,6 +382,8 @@ class Monitor:
     def generate_output_txt(self, expid, joblist, path, classictxt=False, job_list_object=None):
         """
         Function that generates a representation of the jobs in a txt file
+        :param classictxt:
+        :param path:
         :param expid: experiment's identifier
         :type expid: str
         :param joblist: experiment's list of jobs
@@ -432,6 +445,7 @@ class Monitor:
         """
         Plots stats for joblist and stores it in a file
 
+        :param queue_time_fixes:
         :param expid: experiment's identifier
         :type expid: str
         :param joblist: joblist to plot
@@ -474,15 +488,15 @@ class Monitor:
                 if sys.platform != "linux":
                     try:
                         subprocess.check_output(["open", output_complete_path])
-                    except:
+                    except Exception as e:
                         try:
                             subprocess.check_output(["xdg-open", output_complete_path])
-                        except:
+                        except Exception as e:
                             subprocess.check_output(["mimeopen", output_complete_path])
                 else:
                     try:
                         subprocess.check_output(["xdg-open", output_complete_path])
-                    except:
+                    except Exception as e:
                         subprocess.check_output(["mimeopen", output_complete_path])
 
             except subprocess.CalledProcessError:
@@ -558,6 +572,6 @@ class Monitor:
                     Log.critical("General Stats {}: The value for the key \"{}\" is too long ({} characters) and won't be added to the general_stats plot. Maximum length allowed: {} characters.".format(general_stats_path, key, len(value), GENERAL_STATS_OPTION_MAX_LENGTH))
                     continue
                 result.append(stat_item)
-            except:
+            except Exception as e:
                 Log.error("Error while processing general_stats of {}".format(expid))
         return result

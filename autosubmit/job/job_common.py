@@ -176,15 +176,15 @@ class StatisticsSnippetPython:
             try:
                 try:
                     locale.setlocale(locale.LC_ALL,'C.utf8')
-                except:
+                except Exception as e:
                     try:
                         locale.setlocale(locale.LC_ALL, 'C.UTF-8')
-                    except:
+                    except Exception as e:
                         try:
                             locale.setlocale(locale.LC_ALL, 'en_GB')
-                        except:
+                        except Exception as e:
                             locale.setlocale(locale.LC_ALL, 'es_ES')
-            except:
+            except Exception as e:
                 locale.setlocale(locale.LC_ALL, 'C')
             job_name_ptrn = '%CURRENT_LOGDIR%/%JOBNAME%'
             stat_file = open(job_name_ptrn + '_STAT', 'w')
@@ -310,7 +310,7 @@ def parse_output_number(string_number):
     :rtype: float
     """
     number = 0.0
-    if (string_number):
+    if string_number:
         last_letter = string_number.strip()[-1]
         multiplier = 1
         if last_letter == "G":

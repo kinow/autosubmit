@@ -20,7 +20,7 @@ import collections
 import autosubmit.history.utils as HUtils
 import autosubmit.history.database_managers.database_models as Models
 from datetime import datetime, timedelta
-from json import dumps
+from json import dumps , loads
 
 class JobData(object):
     """
@@ -55,7 +55,7 @@ class JobData(object):
       self._platform = platform if platform and len(
           platform) > 0 else "NA"
       self.job_id = job_id if job_id else 0
-      #TODO jobs_data wilmer did this part... need to check that is loading yaml.
+      # TODO jobs_data wilmer did this part... need to check that is loading yaml.
       self.extra_data_parsed = {} # Fail fast
       try:
           if extra_data != "":
@@ -188,7 +188,7 @@ class JobData(object):
         Set the energy value. If it is different from the current energy value, an update flag will be activated.
         """
         if energy > 0:
-            if (energy != self._energy):
+            if energy != self._energy:
                 # print("Updating energy to {0} from {1}.".format(
                 #    energy, self._energy))
                 self.require_update = True
@@ -199,14 +199,14 @@ class JobData(object):
         """
         Returns queuing time as a timedelta object.
         """
-        return str(timedelta(seconds=self.queuing_time()))
+        return str(timedelta(seconds=self.queuing_time))
 
     @property
     def delta_running_time(self):
         """
         Returns running time as a timedelta object.
         """
-        return str(timedelta(seconds=self.running_time()))
+        return str(timedelta(seconds=self.running_time))
 
     @property
     def submit_datetime(self):
@@ -240,7 +240,7 @@ class JobData(object):
         """
         Returns to submit datetime as a string with format %Y-%m-%d-%H:%M:%S
         """
-        o_datetime = self.submit_datetime()
+        o_datetime = self.submit_datetime
         if o_datetime:
             return o_datetime.strftime(HUtils.DATETIME_FORMAT)
         else:
@@ -250,7 +250,7 @@ class JobData(object):
         """
         Returns the start datetime as a string with format %Y-%m-%d-%H:%M:%S
         """
-        o_datetime = self.start_datetime()
+        o_datetime = self.start_datetime
         if o_datetime:
             return o_datetime.strftime(HUtils.DATETIME_FORMAT)
         else:
@@ -260,7 +260,7 @@ class JobData(object):
         """
         Returns the finish datetime as a string with format %Y-%m-%d-%H:%M:%S
         """
-        o_datetime = self.finish_datetime()
+        o_datetime = self.finish_datetime
         if o_datetime:
             return o_datetime.strftime(HUtils.DATETIME_FORMAT)
         else:
@@ -302,11 +302,11 @@ class JobData(object):
         hdata["section"] = self.section
         hdata["member"] = self.member
         hdata["chunk"] = self.chunk
-        hdata["submit"] = self.submit_datetime_str()
-        hdata["start"] = self.start_datetime_str()
-        hdata["finish"] = self.finish_datetime_str()
-        hdata["queue_time"] = self.delta_queue_time()
-        hdata["run_time"] = self.delta_running_time()
+        hdata["submit"] = self.submit_datetime_str
+        hdata["start"] = self.start_datetime_str
+        hdata["finish"] = self.finish_datetime_str
+        hdata["queue_time"] = self.delta_queue_time
+        hdata["run_time"] = self.delta_running_time
         hdata["wallclock"] = self.wallclock
         hdata["ncpus"] = self.ncpus
         hdata["nnodes"] = self.nnodes

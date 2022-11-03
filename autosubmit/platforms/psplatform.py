@@ -32,8 +32,24 @@ class PsPlatform(ParamikoPlatform):
     :type expid: str
     """
 
+    def get_checkAlljobs_cmd(self, jobs_id):
+        pass
+
+    def parse_Alljobs_output(self, output, job_id):
+        pass
+
+    def parse_queue_reason(self, output, job_id):
+        pass
+
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
+        self.mkdir_checker = None
+        self.remove_checker = None
+        self.mkdir_cmd = None
+        self.get_cmd = None
+        self.put_cmd = None
+        self._checkhost_cmd = None
+        self.cancel_cmd = None
         self._header = PsHeader()
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['1']
@@ -41,6 +57,9 @@ class PsPlatform(ParamikoPlatform):
         self.job_status['QUEUING'] = []
         self.job_status['FAILED'] = []
         self.update_cmds()
+
+    def submit_Script(self, hold=False):
+        pass
 
     def update_cmds(self):
         """
@@ -95,11 +114,11 @@ class PsPlatform(ParamikoPlatform):
         try:
             try:
                 self.send_command(self.remove_checker)
-            except:
+            except Exception as e:
                 pass
             self.send_command(self.mkdir_checker)
             pass
             self.send_command(self.remove_checker)
             return True
-        except:
+        except Exception as e:
             return False

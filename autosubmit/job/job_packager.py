@@ -81,7 +81,7 @@ class JobPackager(object):
         # .total_jobs is defined in each section of platforms_.yml, if not from there, it comes form autosubmit_.yml
         # .total_jobs Maximum number of jobs at the same time
         self._max_jobs_to_submit = platform.total_jobs - queuing_jobs_len
-        # Substracting running jobs
+        # Subtracting running jobs
         self._max_jobs_to_submit = self._max_jobs_to_submit - running_jobs_len
         self._max_jobs_to_submit = self._max_jobs_to_submit if self._max_jobs_to_submit > 0 else 0
         self.max_jobs = min(self._max_wait_jobs_to_submit,self._max_jobs_to_submit)
@@ -301,7 +301,7 @@ class JobPackager(object):
                                         for seq in range(0,len(p.jobs_lists)):
                                             try:
                                                 p.jobs_lists[seq].remove(job)
-                                            except:
+                                            except Exception as e:
                                                 pass
                                 if self.wrapper_type[self.current_wrapper_section] != "horizontal" and self.wrapper_type[self.current_wrapper_section] != "vertical" and self.wrapper_type[self.current_wrapper_section] != "vertical-mixed":
                                     aux = p.jobs_lists
@@ -381,7 +381,7 @@ class JobPackager(object):
                                             if direct_children: # Get parent of direct children that aren't in wrapper
                                                 aux_active_jobs += [aux_parent for aux_parent in job.parents if (  aux_parent.status != Status.COMPLETED and aux_parent.status != Status.FAILED) and ( aux_parent.section not in self.jobs_in_wrapper[self.current_wrapper_section] or ( aux_parent.section in self.jobs_in_wrapper[self.current_wrapper_section] and aux_parent.status != Status.COMPLETED and aux_parent.status != Status.FAILED and aux_parent.status != Status.WAITING and aux_parent.status != Status.READY ) ) ]
                                         aux_active_jobs = list(set(aux_active_jobs))
-                                        track = [] # Tracker to prone tree for avoid the checking of the same parent from diferent nodes.
+                                        track = [] # Tracker to prone tree for avoid the checking of the same parent from different nodes.
                                         active_jobs_names = [ job.name for job in p.jobs ] # We want to search if the actual wrapped jobs needs to run for add more jobs to this wrapper
                                         hard_deadlock = False
                                         for job in aux_active_jobs:
@@ -396,7 +396,7 @@ class JobPackager(object):
                                                     if (parent.status == Status.WAITING ) and parent.name != aux_job.name:
                                                         parents_to_check.append(parent)
                                                 track.extend(parents_to_check)
-                                                while len(parents_to_check) > 0 and not infinite_deadlock: # We want to look deeper on the tree until all jobs are completed, or we find an unresolveable deadlock.
+                                                while len(parents_to_check) > 0 and not infinite_deadlock: # We want to look deeper on the tree until all jobs are completed, or we find an unresolvable deadlock.
                                                     aux_job = parents_to_check.pop(0)
                                                     for parent in aux_job.parents:
                                                         if parent.name in active_jobs_names:
@@ -491,7 +491,7 @@ class JobPackager(object):
                                                     if not balanced:
                                                         message += "\nPackages are not well balanced! (This is not the main cause of the Critical error)"
 
-                                                    if len(self._jobs_list.get_in_queue()) == 0: # When there are not more posible jobs, autosubmit will stop the execution
+                                                    if len(self._jobs_list.get_in_queue()) == 0: # When there are not more possible jobs, autosubmit will stop the execution
                                                         raise AutosubmitCritical(message, 7014)
                                         else:
                                             for job in p.jobs:
@@ -659,8 +659,8 @@ class JobPackager(object):
         horizontal_packager.wrapper_limits["max"] = horizontal_packager.wrapper_limits["max"] - actual_wrapped_jobs
         for job in horizontal_package:
             job_list = JobPackagerVertical([job], job.wallclock, horizontal_packager.wrapper_limits["max"],
-                                                 horizontal_packager.wrapper_limits,
-                                                 self._platform.max_wallclock).build_vertical_package(job)
+                                           horizontal_packager.wrapper_limits,
+                                           self._platform.max_wallclock, self.wrapper_type).build_vertical_package(job)
 
             current_package.append(job_list)
 
@@ -704,6 +704,7 @@ class JobPackagerVertical(object):
         Goes through the job and all the related jobs (children, or part of the same date member ordered group), finds those suitable
         and groups them together into a wrapper. 
 
+        :param level:
         :param job: Job to be wrapped. \n
         :type job: Job Object \n
         :return: List of jobs that are wrapped together. \n

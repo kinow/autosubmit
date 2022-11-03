@@ -33,8 +33,25 @@ class SgePlatform(ParamikoPlatform):
     :param expid: experiment's identifier
     :type expid: str
     """
+
+    def get_checkAlljobs_cmd(self, jobs_id):
+        pass
+
+    def parse_Alljobs_output(self, output, job_id):
+        pass
+
+    def parse_queue_reason(self, output, job_id):
+        pass
+
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
+        self.mkdir_cmd = None
+        self.get_cmd = None
+        self.put_cmd = None
+        self._submit_command_name = None
+        self._submit_cmd = None
+        self._checkhost_cmd = None
+        self.cancel_cmd = None
         self._header = SgeHeader()
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['c']
@@ -44,6 +61,9 @@ class SgePlatform(ParamikoPlatform):
                                      'ds', 'dS', 'dT', 'dRs', 'dRS', 'dRT']
         self._pathdir = "\$HOME/LOG_" + self.expid
         self.update_cmds()
+
+    def submit_Script(self, hold=False):
+        pass
 
     def update_cmds(self):
         """
@@ -94,7 +114,7 @@ class SgePlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self.get_qstatjob(job_id)
 
-    def connect(self):
+    def connect(self,reconnect=False):
         """
         In this case, it does nothing because connection is established for each command
 

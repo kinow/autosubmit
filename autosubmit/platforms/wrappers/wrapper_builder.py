@@ -655,7 +655,7 @@ class BashHorizontalWrapperBuilder(BashWrapperBuilder):
 
     def build_main(self):
         return super(BashHorizontalWrapperBuilder, self).build_main() + self.build_parallel_threads_launcher()
-#SRUN CLASES
+#SRUN CLASSES
 class SrunWrapperBuilder(WrapperBuilder):
 
     def build_imports(self):

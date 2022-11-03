@@ -37,8 +37,25 @@ class PBSPlatform(ParamikoPlatform):
     :type version: str
     """
 
+    def submit_Script(self, hold=False):
+        pass
+
+    def get_checkAlljobs_cmd(self, jobs_id):
+        pass
+
+    def parse_Alljobs_output(self, output, job_id):
+        pass
+
     def __init__(self, expid, name, config, version):
         ParamikoPlatform.__init__(self, expid, name, config)
+        self._checkjob_cmd = None
+        self._submit_command_name = None
+        self._submit_cmd = None
+        self.mkdir_cmd = None
+        self.get_cmd = None
+        self.put_cmd = None
+        self._checkhost_cmd = None
+        self.cancel_cmd = None
         self._version = version
 
         if str.startswith(version, '10'):
@@ -57,6 +74,9 @@ class PBSPlatform(ParamikoPlatform):
         self.job_status['QUEUING'] = ['Q', 'H', 'S', 'T', 'W', 'U', 'M']
         self.job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout']
         self.update_cmds()
+
+    def parse_queue_reason(self, output, job_id):
+        pass
 
     def update_cmds(self):
         """

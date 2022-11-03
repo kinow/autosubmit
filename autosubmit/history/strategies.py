@@ -22,7 +22,7 @@ import traceback
 from .internal_logging import Logging
 from .database_managers.database_manager import DEFAULT_LOCAL_ROOT_DIR, DEFAULT_HISTORICAL_LOGS_DIR
 
-class PlatformInformationHandler():
+class PlatformInformationHandler:
   def __init__(self, strategy):
     self._strategy = strategy
   
@@ -152,6 +152,7 @@ class TwoDimWrapperDistributionStrategy(Strategy):
 
   def __init__(self, historiclog_dir_path=DEFAULT_HISTORICAL_LOGS_DIR):
     super(TwoDimWrapperDistributionStrategy, self).__init__(historiclog_dir_path=historiclog_dir_path)
+    self.jobs_per_level = None
 
   def apply_distribution(self, job_data_dc, job_data_dcs_in_wrapper, slurm_monitor):
     try:

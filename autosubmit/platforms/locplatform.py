@@ -37,8 +37,26 @@ class LocalPlatform(ParamikoPlatform):
     :type expid: str
     """
 
+    def submit_Script(self, hold=False):
+        pass
+
+    def parse_Alljobs_output(self, output, job_id):
+        pass
+
+    def parse_queue_reason(self, output, job_id):
+        pass
+
+    def get_checkAlljobs_cmd(self, jobs_id):
+        pass
+
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
+        self.cancel_cmd = None
+        self.mkdir_cmd = None
+        self.del_cmd = None
+        self.get_cmd = None
+        self.put_cmd = None
+        self._checkhost_cmd = None
         self.type = 'local'
         self._header = LocalHeader()
         self.job_status = dict()
@@ -93,7 +111,7 @@ class LocalPlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self.get_pscall(job_id)
 
-    def connect(self):
+    def connect(self, reconnect=False):
         self.connected = True
     def test_connection(self):
         self.connected = True
@@ -120,7 +138,7 @@ class LocalPlatform(ParamikoPlatform):
 
         return True
 
-    def send_file(self, filename):
+    def send_file(self, filename, check=True):
         self.check_remote_log_dir()
         self.delete_file(filename,del_cmd=True)
         command = '{0} {1} {2}'.format(self.put_cmd, os.path.join(self.tmp_path, filename),
@@ -134,8 +152,6 @@ class LocalPlatform(ParamikoPlatform):
             raise
         return True
 
-    def check_file_exists(self,filename,wrapper_failed=False):
-        return True
 
     def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False,wrapper_failed=False):
         local_path = os.path.join(self.tmp_path, relative_path)
@@ -176,7 +192,7 @@ class LocalPlatform(ParamikoPlatform):
         while not file_exist and retries < max_retries:
             try:
                 file_exist = os.path.isfile(os.path.join(self.get_files_path(),src))
-                if not file_exist:  # File doesn't exist, retry in sleeptime
+                if not file_exist:  # File doesn't exist, retry in sleep-time
                     Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
                              max_retries - retries, remote_path)
                     if not wrapper_failed:
@@ -212,6 +228,7 @@ class LocalPlatform(ParamikoPlatform):
         :param must_exist: ignore if file exist or not
         :type dest: str
         """
+        path_root = ""
         try:
             path_root = self.get_files_path()
             os.rename(os.path.join(path_root, src),os.path.join(path_root, dest))

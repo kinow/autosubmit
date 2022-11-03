@@ -39,6 +39,9 @@ class ParamikoSubmitter(Submitter):
     Class to manage the experiments platform
     """
 
+    def __init__(self):
+        self.platforms = None
+
     def load_platforms_migrate(self, asconf, retries=5):
         pass  # Add all info related to migrate
 
@@ -187,7 +190,7 @@ class ParamikoSubmitter(Submitter):
                 remote_platform.update_cmds()
 
                 platforms[section] = remote_platform
-            except:
+            except Exception as e:
                 raise_message = "Error in platform.conf: SCRATCH_DIR, PROJECT, USER, EXPID must be defined for platform {0}".format(section)
             # Executes update_cmds() from corresponding Platform Object
             # Save platform into result dictionary

@@ -40,17 +40,17 @@ def handle_start_time(start_time):
       parsed_time = datetime.datetime.strptime(start_time, "%H:%M:%S")
       target_date = datetime.datetime(datetime_now.year, datetime_now.month,
                                       datetime_now.day, parsed_time.hour, parsed_time.minute, parsed_time.second)
-    except:
+    except Exception as e:
       try:
           # Trying second parse y-m-d H:M:S
           target_date = datetime.datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-      except:
+      except Exception as e:
           target_date = None
           Log.critical(
               "The string input provided as the starting time of your experiment must have the format 'H:M:S' or 'yyyy-mm-dd H:M:S'. Your input was '{0}'.".format(start_time))
           return
     # Must be in the future
-    if (target_date < datetime.datetime.now()):
+    if target_date < datetime.datetime.now():
       Log.critical("You must provide a valid date into the future. Your input was interpreted as '{0}', which is considered past.\nCurrent time {1}.".format(
           target_date.strftime("%Y-%m-%d %H:%M:%S"), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
       return
@@ -77,7 +77,7 @@ def handle_start_after(start_after, expid, BasicConfig):
         return None
     # Historical Database: We use the historical database to retrieve the current progress data of the supplied expid (start_after)
     exp_history = ExperimentHistory(start_after, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-    if exp_history.is_header_ready() == False:
+    if exp_history.is_header_ready() is False:
         Log.critical("Experiment {0} is running a database version which is not supported by the completion trigger function. An updated DB version is needed.".format(
             start_after))
         return
@@ -106,4 +106,4 @@ def get_allowed_members(run_members, as_conf):
     if len(allowed_members) == 0:
       raise AutosubmitCritical("Not a valid -rm --run_members input: {0}".format(str(run_members)))
     return allowed_members
-  return None
+  return []

@@ -22,7 +22,7 @@ from .database_managers.database_manager import DEFAULT_LOCAL_ROOT_DIR, DEFAULT_
 from .internal_logging import Logging
 from autosubmitconfigparser.config.basicconfig import BasicConfig
 
-class ExperimentStatus():
+class ExperimentStatus:
   """ Represents the Experiment Status Mechanism that keeps track of currently active experiments """
   def __init__(self, expid, local_root_dir_path=DEFAULT_LOCAL_ROOT_DIR, historiclog_dir_path=DEFAULT_HISTORICAL_LOGS_DIR):
     # type : (str) -> None

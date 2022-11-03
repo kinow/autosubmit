@@ -51,6 +51,7 @@ class JobPackageBase(object):
 
     def __init__(self, jobs):
         # type: (List[Job]) -> None
+        self._common_script = None
         self._jobs = jobs # type: List[Job]
         self._expid = jobs[0].expid # type: str
         self.hold = False # type: bool
@@ -95,7 +96,7 @@ class JobPackageBase(object):
         for job in jobs:
             if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
                 if only_generate:
-                    exit = True
+                    exit_ = True
                     break
                 if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
                     lock.acquire()
@@ -119,11 +120,12 @@ class JobPackageBase(object):
         for i in range(0, len(jobs)):
             self._job_scripts[jobs[i].name] = jobs[i].create_script(configuration)
 
-    def _create_common_script(self):
+    def _create_common_script(self,filename=""):
         pass
 
     def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
+        :param hold:
         :para configuration: Autosubmit basic configuration \n
         :type configuration: AutosubmitConfig object \n
         :param parameters; Parameters from joblist \n
@@ -131,7 +133,8 @@ class JobPackageBase(object):
         :param only_generate: True if coming from generate_scripts_andor_wrappers(). If true, only generates scripts; otherwise, submits. \n
         :type only_generate: Boolean 
         """
-        exit=False
+        job = None
+        exit_=False
         thread_number = multiprocessing.cpu_count()
         if len(self.jobs) > 2500:
             thread_number = thread_number * 2
@@ -147,7 +150,7 @@ class JobPackageBase(object):
                 for job in self.jobs:
                     if job.check == Job.CHECK_ON_SUBMISSION.lower():
                         if only_generate:
-                            exit=True
+                            exit_=True
                             break
                         if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
                             if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
@@ -172,7 +175,7 @@ class JobPackageBase(object):
             raise AutosubmitCritical(
                 "Error on {1}, template [{0}] still does not exists in running time(check=on_submission actived) ".format(job.file,job.name), 7014)
         Log.debug("Creating Scripts")
-        if not exit:
+        if not exit_:
             if len(self.jobs) < thread_number:
                 self._create_scripts(configuration)
             else:
@@ -297,7 +300,7 @@ class JobPackageArray(JobPackageBase):
         os.chmod(os.path.join(self._tmp_path, filename), 0o755)
         return filename
 
-    def _create_common_script(self, filename):
+    def _create_common_script(self, filename =""):
         script_content = self.platform.header.array_header(filename, self._array_size_id, self._wallclock,
                                                            self._num_processors,
                                                            directives=self.platform.custom_directives)
@@ -416,7 +419,7 @@ class JobPackageThread(JobPackageBase):
         for i in range(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
         self._common_script = self._create_common_script()
-    def _create_common_script(self):
+    def _create_common_script(self,filename=""):
         lang = locale.getlocale()[1]
         if lang is None:
             lang = locale.getdefaultlocale()[1]
@@ -528,7 +531,7 @@ class JobPackageThreadWrapped(JobPackageThread):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
         self._common_script = self._create_common_script()
 
-    def _create_common_script(self):
+    def _create_common_script(self,filename=""):
         script_content = self._common_script_content()
         script_file = self.name + '.cmd'
         open(os.path.join(self._tmp_path, script_file), 'wb').write(script_content)
@@ -572,37 +575,38 @@ class JobPackageVertical(JobPackageThread):
             self._threads = job.threads
 
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
-        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format_(str(int(time.time())) +
                                                                                   str(random.randint(1, 10000)),
                                                                                   self._num_processors,
                                                                                   len(self._jobs))
 
     def parse_time(self):
-        format = "minute"
+        format_ = "minute"
+        # noinspection Annotator
         regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
         parts = regex.match(self._wallclock)
         if not parts:
             return
         parts = parts.groupdict()
         if int(parts['hours']) > 0 :
-            format = "hour"
+            format_ = "hour"
         else:
-            format = "minute"
+            format_ = "minute"
         time_params = {}
         for name, param in parts.items():
             if param:
                 time_params[name] = int(param)
-        return timedelta(**time_params),format
+        return timedelta(**time_params),format_
     def _common_script_content(self):
         if self.jobs[0].wrapper_type == "vertical":
             #wallclock = datetime.datetime.strptime(self._wallclock, '%H:%M')
-            wallclock,format = self.parse_time()
-            if format == "hour":
+            wallclock,format_ = self.parse_time()
+            if format_ == "hour":
                 total = wallclock.days * 24 + wallclock.seconds / 60 / 60
             else:
                 total = wallclock.days * 24 + wallclock.seconds / 60
             total = total * 1.15
-            if format == "hour":
+            if format_ == "hour":
                 hour = int(total )
                 minute = int((total - int(total)) * 60.0)
                 second = int(((total - int(total)) * 60 -

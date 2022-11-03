@@ -45,6 +45,14 @@ class SlurmPlatform(ParamikoPlatform):
 
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
+        self.mkdir_cmd = None
+        self.get_cmd = None
+        self.put_cmd = None
+        self._submit_hold_cmd = None
+        self._submit_command_name = None
+        self._submit_cmd = None
+        self._checkhost_cmd = None
+        self.cancel_cmd = None
         self._header = SlurmHeader()
         self._wrapper = SlurmWrapperFactory(self)
         self.job_status = dict()
@@ -76,6 +84,7 @@ class SlurmPlatform(ParamikoPlatform):
         try:
             valid_packages_to_submit = [ package for package in valid_packages_to_submit if package.x11 != True]
             if len(valid_packages_to_submit) > 0:
+                package = valid_packages_to_submit[0]
                 try:
                     jobs_id = self.submit_Script(hold=hold)
                 except AutosubmitError as e:
@@ -83,8 +92,8 @@ class SlurmPlatform(ParamikoPlatform):
                     for jobname in jobnames:
                         jobid = self.get_jobid_by_jobname(jobname)
                         #cancel bad submitted job if jobid is encountered
-                        for id in jobid:
-                            self.cancel_job(id)
+                        for id_ in jobid:
+                            self.cancel_job(id_)
                     jobs_id = None
                     self.connected = False
                     if e.trace is not None:
@@ -120,6 +129,7 @@ class SlurmPlatform(ParamikoPlatform):
                 i = 0
                 if hold:
                     sleep(10)
+
                 for package in valid_packages_to_submit:
                     if hold:
                         retries = 5
@@ -155,12 +165,12 @@ class SlurmPlatform(ParamikoPlatform):
                         job.status = Status.SUBMITTED
                         job.write_submit_time(hold=hold)
                     i += 1
+                if len(failed_packages) > 0:
+                    for job_id in failed_packages:
+                        package.jobs[0].platform.send_command(
+                            package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
+                    raise AutosubmitError("{0} submission failed, some hold jobs failed to be held".format(self.name), 6015)
             save = True
-            if len(failed_packages) > 0:
-                for job_id in failed_packages:
-                    package.jobs[0].platform.send_command(
-                        package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
-                raise AutosubmitError("{0} submission failed, some hold jobs failed to be held".format(self.name), 6015)
         except WrongTemplateException as e:
             raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
                 e.job_name), 7014, str(e))
@@ -185,6 +195,7 @@ class SlurmPlatform(ParamikoPlatform):
         """
         Submit a job from a given job object.
 
+        :param export:
         :param job: job object
         :type job: autosubmit.job.job.Job
         :param script_name: job script's name
@@ -385,11 +396,11 @@ class SlurmPlatform(ParamikoPlatform):
                 ncpus = int(line[2] if len(line) > 2 else 0)
                 nnodes = int(line[3] if len(line) > 3 else 0)
                 status = str(line[1])
-                if packed == False:
+                if packed is False:
                     # If it is not wrapper job, take first line as source
                     if status not in ["COMPLETED", "FAILED", "UNKNOWN"]:
                         # It is not completed, then its error and send default data plus output
-                        return (0, 0, 0, 0, ncpus, nnodes, detailed_data, False)
+                        return 0, 0, 0, 0, ncpus, nnodes, detailed_data, False
                 else:
                     # If it is a wrapped job
                     # Check if the wrapper has finished
@@ -417,7 +428,7 @@ class SlurmPlatform(ParamikoPlatform):
                         else:
                             # If it is a wrapper job
                             # If end of wrapper, take data from first line
-                            if is_end_of_wrapper == True:
+                            if is_end_of_wrapper is True:
                                 finish = (int(mktime(datetime.strptime(line[6], "%Y-%m-%dT%H:%M:%S").timetuple(
                                 ))) if len(line) > 6 and line[6] != "Unknown" else int(time()))
                                 energy = parse_output_number(line[7]) if len(
@@ -463,14 +474,14 @@ class SlurmPlatform(ParamikoPlatform):
                         # joules = -1
                         pass
 
-                detailed_data = detailed_data if not packed or is_end_of_wrapper == True else extra_data
-                return (submit, start, finish, energy, ncpus, nnodes, detailed_data, is_end_of_wrapper)
+                detailed_data = detailed_data if not packed or is_end_of_wrapper is True else extra_data
+                return submit, start, finish, energy, ncpus, nnodes, detailed_data, is_end_of_wrapper
 
-            return (0, 0, 0, 0, 0, 0, dict(), False)
+            return 0, 0, 0, 0, 0, 0, dict(), False
         except Exception as exp:
             Log.warning(
                 "Autosubmit couldn't parse SLURM energy output. From parse_job_finish_data: {0}".format(str(exp)))
-            return (0, 0, 0, 0, 0, 0, dict(), False)
+            return 0, 0, 0, 0, 0, 0, dict(), False
 
     def parse_Alljobs_output(self, output, job_id):
         status = ""

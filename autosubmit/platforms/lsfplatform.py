@@ -31,8 +31,29 @@ class LsfPlatform(ParamikoPlatform):
     :param expid: experiment's identifier
     :type expid: str
     """
+
+    def submit_Script(self, hold=False):
+        pass
+
+    def get_checkAlljobs_cmd(self, jobs_id):
+        pass
+
+    def parse_queue_reason(self, output, job_id):
+        pass
+
+    def parse_Alljobs_output(self, output, job_id):
+        pass
+
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
+        self.mkdir_cmd = None
+        self.get_cmd = None
+        self.put_cmd = None
+        self._submit_command_name = None
+        self._submit_cmd = None
+        self._checkhost_cmd = None
+        self._checkjob_cmd = None
+        self.cancel_cmd = None
         self._header = LsfHeader()
         self._wrapper = LSFWrapperFactory(self)
         self.job_status = dict()

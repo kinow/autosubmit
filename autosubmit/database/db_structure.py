@@ -27,7 +27,7 @@ from typing import Dict, List
 from log.log import Log
 # from networkx import DiGraph
 
-#DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"
+# DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"
 
 
 def get_structure(exp_id, structures_path):
@@ -132,7 +132,7 @@ def save_structure(graph, exp_id, structures_path):
             conn = create_connection(db_structure_path)
             _delete_table_content(conn)
         else:
-            # Path to structure file does not edxist -> Initialize structure
+            # Path to structure file does not exist -> Initialize structure
             get_structure(exp_id, structures_path)
             conn = create_connection(db_structure_path)
         if conn:
@@ -160,7 +160,7 @@ def _create_edge(conn, data):
         sql = ''' INSERT INTO experiment_structure(e_from, e_to) VALUES(?,?) '''
         cur = conn.cursor()
         cur.executemany(sql, data)
-        # return cur.lastrowid
+        # return cur.lastmod
     except sqlite3.Error as e:
         Log.debug(traceback.format_exc())
         Log.warning("Error on Insert : {0}".format(str(type(e).__name__)))

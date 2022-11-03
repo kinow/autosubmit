@@ -19,6 +19,7 @@ class Platform(object):
         :param expid:
         :param name:
         """
+        self.connected = False
         self.expid = expid # type: str
         self.name = name # type: str
         self.config = config
@@ -61,10 +62,11 @@ class Platform(object):
     def submit_ready_jobs(self, as_conf, job_list, platforms_to_test, packages_persistence, packages_to_submit,
                           inspect=False, only_wrappers=False, hold=False):
 
-        # type: (AutosubmitConfig, JobList, Set[Platform], JobPackagePersistence, bool, bool, bool) -> bool
         """
         Gets READY jobs and send them to the platforms if there is available space on the queues
 
+        :param hold:
+        :param packages_to_submit:
         :param as_conf: autosubmit config object \n
         :type as_conf: AutosubmitConfig object  \n
         :param job_list: job list to check  \n
@@ -110,7 +112,7 @@ class Platform(object):
                         packages_persistence.save(
                             package.name, package.jobs, package._expid, inspect)
                     for innerJob in package._jobs:
-                        # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
+                        # Setting status to COMPLETED, so it does not get stuck in the loop that calls this function
                         innerJob.status = Status.COMPLETED
 
                 # If called from RUN or inspect command
@@ -121,7 +123,7 @@ class Platform(object):
                         if not inspect:
                             job_list.save()
                         valid_packages_to_submit.append(package)
-                        # Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str(open()))
+                        # Log.debug("FD end-submit: {0}".format(log.fd_show.fd_table_status_str(open()))
                     except (IOError, OSError):
                         if package.jobs[0].id != 0:
                             failed_packages.append(package.jobs[0].id)
@@ -263,9 +265,10 @@ class Platform(object):
 
         parameters['{0}LOGDIR'.format(prefix)] = self.get_files_path()
 
-    def send_file(self, filename):
+    def send_file(self, filename, check=True):
         """
         Sends a local file to the platform
+        :param check:
         :param filename: name of the file to send
         :type filename: str
         """
@@ -285,6 +288,8 @@ class Platform(object):
         """
         Copies a file from the current platform to experiment's tmp folder
 
+        :param wrapper_failed:
+        :param ignore_log:
         :param filename: file name
         :type filename: str
         :param must_exist: If True, raises an exception if file can not be copied
@@ -336,22 +341,13 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
-    def get_stat_file(self, exp_id, job_name):
-        """
-        Get the given stat files for all retrials
-        :param exp_id: experiment id
-        :type exp_id: str
-        :param job_name: job name
-        :type job_name: str
-
-        """
-        self.get_files(job_name,False, 'LOG_{0}'.format(exp_id))
-
     def get_completed_files(self, job_name, retries=0, recovery=False, wrapper_failed=False):
         """
         Get the COMPLETED file of the given job
 
 
+        :param wrapper_failed:
+        :param recovery:
         :param job_name: name of the job
         :type job_name: str
         :param retries: Max number of tries to get the file
@@ -520,9 +516,10 @@ class Platform(object):
         """
         Checks job running status
 
+        :param is_wrapper:
+        :param submit_hold_check:
+        :param job:
         :param retries: retries
-        :param jobid: job id
-        :type jobid: str
         :param default_status: status to assign if it can be retrieved from the platform
         :type default_status: autosubmit.job.job_common.Status
         :return: current job status

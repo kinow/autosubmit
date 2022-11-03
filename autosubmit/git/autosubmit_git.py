@@ -22,7 +22,7 @@ import os
 from shutil import rmtree
 import subprocess
 import shutil
-#from autosubmit import Autosubmit
+# from autosubmit import Autosubmit
 from autosubmitconfigparser.config.basicconfig import BasicConfig
 from time import time
 from log.log import Log, AutosubmitCritical, AutosubmitError
@@ -162,8 +162,8 @@ class AutosubmitGit:
                 Log.info("Making a backup of your current proj folder at {0}".format(
                     project_backup_path))
                 shutil.move(project_path, project_backup_path)
-            #shutil.make_archive(project_backup_path, 'zip', project_path)
-            #project_backup_path = project_backup_path + ".zip"
+            # shutil.make_archive(project_backup_path, 'zip', project_path)
+            # project_backup_path = project_backup_path + ".zip"
 
         if os.path.exists(project_path):
             Log.info("Using project folder: {0}", project_path)
@@ -195,16 +195,16 @@ class AutosubmitGit:
                                                                              git_project_origin,
                                                                              project_destination)
         try:
-            ##command 0
+            ## command 0
             Log.debug('Clone command: {0}', command_0)
 
             if git_remote_project_path == '':
                 command_0 = "cd {0} ; {1}".format(project_path, command_0)
                 output_0 = subprocess.check_output(command_0, shell=True)
             else:
-                command_0 = "cd {0} ; {1}".format(git_remote_path, command_0)
+                command_0 = "cd {0} ; {1}".format(project_path, command_0)
                 hpcarch.send_command(command_0)
-            ##command 1
+            # command 1
             if os.path.exists(os.path.join(git_path, ".githooks")):
                 for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
                     for f_dir in dirs:
@@ -225,16 +225,16 @@ class AutosubmitGit:
                     command_1 += " git submodule update --init --recursive {0};".format(submodule)
             if git_remote_project_path == '':
                 try:
-                    command_1 = "cd {0}; {1} ".format(git_path,command_1)
+                    command_1 = "cd {0}; {1} ".format(git_path, command_1)
                     Log.debug('Githook + Checkout and Submodules: {0}', command_1)
                     output_1 = subprocess.check_output(command_1, shell=True)
                 except BaseException as e:
                     submodule_failure = True
                     Log.printlog("Trace: {0}".format(str(e)), 6014)
                     Log.printlog(
-                        "Submodule {0} has a wrong configuration".format(submodule), 6014)
+                        "Submodule has a wrong configuration", 6014)
             else:
-                command_1 = "cd {0}; {1} ".format(git_remote_path, command_1)
+                command_1 = "cd {0}; {1} ".format(project_path, command_1)
                 hpcarch.send_command(command_1)
         except subprocess.CalledProcessError as e:
             shutil.rmtree(project_path)

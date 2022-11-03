@@ -19,7 +19,7 @@ import os
 from . import utils as HUtils
 from .database_managers.database_manager import DEFAULT_HISTORICAL_LOGS_DIR
 
-class Logging():
+class Logging:
   def __init__(self, expid, historiclog_dir_path=DEFAULT_HISTORICAL_LOGS_DIR):
     self.expid = expid
     self.historiclog_dir_path = historiclog_dir_path

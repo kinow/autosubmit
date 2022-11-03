@@ -18,7 +18,7 @@
 
 from . import platform_utils as utils
 
-class SlurmMonitorItem():
+class SlurmMonitorItem:
   def __init__(self, name, status, ncpus, nnodes, submit, start, finish, energy="0", MaxRSS=0.0, AveRSS=0.0):
     self.name = str(name)
     self.status = str(status)
@@ -56,14 +56,14 @@ class SlurmMonitorItem():
   
   @property
   def step_number(self):
-    if self.is_step == True:
+    if self.is_step is True:
       point_loc = self.name.find(".")
       return int(self.name[point_loc+1:])
     return -1
   
   @property
   def is_step(self):
-    if self.name.find(".") >= 0 and self.is_batch == False and self.is_extern == False:
+    if self.name.find(".") >= 0 and self.is_batch is False and self.is_extern is False:
       return True
     return False
     

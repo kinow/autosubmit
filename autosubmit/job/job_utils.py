@@ -50,6 +50,7 @@ def get_job_package_code(expid, job_name):
     """
     Finds the package code and retrieves it. None if no package.
 
+    :param job_name:
     :param expid: Experiment ID
     :type expid: String
 
@@ -61,13 +62,13 @@ def get_job_package_code(expid, job_name):
         basic_conf.read()
         packages_wrapper = JobPackagePersistence(os.path.join(basic_conf.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid).load(wrapper=True)
         packages_wrapper_plus = JobPackagePersistence(os.path.join(basic_conf.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid).load(wrapper=False)
-        if (packages_wrapper or packages_wrapper_plus):
+        if packages_wrapper or packages_wrapper_plus:
             packages = packages_wrapper if len(packages_wrapper) > len(packages_wrapper_plus) else packages_wrapper_plus
             for exp, package_name, _job_name in packages:
                 if job_name == _job_name:
                     code = int(package_name.split("_")[2])
                     return code            
-    except:
+    except Exception as e:
         pass
     return 0
 
@@ -142,8 +143,8 @@ class SubJobManager(object):
     def process_times(self):
         """
         """
-        if (self.job_to_package) and (self.package_to_jobs):
-            if(self.current_structure) and len(list(self.current_structure.keys())) > 0:
+        if self.job_to_package and self.package_to_jobs:
+            if self.current_structure and len(list(self.current_structure.keys())) > 0:
                 # Structure exists
                 new_queues = dict()
                 fixes_applied = dict()
@@ -175,7 +176,7 @@ class SubJobManager(object):
                         sub.parents) == 0]
 
                     # While roots exists (consider pop)
-                    while(len(roots) > 0):
+                    while len(roots) > 0:
                         sub = roots.pop(0)
                         if len(sub.children) > 0:
                             for sub_children_name in sub.children:
@@ -229,7 +230,7 @@ class SubJobManager(object):
                         positive = len(
                             [job for job in filtered if job.transit >= 0])
 
-                        if (positive > 1):
+                        if positive > 1:
                             for i in range(0, len(filtered)):
                                 if filtered[i].transit >= 0:
                                     temp_index = i

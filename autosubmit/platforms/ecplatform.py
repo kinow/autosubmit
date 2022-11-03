@@ -37,6 +37,18 @@ class EcPlatform(ParamikoPlatform):
     :type scheduler: str (pbs, loadleveler)
     """
 
+    def parse_Alljobs_output(self, output, job_id):
+        pass
+
+    def parse_queue_reason(self, output, job_id):
+        pass
+
+    def get_checkAlljobs_cmd(self, jobs_id):
+        pass
+
+    def submit_Script(self, hold=False):
+        pass
+
     def __init__(self, expid, name, config, scheduler):
         ParamikoPlatform.__init__(self, expid, name, config)
         if scheduler == 'pbs':
@@ -57,6 +69,19 @@ class EcPlatform(ParamikoPlatform):
         self._allow_arrays = False
         self._allow_wrappers = False # TODO
         self._allow_python_jobs = False
+        self.root_dir = ""
+        self.remote_log_dir = ""
+        self.cancel_cmd = ""
+        self._checkjob_cmd = ""
+        self._checkhost_cmd = ""
+        self._submit_cmd = ""
+        self._submit_command_name = ""
+        self.put_cmd = ""
+        self.get_cmd = ""
+        self.del_cmd = ""
+        self.mkdir_cmd = ""
+        self.check_remote_permissions_cmd = ""
+        self.check_remote_permissions_remove_cmd = ""
         self.update_cmds()
 
     def update_cmds(self):
@@ -123,7 +148,7 @@ class EcPlatform(ParamikoPlatform):
             export += " ; "
         return export + self._submit_cmd + job_script
 
-    def connect(self):
+    def connect(self, reconnect=False):
         """
         In this case, it does nothing because connection is established for each command
 
@@ -152,13 +177,13 @@ class EcPlatform(ParamikoPlatform):
         try:
             try:
                 output = subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=True)
-            except:
+            except Exception as e:
                 pass
             output = subprocess.check_output(self.check_remote_permissions_cmd, shell=True)
             pass
             output = subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=True)
             return True
-        except:
+        except Exception as e:
             return False
 
     def send_command(self, command, ignore_log=False, x11 = False):

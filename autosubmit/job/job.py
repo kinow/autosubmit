@@ -84,6 +84,7 @@ class Job(object):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
     def __init__(self, name, job_id, status, priority):
+        self.script_name_wrapper = None
         self.delay_end = datetime.datetime.now()
         self.delay_retrials = "0"
         self.wrapper_type = None
@@ -575,7 +576,7 @@ class Job(object):
                     already_completed = True
                 retrial_dates = list(map(lambda y: parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y,
                                     retrial_fields))
-                # Inserting list [submit, start, finish] of datetimes at the beginning of the list. Restores ordering.
+                # Inserting list [submit, start, finish] of datetime at the beginning of the list. Restores ordering.
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
@@ -634,6 +635,7 @@ class Job(object):
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0):
         max_logs = 0
+        last_log = 0
         sleep(5)
         stat_file = self.script_name[:-4] + "_STAT_"
         lang = locale.getlocale()[1]
@@ -645,12 +647,19 @@ class Job(object):
         count = 0
         success = False
         error_message = ""
+        platform = None
+        max_retrials = 0
         while (count < retries) or not success:
             try:
                 as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
                 as_conf.reload(first_load=True)
+                max_retrials = as_conf.get_retrials()
+                max_logs = int(as_conf.get_retrials()) - fail_count
+                last_log = int(as_conf.get_retrials()) - fail_count
                 submitter = self._get_submitter(as_conf)
                 submitter.load_platforms(as_conf)
+                platform = submitter.platforms[platform_name]
+                platform.test_connection()
                 success = True
             except BaseException as e:
                 error_message = str(e)
@@ -661,31 +670,28 @@ class Job(object):
             raise AutosubmitError(
                 "Couldn't load the autosubmit platforms, seems that the local platform has some issue\n:{0}".format(
                     error_message), 6006)
-        platform = submitter.platforms[platform_name]
-        try:
-            platform.test_connection()
-            max_logs = int(as_conf.get_retrials()) - fail_count
-            last_log = int(as_conf.get_retrials()) - fail_count
-            if self.wrapper_type is not None and self.wrapper_type == "vertical":
-                found = False
-                retrials = 0
-                while retrials < 3 and not found:
-                    if platform.check_stat_file_by_retrials(stat_file + str(max_logs)):
-                        found = True
-                    retrials = retrials + 1
-                for i in range(max_logs-1,-1,-1):
-                    if platform.check_stat_file_by_retrials(stat_file + str(i)):
-                        last_log = i
-                    else:
-                        break
-                remote_logs = (self.script_name + ".out." + str(last_log), self.script_name + ".err." + str(last_log))
+        else:
+            try:
+                if self.wrapper_type is not None and self.wrapper_type == "vertical":
+                    found = False
+                    retrials = 0
+                    while retrials < 3 and not found:
+                        if platform.check_stat_file_by_retrials(stat_file + str(max_logs)):
+                            found = True
+                        retrials = retrials + 1
+                    for i in range(max_logs-1,-1,-1):
+                        if platform.check_stat_file_by_retrials(stat_file + str(i)):
+                            last_log = i
+                        else:
+                            break
+                    remote_logs = (self.script_name + ".out." + str(last_log), self.script_name + ".err." + str(last_log))
 
-            else:
-                remote_logs = (self.script_name + ".out."+str(fail_count), self.script_name + ".err." + str(fail_count))
+                else:
+                    remote_logs = (self.script_name + ".out."+str(fail_count), self.script_name + ".err." + str(fail_count))
 
-        except BaseException as e:
-            Log.printlog(
-                "{0} \n Couldn't connect to the remote platform for {1} job err/out files. ".format(str(e), self.name), 6001)
+            except BaseException as e:
+                Log.printlog(
+                    "{0} \n Couldn't connect to the remote platform for {1} job err/out files. ".format(str(e), self.name), 6001)
         out_exist = False
         err_exist = False
         retries = 3
@@ -737,10 +743,10 @@ class Job(object):
                                     try:
                                         total_stats[0] = float(total_stats[0])
                                         total_stats[1] = float(total_stats[1])
-                                    except:
+                                    except Exception as e:
                                         total_stats[0] = int(str(total_stats[0]).split('.')[0])
                                         total_stats[1] = int(str(total_stats[1]).split('.')[0])
-                                    if max_logs != ( int(as_conf.get_retrials()) - fail_count ):
+                                    if max_logs != ( int(max_retrials) - fail_count ):
                                         time_stamp = date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S')
                                     else:
                                         with open(os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP'), 'rb+') as f2:
@@ -749,7 +755,7 @@ class Job(object):
                                                     line = line.decode(lang)
                                                     time_stamp = line.split(" ")[0]
 
-                                    self.write_total_stat_by_retries(total_stats,max_logs == ( int(as_conf.get_retrials()) - fail_count ))
+                                    self.write_total_stat_by_retries(total_stats,max_logs == ( int(max_retrials) - fail_count ))
                                     platform.remove_stat_file_by_retrials(stat_file+str(max_logs))
                                     l_log = (self.script_name[:-4] + "." + time_stamp + ".out",self.script_name[:-4] + "." + time_stamp + ".err")
                                     r_log = ( remote_logs[0][:-1]+str(max_logs) , remote_logs[1][:-1]+str(max_logs) )
@@ -792,7 +798,7 @@ class Job(object):
                 e.message, self.name), 6001)
             try:
                 platform.closeConnection()
-            except:
+            except Exception as e:
                 pass
             return
         try:
@@ -801,21 +807,20 @@ class Job(object):
             pass
         return
     def parse_time(self,wallclock):
-        format = "minute"
         regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
         parts = regex.match(wallclock)
         if not parts:
             return
         parts = parts.groupdict()
         if int(parts['hours']) > 0 :
-            format = "hour"
+            format_ = "hour"
         else:
-            format = "minute"
+            format_ = "minute"
         time_params = {}
         for name, param in parts.items():
             if param:
                 time_params[name] = int(param)
-        return datetime.timedelta(**time_params),format
+        return datetime.timedelta(**time_params),format_
     # Duplicated for wrappers and jobs to fix in 4.0.0
     def is_over_wallclock(self, start_time, wallclock):
         """
@@ -850,7 +855,7 @@ class Job(object):
         """
         Updates job status, checking COMPLETED file if needed
 
-        :param copy_remote_logs: boolean, if True, copies remote logs to local
+        :param as_conf:
         :param failed_file: boolean, if True, checks if the job failed
         :return:
         """
@@ -952,6 +957,7 @@ class Job(object):
         """
         Check the presence of *COMPLETED* file.
         Change status to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
+        :param over_wallclock:
         :param default_status: status to set if job is not completed. By default, is FAILED
         :type default_status: Status
         """
@@ -1111,7 +1117,7 @@ class Job(object):
             elif self.custom_directives == '':
                 self.custom_directives = []
         except BaseException as e:
-            raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({custom_directive}) for job {self.section}",7014,str(e))
+            raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({self.custom_directive}) for job {self.section}",7014,str(e))
         parameters['NUMPROC'] = self.processors
         parameters['PROCESSORS'] = self.processors
         parameters['MEMORY'] = self.memory
@@ -1235,7 +1241,7 @@ class Job(object):
                     template = 'Sys.sleep(5)'
                 else:
                     template = ''
-        except:
+        except Exception as e:
             template = ''
 
         if self.type == Type.BASH:
@@ -1291,7 +1297,7 @@ class Job(object):
                                                      'QOSTimeLimit','QOSResourceLimit','QOSJobLimit','InvalidQOS','InvalidAccount']:
                     return True
             return False
-        except:
+        except Exception as e:
             return False
 
     @staticmethod
@@ -1391,11 +1397,11 @@ class Job(object):
     def write_submit_time(self, enabled=False, hold=False):
         # type: (bool, bool) -> None
         """
-        Writes submit date and time to TOTAL_STATS file. It doesn't write if hold == True.
+        Writes submit date and time to TOTAL_STATS file. It doesn't write if hold is True.
         """
         # print(traceback.format_stack())
         print(("Call from {} with status {}".format(self.name, self.status_str)))
-        if hold == True:
+        if hold is True:
             return # Do not write for HELD jobs.
         data_time = ["",time.time()]
         if self.wrapper_type != "vertical" or enabled:
@@ -1419,13 +1425,13 @@ class Job(object):
                     data_time = line.split(" ")
                     try:
                         data_time[1] = float(data_time[1])
-                    except:
+                    except Exception as e:
                         data_time[1] = int(data_time[1])
             f.write(data_time[0])
             f2.close()
             try:
                 os.remove(path2)
-            except:
+            except Exception as e:
                 pass
         # Get
         # Writing database
@@ -1470,6 +1476,7 @@ class Job(object):
     def write_end_time(self, completed,enabled = False):
         """
         Writes ends date and time to TOTAL_STATS file
+        :param enabled:
         :param completed: True if job was completed successfully, False otherwise
         :type completed: bool
         """
@@ -1681,7 +1688,7 @@ class WrapperJob(Job):
                                                      'QOSTimeLimit','QOSResourceLimit','QOSJobLimit','InvalidQOS','InvalidAccount']:
                     return True
             return False
-        except:
+        except Exception as e:
             return False
 
     def check_status(self, status):
@@ -1699,7 +1706,7 @@ class WrapperJob(Job):
             if prev_status in [Status.SUBMITTED]:
                 for job in self.job_list:
                     job.status = Status.QUEUING
-            self._check_running_jobs()  # Check and update inner_jobs status that are elegible
+            self._check_running_jobs()  # Check and update inner_jobs status that are eligible
         # Completed wrapper will always come from check function.
         elif self.status == Status.COMPLETED:
             self.check_inner_jobs_completed(self.job_list)
@@ -1772,7 +1779,7 @@ class WrapperJob(Job):
                 return
             if reason == '(JobHeldUser)':
                 if self.hold == "false":
-                    # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
+                    # SHOULD BE MORE CLASS (GET_scontrol release but not sure if this can be implemented on others PLATFORMS
                     self._platform.send_command("scontrol release " + "{0}".format(self.id))
                     self.new_status = Status.QUEUING
                     for job in self.job_list:

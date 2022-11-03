@@ -6,7 +6,7 @@ from autosubmitconfigparser.config.basicconfig import BasicConfig
 from typing import Tuple
 
 def check_experiment_ownership(expid, basic_config, raise_error=False, logger=None):
-  #Logger variable is not needed, LOG is global thus it will be read if avaliable
+  # [A-Za-z09]+ variable is not needed, LOG is global thus it will be read if available
   ## type: (str, BasicConfig, bool, Log) -> Tuple[bool, bool, str]
   my_user_ID = os.getuid()
   current_owner_ID = 0
@@ -14,7 +14,7 @@ def check_experiment_ownership(expid, basic_config, raise_error=False, logger=No
   try:
       current_owner_ID = os.stat(os.path.join(basic_config.LOCAL_ROOT_DIR, expid)).st_uid
       current_owner_name = pwd.getpwuid(os.stat(os.path.join(basic_config.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
-  except:
+  except Exception as e:
       if logger:
         logger.info("Error while trying to get the experiment's owner information.")
   finally:

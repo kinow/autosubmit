@@ -61,12 +61,12 @@ class ExperimentStatusDbManager(DatabaseManager):
   def is_running(self, time_condition=600):
       # type : (int) -> bool
       """ True if experiment is running, False otherwise. """
-      if (os.path.exists(self._pkl_file_path)):
+      if os.path.exists(self._pkl_file_path):
           current_stat = os.stat(self._pkl_file_path)
           timest = int(current_stat.st_mtime)
           timesys = int(time.time())
           time_diff = int(timesys - timest)
-          if (time_diff < time_condition):
+          if time_diff < time_condition:
               return True
           else:
               return False

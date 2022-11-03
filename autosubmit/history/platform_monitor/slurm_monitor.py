@@ -47,7 +47,7 @@ class SlurmMonitor(PlatformMonitor):
 
   @property
   def header(self):
-    #test
+    # test
     headers = [header for header in self.input_items if header.is_header]
     if len(headers) > 0:
         return headers[0]

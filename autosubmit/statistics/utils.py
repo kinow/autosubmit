@@ -28,8 +28,8 @@ def filter_by_time_period(jobs, hours_span):
     if hours_span <= 0:
       raise AutosubmitCritical("{} is not a valid input for the statistics filter -fp.".format(hours_span))
     start_time = current_time - timedelta(hours=int(hours_span))
-    return ([job for job in jobs if job.check_started_after(start_time) or job.check_running_after(start_time)], start_time, current_time)
-  return (jobs, start_time, current_time)
+    return [job for job in jobs if job.check_started_after(start_time) or job.check_running_after(start_time)], start_time, current_time
+  return jobs, start_time, current_time
 
 
 def timedelta2hours(deltatime):
@@ -50,6 +50,6 @@ def parse_number_processors(processors_str):
       else:
         processors = int(processors_str)
         return processors
-    except:
+    except Exception as e:
       return 1
   

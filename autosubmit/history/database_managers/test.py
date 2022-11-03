@@ -244,7 +244,7 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
 
   def test_if_database_exists(self):
     exp_manager = ExperimentHistoryDbManager("0000")
-    self.assertTrue(exp_manager.my_database_exists() == False)
+    self.assertTrue(exp_manager.my_database_exists() is False)
 
 
 if __name__ == '__main__':

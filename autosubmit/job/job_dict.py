@@ -190,9 +190,8 @@ class DicJobs:
         :type delay: int
         """
         # Temporally creation for unified jobs in case of synchronize
-
+        tmp_dic = dict()
         if synchronize is not None and len(str(synchronize)) > 0:
-            tmp_dic = dict()
             count = 0
             for chunk in self._chunk_list:
                 count += 1
@@ -231,9 +230,11 @@ class DicJobs:
                     if delay == -1 or delay < chunk:
                         if count % frequency == 0 or count == len(self._chunk_list):
                             if synchronize == 'date':
-                                self._dic[section][date][member][chunk] = tmp_dic[chunk]
+                                if chunk in tmp_dic:
+                                    self._dic[section][date][member][chunk] = tmp_dic[chunk]
                             elif synchronize == 'member':
-                                self._dic[section][date][member][chunk] = tmp_dic[chunk][date]
+                                if chunk in tmp_dic:
+                                    self._dic[section][date][member][chunk] = tmp_dic[chunk][date]
 
                             if splits > 1 and (synchronize is None or not synchronize):
                                 self._dic[section][date][member][chunk] = []
@@ -244,11 +245,11 @@ class DicJobs:
                                                                                              chunk, default_job_type, jobs_data)
                                 self._jobs_list.graph.add_node(self._dic[section][date][member][chunk].name)
 
-    def _create_jobs_split(self, splits, section, date, member, chunk, priority, default_job_type, jobs_data, dict):
+    def _create_jobs_split(self, splits, section, date, member, chunk, priority, default_job_type, jobs_data, dict_):
         total_jobs = 1
         while total_jobs <= splits:
             job = self.build_job(section, priority, date, member, chunk, default_job_type, jobs_data, total_jobs)
-            dict.append(job)
+            dict_.append(job)
             self._jobs_list.graph.add_node(job.name)
             total_jobs += 1
 

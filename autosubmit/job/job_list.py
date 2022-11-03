@@ -132,7 +132,7 @@ class JobList(object):
             found_member = False
             processed_job_list = []
             for job in self._job_list: # We are assuming that the jobs are sorted in topological order (which is the default)
-                if (job.member is None and found_member == False) or job.member in self._run_members or job.status not in [Status.WAITING, Status.READY]:
+                if (job.member is None and found_member is False) or job.member in self._run_members or job.status not in [Status.WAITING, Status.READY]:
                     processed_job_list.append(job)
                 if job.member is not None and len(str(job.member)) > 0:
                     found_member = True
@@ -160,7 +160,7 @@ class JobList(object):
         for i, job in enumerate(self._job_list):
             if ( ( len(job.dependencies) > 0 and not job.has_parents()) and not job.has_children()) and job.delete_when_edgeless in ["true",True,1]:
                 jobs_to_delete.append(job)
-        # delete jobs by indice
+        # delete jobs by indices
         for i in jobs_to_delete:
             self._job_list.remove(i)
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
@@ -168,6 +168,12 @@ class JobList(object):
         """
         Creates all jobs needed for the current workflow
 
+        :param as_conf:
+        :param jobs_data:
+        :param show_log:
+        :param run_only_members:
+        :param update_structure:
+        :param notransitive:
         :param default_job_type: default type for jobs
         :type default_job_type: str
         :param date_list: start dates
@@ -187,7 +193,6 @@ class JobList(object):
         :param new: is it a new generation?
         :type new: bool \n
         :param wrapper_type: Type of wrapper defined by the user in autosubmit_.yml [wrapper] section. \n
-        :type wrapper type: String \n
         :param wrapper_jobs: Job types defined in autosubmit_.yml [wrapper sections] to be wrapped. \n
         :type wrapper_jobs: String \n
         """
@@ -208,10 +213,10 @@ class JobList(object):
         if not new:
             try:
                 jobs_data = {row[0]: row for row in self.load()}
-            except:
+            except Exception as e:
                 try:
                     jobs_data = {row[0]: row for row in self.backup_load()}
-                except:
+                except Exception as e:
                     pass
                     Log.info("Deleting previous pkl due being incompatible with current AS version")
                     if os.path.exists(os.path.join(self._persistence_path, self._persistence_file+".pkl")):
@@ -328,7 +333,7 @@ class JobList(object):
                     splits = JobList._calculate_splits_dependencies(
                         section, splits_section)
                     section = section_name
-                except:
+                except Exception as e:
                     pass
             if parameters.get(section,None) is None:
                 Log.printlog("WARNING: SECTION {0} is not defined in jobs.conf".format(section))
@@ -445,7 +450,7 @@ class JobList(object):
         # Search all filters in dependency relationship that affect current_job
         # First level can be Date,member or chunk or generic
         # Second level can be member or chunk or generic
-        # Third level can only be chunk.
+        # Third level can only be chunked.
         # If the filter is generic, it will be applied to all section jobs.
         # Check Date then Member or Chunk then Chunk
         optional = False
@@ -503,11 +508,11 @@ class JobList(object):
         '''
         #check if current_parent is listed on dependency.relationships
         optional = False
-        for filter in filters_to_apply:
+        for filter_ in filters_to_apply:
             associative_list = {}
-            dates_to = str(filter.get("DATES_TO", "natural")).lower()
-            members_to = str(filter.get("MEMBERS_TO", "natural")).lower()
-            chunks_to = str(filter.get("CHUNKS_TO", "natural")).lower()
+            dates_to = str(filter_.get("DATES_TO", "natural")).lower()
+            members_to = str(filter_.get("MEMBERS_TO", "natural")).lower()
+            chunks_to = str(filter_.get("CHUNKS_TO", "natural")).lower()
             if not is_a_natural_relation:
                 if dates_to == "natural":
                     dates_to = "none"
@@ -795,8 +800,8 @@ class JobList(object):
                 # Index starts at 1 because 0 has been taken in a previous step
                 for index in range(1, len(sorted_jobs_list) + 1):
                     # If not last item
+                    job = sorted_jobs_list[index]
                     if index < len(sorted_jobs_list):
-                        job = sorted_jobs_list[index]
                         # Test if section has changed. e.g. from INI to SIM
                         if previous_job.section != job.section:
                             previous_section_running_type = section_running_type
@@ -819,7 +824,7 @@ class JobList(object):
                                 # Get original
                                 jobs_to_sort[idx] = fake_original_job_map[fake_job]
                         # Add to result, and reset jobs_to_sort
-                        # By adding to the result at this step, only those with the same RUNNIN have been added.
+                        # By adding to the result at this step, only those with the same RUNNING have been added.
                         dict_jobs[date][member] += jobs_to_sort
                         jobs_to_sort = []
                     if len(sorted_jobs_list) > 1 :
@@ -857,7 +862,7 @@ class JobList(object):
                     + member + "_" + fake_job.name.split("_", 1)[1]
                 # Filling list of fake jobs, only difference is the name
                 filtered_jobs_fake_date_member.append(fake_job)
-                # Mapping fake jobs to orignal ones
+                # Mapping fake jobs to original ones
                 fake_original_job_map[fake_job] = job
             # running date or synchronize member
             elif job.member is None:
@@ -958,6 +963,7 @@ class JobList(object):
         """
         Returns a list of completed jobs
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: completed jobs
@@ -976,6 +982,7 @@ class JobList(object):
         """
         Returns a list of completed jobs
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: completed jobs
@@ -993,6 +1000,7 @@ class JobList(object):
         """
         Returns a list of completed jobs and waiting
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: completed jobs
@@ -1011,6 +1019,8 @@ class JobList(object):
         """
         Returns a list of submitted jobs
 
+        :param wrapper:
+        :param hold:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: submitted jobs
@@ -1032,6 +1042,7 @@ class JobList(object):
         """
         Returns a list of jobs running
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: running jobs
@@ -1048,6 +1059,7 @@ class JobList(object):
         """
         Returns a list of jobs queuing
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: queuedjobs
@@ -1064,6 +1076,7 @@ class JobList(object):
         """
         Returns a list of failed jobs
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: failed jobs
@@ -1080,6 +1093,7 @@ class JobList(object):
         """
         Returns a list of unsummited jobs
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: all jobs
@@ -1097,17 +1111,18 @@ class JobList(object):
         """
         Returns a list of all jobs
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: all jobs
         :rtype: list
         """
-        all = [job for job in self._job_list]
+        all_jobs = [job for job in self._job_list]
 
         if wrapper:
-            return [job for job in all if job.packed is False]
+            return [job for job in all_jobs if job.packed is False]
         else:
-            return all
+            return all_jobs
 
     def get_job_names(self,lower_case=False):
         """
@@ -1162,20 +1177,21 @@ class JobList(object):
         if two_step_start:
             try:
                 self.jobs_to_run_first = self.get_job_related(select_jobs_by_name=select_jobs_by_name,select_all_jobs_by_section=select_all_jobs_by_section,filter_jobs_by_section=filter_jobs_by_section)
-            except:
+            except Exception as e:
                 raise AutosubmitCritical("Check the {0} format.\nFirst filter is optional ends with '&'.\nSecond filter ends with ';'.\nThird filter must contain '['. ".format(unparsed_jobs))
         else:
             try:
                 self.rerun_job_list = self.get_job_related(select_jobs_by_name=select_jobs_by_name,
                                                               select_all_jobs_by_section=select_all_jobs_by_section,
                                                               filter_jobs_by_section=filter_jobs_by_section,two_step_start=two_step_start)
-            except:
+            except Exception as e:
                 raise AutosubmitCritical(
                     "Check the {0} format.\nFirst filter is optional ends with '&'.\nSecond filter ends with ';'.\nThird filter must contain '['. ".format(
                         unparsed_jobs))
 
     def get_job_related(self, select_jobs_by_name="",select_all_jobs_by_section="",filter_jobs_by_section="",two_step_start=True):
         """
+        :param two_step_start:
         :param select_jobs_by_name: job name
         :param select_all_jobs_by_section: section name
         :param filter_jobs_by_section: section, date , member? , chunk?
@@ -1183,6 +1199,8 @@ class JobList(object):
         :rtype: list
         """
         ultimate_jobs_list = []
+        jobs_filtered = []
+        jobs_date = []
         # First Filter {select job by name}
         if select_jobs_by_name != "":
             jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",select_jobs_by_name.lower()) is not None  ]
@@ -1263,6 +1281,8 @@ class JobList(object):
         """
         Returns a list of ready jobs
 
+        :param wrapper:
+        :param hold:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: ready jobs
@@ -1317,6 +1337,7 @@ class JobList(object):
         """
         Returns a list of jobs waiting
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: waiting jobs
@@ -1358,6 +1379,7 @@ class JobList(object):
         """
         Returns a list of jobs on unknown state
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: unknown state jobs
@@ -1374,6 +1396,7 @@ class JobList(object):
         """
         Returns a list of jobs on unknown state
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: unknown state jobs
@@ -1390,6 +1413,7 @@ class JobList(object):
         """
         Returns a list of jobs in the platforms (Submitted, Running, Queuing, Unknown,Held)
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: jobs in platforms
@@ -1407,6 +1431,7 @@ class JobList(object):
         """
         Returns a list of jobs NOT in the platforms (Ready, Waiting)
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: jobs not in platforms
@@ -1423,6 +1448,7 @@ class JobList(object):
         Returns a list of jobs finished (Completed, Failed)
 
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: finished jobs
@@ -1438,6 +1464,7 @@ class JobList(object):
         """
         Returns a list of active jobs (In platforms queue + Ready)
 
+        :param wrapper:
         :param platform: job platform
         :type platform: HPCPlatform
         :return: active jobs
@@ -1700,6 +1727,10 @@ class JobList(object):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
+        :param first_time:
+        :param submitter:
+        :param fromSetStatus:
+        :param store_change:
         :param as_conf: autosubmit config object
         :type as_conf: AutosubmitConfig
         :return: True if job status were modified, False otherwise
@@ -1730,7 +1761,7 @@ class JobList(object):
                         if self.jobs_data[job.section].get("DELAY_RETRY_TIME",None) or aux_job_delay <= 0:
                             delay_retry_time = str(as_conf.get_delay_retry_time())
                         else:
-                            delay_retry_time = (job.retry_delay)
+                            delay_retry_time = job.retry_delay
                         if "+" in delay_retry_time:
                             retry_delay = job.fail_count * int(delay_retry_time[:-1]) + int(delay_retry_time[:-1])
                         elif "*" in delay_retry_time:
@@ -1914,7 +1945,7 @@ class JobList(object):
                                         if job.status == Status.QUEUING:
                                             job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id),
                                                                       ignore_log=True)
-                                    except:
+                                    except Exception as e:
                                         pass  # jobid finished already
                                     job.status = Status.SKIPPED
                                     save = True
@@ -1928,7 +1959,7 @@ class JobList(object):
                                         if job.status == Status.QUEUING:
                                             job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id),
                                                                       ignore_log=True)
-                                    except:
+                                    except Exception as e:
                                         pass  # job_id finished already
                                     job.status = Status.SKIPPED
                                     save = True
@@ -1941,6 +1972,8 @@ class JobList(object):
         """
         When we have created the job list, every type of job is created.
         Update genealogy remove jobs that have no templates
+        :param update_structure:
+        :param notransitive:
         :param new: if it is a new job list or not
         :type new: bool
         """
@@ -1972,7 +2005,7 @@ class JobList(object):
                     pass
             structure_valid = False
             # If there is a current structure, and the number of jobs in JobList is equal to the number of jobs in the structure
-            if ((current_structure) and (len(self._job_list) == len(current_structure)) and update_structure == False):
+            if (current_structure) and (len(self._job_list) == len(current_structure)) and update_structure is False:
                 structure_valid = True
                 # Further validation
                 # Structure exists and is valid, use it as a source of dependencies
@@ -1985,13 +2018,13 @@ class JobList(object):
                     Log.info(
                         "File jobs_{0}.yml was not found.".format(self.expid))
 
-                if structure_valid == True:
+                if structure_valid is True:
                     for job in self._job_list:
                         if current_structure.get(job.name, None) is None:
                             structure_valid = False
                             break
 
-                if structure_valid == True:
+                if structure_valid is True:
                     Log.info("Using existing valid structure.")
                     for job in self._job_list:
                         children_to_remove = [
@@ -1999,7 +2032,7 @@ class JobList(object):
                         for child in children_to_remove:
                             job.children.remove(child)
                             child.parents.remove(job)
-            if structure_valid == False:
+            if structure_valid is False:
                 # Structure does not exist, or it is not be updated, attempt to create it.
                 Log.info("Updating structure persistence...")
                 self.graph = transitive_reduction(self.graph) # add threads for large experiments? todo
@@ -2114,7 +2147,7 @@ class JobList(object):
         """
         Updates job list to rerun the jobs specified by a job list
         :param job_list_unparsed: list of jobs to rerun
-        :type job_list_unparsed: list
+        :type job_list_unparsed: str
         :param monitor: if True, the job list will be monitored
         :type monitor: bool
         """
@@ -2201,18 +2234,18 @@ class JobList(object):
         # nocolor = True
         allJobs = self.get_all() if existingList is None else existingList
         # Header
-        result = (bcolors.BOLD if nocolor == False else '') + \
+        result = (bcolors.BOLD if nocolor is False else '') + \
             "## String representation of Job List [" + str(len(allJobs)) + "] "
         if statusChange is not None and len(str(statusChange)) > 0:
-            result += "with " + (bcolors.OKGREEN if nocolor == False else '') + str(len(list(statusChange.keys()))
-                                                                                    ) + " Change(s) ##" + (bcolors.ENDC + bcolors.ENDC if nocolor == False else '')
+            result += "with " + (bcolors.OKGREEN if nocolor is False else '') + str(len(list(statusChange.keys()))
+                                                                                    ) + " Change(s) ##" + (bcolors.ENDC + bcolors.ENDC if nocolor is False else '')
         else:
             result += " ## "
 
         # Find root
         root = None
         for job in allJobs:
-            if job.has_parents() == False:
+            if job.has_parents() is False:
                 root = job
         visited = list()
         #print(root)
@@ -2240,7 +2273,7 @@ class JobList(object):
         # Find root
         root = None
         for job in allJobs:
-            if job.has_parents() == False:
+            if job.has_parents() is False:
                 root = job
 
         # root exists
@@ -2275,9 +2308,9 @@ class JobList(object):
                 prefix += "|  "
             # Prefix + Job Name
             result = "\n" + prefix + \
-                (bcolors.BOLD + bcolors.CODE_TO_COLOR[job.status] if nocolor == False else '') + \
+                (bcolors.BOLD + bcolors.CODE_TO_COLOR[job.status] if nocolor is False else '') + \
                 job.name + \
-                (bcolors.ENDC + bcolors.ENDC if nocolor == False else '')
+                (bcolors.ENDC + bcolors.ENDC if nocolor is False else '')
             if len(job._children) > 0:
                 level += 1
                 children = job._children
@@ -2285,15 +2318,15 @@ class JobList(object):
                 # Writes children number and status if color are not being showed
                 result += " ~ [" + str(total_children) + (" children] " if total_children > 1 else " child] ") + \
                     ("[" + Status.VALUE_TO_KEY[job.status] +
-                     "] " if nocolor == True else "")
+                     "] " if nocolor is True else "")
                 if statusChange is not None and len(str(statusChange)) > 0:
                     # Writes change if performed
                     result += (bcolors.BOLD +
-                               bcolors.OKGREEN if nocolor == False else '')
+                               bcolors.OKGREEN if nocolor is False else '')
                     result += (statusChange[job.name]
                                if job.name in statusChange else "")
                     result += (bcolors.ENDC +
-                               bcolors.ENDC if nocolor == False else "")
+                               bcolors.ENDC if nocolor is False else "")
 
                 for child in children:
                     # Continues recursion
@@ -2301,7 +2334,7 @@ class JobList(object):
                         child, level, visited, statusChange=statusChange, nocolor=nocolor)
             else:
                 result += (" [" + Status.VALUE_TO_KEY[job.status] +
-                           "] " if nocolor == True else "")
+                           "] " if nocolor is True else "")
 
         return result
     
@@ -2339,11 +2372,11 @@ class JobList(object):
         package_to_jobs = dict()
         package_to_package_id = dict()
         package_to_symbol = dict()
-        if (packages):
+        if packages:
             try:
                 for exp, package_name, job_name in packages:
                     if len(str(package_name).strip()) > 0:
-                        if (current_jobs):
+                        if current_jobs:
                             if job_name in current_jobs:
                                 job_to_package[job_name] = package_name
                         else:
@@ -2366,13 +2399,15 @@ class JobList(object):
             except Exception as ex:
                 print((traceback.format_exc()))
 
-        return (job_to_package, package_to_jobs, package_to_package_id, package_to_symbol)
+        return job_to_package, package_to_jobs, package_to_package_id, package_to_symbol
 
     @staticmethod
     def retrieve_times(status_code, name, tmp_path, make_exception=False, job_times=None, seconds=False, job_data_collection=None):
         """
         Retrieve job timestamps from database.  
-        :param status_code: Code of the Status of the job  
+        :param job_data_collection:
+        :param seconds:
+        :param status_code: Code of the Status of the job
         :type status_code: Integer  
         :param name: Name of the job  
         :type name: String  
@@ -2416,7 +2451,7 @@ class JobList(object):
                                 t_start = c_start if t_start > c_start else t_start
                                 job_data.start = t_start
 
-                        if seconds == False:
+                        if seconds is False:
                             queue_time = math.ceil(
                                 job_data.queuing_time() / 60)
                             running_time = math.ceil(
@@ -2431,8 +2466,8 @@ class JobList(object):
                         return JobRow(job_data.job_name, int(queue_time), int(running_time), status, energy, JobList.ts_to_datetime(t_submit), JobList.ts_to_datetime(t_start), JobList.ts_to_datetime(t_finish), job_data.ncpus, job_data.run_id)
 
             # Using standard procedure
-            if status_code in [Status.RUNNING, Status.SUBMITTED, Status.QUEUING, Status.FAILED] or make_exception == True:
-                # COMPLETED adds too much overhead so these values are now stored in a database and retrieved separatedly
+            if status_code in [Status.RUNNING, Status.SUBMITTED, Status.QUEUING, Status.FAILED] or make_exception is True:
+                # COMPLETED adds too much overhead so these values are now stored in a database and retrieved separately
                 submit_time, start_time, finish_time, status = JobList._job_running_check(
                     status_code, name, tmp_path)
                 if status_code in [Status.RUNNING, Status.FAILED]:
@@ -2457,9 +2492,9 @@ class JobList(object):
                 seconds_running = running_for_min.total_seconds()
 
             else:
-                # For job times completed we no longer use timedeltas, but timestamps
+                # For job times completed we no longer use time-deltas, but timestamps
                 status = Status.VALUE_TO_KEY[status_code]
-                if (job_times) and status_code not in [Status.READY, Status.WAITING, Status.SUSPENDED]:
+                if job_times and status_code not in [Status.READY, Status.WAITING, Status.SUSPENDED]:
                     if name in list(job_times.keys()):
                         submit_time, start_time, finish_time, status, detail_id = job_times[
                             name]
@@ -2481,7 +2516,7 @@ class JobList(object):
             (-1) if seconds_queued < 0 else seconds_queued
         seconds_running = seconds_running * \
             (-1) if seconds_running < 0 else seconds_running
-        if seconds == False:
+        if seconds is False:
             queue_time = math.ceil(
                 seconds_queued / 60) if seconds_queued > 0 else 0
             running_time = math.ceil(
@@ -2570,7 +2605,7 @@ class JobList(object):
         # TOTAL_STATS last line has more than 3 items, status is different from pkl, and status is not "NA"
         if len(values) > 3 and current_status != status_from_job and current_status != "NA":
             current_status = "SUSPICIOUS"
-        return (submit_time, start_time, finish_time, current_status)
+        return submit_time, start_time, finish_time, current_status
     
     @staticmethod
     def ts_to_datetime(timestamp):

@@ -34,7 +34,7 @@ class TestStatistics(unittest.TestCase):
     job_to_package, package_to_jobs, _, _ = JobList.retrieve_packages(
             BasicConfig, expid, [job.name for job in job_list.get_job_list()])
     queue_time_fixes = {}
-    if (job_to_package):
+    if job_to_package:
       current_table_structure = DbStructure.get_structure(expid, BasicConfig.STRUCTURES_DIR)
       subjobs = []
       for job in job_list.get_job_list():

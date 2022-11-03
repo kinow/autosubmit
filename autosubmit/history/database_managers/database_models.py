@@ -40,7 +40,7 @@ class RunningStatus:
 
 class RowType:
     NORMAL = 2
-    #PACKED = 2
+    # PACKED = 2
 
 class RowStatus:
     INITIAL = 0

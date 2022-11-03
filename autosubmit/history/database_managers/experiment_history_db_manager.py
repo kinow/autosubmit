@@ -360,10 +360,10 @@ class ExperimentHistoryDbManager(DatabaseManager):
       max_counter = Models.MaxCounterRow(*counter_result[0]).maxcounter
       return max_counter if max_counter else DEFAULT_MAX_COUNTER
 
-  def delete_job_data(self, id):
+  def delete_job_data(self, id_):
     """ Deletes row from job_data by id. Useful for testing. """
     statement = ''' DELETE FROM job_data WHERE id=? '''
-    arguments = (id, )
+    arguments = (id_, )
     self.execute_statement_with_arguments_on_dbfile(self.historicaldb_file_path, statement, arguments)
   
   def delete_experiment_run(self, run_id):

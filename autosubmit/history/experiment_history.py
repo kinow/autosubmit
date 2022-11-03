@@ -30,7 +30,7 @@ from autosubmitconfigparser.config.basicconfig import BasicConfig
 
 SECONDS_WAIT_PLATFORM = 60
 
-class ExperimentHistory():
+class ExperimentHistory:
   def __init__(self, expid, jobdata_dir_path=DEFAULT_JOBDATA_DIR, historiclog_dir_path=DEFAULT_HISTORICAL_LOGS_DIR):    
     self.expid = expid
     BasicConfig.read()
@@ -194,7 +194,7 @@ class ExperimentHistory():
       current_experiment_run_dc = self.manager.get_experiment_run_dc_with_max_id()      
       update_these_changes = self._get_built_list_of_changes(job_list)
       should_create_new_run = self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc, chunk_unit, chunk_size,create)
-      if len(update_these_changes) > 0 and should_create_new_run == False:
+      if len(update_these_changes) > 0 and should_create_new_run is False:
         self.manager.update_many_job_data_change_status(update_these_changes)
       if should_create_new_run:
         return self.create_new_experiment_run(chunk_unit, chunk_size, current_config, job_list)
