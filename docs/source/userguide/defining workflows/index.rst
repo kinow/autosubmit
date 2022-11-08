@@ -21,14 +21,14 @@ It is important to remember when defining workflows that DEPENDENCIES on autosub
 be finished before launching the job that has the DEPENDENCIES attribute.
 
 
-.. code-block:: yaml
+.. code-block:: ini
 
-    JOBS:
-        One:
-          FILE: "one.sh"
-        Two:
-          FILE: "two.sh"
-          DEPENDENCIES: "One"
+   [One]
+   FILE = one.sh
+
+   [Two]
+   FILE = two.sh
+   DEPENDENCIES = One
 
 
 The resulting workflow can be seen in Figure :numref:`simple`
@@ -51,24 +51,25 @@ divide member execution on different chunks.
 To set at what level a job has to run you have to use the RUNNING attribute. It has four possible values: once, date,
 member and chunk corresponding to running once, once per startdate, once per member or once per chunk respectively.
 
-.. code-block:: yaml
+.. code-block:: ini
 
-    JOBS:
-        once:
-          FILE: "Once.sh"
-        date:
-          FILE: "date.sh"
-          DEPENDENCIES: "once"
-          RUNNING: "date"
-        member:
-          FILE: "Member.sh"
-          DEPENDENCIES: "date"
-          RUNNING: "member"
-        chunk:
-          FILE: "Chunk.sh"
-          DEPENDENCIES: "member"
-          RUNNING: "chunk"
+    [once]
+    FILE = Once.sh
 
+    [date]
+    FILE = date.sh
+    DEPENDENCIES = once
+    RUNNING = date
+
+    [member]
+    FILE = Member.sh
+    DEPENDENCIES = date
+    RUNNING = member
+
+    [chunk]
+    FILE = Chunk.sh
+    DEPENDENCIES = member
+    RUNNING = chunk
 
 
 The resulting workflow can be seen in Figure :numref:`running` for a experiment with 2 startdates, 2 members and 2 chunks.
@@ -97,20 +98,19 @@ sim-1 on the DEPENDENCIES attribute. As you can see, you can add as much depende
 
 .. code-block:: ini
 
+   [ini]
+   FILE = ini.sh
+   RUNNING = member
 
-    JOBS:
-        ini:
-          FILE: "ini.sh"
-          RUNNING: "member"
-        sim:
-          FILE: "sim.sh"
-          DEPENDENCIES: "ini sim-1"
-          RUNNING: "chunk"
-        postprocess:
-          FILE: "postprocess.sh"
-          DEPENDENCIES: "sim"
-          RUNNING: "chunk"
+   [sim]
+   FILE = sim.sh
+   DEPENDENCIES = ini sim-1
+   RUNNING = chunk
 
+   [postprocess]
+   FILE = postprocess.sh
+   DEPENDENCIES = sim
+   RUNNING = chunk
 
 
 The resulting workflow can be seen in Figure :numref:`dprevious`
@@ -142,22 +142,24 @@ jobs to be finished. That is the case of the postprocess combine dependency on t
 
 .. code-block:: ini
 
-    JOBS:
-        ini:
-          FILE: "ini.sh"
-          RUNNING: "member"
-        sim:
-          FILE: "sim.sh"
-          DEPENDENCIES: "ini sim-1"
-          RUNNING: "chunk"
-        postprocess:
-          FILE: "postprocess.sh"
-          DEPENDENCIES: "sim"
-          RUNNING: "chunk"
-        combine:
-          FILE: "combine.sh"
-          DEPENDENCIES: "postprocess"
-          RUNNING: "member"
+    [ini]
+    FILE = ini.sh
+    RUNNING = member
+
+    [sim]
+    FILE = sim.sh
+    DEPENDENCIES = ini sim-1
+    RUNNING = chunk
+
+    [postprocess]
+    FILE = postprocess.sh
+    DEPENDENCIES = sim
+    RUNNING = chunk
+
+    [combine]
+    FILE = combine.sh
+    DEPENDENCIES = postprocess
+    RUNNING = member
 
 
 The resulting workflow can be seen in Figure :numref:`dependencies`
@@ -183,23 +185,25 @@ an integer I for this attribute and the job will run only once for each I iterat
 
 .. code-block:: ini
 
-    JOBS:
-        ini:
-          FILE: "ini.sh"
-          RUNNING: "member"
-        sim:
-          FILE: "sim.sh"
-          DEPENDENCIES: "ini sim-1"
-          RUNNING: "chunk"
-        postprocess:
-          FILE: "postprocess.sh"
-          DEPENDENCIES: "sim"
-          RUNNING: "chunk"
-          FREQUENCY: "3"
-        combine:
-          FILE: "combine.sh"
-          DEPENDENCIES: "postprocess"
-          RUNNING: "member"
+    [ini]
+    FILE = ini.sh
+    RUNNING = member
+
+    [sim]
+    FILE = sim.sh
+    DEPENDENCIES = ini sim-1
+    RUNNING = chunk
+
+    [postprocess]
+    FILE = postprocess.sh
+    DEPENDENCIES = sim
+    RUNNING = chunk
+    FREQUENCY = 3
+
+    [combine]
+    FILE = combine.sh
+    DEPENDENCIES = postprocess
+    RUNNING = member
 
 
 The resulting workflow can be seen in Figure :numref:`frequency`
@@ -225,18 +229,19 @@ of synchronization do you want. See the below examples with and without this par
 
 .. code-block:: ini
 
-    JOBS:
-        ini:
-          FILE: "ini.sh"
-          RUNNING: "member"
-        sim:
-          FILE: "sim.sh"
-          DEPENDENCIES: "INI SIM-1"
-          RUNNING: "chunk"
-        ASIM:
-          FILE: "asim.sh"
-          DEPENDENCIES: "SIM"
-          RUNNING: "chunk"
+    [ini]
+    FILE = ini.sh
+    RUNNING = member
+
+    [sim]
+    FILE = sim.sh
+    DEPENDENCIES = INI SIM-1
+    RUNNING = chunk
+
+    [ASIM]
+    FILE = asim.sh
+    DEPENDENCIES = SIM
+    RUNNING = chunk
 
 The resulting workflow can be seen in Figure :numref:`nosync`
 
@@ -250,9 +255,8 @@ The resulting workflow can be seen in Figure :numref:`nosync`
 
 .. code-block:: ini
 
-    JOBS:
-        ASIM:
-            SYNCHRONIZE: member
+    [ASIM]
+    SYNCHRONIZE = member
 
 The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen in Figure :numref:`msynchronize`
 
@@ -266,9 +270,8 @@ The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen 
 
 .. code-block:: ini
 
-    JOBS:
-        ASIM:
-            SYNCHRONIZE: member
+    [ASIM]
+    SYNCHRONIZE = date
 
 The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen in Figure :numref:`dsynchronize`
 
@@ -288,28 +291,31 @@ This behaviour can be achieved using the SPLITS attribute to specify the number 
 It is possible to define dependencies to specific splits within [], as well as to a list/range of splits,
 in the format [1:3,7,10] or [1,2,3]
 
+
 .. hint::
    This job parameter works with jobs with RUNNING parameter equals to 'chunk'.
 
 .. code-block:: ini
 
-    JOBS:
-        ini:
-          FILE: "ini.sh"
-          RUNNING: "member"
-        sim:
-          FILE: "sim.sh"
-          DEPENDENCIES: "ini sim-1"
-          RUNNING: "chunk"
-        asim:
-          FILE: "asim.sh"
-          DEPENDENCIES: "sim"
-          RUNNING: "chunk"
-          SPLITS: "3"
-        post:
-          FILE: "post.sh"
-          RUNNING: "chunk"
-          DEPENDENCIES: "asim[1] asim[1]+1"
+    [ini]
+    FILE = ini.sh
+    RUNNING = member
+
+    [sim]
+    FILE = sim.sh
+    DEPENDENCIES = ini sim-1
+    RUNNING = chunk
+
+    [asim]
+    FILE = asim.sh
+    DEPENDENCIES = sim
+    RUNNING = chunk
+    SPLITS = 3
+
+    [post]
+    FILE = post.sh
+    RUNNING = chunk
+    DEPENDENCIES = asim[1] asim[1]+1
 
 The resulting workflow can be seen in Figure :numref:`split`
 
@@ -333,24 +339,25 @@ an integer N for this attribute and the job will run only after N chunks.
 
 .. code-block:: ini
 
-    JOBS:
-        ini:
-          FILE: "ini.sh"
-          RUNNING: "member"
-        sim:
-          FILE: "sim.sh"
-          DEPENDENCIES: "ini sim-1"
-          RUNNING: "chunk"
-        asim:
-          FILE: "asim.sh"
-          DEPENDENCIES: "sim asim-1"
-          RUNNING: "chunk"
-          DELAY: "2"
-        post:
-          FILE: "post.sh"
-          DEPENDENCIES: "sim asim"
-          RUNNING: "chunk"
+    [ini]
+    FILE = ini.sh
+    RUNNING = member
 
+    [sim]
+    FILE = sim.sh
+    DEPENDENCIES = ini sim-1
+    RUNNING = chunk
+
+    [asim]
+    FILE = asim.sh
+    DEPENDENCIES = sim asim-1
+    RUNNING = chunk
+    DELAY = 2
+
+    [post]
+    FILE = post.sh
+    DEPENDENCIES = sim asim
+    RUNNING = chunk
 
 The resulting workflow can be seen in Figure :numref:`delay`
 

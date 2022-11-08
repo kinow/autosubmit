@@ -1,4 +1,4 @@
-Manage experiments
+Manage Experiments
 ===================
 
 How to clean the experiment

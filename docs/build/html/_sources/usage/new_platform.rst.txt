@@ -53,9 +53,9 @@ There are some other parameters that you may need to specify:
 
 * TEST_SUITE: if true, autosubmit test command can use this queue as a main queue. Defaults to false
 
-* MAX_WAITING_JOBS: maximum number of jobs to be waiting in this platform.
+* MAX_WAITING_JOBS: Maximum number of jobs to be queuing or submitted  in this platform.
 
-* TOTAL_JOBS: maximum number of jobs to be running at the same time in this platform.
+* TOTAL_JOBS: Maximum number of jobs to be queuing, running or submitted at the same time in this platform.
 
 * CUSTOM_DIRECTIVES: Custom directives for the resource manager of this platform.
 

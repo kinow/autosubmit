@@ -1,5 +1,5 @@
-Wrappers
-========
+Configure Wrappers
+==================
 
 In order to understand the goal of this feature, please take a look at: https://earth.bsc.es/wiki/lib/exe/fetch.php?media=library:seminars:techniques_to_improve_the_throughput.pptx
 

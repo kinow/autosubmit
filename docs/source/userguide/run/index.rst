@@ -1,4 +1,4 @@
-Running experiments
+Running Experiments
 ===================
 
 Run an experiment
