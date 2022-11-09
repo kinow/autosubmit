@@ -571,7 +571,7 @@ class SlurmPlatform(ParamikoPlatform):
         return reason
 
     @staticmethod
-    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads, method="asthreads"):
+    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads, method="asthreads", partition=""):
         if method == 'srun':
             language = "#!/bin/bash"
             return \
@@ -582,6 +582,7 @@ class SlurmPlatform(ParamikoPlatform):
 #
 #SBATCH -J {0}
 {1}
+{8}
 #SBATCH -A {2}
 #SBATCH --output={0}.out
 #SBATCH --error={0}.err
@@ -590,10 +591,11 @@ class SlurmPlatform(ParamikoPlatform):
 #SBATCH --cpus-per-task={7}
 {5}
 {6}
+
 #
 ###############################################################################
                 """.format(filename, queue, project, wallclock, num_procs, dependency,
-                           '\n'.ljust(13).join(str(s) for s in directives), threads)
+                           '\n'.ljust(13).join(str(s) for s in directives), threads,partition)
         else:
             language = "#!/usr/bin/env python3"
             return \
@@ -604,6 +606,7 @@ class SlurmPlatform(ParamikoPlatform):
 #
 #SBATCH -J {0}
 {1}
+{8}
 #SBATCH -A {2}
 #SBATCH --output={0}.out
 #SBATCH --error={0}.err
@@ -615,7 +618,7 @@ class SlurmPlatform(ParamikoPlatform):
 #
 ###############################################################################
             """.format(filename, queue, project, wallclock, num_procs, dependency,
-                       '\n'.ljust(13).join(str(s) for s in directives), threads)
+                       '\n'.ljust(13).join(str(s) for s in directives), threads,partition)
 
     @staticmethod
     def allocated_nodes():

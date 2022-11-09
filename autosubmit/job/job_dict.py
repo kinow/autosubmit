@@ -383,6 +383,8 @@ class DicJobs:
         job.file = str(parameters[section].get( "FILE", ""))
         job.queue = str(parameters[section].get( "QUEUE", ""))
         job.partition = str(parameters[section].get( "PARTITION", ""))
+        if job.partition == "" and job.platform_name.upper() != "LOCAL":
+            job.partition = str(self.experiment_data["PLATFORMS"][job.platform_name].get("PARTITION",""))
         job.check = str(parameters[section].get( "CHECK", "true")).lower()
         job.export = str(parameters[section].get( "EXPORT", ""))
         job.processors = str(parameters[section].get( "PROCESSORS", ""))

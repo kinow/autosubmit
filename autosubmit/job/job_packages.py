@@ -379,9 +379,14 @@ class JobPackageThread(JobPackageBase):
                 self.queue = wr_queue
             else:
                 self.queue = jobs[0].queue
+            wr_partition = configuration.get_wrapper_partition(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
+            if wr_partition is not None and len(str(wr_partition)) > 0:
+                self.partition = wr_partition
+            else:
+                self.partition = jobs[0].partition
         else:
             self.queue = jobs[0].queue
-
+            self.partition = jobs[0].partition
         self.method = method
 #pipeline
     @property
@@ -575,7 +580,7 @@ class JobPackageVertical(JobPackageThread):
             self._threads = job.threads
 
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
-        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format_(str(int(time.time())) +
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
                                                                                   str(random.randint(1, 10000)),
                                                                                   self._num_processors,
                                                                                   len(self._jobs))
@@ -645,7 +650,7 @@ class JobPackageVertical(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level,partition=self.partition)
 
 
 class JobPackageHorizontal(JobPackageThread):

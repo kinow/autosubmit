@@ -34,6 +34,7 @@ class WrapperFactory(object):
         kwargs['allocated_nodes'] = self.allocated_nodes()
         kwargs['dependency'] = self.dependency(kwargs['dependency'])
         kwargs['queue'] = self.queue(kwargs['queue'])
+        kwargs['partition'] = self.partition(kwargs['partition'])
         kwargs['header_directive'] = self.header_directives(**kwargs)
         builder = wrapper_builder(**kwargs)
         return self.wrapper_director.construct(builder)
@@ -61,11 +62,14 @@ class WrapperFactory(object):
 
     def queue(self, queue):
         return '#' if not queue else self.queue_directive(queue)
-
+    def partition(self, partition):
+        return '#' if not partition else self.partition_directive(partition)
     def dependency_directive(self, dependency):
         pass
 
     def queue_directive(self, queue):
+        pass
+    def partition_directive(self, partition):
         pass
 
 
@@ -92,7 +96,7 @@ class SlurmWrapperFactory(WrapperFactory):
 
     def header_directives(self, **kwargs):
         return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
-                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'],kwargs['method'])
+                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'],kwargs['method'],kwargs['partition'])
 
     def allocated_nodes(self):
         return self.platform.allocated_nodes()
@@ -102,6 +106,9 @@ class SlurmWrapperFactory(WrapperFactory):
 
     def queue_directive(self, queue):
         return '#SBATCH --qos={0}'.format(queue)
+
+    def partition_directive(self, partition):
+        return '#SBATCH --partition={0}'.format(partition)
 
 
 class LSFWrapperFactory(WrapperFactory):

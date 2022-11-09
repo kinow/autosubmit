@@ -49,10 +49,10 @@ class SlurmHeader(object):
         :rtype: str
         """
         # There is no partition, so directive is empty
-        if job.parameters.get('PARTITION',"") == '':
+        if job.partition == '':
             return ""
         else:
-            return "SBATCH --partition={0}".format(job.parameters['PARTITION'])
+            return "SBATCH --partition={0}".format(job.partition)
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def get_account_directive(self, job):
         """

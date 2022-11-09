@@ -1100,24 +1100,22 @@ class Job(object):
         if self.scratch_free_space == 0:
             self.scratch_free_space = job_platform.scratch_free_space
         try:
-            self.custom_directives = str(as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES",""))
+            self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","").replace("\'", "\"").strip("[]").strip(", ")
+            if self.custom_directives == '':
+                if job_platform.custom_directives is None:
+                    job_platform.custom_directives = ''
+                self.custom_directives = job_platform.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
             if self.custom_directives != '':
-                custom_directive = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","").replace("\'", "\"").strip("[]").strip(", ")
-                if custom_directive[0] != "\"":
-                    custom_directive = "\""+custom_directive
-                if custom_directive[-1] != "\"":
-                    custom_directive = custom_directive+"\""
-                custom_directive = "[" + custom_directive + "]"
-                self.custom_directives = json.loads(custom_directive)
-                if job_platform.custom_directives != "":
-                    self.custom_directives = self.custom_directives + \
-                        json.loads(job_platform.custom_directives)
-            elif job_platform.custom_directives is not None and len(str(job_platform.custom_directives)) > 0:
-                self.custom_directives = json.loads(job_platform.custom_directives)
-            elif self.custom_directives == '':
+                if self.custom_directives[0] != "\"":
+                    self.custom_directives = "\""+self.custom_directives
+                if self.custom_directives[-1] != "\"":
+                    self.custom_directives = self.custom_directives+"\""
+                self.custom_directives = "[" + self.custom_directives + "]"
+                self.custom_directives = json.loads(self.custom_directives)
+            else:
                 self.custom_directives = []
         except BaseException as e:
-            raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({self.custom_directive}) for job {self.section}",7014,str(e))
+            raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({self.custom_directives}) for job {self.section}",7014,str(e))
         parameters['NUMPROC'] = self.processors
         parameters['PROCESSORS'] = self.processors
         parameters['MEMORY'] = self.memory

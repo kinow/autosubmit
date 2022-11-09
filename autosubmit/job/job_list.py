@@ -800,8 +800,8 @@ class JobList(object):
                 # Index starts at 1 because 0 has been taken in a previous step
                 for index in range(1, len(sorted_jobs_list) + 1):
                     # If not last item
-                    job = sorted_jobs_list[index]
                     if index < len(sorted_jobs_list):
+                        job = sorted_jobs_list[index]
                         # Test if section has changed. e.g. from INI to SIM
                         if previous_job.section != job.section:
                             previous_section_running_type = section_running_type
