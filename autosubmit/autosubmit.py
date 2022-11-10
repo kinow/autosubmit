@@ -3291,22 +3291,34 @@ class Autosubmit:
             # Preparation for section parameters
             no_load_sections = False
             no_load_platforms = False
-            try:
-                job_list = Autosubmit.load_job_list(
-                    expid, as_conf, notransitive=False)
-            except Exception as e:
-                no_load_sections = True
+
             try:
                 submitter = Autosubmit._get_submitter(as_conf)
                 submitter.load_platforms(as_conf)
+                hpcarch = submitter.platforms[as_conf.get_platform()]
+
             except Exception as e:
                 no_load_platforms = True
                 submitter = Autosubmit._get_submitter(as_conf)
                 submitter.load_local_platform(as_conf)
+                hpcarch = submitter.platforms[as_conf.get_platform()]
+
+            job_list = Autosubmit.load_job_list(
+                expid, as_conf, notransitive=False)
+            for job in job_list.get_job_list():
+                if job.platform_name is None or job.platform_name == "":
+                    job.platform_name = hpcarch.name
+                job.platform = submitter.platforms[job.platform_name]
+
             try:
                 # Gathering parameters of autosubmit and expdef config files
                 as_conf.reload(True)
                 exp_parameters = as_conf.load_parameters()
+                try:
+                    for job in job_list.get_job_list():
+                        exp_parameters.update(job.update_parameters(as_conf, job_list.parameters))
+                except:
+                    pass
             except Exception as e:
                 raise AutosubmitCritical(
                     "Couldn't gather the experiment parameters", 7012, str(e))
