@@ -28,4 +28,4 @@ xlib
 Pygments
 packaging==19
 typing>=3.7
-autosubmitconfigparser==0.0.4
+autosubmitconfigparser==0.0.5
