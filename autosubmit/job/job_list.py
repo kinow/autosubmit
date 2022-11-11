@@ -584,9 +584,16 @@ class JobList(object):
                 optional_section = True
             else:
                 optional_section = False
+            # Convert multi_array list into 1d list
             if len(parents_jobs) > 0:
-                if type(parents_jobs[0]) is list:
-                    parents_jobs = parents_jobs[0]
+                aux = []
+                for p_split in parents_jobs:
+                    if type(p_split) is not list:
+                        aux.append(p_split)
+                    else:
+                        for aux_job in p_split:
+                            aux.append(aux_job)
+                parents_jobs = aux
             all_parents = list(set(other_parents + parents_jobs))
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply,optional_from = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
