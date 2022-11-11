@@ -158,8 +158,9 @@ class JobList(object):
         jobs_to_delete = []
         # indices to delete
         for i, job in enumerate(self._job_list):
-            if ( ( len(job.dependencies) > 0 and not job.has_parents()) and not job.has_children()) and job.delete_when_edgeless in ["true",True,1]:
-                jobs_to_delete.append(job)
+            if job.dependencies is not None:
+                if ( ( len(job.dependencies) > 0 and not job.has_parents()) and not job.has_children()) and job.delete_when_edgeless in ["true",True,1]:
+                    jobs_to_delete.append(job)
         # delete jobs by indices
         for i in jobs_to_delete:
             self._job_list.remove(i)
@@ -285,6 +286,8 @@ class JobList(object):
             dependencies_keys = jobs_data[job_section].get(option,{})
             if type(dependencies_keys) is str:
                 dependencies_keys = dependencies_keys.split()
+            if dependencies_keys is None:
+                dependencies_keys = []
             dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs, job_section)
 
             for job in dic_jobs.get_jobs(job_section):
@@ -594,6 +597,15 @@ class JobList(object):
                         for aux_job in p_split:
                             aux.append(aux_job)
                 parents_jobs = aux
+            if len(natural_jobs) > 0:
+                aux = []
+                for p_split in natural_jobs:
+                    if type(p_split) is not list:
+                        aux.append(p_split)
+                    else:
+                        for aux_job in p_split:
+                            aux.append(aux_job)
+                natural_jobs = aux
             all_parents = list(set(other_parents + parents_jobs))
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply,optional_from = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
