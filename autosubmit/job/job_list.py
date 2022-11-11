@@ -584,7 +584,10 @@ class JobList(object):
                 optional_section = True
             else:
                 optional_section = False
-            all_parents = other_parents + parents_jobs
+            if len(parents_jobs) > 0:
+                if type(parents_jobs[0]) is list:
+                    parents_jobs = parents_jobs[0]
+            all_parents = list(set(other_parents + parents_jobs))
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply,optional_from = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
             if len(filters_to_apply) == 0:
