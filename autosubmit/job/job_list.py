@@ -1863,7 +1863,7 @@ class JobList(object):
                             strong_dependencies_failure = False
                             weak_dependencies_failure = False
                             for parent in failed_ones:
-                                if parent.name in job.edge_info and job.edge_info[job.name].get('optional', False):
+                                if parent.name in job.edge_info and job.edge_info[parent.name].get('optional', False):
                                     weak_dependencies_failure = True
                                 elif parent.section in job.dependencies:
                                     if parent.status not in [Status.COMPLETED,Status.SKIPPED]:
