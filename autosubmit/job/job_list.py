@@ -1767,9 +1767,9 @@ class JobList(object):
         if not first_time:
             for job in self.get_failed():
                 if self.jobs_data[job.section].get("RETRIALS",None) is None:
-                    retrials = as_conf.get_retrials()
+                    retrials = int(as_conf.get_retrials())
                 else:
-                    retrials = job.retrials
+                    retrials = int(job.retrials)
                 if job.fail_count < retrials:
                     job.inc_fail_count()
                     tmp = [
@@ -1880,7 +1880,7 @@ class JobList(object):
                     else:
                         if len(tmp3) == 1 and len(job.parents) == 1:
                             for parent in job.parents:
-                                if parent.name in job.edge_info and job.edge_info[job.name].get('optional', False):
+                                if parent.name in job.edge_info and job.edge_info[parent.name].get('optional', False):
                                     job.status = Status.READY
                                     job.hold = False
                                     Log.debug(
