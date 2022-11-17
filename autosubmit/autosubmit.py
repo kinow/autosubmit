@@ -4759,6 +4759,7 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         section_validation_message = " "
+        job_validation_message = " "
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -4817,7 +4818,7 @@ class Autosubmit:
                                                           "\n\tRemember that this option expects section names separated by a blank space as input."
 
                         raise AutosubmitCritical(
-                            "Error in the supplied input for -ft.", 7011, section_validation_message)
+                            "Error in the supplied input for -ft.", 7011, section_validation_message+job_validation_message)
                 job_list = Autosubmit.load_job_list(
                     expid, as_conf, notransitive=notransitive)
                 submitter = Autosubmit._get_submitter(as_conf)
@@ -4884,7 +4885,7 @@ class Autosubmit:
                                                       str(expid) + ". \n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
                                                       "\n\tRemember that this option expects job names separated by a blank space as input."
                         raise AutosubmitCritical(
-                            "Error in the supplied input for -ft.", 7011, section_validation_message)
+                            "Error in the supplied input for -ft.", 7011, section_validation_message+job_validation_message)
 
                 # Validating fc if filter_chunks -fc has been set:
                 if filter_chunks is not None:
@@ -4949,7 +4950,7 @@ class Autosubmit:
                     if fc_filter_is_correct is False:
                         section_validation_message = fc_validation_message
                         raise AutosubmitCritical(
-                            "Error in the supplied input for -fc.", 7011, section_validation_message)
+                            "Error in the supplied input for -fc.", 7011, section_validation_message+job_validation_message)
                 # Validating status, if filter_status -fs has been set:
                 # At this point we already have job_list from where we are getting the allows STATUS
                 if filter_status is not None:
@@ -4982,7 +4983,7 @@ class Autosubmit:
                                                              status + " in this experiment."
                     if status_validation_error is True:
                         raise AutosubmitCritical("Error in the supplied input for -fs.{0}".format(
-                            status_validation_message), 7011, section_validation_message)
+                            status_validation_message), 7011, section_validation_message+job_validation_message)
 
                 jobs_filtered = []
                 final_status = Autosubmit._get_status(final)
@@ -5069,7 +5070,7 @@ class Autosubmit:
                     # Ending validation
                     if filter_is_correct is False:
                         raise AutosubmitCritical(
-                            "Error in the supplied input for -ftc.", 7011, validation_message)
+                            "Error in the supplied input for -ftc.", 7011, section_validation_message+job_validation_message)
 
                     # If input is valid, continue.
                     record = dict()
