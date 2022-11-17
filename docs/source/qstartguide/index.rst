@@ -83,7 +83,7 @@ Run and monitoring:
 
  - First, it **checks the experiment configuration**. If it is wrong, it won't proceed further.
  - Second, it **runs the experiment while retrieving all logs** from completed or failed tasks as they run.
- - Third, it manages all the **workflow steps by following the dependencies defined by the user** until all jobs are in COMPLETED or FAILED status. There can be jobs left in WAITING status if their dependencies are in FAILED status.
+ - Third, it manages all the **workflow steps by following the dependencies defined by the user** until all jobs are in COMPLETED or FAILED status. There can be jobs left in **WAITING** status if their dependencies are in **FAILED** status.
 
 While the experiment is running, it can be visualized via ``autosubmit monitor <expid>``.
 
@@ -144,39 +144,44 @@ Final step: Modify and run
 
  It is time to look into the configuration files of the dummy experiment and modify them with a remote platform to run a workflow with a few more chunks.
 
- Open expdef.conf
+ Open expdef.yml
 
-.. code-block:: INI
+.. code-block:: yaml
 
-    [DEFAULT]
-    EXPID = a000 #<- don't change
-    HPCARCH = local # Change for your new main platform name, ej. marenostrum4
+    DEFAULT:
+        # Don't change
+        EXPID: "a000"
+        # Change for your new main platform name, ej. marenostrum4
+        HPCARCH: "local"
+        # Locate and  change these parameters, per ej. numchunks = 3
+        EXPERIMENT:
+            DATELIST: 20000101
+            MEMBERS: fc0
+            NUMCHUNKS: 1
+        (...)
 
-    # Locate and  change these parameters, per ej. numchunks = 3
-    [experiment]
-    DATELIST = 20000101
-    MEMBERS = fc0
-    NUMCHUNKS = 1
-    (...)
+Now open platforms.yml. Note: This will be an example for marenostrum4
 
-Now open platforms.conf. Note: This will be an example for marenostrum4
+.. code-block:: yml
 
-.. code-block:: INI
-
-    [marenostrum4]
-    # Queue type. Options: ps, SGE, LSF, SLURM, PBS, eceaccess
-    TYPE = slurm # scheduler type
-    HOST = mn1.bsc.es,mn2.bsc.es,mn3.bsc.es
-    PROJECT = bsc32 # <- your project
-    USER = bsc32070 # <- your user
-    SCRATCH_DIR = /gpfs/scratch
-    ADD_PROJECT_TO_HOST = False
-    # use 72:00 if you are using a PRACE account, 48:00 for the bsc account
-    MAX_WALLCLOCK = 02:00
-    # use 19200 if you are using a PRACE account, 2400 for the bsc account
-    MAX_PROCESSORS = 2400
-    PROCESSORS_PER_NODE = 48
-    SERIAL_QUEUE = debug
-    QUEUE = debug
+    PLATFORMS:
+        marenostrum4:
+            # Queue type. Options: ps, SGE, LSF, SLURM, PBS, eceaccess
+            # scheduler type
+            TYPE: slurm
+            HOST: mn1.bsc.es,mn2.bsc.es,mn3.bsc.es
+            # <- your project
+            PROJECT: bsc32
+            # <- your user
+            USER: bsc32070
+            SCRATCH_DIR: /gpfs/scratch
+            ADD_PROJECT_TO_HOST: False
+            # use 72:00 if you are using a PRACE account, 48:00 for the bsc account
+            MAX_WALLCLOCK: 02:00
+            # use 19200 if you are using a PRACE account, 2400 for the bsc account
+            MAX_PROCESSORS: 2400
+            PROCESSORS_PER_NODE: 48
+            SERIAL_QUEUE: debug
+            QUEUE: debug
 
 ``autosubmit create <expid>** (without -np)`` will generate the new workflow and ``autosubmit run <expid>`` will run the experiment with the latest changes.

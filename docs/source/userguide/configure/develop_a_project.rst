@@ -9,7 +9,7 @@ This section contains some examples on how to develop a new project.
 
 All files, with the exception of user-defined scripts, are located in the ``<expid>/conf`` directory.
 
-Configuration files are written in ``ini`` format. In the other hand, the user-defined scripts are written in ``bash/python or R`` format.
+Configuration files are written in ``yaml`` format. In the other hand, the user-defined scripts are written in ``bash/python or R`` format.
 
 To configure the experiment, edit ``autosubmit_cxxx.conf``, ``expdef_cxxx.conf``, ``jobs_cxxx.conf`` , ``platforms_cxxx.conf`` and ``proj_cxxx.conf``` in the ``conf`` folder of the experiment.
 

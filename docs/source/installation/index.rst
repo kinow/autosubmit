@@ -7,7 +7,7 @@ How to install
 
 The Autosubmit code is maintained in *PyPi*, the main source for python packages.
 
-- Pre-requisites: bash, python3, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk(tkinter in centOS), python2-dev, graphviz >= 2.41, pip3
+- Pre-requisites: bash, python3, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk(tkinter in centOS), graphviz >= 2.41, pip3
 
 .. important:: (SYSTEM) Graphviz version must be >= 2.38 except 2.40(not working). You can check the version using dot -v.
 
@@ -26,7 +26,7 @@ To install autosubmit just execute:
 or download, unpack and:
 ::
 
-    python setup.py install
+    python3 setup.py install
 
 .. hint::
     To check if autosubmit has been installed run ``autosubmit -v.`` This command will print autosubmit's current
