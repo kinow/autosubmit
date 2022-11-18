@@ -4603,11 +4603,12 @@ class Autosubmit:
             try:
                 hpcarch = submitter.platforms[as_conf.get_platform()]
             except BaseException as e:
+                error = str(e)
                 try:
                     hpcarch = submitter.platforms[as_conf.get_platform()]
                 except Exception as e:
                     hpcarch = "local"
-                Log.warning("Remote clone may be disabled due to: " + e.message)
+                Log.warning("Remote clone may be disabled due to: " + error)
             return AutosubmitGit.clone_repository(as_conf, force, hpcarch)
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()
