@@ -111,7 +111,7 @@ class LsfPlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self._checkjob_cmd + str(job_id)
 
-    def get_submit_cmd(self, job_script, job, export=""):
+    def get_submit_cmd(self, job_script, job, hold=False, export=""):
         if (export is None or export.lower() == "none") or len(export) == 0:
             export = ""
         else:

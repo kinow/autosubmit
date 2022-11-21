@@ -117,7 +117,7 @@ class PBSPlatform(ParamikoPlatform):
     def jobs_in_queue(self):
         return ''.split()
 
-    def get_submit_cmd(self, job_script, job, export=""):
+    def get_submit_cmd(self, job_script, job,hold=False, export=""):
         if export == "none" or export == "None" or export is None or export == "":
             export = ""
         else:

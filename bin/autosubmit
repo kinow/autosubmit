@@ -21,13 +21,12 @@
 import os
 import sys
 import traceback
+
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 sys.path.append(scriptdir)
 sys.path.append(os.path.normpath(os.path.join(scriptdir, os.pardir)))
-
+# noinspection PyUnresolvedReferences
 from log.log import Log, AutosubmitCritical , AutosubmitError
-
-
 from autosubmit.autosubmit import Autosubmit
 
 
@@ -61,10 +60,11 @@ def main():
         Log.error("Trace: {0}", str(e))
         if "temporarily unavailable" in str(e):
             Log.critical(
-                "Another instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock", 7000)
+                "{0}\nAnother instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock".format(str(e)), 7000)
         else:
             Log.critical(
-                "Unhandled error: If you see this message, please report it in Autosubmit's GitLab project")
+                "{1}{0}\nUnhandled error: If you see this message, please report it in Autosubmit's GitLab project".format(str(e),traceback.print_exc()
+), 7000)
         os._exit(1)
 
 
