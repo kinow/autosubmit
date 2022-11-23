@@ -746,7 +746,7 @@ class Autosubmit:
             if 'all' in BasicConfig.DENIED_HOSTS[args.command] or host in BasicConfig.DENIED_HOSTS[args.command] or fullhost in BasicConfig.DENIED_HOSTS[args.command]:
                 raise AutosubmitCritical(message, 7071)
         if args.command in BasicConfig.ALLOWED_HOSTS:
-            if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and (host not in BasicConfig.ALLOWED_HOSTS[args.command] or fullhost not in BasicConfig.ALLOWED_HOSTS[args.command]):
+            if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and not (host in BasicConfig.ALLOWED_HOSTS[args.command] or fullhost in BasicConfig.ALLOWED_HOSTS[args.command]):
                 raise AutosubmitCritical(message, 7071)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
