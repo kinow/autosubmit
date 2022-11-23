@@ -725,7 +725,13 @@ class Autosubmit:
             else:
                 expid_less.append("migrate")  # pickup
         import platform
-        host = platform.node()
+        fullhost = platform.node()
+        if "." in fullhost:
+            host = fullhost.split(".")[0]
+        elif "," in fullhost:
+            host = fullhost.split(",")[0]
+        else:
+            host = fullhost
         forbidden = BasicConfig.DENIED_HOSTS
         authorized = BasicConfig.ALLOWED_HOSTS
         message = "Command: {0} is not allowed to run in host: {1}.\n".format(args.command.upper(), host)
@@ -736,11 +742,11 @@ class Autosubmit:
         for command in forbidden:
             message += "   {0}:{1} \n".format(command, forbidden[command])
         message += "[Command: autosubmit {0}] is not allowed to run in [host: {1}].".format(args.command.upper(), host)
-        if args.command in forbidden:
-            if 'all' in forbidden[args.command] or host in forbidden[args.command]:
+        if args.command in BasicConfig.DENIED_HOSTS:
+            if 'all' in BasicConfig.DENIED_HOSTS[args.command] or host in BasicConfig.DENIED_HOSTS[args.command] or fullhost in BasicConfig.DENIED_HOSTS[args.command]:
                 raise AutosubmitCritical(message, 7071)
-        if args.command in authorized:
-            if 'all' not in authorized[args.command] and host not in authorized[args.command]:
+        if args.command in BasicConfig.ALLOWED_HOSTS:
+            if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and (host not in BasicConfig.ALLOWED_HOSTS[args.command] or fullhost not in BasicConfig.ALLOWED_HOSTS[args.command]):
                 raise AutosubmitCritical(message, 7071)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
