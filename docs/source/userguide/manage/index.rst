@@ -44,7 +44,7 @@ A bare copy (which occupies less space on disk) will be automatically made.
 .. hint:: That bare clone can be always reconverted in a working clone if we want to run again the experiment by using ``git clone bare_clone original_clone``.
 
 .. note:: In addition, every time you run this command with -pr option, it will check the commit unique identifier for local working tree existing on the ``proj`` directory.
-    In case that commit identifier exists, clean will register it to the ``expdef_cxxx.conf`` file.
+    In case that commit identifier exists, clean will register it to the ``expdef_cxxx.yml`` file.
 
 How to archive an experiment
 ----------------------------
@@ -142,15 +142,15 @@ How to migrate an experiment
 
 To migrate an experiment from one user to another, you need to add two parameters for each platform in the platforms configuration file:
 
- * USER_TO = <target_user> # Mandatory
- * TEMP_DIR = <hpc_temporary_directory> # Mandatory, can be left empty if there are no files on that platform
- * SAME_USER = false|true # Default False
+ * USER_TO: <target_user> # Mandatory
+ * TEMP_DIR: <hpc_temporary_directory> # Mandatory, can be left empty if there are no files on that platform
+ * SAME_USER: false|true # Default False
 
- * PROJECT_TO = <project> # Optional, if not specified project will remain the same
- * HOST_TO = <cluster_ip> # Optional, avoid alias if possible, try use direct ip.
+ * PROJECT_TO: <project> # Optional, if not specified project will remain the same
+ * HOST_TO: <cluster_ip> # Optional, avoid alias if possible, try use direct ip.
 
 
-.. warning:: The USER_TO must be a different user , in case you want to maintain the same user, put SAME_USER = True.
+.. warning:: The USER_TO must be a different user , in case you want to maintain the same user, put SAME_USER: True.
 
 .. warning:: The temporary directory must be readable by both users (old owner and new owner)
     Example for a RES account to BSC account the tmp folder must have rwx|rwx|--- permissions.

@@ -5,7 +5,7 @@ Installation
 How to install
 ==============
 
-The Autosubmit code is maintained in *PyPi*, the main source for python packages.
+The Autosubmit code is maintained in *PyPi* and git, the main source for python packages.
 
 - Pre-requisites: bash, python3, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk(tkinter in centOS), graphviz >= 2.41, pip3
 
@@ -79,37 +79,37 @@ Create or modify /etc/autosubmitrc file or ~/.autosubmitrc with the information 
 
 .. code-block:: ini
 
-    [database]
-    path = path to autosubmit db
-    filename = autosubmit.db
+    database:
+    path: path to autosubmit db
+    filename: autosubmit.db
 
-    [local]
-    path = path to experiment folders
+    local:
+    path: path to experiment folders
 
-    [conf]
-    jobs = path to any experiment  jobs conf # If not working on esarchive, you must create one from scratch check the how to.
-    platforms = path to any experiment  platform conf # If not working on esarchive, you must create one from scratch check the how to.
+    conf:
+    jobs: path to any experiment  jobs conf # If not working on esarchive, you must create one from scratch check the how to.
+    platforms: path to any experiment  platform conf # If not working on esarchive, you must create one from scratch check the how to.
 
-    [mail]
-    smtp_server = mail.bsc.es
-    mail_from = automail@bsc.es
+    mail:
+    smtp_server:mail.bsc.es
+    mail_from:automail@bsc.es
 
-    [structures]
-    path =  path to experiment folders
+    structures:
+    path:   path to experiment folders
 
-    [globallogs]
-    path =  path to global logs (for expid,delete and migrate commands)
+    globallogs:
+    path:   path to global logs (for expid,delete and migrate commands)
 
-    [historicdb]
-    path = <experiment_folder>/historic
+    historicdb:
+    path: <experiment_folder>/historic
 
-    [autosubmitapi]
-    url = url of Autosubmit API (The API is provided inside the BSC network) 
+    autosubmitapi:
+    url:  url of Autosubmit API (The API is provided inside the BSC network)
     # Autosubmit API provides extra information for some Autosubmit functions. It is not mandatory to have access to it to use Autosubmit.
 
-    [hosts]
-    authorized = [run bscearth000,bscesautosubmit01,bscesautosubmit02] [stats,clean,describe,check,report,dbfix,pklfix,updatedescript,updateversion all]
-    forbidden = [expìd,create,recovery,delete,inspect,monitor,recovery,migrate,configure,setstatus,testcase,test,refresh,archive,unarchive bscearth000,bscesautosubmit01,bscesautosubmit02]
+    hosts:
+    authorized:  [run bscearth000,bscesautosubmit01,bscesautosubmit02] [stats,clean,describe,check,report,dbfix,pklfix,updatedescript,updateversion all]
+    forbidden:  [expìd,create,recovery,delete,inspect,monitor,recovery,migrate,configure,setstatus,testcase,test,refresh,archive,unarchive bscearth000,bscesautosubmit01,bscesautosubmit02]
 
 
 Hosts:

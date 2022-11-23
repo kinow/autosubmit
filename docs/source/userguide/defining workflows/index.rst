@@ -23,12 +23,12 @@ be finished before launching the job that has the DEPENDENCIES attribute.
 
 .. code-block:: ini
 
-   [One]
-   FILE = one.sh
+   One:
+   FILE: one.sh
 
-   [Two]
-   FILE = two.sh
-   DEPENDENCIES = One
+   Two:
+   FILE: two.sh
+   DEPENDENCIES: One
 
 
 The resulting workflow can be seen in Figure :numref:`simple`
@@ -53,23 +53,23 @@ member and chunk corresponding to running once, once per startdate, once per mem
 
 .. code-block:: ini
 
-    [once]
-    FILE = Once.sh
+    once:
+    FILE: Once.sh
 
-    [date]
-    FILE = date.sh
-    DEPENDENCIES = once
-    RUNNING = date
+    date:
+    FILE: date.sh
+    DEPENDENCIES: once
+    RUNNING: date
 
-    [member]
-    FILE = Member.sh
-    DEPENDENCIES = date
-    RUNNING = member
+    member:
+    FILE: Member.sh
+    DEPENDENCIES: date
+    RUNNING: member
 
-    [chunk]
-    FILE = Chunk.sh
-    DEPENDENCIES = member
-    RUNNING = chunk
+    chunk:
+    FILE: Chunk.sh
+    DEPENDENCIES: member
+    RUNNING: chunk
 
 
 The resulting workflow can be seen in Figure :numref:`running` for a experiment with 2 startdates, 2 members and 2 chunks.
@@ -98,19 +98,19 @@ sim-1 on the DEPENDENCIES attribute. As you can see, you can add as much depende
 
 .. code-block:: ini
 
-   [ini]
-   FILE = ini.sh
-   RUNNING = member
+   ini:
+   FILE: ini.sh
+   RUNNING: member
 
-   [sim]
-   FILE = sim.sh
-   DEPENDENCIES = ini sim-1
-   RUNNING = chunk
+   sim:
+   FILE: sim.sh
+   DEPENDENCIES: ini sim-1
+   RUNNING: chunk
 
-   [postprocess]
-   FILE = postprocess.sh
-   DEPENDENCIES = sim
-   RUNNING = chunk
+   postprocess:
+   FILE: postprocess.sh
+   DEPENDENCIES: sim
+   RUNNING: chunk
 
 
 The resulting workflow can be seen in Figure :numref:`dprevious`
@@ -142,24 +142,24 @@ jobs to be finished. That is the case of the postprocess combine dependency on t
 
 .. code-block:: ini
 
-    [ini]
-    FILE = ini.sh
-    RUNNING = member
+    ini:
+    FILE: ini.sh
+    RUNNING: member
 
-    [sim]
-    FILE = sim.sh
-    DEPENDENCIES = ini sim-1
-    RUNNING = chunk
+    sim:
+    FILE: sim.sh
+    DEPENDENCIES: ini sim-1
+    RUNNING: chunk
 
-    [postprocess]
-    FILE = postprocess.sh
-    DEPENDENCIES = sim
-    RUNNING = chunk
+    postprocess:
+    FILE: postprocess.sh
+    DEPENDENCIES: sim
+    RUNNING: chunk
 
-    [combine]
-    FILE = combine.sh
-    DEPENDENCIES = postprocess
-    RUNNING = member
+    combine:
+    FILE: combine.sh
+    DEPENDENCIES: postprocess
+    RUNNING: member
 
 
 The resulting workflow can be seen in Figure :numref:`dependencies`
@@ -185,25 +185,25 @@ an integer I for this attribute and the job will run only once for each I iterat
 
 .. code-block:: ini
 
-    [ini]
-    FILE = ini.sh
-    RUNNING = member
+    ini:
+    FILE: ini.sh
+    RUNNING: member
 
-    [sim]
-    FILE = sim.sh
-    DEPENDENCIES = ini sim-1
-    RUNNING = chunk
+    sim:
+    FILE: sim.sh
+    DEPENDENCIES: ini sim-1
+    RUNNING: chunk
 
-    [postprocess]
-    FILE = postprocess.sh
-    DEPENDENCIES = sim
-    RUNNING = chunk
-    FREQUENCY = 3
+    postprocess:
+    FILE: postprocess.sh
+    DEPENDENCIES: sim
+    RUNNING: chunk
+    FREQUENCY: 3
 
-    [combine]
-    FILE = combine.sh
-    DEPENDENCIES = postprocess
-    RUNNING = member
+    combine:
+    FILE: combine.sh
+    DEPENDENCIES: postprocess
+    RUNNING: member
 
 
 The resulting workflow can be seen in Figure :numref:`frequency`
@@ -229,19 +229,19 @@ of synchronization do you want. See the below examples with and without this par
 
 .. code-block:: ini
 
-    [ini]
-    FILE = ini.sh
-    RUNNING = member
+    ini:
+    FILE: ini.sh
+    RUNNING: member
 
-    [sim]
-    FILE = sim.sh
-    DEPENDENCIES = INI SIM-1
-    RUNNING = chunk
+    sim:
+    FILE: sim.sh
+    DEPENDENCIES: INI SIM-1
+    RUNNING: chunk
 
-    [ASIM]
-    FILE = asim.sh
-    DEPENDENCIES = SIM
-    RUNNING = chunk
+    ASIM:
+    FILE: asim.sh
+    DEPENDENCIES: SIM
+    RUNNING: chunk
 
 The resulting workflow can be seen in Figure :numref:`nosync`
 
@@ -255,8 +255,8 @@ The resulting workflow can be seen in Figure :numref:`nosync`
 
 .. code-block:: ini
 
-    [ASIM]
-    SYNCHRONIZE = member
+    ASIM:
+    SYNCHRONIZE: member
 
 The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen in Figure :numref:`msynchronize`
 
@@ -270,8 +270,8 @@ The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen 
 
 .. code-block:: ini
 
-    [ASIM]
-    SYNCHRONIZE = date
+    ASIM:
+    SYNCHRONIZE: date
 
 The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen in Figure :numref:`dsynchronize`
 
@@ -297,25 +297,25 @@ in the format [1:3,7,10] or [1,2,3]
 
 .. code-block:: ini
 
-    [ini]
-    FILE = ini.sh
-    RUNNING = member
+    ini:
+    FILE: ini.sh
+    RUNNING: member
 
-    [sim]
-    FILE = sim.sh
-    DEPENDENCIES = ini sim-1
-    RUNNING = chunk
+    sim:
+    FILE: sim.sh
+    DEPENDENCIES: ini sim-1
+    RUNNING: chunk
 
-    [asim]
-    FILE = asim.sh
-    DEPENDENCIES = sim
-    RUNNING = chunk
-    SPLITS = 3
+    asim:
+    FILE: asim.sh
+    DEPENDENCIES: sim
+    RUNNING: chunk
+    SPLITS: 3
 
-    [post]
-    FILE = post.sh
-    RUNNING = chunk
-    DEPENDENCIES = asim[1] asim[1]+1
+    post:
+    FILE: post.sh
+    RUNNING: chunk
+    DEPENDENCIES: asim1: asim1:+1
 
 The resulting workflow can be seen in Figure :numref:`split`
 
@@ -339,25 +339,25 @@ an integer N for this attribute and the job will run only after N chunks.
 
 .. code-block:: ini
 
-    [ini]
-    FILE = ini.sh
-    RUNNING = member
+    ini:
+    FILE: ini.sh
+    RUNNING: member
 
-    [sim]
-    FILE = sim.sh
-    DEPENDENCIES = ini sim-1
-    RUNNING = chunk
+    sim:
+    FILE: sim.sh
+    DEPENDENCIES: ini sim-1
+    RUNNING: chunk
 
-    [asim]
-    FILE = asim.sh
-    DEPENDENCIES = sim asim-1
-    RUNNING = chunk
-    DELAY = 2
+    asim:
+    FILE: asim.sh
+    DEPENDENCIES:  sim asim-1
+    RUNNING:  chunk
+    DELAY:  2
 
-    [post]
-    FILE = post.sh
-    DEPENDENCIES = sim asim
-    RUNNING = chunk
+    post:
+    FILE:  post.sh
+    DEPENDENCIES:  sim asim
+    RUNNING:  chunk
 
 The resulting workflow can be seen in Figure :numref:`delay`
 
@@ -379,34 +379,34 @@ In this first example, you can see 3 jobs in which last job (POST) shows an exam
 
 .. code-block:: ini
 
-    [INI]
-    FILE = templates/common/ini.tmpl.sh
-    RUNNING = member
-    WALLCLOCK = 00:30
-    QUEUE = debug
-    CHECK = true
+    INI:
+    FILE:  templates/common/ini.tmpl.sh
+    RUNNING:  member
+    WALLCLOCK: 00:30
+    QUEUE: debug
+    CHECK: true
 
-    [SIM]
-    FILE = templates/ecearth3/ecearth3.sim
-    DEPENDENCIES = INI
-    RUNNING = chunk
-    WALLCLOCK = 04:00
-    PROCESSORS = 1616
-    THREADS = 1
+    SIM:
+    FILE: templates/ecearth3/ecearth3.sim
+    DEPENDENCIES: INI
+    RUNNING: chunk
+    WALLCLOCK: 04:00
+    PROCESSORS: 1616
+    THREADS: 1
 
-    [POST]
-    FILE = templates/common/post.tmpl.sh
-    DEPENDENCIES =  SIM
-    RUNNING = chunk
-    WALLCLOCK = 01:00
-    QUEUE = Debug
-    check = true
+    POST:
+    FILE: templates/common/post.tmpl.sh
+    DEPENDENCIES:   SIM
+    RUNNING: chunk
+    WALLCLOCK: 01:00
+    QUEUE: Debug
+    check: true
     # Then you can select the specific chunks of dependency SIM with one of those lines:
 
-    SELECT_CHUNKS = SIM*[1]*[3] # Will do the dependency of chunk 1 and chunk 3. While chunks 2,4  won't be linked.
-    SELECT_CHUNKS = SIM*[1:3] #Enables the dependency of chunk 1,2 and 3. While 4 won't be linked.
-    SELECT_CHUNKS = SIM*[1,3] #Enables the dependency of chunk 1 and 3. While 2 and 4 won't be linked
-    SELECT_CHUNKS = SIM*[1] #Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked
+    SELECT_CHUNKS: SIM*1:*3: # Will do the dependency of chunk 1 and chunk 3. While chunks 2,4  won't be linked.
+    SELECT_CHUNKS: SIM*[1:3] #Enables the dependency of chunk 1,2 and 3. While 4 won't be linked.
+    SELECT_CHUNKS: SIM*[1,3] #Enables the dependency of chunk 1 and 3. While 2 and 4 won't be linked
+    SELECT_CHUNKS: SIM*1: #Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked
 
 Example 2: select_chunks
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -415,13 +415,13 @@ In this workflow you can see an illustrated example of select_chunks used in an 
 
 .. code-block:: ini
 
-    [SIM]
-    FILE = templates/sim.tmpl.sh
-    DEPENDENCIES = INI SIM-1 POST-1 CLEAN-5
-    SELECT_CHUNKS = POST*[1]
-    RUNNING = chunk
-    WALLCLOCK = 0:30
-    PROCESSORS = 768
+    SIM:
+    FILE: templates/sim.tmpl.sh
+    DEPENDENCIES: INI SIM-1 POST-1 CLEAN-5
+    SELECT_CHUNKS: POST*1:
+    RUNNING: chunk
+    WALLCLOCK: 0:30
+    PROCESSORS: 768
 
 .. figure:: fig/select_chunks.png
    :name: simple
@@ -436,20 +436,20 @@ In this workflow you can see an illustrated example of SKIPPABLE parameter used 
 
 .. code-block:: ini
 
-    [SIM]
-    FILE = sim.sh
-    DEPENDENCIES = INI POST-1
-    WALLCLOCK = 00:15
-    RUNNING = chunk
-    QUEUE = debug
-    SKIPPABLE = TRUE
+    SIM:
+    FILE: sim.sh
+    DEPENDENCIES: INI POST-1
+    WALLCLOCK: 00:15
+    RUNNING: chunk
+    QUEUE: debug
+    SKIPPABLE: TRUE
 
-    [POST]
-    FILE = post.sh
-    DEPENDENCIES = SIM
-    WALLCLOCK = 00:05
-    RUNNING = member
-    #QUEUE = debug
+    POST:
+    FILE: post.sh
+    DEPENDENCIES: SIM
+    WALLCLOCK: 00:05
+    RUNNING: member
+    #QUEUE: debug
 
 .. figure:: fig/skip.png
    :name: simple
@@ -469,20 +469,20 @@ Weak dependencies, work like this way:
 
 .. code-block:: ini
 
-    [GET_FILES]
-    FILE = templates/fail.sh
-    RUNNING = chunk
+    GET_FILES:
+    FILE: templates/fail.sh
+    RUNNING: chunk
 
-    [IT]
-    FILE = templates/work.sh
-    RUNNING = chunk
-    QUEUE = debug
+    IT:
+    FILE: templates/work.sh
+    RUNNING: chunk
+    QUEUE: debug
 
-    [CALC_STATS]
-    FILE = templates/work.sh
-    DEPENDENCIES = IT GET_FILES?
-    RUNNING = chunk
-    SYNCHRONIZE = member
+    CALC_STATS:
+    FILE: templates/work.sh
+    DEPENDENCIES: IT GET_FILES?
+    RUNNING: chunk
+    SYNCHRONIZE: member
 
 .. figure:: fig/dashed.png
    :name: simple
@@ -499,41 +499,41 @@ Expdef:
 
 .. code-block:: ini
 
-    [experiment]
-    DATELIST = 19600101
-    MEMBERS = 00 01 02 03
-    CHUNKSIZE = 1
-    NUMCHUNKS = 2
+    experiment:
+    DATELIST: 19600101
+    MEMBERS: 00 01 02 03
+    CHUNKSIZE: 1
+    NUMCHUNKS: 2
 
 Jobs_conf:
 
 .. code-block:: ini
 
-    [SIM]
+    SIM:
     ...
-    RUNNING = chunk
-    QUEUE = debug
+    RUNNING: chunk
+    QUEUE: debug
 
-    [DA]
+    DA:
     ...
-    DEPENDENCIES = SIM
-    SELECT_MEMBERS = SIM*[0:2]
-    RUNNING = chunk
-    SYNCHRONIZE = member
+    DEPENDENCIES: SIM
+    SELECT_MEMBERS: SIM*[0:2]
+    RUNNING: chunk
+    SYNCHRONIZE: member
 
-    [REDUCE]
+    REDUCE:
     ...
-    DEPENDENCIES = SIM
-    SELECT_MEMBERS = SIM*[3]
-    RUNNING = member
-    FREQUENCY = 4
+    DEPENDENCIES: SIM
+    SELECT_MEMBERS: SIM*3:
+    RUNNING: member
+    FREQUENCY: 4
 
-    [REDUCE_AN]
+    REDUCE_AN:
     ...
-    FILE = templates/05b_sim.sh
-    DEPENDENCIES = DA
-    RUNNING = chunk
-    SYNCHRONIZE = member
+    FILE: templates/05b_sim.sh
+    DEPENDENCIES: DA
+    RUNNING: chunk
+    SYNCHRONIZE: member
 
 .. figure:: fig/select_members.png
    :name: simple

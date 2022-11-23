@@ -46,7 +46,7 @@ Additionally, you must be aware of the following changes:
  - To define a job, you must put them under the key `jobs` in any custom configuration file.
  - To define a platform, you must put them under the key `platforms` in any custom configuration file.
  - To define a loop, you must put the key "FOR" as the first key of the section.
- - You can put any %placeholder% in the proj.conf and custom files, and also you can put %ROOTDIR% in the expdef.yml.
+ - You can put any %placeholder% in the proj.yml and custom files, and also you can put %ROOTDIR% in the expdef.yml.
  - All configuration is now based in an hierarchical structure, so to export a var, you must use the following syntax: `%KEY.SUBKEY.SUBSUBKEY%`. The same goes for override them.
  - YAML has into account the type.
 
@@ -270,7 +270,7 @@ Configuration
             RUNNING: once
           additional_job_2:
             FILE: extrajob.sh
-            RUNNING : once
+            RUNNING: once
 
 
 Wrappers definition

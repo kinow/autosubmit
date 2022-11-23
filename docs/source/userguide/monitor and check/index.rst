@@ -32,7 +32,7 @@ Example:
 How to use check in running time:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In ``jobs_cxxx.conf`` , you can set check(default true) to check the scripts during autosubmit run cxx.
+In ``jobs_cxxx.yml`` , you can set check(default true) to check the scripts during autosubmit run cxx.
 
 There are two parameters related to check:
 
@@ -42,43 +42,43 @@ There are two parameters related to check:
 
 .. code-block:: ini
 
-    CHECK = TRUE or FALSE or ON_SUBMISSION # Default is TRUE
-    SHOW_CHECK_WARNINGS = TRUE or FALSE # Default is FALSE
+    CHECK: TRUE or FALSE or ON_SUBMISSION # Default is TRUE
+    SHOW_CHECK_WARNINGS: TRUE or FALSE # Default is FALSE
 
 
 
 ::
 
-    CHECK = TRUE # Static templates (existing on `autosubmit create`). Used to substitute empty variables
+    CHECK: TRUE # Static templates (existing on `autosubmit create`). Used to substitute empty variables
 
-    CHECK = ON_SUBMISSION # Dynamic templates (generated on running time). Used to substitute empty variables.
+    CHECK: ON_SUBMISSION # Dynamic templates (generated on running time). Used to substitute empty variables.
 
-    CHECK = FALSE # Used to disable this substitution.
+    CHECK: FALSE # Used to disable this substitution.
 
 ::
 
-    SHOW_CHECK_WARNINGS = TRUE # Shows a LOT of information. Disabled by default.
+    SHOW_CHECK_WARNINGS: TRUE # Shows a LOT of information. Disabled by default.
 
 
 For example:
 
 .. code-block:: ini
 
-    [LOCAL_SETUP]
-    FILE = filepath_that_exists
-    PLATFORM = LOCAL
-    WALLCLOCK = 05:00
-    CHECK = TRUE
-    SHOW_CHECK_WARNINGS = TRUE
+    LOCAL_SETUP:
+    FILE: filepath_that_exists
+    PLATFORM: LOCAL
+    WALLCLOCK: 05:00
+    CHECK: TRUE
+    SHOW_CHECK_WARNINGS: TRUE
     ...
-    [SIM]
-    FILE = filepath_that_no_exists_until_setup_is_processed
-    PLATFORM = bsc_es
-    DEPENDENCIES = LOCAL_SETUP SIM - 1
-    RUNNING = chunk
-    WALLCLOCK = 05:00
-    CHECK = ON_SUBMISSION
-    SHOW_CHECK_WARNINGS = FALSE
+    SIM:
+    FILE: filepath_that_no_exists_until_setup_is_processed
+    PLATFORM: bsc_es
+    DEPENDENCIES: LOCAL_SETUP SIM - 1
+    RUNNING: chunk
+    WALLCLOCK: 05:00
+    CHECK: ON_SUBMISSION
+    SHOW_CHECK_WARNINGS: FALSE
     ...
 
 How to generate cmd files
@@ -549,10 +549,10 @@ The user also might be interested in adding his particular statistics to the Aut
 The allowed format for this feature is the same as the Autosubmit configuration files: INI style. For example:
 ::
 
-    [COUPLING]
-    LOAD_BALANCE = 0.44
-    RECOMMENDED_PROCS_MODEL_A = 522
-    RECOMMENDED_PROCS_MODEL_B = 418
+    COUPLING:
+    LOAD_BALANCE: 0.44
+    RECOMMENDED_PROCS_MODEL_A: 522
+    RECOMMENDED_PROCS_MODEL_B: 418
 
 The location where user can put this stats is in the file:
 ::
@@ -632,17 +632,17 @@ On the other hand, if you use the option -l autosubmit will write a file called 
 
 .. code-block:: ini
 
-    HPCQUEUE=bsc_es
-    HPCARCH=marenostrum4
-    LOCAL_TEMP_DIR=/home/dbeltran/experiments/ASlogs
-    NUMCHUNKS=1
-    PROJECT_ORIGIN=https://earth.bsc.es/gitlab/es/auto-ecearth3.git
-    MARENOSTRUM4_HOST=mn1.bsc.es
-    NORD3_QUEUE=bsc_es
-    NORD3_ARCH=nord3
-    CHUNKSIZEUNIT=month
-    MARENOSTRUM4_LOGDIR=/gpfs/scratch/bsc32/bsc32070/a01w/LOG_a01w
-    PROJECT_COMMIT=
-    SCRATCH_DIR=/gpfs/scratch
-    HPCPROJ=bsc32
-    NORD3_BUDG=bsc32
+    HPCQUEUE: bsc_es
+    HPCARCH: marenostrum4
+    LOCAL_TEMP_DIR: /home/dbeltran/experiments/ASlogs
+    NUMCHUNKS: 1
+    PROJECT_ORIGIN: https://earth.bsc.es/gitlab/es/auto-ecearth3.git
+    MARENOSTRUM4_HOST: mn1.bsc.es
+    NORD3_QUEUE: bsc_es
+    NORD3_ARCH: nord3
+    CHUNKSIZEUNIT: month
+    MARENOSTRUM4_LOGDIR: /gpfs/scratch/bsc32/bsc32070/a01w/LOG_a01w
+    PROJECT_COMMIT:
+    SCRATCH_DIR: /gpfs/scratch
+    HPCPROJ: bsc32
+    NORD3_BUDG: bsc32

@@ -33,7 +33,7 @@ Example:
 ::
 
     autosubmit run cxxx
-.. important:: If the autosubmit version is set on autosubmit.conf it must match the actual autosubmit version
+.. important:: If the autosubmit version is set on autosubmit.yml it must match the actual autosubmit version
 .. hint:: It is recommended to launch it in background and with ``nohup`` (continue running although the user who launched the process logs out).
 
 Example:
@@ -142,20 +142,20 @@ This feature allows to run an experiment in two separated steps without the need
 
 To achieve this, you will have to use an special parameter called TWO_STEP_START in which you will put the list of the jobs that you want to run in an exclusive mode. These jobs will run until all of them finishes and once it finishes, the rest of the jobs will begun the execution.
 
-It can be activated through TWO_STEP_START and it is set on expdef_a02n.conf, under the [experiment] section.
+It can be activated through TWO_STEP_START and it is set on expdef_a02n.yml, under the experiment: section.
 
 .. code-block:: ini
 
-    [experiment]
-    DATELIST = 20120101 20120201
-    MEMBERS = fc00[0-3]
-    CHUNKSIZEUNIT = day
-    CHUNKSIZE = 1
-    NUMCHUNKS = 10
-    CHUNKINI =
-    CALENDAR = standard
+    experiment:
+    DATELIST: 20120101 20120201
+    MEMBERS: fc00[0-3]
+    CHUNKSIZEUNIT: day
+    CHUNKSIZE: 1
+    NUMCHUNKS: 10
+    CHUNKINI :
+    CALENDAR: standard
     # To run before the rest of experiment:
-    TWO_STEP_START = <job_names&section,dates,member_or_chunk(M/C),chunk_or_member(C/M)>
+    TWO_STEP_START: <job_names&section,dates,member_or_chunk(M/C),chunk_or_member(C/M)>
 
 In order to be easier to use, there are Three  modes for use this feature: job_names and section,dates,member_or_chunk(M/C),chunk_or_member(C/M).
 
@@ -178,13 +178,13 @@ Guess the expdef configuration as follow:
 
 .. code-block:: ini
 
-    [experiment]
-    DATELIST = 20120101
-    MEMBERS = 00[0-1]
-    CHUNKSIZEUNIT = day
-    CHUNKSIZE = 1
-    NUMCHUNKS = 2
-    TWO_STEP_START = a02n_20120101_000_1_REDUCE&COMPILE_DA,SIM;20120101;c[1]
+    experiment:
+    DATELIST: 20120101
+    MEMBERS: 00[0-1]
+    CHUNKSIZEUNIT: day
+    CHUNKSIZE: 1
+    NUMCHUNKS: 2
+    TWO_STEP_START: a02n_20120101_000_1_REDUCE&COMPILE_DA,SIM;20120101;c[1]
 
 Given this job_list ( jobs_conf has REMOTE_COMPILE(once),DA,SIM,REDUCE)
 
