@@ -197,15 +197,24 @@ class AutosubmitGit:
         try:
             ## command 0
             Log.debug('Clone command: {0}', command_0)
-
+            try:
+                git_version = subprocess.check_output("git --version",shell=True)
+                git_version = git_version.split(" ")[2].strip("\n")
+                version_int = ""
+                for number in git_version.split("."):
+                    version_int += number
+                git_version = int(version_int)
+            except:
+                git_version = 2251
             if git_remote_project_path == '':
                 command_0 = "cd {0} ; {1}".format(project_path, command_0)
                 output_0 = subprocess.check_output(command_0, shell=True)
             else:
                 command_0 = "cd {0} ; {1}".format(project_path, command_0)
                 hpcarch.send_command(command_0)
-            # command 1
-            if os.path.exists(os.path.join(git_path, ".githooks")):
+            ##command 1
+
+            if os.path.exists(os.path.join(git_path, ".githooks")) and git_version > 2136:
                 for root_dir, dirs, files in os.walk(os.path.join(git_path, ".githooks")):
                     for f_dir in dirs:
                         os.chmod(os.path.join(root_dir, f_dir), 0o750)
