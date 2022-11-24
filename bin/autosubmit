@@ -49,9 +49,11 @@ def main():
     except AutosubmitCritical as e:
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
             os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
+        Log.error(str(traceback.print_exc()))
         if e.trace is not None:
             Log.error("Trace: {0}", e.trace)
         Log.critical("{1} [eCode={0}]", e.code, e.message)
+
         Log.info("More info at https://autosubmit.readthedocs.io/en/latest/faq.html")
         os._exit(1)
     except Exception as e:
@@ -63,7 +65,7 @@ def main():
                 "{0}\nAnother instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock".format(str(e)), 7000)
         else:
             Log.critical(
-                "{1}{0}\nUnhandled error: If you see this message, please report it in Autosubmit's GitLab project".format(str(e),traceback.print_exc()
+                "{1}{0}\nUnhandled error: If you see this message, please report it in Autosubmit's GitLab project".format(str(e),str(traceback.print_exc())
 ), 7000)
         os._exit(1)
 

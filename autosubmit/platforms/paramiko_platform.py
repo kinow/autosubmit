@@ -586,7 +586,11 @@ class ParamikoPlatform(Platform):
         remote_logs = as_conf.get_copy_remote_logs()
         job_list_cmd = ""
         for job,job_prev_status in job_list:
-            job_list_cmd += str(job.id)+","
+            if job.id is None:
+                job_str = "0"
+            else:
+                job_str = str(job.id)
+            job_list_cmd += job_str+","
         if job_list_cmd[-1] == ",":
             job_list_cmd=job_list_cmd[:-1]
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
@@ -597,14 +601,14 @@ class ParamikoPlatform(Platform):
         try:
             self.send_command(cmd)
         except AutosubmitError as e:
-            e_msg = e.trace+" "+e.message
+            e_msg = str(e.trace)+" "+str(e.message)
             slurm_error = True
         if not slurm_error:
             while not self._check_jobid_in_queue(self.get_ssh_output(), job_list_cmd) and retries > 0:
                 try:
                     self.send_command(cmd)
                 except AutosubmitError as e:
-                    e_msg = e.trace + " " + e.message
+                    e_msg = str(e.trace) + " " + str(e.message)
                     slurm_error = True
                     break
                 Log.debug('Retrying check job command: {0}', cmd)
@@ -670,7 +674,7 @@ class ParamikoPlatform(Platform):
                 else:
                     job_status = Status.UNKNOWN
                     Log.error(
-                        'check_job() The job id ({0}) status is {1}.', job_id, job_status)
+                        'check_job() The job id ({0}) status is {1}.', job.id, job_status)
                 job.new_status = job_status
             reason = str()
             if self.type == 'slurm' and len(in_queue_jobs) > 0:

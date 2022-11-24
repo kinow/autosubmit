@@ -142,7 +142,7 @@ class Autosubmit:
     """
 
     def __init__(self):
-        self._experiment_data = dict()
+        self._experiment_data = {}
 
     @property
     def experiment_data(self):
@@ -1075,11 +1075,12 @@ class Autosubmit:
                         pass
                     raise
                 except BaseException as e:
+                    err=str(e)
                     try:
                         Autosubmit._delete_expid(exp_id)
                     except Exception as e:
                         pass
-                    raise AutosubmitCritical("Couldn't create a new experiment", 7012, str(e))
+                    raise AutosubmitCritical("Couldn't create a new experiment", 7012, err)
             else:
                 try:
                     if root_folder == '' or root_folder is None:
