@@ -21,14 +21,14 @@ It is important to remember when defining workflows that DEPENDENCIES on autosub
 be finished before launching the job that has the DEPENDENCIES attribute.
 
 
-.. code-block:: ini
+.. code-block:: yaml
 
    One:
-   FILE: one.sh
+       FILE: one.sh
 
    Two:
-   FILE: two.sh
-   DEPENDENCIES: One
+       FILE: two.sh
+       DEPENDENCIES: One
 
 
 The resulting workflow can be seen in Figure :numref:`simple`
@@ -51,25 +51,25 @@ divide member execution on different chunks.
 To set at what level a job has to run you have to use the RUNNING attribute. It has four possible values: once, date,
 member and chunk corresponding to running once, once per startdate, once per member or once per chunk respectively.
 
-.. code-block:: ini
+.. code-block:: yaml
 
     once:
-    FILE: Once.sh
+        FILE: Once.sh
 
     date:
-    FILE: date.sh
-    DEPENDENCIES: once
-    RUNNING: date
+        FILE: date.sh
+        DEPENDENCIES: once
+        RUNNING: date
 
     member:
-    FILE: Member.sh
-    DEPENDENCIES: date
-    RUNNING: member
+        FILE: Member.sh
+        DEPENDENCIES: date
+        RUNNING: member
 
     chunk:
-    FILE: Chunk.sh
-    DEPENDENCIES: member
-    RUNNING: chunk
+        FILE: Chunk.sh
+        DEPENDENCIES: member
+        RUNNING: chunk
 
 
 The resulting workflow can be seen in Figure :numref:`running` for a experiment with 2 startdates, 2 members and 2 chunks.
@@ -96,21 +96,21 @@ Autosubmit can manage dependencies between jobs that are part of different chunk
 example will show how to make a simulation job wait for the previous chunk of the simulation. To do that, we add
 sim-1 on the DEPENDENCIES attribute. As you can see, you can add as much dependencies as you like separated by spaces
 
-.. code-block:: ini
+.. code-block:: yaml
 
    ini:
-   FILE: ini.sh
-   RUNNING: member
+       FILE: ini.sh
+       RUNNING: member
 
    sim:
-   FILE: sim.sh
-   DEPENDENCIES: ini sim-1
-   RUNNING: chunk
+       FILE: sim.sh
+       DEPENDENCIES: ini sim-1
+       RUNNING: chunk
 
    postprocess:
-   FILE: postprocess.sh
-   DEPENDENCIES: sim
-   RUNNING: chunk
+       FILE: postprocess.sh
+       DEPENDENCIES: sim
+       RUNNING: chunk
 
 
 The resulting workflow can be seen in Figure :numref:`dprevious`
@@ -140,26 +140,26 @@ on the next example.
 In the other case, a job depending on a lower running level job, the higher level job will wait for ALL the lower level
 jobs to be finished. That is the case of the postprocess combine dependency on the next example.
 
-.. code-block:: ini
+.. code-block:: yaml
 
     ini:
-    FILE: ini.sh
-    RUNNING: member
+        FILE: ini.sh
+        RUNNING: member
 
     sim:
-    FILE: sim.sh
-    DEPENDENCIES: ini sim-1
-    RUNNING: chunk
+        FILE: sim.sh
+        DEPENDENCIES: ini sim-1
+        RUNNING: chunk
 
     postprocess:
-    FILE: postprocess.sh
-    DEPENDENCIES: sim
-    RUNNING: chunk
+        FILE: postprocess.sh
+        DEPENDENCIES: sim
+        RUNNING: chunk
 
     combine:
-    FILE: combine.sh
-    DEPENDENCIES: postprocess
-    RUNNING: member
+        FILE: combine.sh
+        DEPENDENCIES: postprocess
+        RUNNING: member
 
 
 The resulting workflow can be seen in Figure :numref:`dependencies`
@@ -183,27 +183,27 @@ an integer I for this attribute and the job will run only once for each I iterat
    You don't need to adjust the frequency to be a divisor of the total jobs. A job will always execute at the last
    iteration of its running level
 
-.. code-block:: ini
+.. code-block:: yaml
 
     ini:
-    FILE: ini.sh
-    RUNNING: member
+        FILE: ini.sh
+        RUNNING: member
 
     sim:
-    FILE: sim.sh
-    DEPENDENCIES: ini sim-1
-    RUNNING: chunk
+        FILE: sim.sh
+        DEPENDENCIES: ini sim-1
+        RUNNING: chunk
 
     postprocess:
-    FILE: postprocess.sh
-    DEPENDENCIES: sim
-    RUNNING: chunk
-    FREQUENCY: 3
+        FILE: postprocess.sh
+        DEPENDENCIES: sim
+        RUNNING: chunk
+        FREQUENCY: 3
 
     combine:
-    FILE: combine.sh
-    DEPENDENCIES: postprocess
-    RUNNING: member
+        FILE: combine.sh
+        DEPENDENCIES: postprocess
+        RUNNING: member
 
 
 The resulting workflow can be seen in Figure :numref:`frequency`
@@ -230,18 +230,18 @@ of synchronization do you want. See the below examples with and without this par
 .. code-block:: ini
 
     ini:
-    FILE: ini.sh
-    RUNNING: member
+        FILE: ini.sh
+        RUNNING: member
 
     sim:
-    FILE: sim.sh
-    DEPENDENCIES: INI SIM-1
-    RUNNING: chunk
+        FILE: sim.sh
+        DEPENDENCIES: INI SIM-1
+        RUNNING: chunk
 
     ASIM:
-    FILE: asim.sh
-    DEPENDENCIES: SIM
-    RUNNING: chunk
+        FILE: asim.sh
+        DEPENDENCIES: SIM
+        RUNNING: chunk
 
 The resulting workflow can be seen in Figure :numref:`nosync`
 
@@ -253,10 +253,10 @@ The resulting workflow can be seen in Figure :numref:`nosync`
 
    Example showing dependencies between chunk jobs running without synchronize.
 
-.. code-block:: ini
+.. code-block:: yaml
 
     ASIM:
-    SYNCHRONIZE: member
+        SYNCHRONIZE: member
 
 The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen in Figure :numref:`msynchronize`
 
@@ -268,10 +268,10 @@ The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen 
 
    Example showing dependencies between chunk jobs running with member synchronize.
 
-.. code-block:: ini
+.. code-block:: yaml
 
     ASIM:
-    SYNCHRONIZE: date
+        SYNCHRONIZE: date
 
 The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen in Figure :numref:`dsynchronize`
 
@@ -295,27 +295,27 @@ in the format [1:3,7,10] or [1,2,3]
 .. hint::
    This job parameter works with jobs with RUNNING parameter equals to 'chunk'.
 
-.. code-block:: ini
+.. code-block:: yaml
 
     ini:
-    FILE: ini.sh
-    RUNNING: member
+        FILE: ini.sh
+        RUNNING: member
 
     sim:
-    FILE: sim.sh
-    DEPENDENCIES: ini sim-1
-    RUNNING: chunk
+        FILE: sim.sh
+        DEPENDENCIES: ini sim-1
+        RUNNING: chunk
 
     asim:
-    FILE: asim.sh
-    DEPENDENCIES: sim
-    RUNNING: chunk
-    SPLITS: 3
+        FILE: asim.sh
+        DEPENDENCIES: sim
+        RUNNING: chunk
+        SPLITS: 3
 
     post:
-    FILE: post.sh
-    RUNNING: chunk
-    DEPENDENCIES: asim1: asim1:+1
+        FILE: post.sh
+        RUNNING: chunk
+        DEPENDENCIES: asim1: asim1:+1
 
 The resulting workflow can be seen in Figure :numref:`split`
 
@@ -337,27 +337,27 @@ an integer N for this attribute and the job will run only after N chunks.
 .. hint::
    This job parameter works with jobs with RUNNING parameter equals to 'chunk'.
 
-.. code-block:: ini
+.. code-block:: yaml
 
     ini:
-    FILE: ini.sh
-    RUNNING: member
+        FILE: ini.sh
+        RUNNING: member
 
     sim:
-    FILE: sim.sh
-    DEPENDENCIES: ini sim-1
-    RUNNING: chunk
+        FILE: sim.sh
+        DEPENDENCIES: ini sim-1
+        RUNNING: chunk
 
     asim:
-    FILE: asim.sh
-    DEPENDENCIES:  sim asim-1
-    RUNNING:  chunk
-    DELAY:  2
+        FILE: asim.sh
+        DEPENDENCIES:  sim asim-1
+        RUNNING:  chunk
+        DELAY:  2
 
     post:
-    FILE:  post.sh
-    DEPENDENCIES:  sim asim
-    RUNNING:  chunk
+        FILE:  post.sh
+        DEPENDENCIES:  sim asim
+        RUNNING:  chunk
 
 The resulting workflow can be seen in Figure :numref:`delay`
 
@@ -372,56 +372,27 @@ The resulting workflow can be seen in Figure :numref:`delay`
 Workflow examples:
 ------------------
 
-Example 1:
-~~~~~~~~~~
+Example 1: How to select an specfic chunk
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In this first example, you can see 3 jobs in which last job (POST) shows an example with select chunks:
+.. WARNING::
+   This example ilustrates the old select_chunk.
 
-.. code-block:: ini
-
-    INI:
-    FILE:  templates/common/ini.tmpl.sh
-    RUNNING:  member
-    WALLCLOCK: 00:30
-    QUEUE: debug
-    CHECK: true
+.. code-block:: yaml
 
     SIM:
-    FILE: templates/ecearth3/ecearth3.sim
-    DEPENDENCIES: INI
-    RUNNING: chunk
-    WALLCLOCK: 04:00
-    PROCESSORS: 1616
-    THREADS: 1
-
-    POST:
-    FILE: templates/common/post.tmpl.sh
-    DEPENDENCIES:   SIM
-    RUNNING: chunk
-    WALLCLOCK: 01:00
-    QUEUE: Debug
-    check: true
-    # Then you can select the specific chunks of dependency SIM with one of those lines:
-
-    SELECT_CHUNKS: SIM*1:*3: # Will do the dependency of chunk 1 and chunk 3. While chunks 2,4  won't be linked.
-    SELECT_CHUNKS: SIM*[1:3] #Enables the dependency of chunk 1,2 and 3. While 4 won't be linked.
-    SELECT_CHUNKS: SIM*[1,3] #Enables the dependency of chunk 1 and 3. While 2 and 4 won't be linked
-    SELECT_CHUNKS: SIM*1: #Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked
-
-Example 2: select_chunks
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-In this workflow you can see an illustrated example of select_chunks used in an actual workflow, to avoid an excess of information we only will see the configuration of a single job:
-
-.. code-block:: ini
-
-    SIM:
-    FILE: templates/sim.tmpl.sh
-    DEPENDENCIES: INI SIM-1 POST-1 CLEAN-5
-    SELECT_CHUNKS: POST*1:
-    RUNNING: chunk
-    WALLCLOCK: 0:30
-    PROCESSORS: 768
+        FILE: templates/sim.tmpl.sh
+        DEPENDENCIES: INI SIM-1 POST-1 CLEAN-5
+            INI:
+            SIM-1:
+            POST-1:
+              CHUNKS_FROM:
+                all:
+                    chunks_to: 1
+            CLEAN-5:
+        RUNNING: chunk
+        WALLCLOCK: 0:30
+        PROCESSORS: 768
 
 .. figure:: fig/select_chunks.png
    :name: simple
@@ -429,27 +400,28 @@ In this workflow you can see an illustrated example of select_chunks used in an 
    :align: center
    :alt: select_chunks_workflow
 
-Example 3: SKIPPABLE
+Example 2: SKIPPABLE
 ~~~~~~~~~~~~~~~~~~~~
 
 In this workflow you can see an illustrated example of SKIPPABLE parameter used in an dummy workflow.
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    SIM:
-    FILE: sim.sh
-    DEPENDENCIES: INI POST-1
-    WALLCLOCK: 00:15
-    RUNNING: chunk
-    QUEUE: debug
-    SKIPPABLE: TRUE
+    JOBS:
+        SIM:
+            FILE: sim.sh
+            DEPENDENCIES: INI POST-1
+            WALLCLOCK: 00:15
+            RUNNING: chunk
+            QUEUE: debug
+            SKIPPABLE: TRUE
 
-    POST:
-    FILE: post.sh
-    DEPENDENCIES: SIM
-    WALLCLOCK: 00:05
-    RUNNING: member
-    #QUEUE: debug
+        POST:
+            FILE: post.sh
+            DEPENDENCIES: SIM
+            WALLCLOCK: 00:05
+            RUNNING: member
+            #QUEUE: debug
 
 .. figure:: fig/skip.png
    :name: simple
@@ -457,7 +429,7 @@ In this workflow you can see an illustrated example of SKIPPABLE parameter used 
    :align: center
    :alt: skip_workflow
 
-Example 4: Weak dependencies
+Example 3: Weak dependencies
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this workflow you can see an illustrated example of weak dependencies.
@@ -467,22 +439,23 @@ Weak dependencies, work like this way:
 * X job only has one parent. X job parent can have "COMPLETED or FAILED" as status for current job to run.
 * X job has more than one parent. One of the X job parent must have "COMPLETED" as status while the rest can be  "FAILED or COMPLETED".
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    GET_FILES:
-    FILE: templates/fail.sh
-    RUNNING: chunk
+    JOBS:
+        GET_FILES:
+            FILE: templates/fail.sh
+            RUNNING: chunk
 
-    IT:
-    FILE: templates/work.sh
-    RUNNING: chunk
-    QUEUE: debug
+        IT:
+            FILE: templates/work.sh
+            RUNNING: chunk
+            QUEUE: debug
 
-    CALC_STATS:
-    FILE: templates/work.sh
-    DEPENDENCIES: IT GET_FILES?
-    RUNNING: chunk
-    SYNCHRONIZE: member
+        CALC_STATS:
+            FILE: templates/work.sh
+            DEPENDENCIES: IT GET_FILES?
+            RUNNING: chunk
+            SYNCHRONIZE: member
 
 .. figure:: fig/dashed.png
    :name: simple
@@ -490,50 +463,57 @@ Weak dependencies, work like this way:
    :align: center
    :alt: dashed_workflow
 
-Example 5: Select Member
+Example 4: Select Member
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 In this workflow you can see an illustrated example of select member. Using 4 members 1 datelist and 4 different job sections.
 
 Expdef:
 
-.. code-block:: ini
+.. code-block:: yaml
 
     experiment:
-    DATELIST: 19600101
-    MEMBERS: 00 01 02 03
-    CHUNKSIZE: 1
-    NUMCHUNKS: 2
+        DATELIST: 19600101
+        MEMBERS: "00 01 02 03"
+        CHUNKSIZE: 1
+        NUMCHUNKS: 2
 
 Jobs_conf:
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    SIM:
-    ...
-    RUNNING: chunk
-    QUEUE: debug
+    JOBS:
+        SIM:
+            ...
+            RUNNING: chunk
+            QUEUE: debug
 
-    DA:
-    ...
-    DEPENDENCIES: SIM
-    SELECT_MEMBERS: SIM*[0:2]
-    RUNNING: chunk
-    SYNCHRONIZE: member
+        DA:
+            ...
+            DEPENDENCIES:
+                SIM:
+                    members_from:
+                        all:
+                            members_to: 00,01,02
+            RUNNING: chunk
+            SYNCHRONIZE: member
 
-    REDUCE:
-    ...
-    DEPENDENCIES: SIM
-    SELECT_MEMBERS: SIM*3:
-    RUNNING: member
-    FREQUENCY: 4
+        REDUCE:
+            ...
+            DEPENDENCIES:
+                SIM:
+                    members_from:
+                        all:
+                            members_to: 03
+            RUNNING: member
+            FREQUENCY: 4
 
-    REDUCE_AN:
-    ...
-    FILE: templates/05b_sim.sh
-    DEPENDENCIES: DA
-    RUNNING: chunk
-    SYNCHRONIZE: member
+        REDUCE_AN:
+            ...
+            FILE: templates/05b_sim.sh
+            DEPENDENCIES: DA
+            RUNNING: chunk
+            SYNCHRONIZE: member
 
 .. figure:: fig/select_members.png
    :name: simple

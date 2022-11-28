@@ -97,7 +97,7 @@ Autosubmit configuration
 
     vi <experiments_directory>/cxxx/conf/autosubmit_cxxx.yml
 
-.. code-block:: ini
+.. code-block:: yaml
 
     config:
         # Experiment identifier
@@ -577,86 +577,87 @@ In this section, we describe the platform configuration using `-QOS` and also `P
 
 .. code-block:: yaml
 
-    marenostrum0:
-        TYPE: ps
-        HOST: mn0.bsc.es
-        PROJECT: bsc32
-        USER: bsc32070
-        ADD_PROJECT_TO_HOST: false
-        SCRATCH_DIR: /gpfs/scratch
+    PLATFORMS:
+        marenostrum0:
+            TYPE: ps
+            HOST: mn0.bsc.es
+            PROJECT: bsc32
+            USER: bsc32070
+            ADD_PROJECT_TO_HOST: false
+            SCRATCH_DIR: /gpfs/scratch
 
-    marenostrum4:
-        # Queue type. Options: ps, SGE, LSF, SLURM, PBS, eceaccess
-        TYPE: slurm
-        HOST: mn1.bsc.es,mn2.bsc.es,mn3.bsc.es
-        PROJECT: bsc32
-        USER: bsc32070
-        SCRATCH_DIR: /gpfs/scratch
-        ADD_PROJECT_TO_HOST: False
-        # use 72:00 if you are using a PRACE account, 48:00 for the bsc account
-        MAX_WALLCLOCK: 02:00
-        # use 19200 if you are using a PRACE account, 2400 for the bsc account
-        MAX_PROCESSORS: 2400
-        PROCESSORS_PER_NODE: 48
-        #SERIAL_QUEUE: debug
-        #QUEUE: debug
-        CUSTOM_DIRECTIVES: ["#SBATCH -p small", "#SBATCH --no-requeue", "#SBATCH --usage"]
+        marenostrum4:
+            # Queue type. Options: ps, SGE, LSF, SLURM, PBS, eceaccess
+            TYPE: slurm
+            HOST: mn1.bsc.es,mn2.bsc.es,mn3.bsc.es
+            PROJECT: bsc32
+            USER: bsc32070
+            SCRATCH_DIR: /gpfs/scratch
+            ADD_PROJECT_TO_HOST: False
+            # use 72:00 if you are using a PRACE account, 48:00 for the bsc account
+            MAX_WALLCLOCK: 02:00
+            # use 19200 if you are using a PRACE account, 2400 for the bsc account
+            MAX_PROCESSORS: 2400
+            PROCESSORS_PER_NODE: 48
+            #SERIAL_QUEUE: debug
+            #QUEUE: debug
+            CUSTOM_DIRECTIVES: ["#SBATCH -p small", "#SBATCH --no-requeue", "#SBATCH --usage"]
 
-    marenostrum_archive:
-        TYPE: ps
-        HOST: dt02.bsc.es
-        PROJECT: bsc32
-        USER: bsc32070
-        SCRATCH_DIR: /gpfs/scratch
-        ADD_PROJECT_TO_HOST: False
-        TEST_SUITE: False
+        marenostrum_archive:
+            TYPE: ps
+            HOST: dt02.bsc.es
+            PROJECT: bsc32
+            USER: bsc32070
+            SCRATCH_DIR: /gpfs/scratch
+            ADD_PROJECT_TO_HOST: False
+            TEST_SUITE: False
 
-    power9:
-        TYPE: slurm
-        HOST: plogin1.bsc.es
-        PROJECT: bsc32
-        USER: bsc32070
-        SCRATCH_DIR: /gpfs/scratch
-        ADD_PROJECT_TO_HOST: False
-        TEST_SUITE: False
-        SERIAL_QUEUE: debug
-        QUEUE: debug
+        power9:
+            TYPE: slurm
+            HOST: plogin1.bsc.es
+            PROJECT: bsc32
+            USER: bsc32070
+            SCRATCH_DIR: /gpfs/scratch
+            ADD_PROJECT_TO_HOST: False
+            TEST_SUITE: False
+            SERIAL_QUEUE: debug
+            QUEUE: debug
 
-    nord3:
-        TYPE: lsf
-        HOST: nord1.bsc.es
-        PROJECT: bsc32
-        USER: bsc32070
-        ADD_PROJECT_TO_HOST: False
-        SCRATCH_DIR: /gpfs/scratch
-        TEST_SUITE: False
-        MAX_WALLCLOCK: 48:00
-        MAX_PROCESSORS: 1024
-        PROCESSORS_PER_NODE: 16
+        nord3:
+            TYPE: lsf
+            HOST: nord1.bsc.es
+            PROJECT: bsc32
+            USER: bsc32070
+            ADD_PROJECT_TO_HOST: False
+            SCRATCH_DIR: /gpfs/scratch
+            TEST_SUITE: False
+            MAX_WALLCLOCK: 48:00
+            MAX_PROCESSORS: 1024
+            PROCESSORS_PER_NODE: 16
 
-    transfer_node:
-        TYPE: ps
-        HOST: dt01.bsc.es
-        PROJECT: bsc32
-        USER: bsc32070
-        ADD_PROJECT_TO_HOST: false
-        SCRATCH_DIR: /gpfs/scratch
+        transfer_node:
+            TYPE: ps
+            HOST: dt01.bsc.es
+            PROJECT: bsc32
+            USER: bsc32070
+            ADD_PROJECT_TO_HOST: false
+            SCRATCH_DIR: /gpfs/scratch
 
-    transfer_node_bscearth000:
-        TYPE: ps
-        HOST: bscearth000
-        USER: dbeltran
-        PROJECT: Earth
-        ADD_PROJECT_TO_HOST: false
-        QUEUE: serial
-        SCRATCH_DIR: /esarchive/scratch
+        transfer_node_bscearth000:
+            TYPE: ps
+            HOST: bscearth000
+            USER: dbeltran
+            PROJECT: Earth
+            ADD_PROJECT_TO_HOST: false
+            QUEUE: serial
+            SCRATCH_DIR: /esarchive/scratch
 
-    bscearth000:
-        TYPE: ps
-        HOST: bscearth000
-        PROJECT: Earth
-        USER: dbeltran
-        SCRATCH_DIR: /esarchive/scratch
+        bscearth000:
+            TYPE: ps
+            HOST: bscearth000
+            PROJECT: Earth
+            USER: dbeltran
+            SCRATCH_DIR: /esarchive/scratch
 
 .. warning::
 
@@ -686,28 +687,29 @@ The custom directives can be used for multiple parameters at the same time using
 
 .. code-block:: yaml
 
-    puhti:
-        #Check your partition ( test/small/large])
-        CUSTOM_DIRECTIVES: ["#SBATCH -p test", "#SBATCH --no-requeue", "#SBATCH --usage"]
-        ### Batch job system / queue at HPC
-        TYPE: slurm
-        ### Hostname of the HPC
-        HOST: puhti
-        ### Project name-ID at HPC (WEATHER)
-        PROJECT: project_test
-        ### User name at HPC
-        USER: dbeltran
-        ### Path to the scratch directory for the project at HPC
-        SCRATCH_DIR: /scratch
-        # Should've false already, just in case it is not
-        ADD_PROJECT_TO_HOST: False
+    PLATFORMS:
+        puhti:
+            #Check your partition ( test/small/large])
+            CUSTOM_DIRECTIVES: ["#SBATCH -p test", "#SBATCH --no-requeue", "#SBATCH --usage"]
+            ### Batch job system / queue at HPC
+            TYPE: slurm
+            ### Hostname of the HPC
+            HOST: puhti
+            ### Project name-ID at HPC (WEATHER)
+            PROJECT: project_test
+            ### User name at HPC
+            USER: dbeltran
+            ### Path to the scratch directory for the project at HPC
+            SCRATCH_DIR: /scratch
+            # Should've false already, just in case it is not
+            ADD_PROJECT_TO_HOST: False
 
-        #Check your partition ( test[00:15]/small[72:00]/large[72:00]) max_wallclock
-        MAX_WALLCLOCK: 00:15
-        # [test [80] // small [40] // large [1040]
-        MAX_PROCESSORS: 80
-        # test [40] / small [40] // large [40]
-        PROCESSORS_PER_NODE: 40
+            #Check your partition ( test[00:15]/small[72:00]/large[72:00]) max_wallclock
+            MAX_WALLCLOCK: 00:15
+            # [test [80] // small [40] // large [1040]
+            MAX_PROCESSORS: 80
+            # test [40] / small [40] // large [40]
+            PROCESSORS_PER_NODE: 40
 
 Controling the number of active concurrent tasks in an experiment
 ----------------------------------------------------------------------
@@ -735,13 +737,13 @@ Note that a wrapped job is counted as a single job regardless of the number of t
 
     wrappers:
         wrapper:
-        TYPE: <ANY>
-        MIN_WRAPPED: 2 # Minium amount of jobs that will be wrapped together in any given time.
-        MIN_WRAPPED_H: 2 # Same as above but only for the horizontal packages.
-        MIN_WRAPPED_V: 2 # Same as above but only for the vertical packages.
-        MAX_WRAPPED: 99999 # Maximum amount of jobs that will be wrapped together in any given time.
-        MAX_WRAPPED_H: 99999 # Same as above but only for the horizontal packages.
-        MAX_WRAPPED_V: 99999 # Same as above but only for the vertical packages.
+            TYPE: <ANY>
+            MIN_WRAPPED: 2 # Minium amount of jobs that will be wrapped together in any given time.
+            MIN_WRAPPED_H: 2 # Same as above but only for the horizontal packages.
+            MIN_WRAPPED_V: 2 # Same as above but only for the vertical packages.
+            MAX_WRAPPED: 99999 # Maximum amount of jobs that will be wrapped together in any given time.
+            MAX_WRAPPED_H: 99999 # Same as above but only for the horizontal packages.
+            MAX_WRAPPED_V: 99999 # Same as above but only for the vertical packages.
 
 - **MAX_WRAPPED** can be defined in ``jobs_cxxx.yml`` in order to limit the number of jobs wrapped for the corresponding job section
     - If not defined, it considers the **MAX_WRAPPED** defined under wrapper: in ``autosubmit_cxxx.yml``

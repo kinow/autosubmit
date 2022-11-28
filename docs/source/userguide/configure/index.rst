@@ -6,7 +6,7 @@ Configure Experiments
 How to configure experiments
 ----------------------------
 
-Edit ``expdef_cxxx.yml``, ``jobs_cxxx.yml`` and ``platforms_cxxx.yml`` in the ``conf`` folder of the experiment.
+Edit ``expdef_cxxx.yml``chimenea de bioetanol, ``jobs_cxxx.yml`` and ``platforms_cxxx.yml`` in the ``conf`` folder of the experiment.
 
 *expdef_cxxx.yml* contains:
     - Start dates, members and chunks (number and length).
@@ -99,33 +99,6 @@ This is the minimum job definition and usually is not enough. You usually will n
     * For dependencies that are not mandatory for the normal workflow behaviour, you must add the char '?' at the end of the dependency.
 
 
-.. code-block:: yaml
-
-    jobs:
-    SELECT_CHUNKS: SIM*1:*3: # Enables the dependency of  chunk 1 with chunk 3. While chunks 2,4  won't be linked.
-    SELECT_CHUNKS: SIM*[1:3] # Enables the dependency of chunk 1,2 and 3. While 4 won't be linked.
-    SELECT_CHUNKS: SIM*[1,3] # Enables the dependency of chunk 1 and 3. While 2 and 4 won't be linked
-    SELECT_CHUNKS: SIM*1: # Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked
-
-* SELECT_MEMBERS (optional): by default, all sections depend on all jobs the items specified on the DEPENDENCIES parameter. However, with this parameter, you could select the members of a specific job section. At the end of this doc, you will find diverse examples of this feature. Caution, you must pick the member index, not the member name.
-
-.. code-block:: ini
-
-    [expdef.yml]
-    ...
-    MEMBERS: AA BB CC DD
-    ...
-    [jobs.yml]
-    SELECT_MEMBERS: SIM*1:*3: # Enables the dependency of member BB with member DD. While AA and CC won't be linked.
-    SELECT_MEMBERS: SIM*[1:3] # Enables the dependency of member  BB,CC and DD. While AA won't be linked.
-    SELECT_MEMBERS: SIM*[1,3] # Enables the dependency of member BB and DD. While AA and CC won't be linked
-    SELECT_MEMBERS: SIM*1: # Enables the dependency of member BB. While AA, CC and DD won't be linked
-
-
-* EXCLUDED_CHUNKS (optional): With this parameter, you can prevent the generation of jobs for a list of chunks.
-
-* EXCLUDED_MEMBERS (optional): With this parameter, you can prevent the generation of jobs for a list of members.
-
 For jobs running in HPC platforms, usually you have to provide information about processors, wallclock times and more.
 To do this use:
 
@@ -189,17 +162,17 @@ Example:
 
     vi <experiments_directory>/cxxx/conf/autosubmit_cxxx.yml
 
-.. code-block:: ini
+.. code-block:: yaml
 
     mail:
-    # Enable mail notifications for remote_failures
-    # Default:True
-    NOTIFY_ON_REMOTE_FAIL: True
-    # Enable mail notifications
-    # Default: False
-    NOTIFICATIONS: True
-    # Mail address where notifications will be received
-    TO:   jsmith@example.com  rlewis@example.com
+        # Enable mail notifications for remote_failures
+        # Default:True
+        NOTIFY_ON_REMOTE_FAIL: True
+        # Enable mail notifications
+        # Default: False
+        NOTIFICATIONS: True
+        # Mail address where notifications will be received
+        TO:   jsmith@example.com  rlewis@example.com
 
 2. Then you have to define for which jobs you want to be notified.
 
@@ -217,12 +190,13 @@ Example:
 
     vi <experiments_directory>/cxxx/conf/jobs_cxxx.yml
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    LOCAL_SETUP:
-    FILE: LOCAL_SETUP.sh
-    PLATFORM: LOCAL
-    NOTIFY_ON: FAILED COMPLETED
+    JOBS:
+        LOCAL_SETUP:
+            FILE: LOCAL_SETUP.sh
+            PLATFORM: LOCAL
+            NOTIFY_ON: FAILED COMPLETED
 
 How to add a new platform
 -------------------------
@@ -233,14 +207,15 @@ How to add a new platform
 To add a new platform, open the <experiments_directory>/cxxx/conf/platforms_cxxx.yml file where cxxx is the experiment
 identifier and add this text:
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    new_platform:
-    TYPE: <platform_type>
-    HOST: <host_name>
-    PROJECT: <project>
-    USER: <user>
-    SCRATCH: <scratch_dir>
+    PLATFORMS:
+        new_platform:
+            TYPE: <platform_type>
+            HOST: <host_name>
+            PROJECT: <project>
+            USER: <user>
+            SCRATCH: <scratch_dir>
 
 
 This will create a platform named "new_platform". The options specified are all mandatory:
@@ -287,17 +262,18 @@ There are some other parameters that you may need to specify:
 
 Example:
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    platform:
-    TYPE: SGE
-    HOST: hostname
-    PROJECT: my_project
-    ADD_PROJECT_TO_HOST: true
-    USER: my_user
-    SCRATCH_DIR: /scratch
-    TEST_SUITE: True
-    CUSTOM_DIRECTIVES: [ "my_directive" ]
+    platforms:
+        platform:
+        TYPE: SGE
+        HOST: hostname
+        PROJECT: my_project
+        ADD_PROJECT_TO_HOST: true
+        USER: my_user
+        SCRATCH_DIR: /scratch
+        TEST_SUITE: True
+        CUSTOM_DIRECTIVES: "[ 'my_directive' ]"
 
 How to request exclusivity or reservation
 -----------------------------------------
@@ -318,17 +294,18 @@ Example:
 
     vi <experiments_directory>/cxxx/conf/platforms_cxxx.yml
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    marenostrum3:
-    TYPE: LSF
-    HOST: mn-bsc32
-    PROJECT: bsc32
-    ADD_PROJECT_TO_HOST: false
-    USER: bsc32XXX
-    SCRATCH_DIR: /gpfs/scratch
-    TEST_SUITE: True
-    EXCLUSIVITY: True
+    PLATFORMS:
+        marenostrum3:
+            TYPE: LSF
+            HOST: mn-bsc32
+            PROJECT: bsc32
+            ADD_PROJECT_TO_HOST: false
+            USER: bsc32XXX
+            SCRATCH_DIR: /gpfs/scratch
+            TEST_SUITE: True
+            EXCLUSIVITY: True
 
 Of course, you can configure only one or both. For example, for reservation it would be:
 
@@ -337,32 +314,14 @@ Example:
 
     vi <experiments_directory>/cxxx/conf/platforms_cxxx.yml
 
-.. code-block:: ini
+.. code-block:: YAML
 
-    marenostrum3:
-    TYPE: LSF
-    ...
-    RESERVATION: your-reservation-id
+    PLATFORMS:
+        marenostrum3:
+            TYPE: LSF
+            ...
+            RESERVATION: your-reservation-id
 
-How to change the communications library
-----------------------------------------
-
-In order to handle the remote communications with the different platforms, Autosubmit uses an implementation
-of a communications library. There are multiple implementations, so you can choose any of them.
-
-.. hint::
-    At this moment there are one available communication library which is ``paramiko``.
-
-To change the communications library, open the <experiments_directory>/cxxx/conf/autosubmit_cxxx.yml file
-where cxxx is the experiment identifier and change the value of the API configuration variable in the communications
-section:
-
-.. code-block:: ini
-
-    communications:
-    # Communications library used to connect with platforms: paramiko.
-    # Default: paramiko
-    API:  paramiko
 
 How to set a custom interpreter for your job
 --------------------------------------------
@@ -375,78 +334,80 @@ In the file:
 
     vi <experiments_directory>/cxxx/conf/jobs_cxxx.yml
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    # Example job with all options specified
+    JOBS:
+        # Example job with all options specified
 
-    ## Job name
-    # JOBNAME:
-    ## Script to execute. If not specified, job will be omitted from workflow.
-    ## Path relative to the project directory
-    # FILE :
-    ## Platform to execute the job. If not specified, defaults to HPCARCH in expedf file.
-    ## LOCAL is always defined and refers to current machine
-    # PLATFORM :
-    ## Queue to add the job to. If not specified, uses PLATFORM default.
-    # QUEUE :
-    ## Defines dependencies from job as a list of parents jobs separated by spaces.
-    ## Dependencies to jobs in previous chunk, member o startdate, use -(DISTANCE)
-    # DEPENDENCIES:  INI SIM-1 CLEAN-2
-    ## Define if jobs runs once, once per stardate, once per member or once per chunk. Options: once, date, member, chunk.
-    ## If not specified, defaults to once
-    # RUNNING:  once
-    ## Specifies that job has only to be run after X dates, members or chunk. A job will always be created for the last
-    ## If not specified, defaults to 1
-    # FREQUENCY:  3
-    ## On a job with FREQUENCY > 1, if True, the dependencies are evaluated against all
-    ## jobs in the frequency interval, otherwise only evaluate dependencies against current
-    ## iteration.
-    ## If not specified, defaults to True
-    # WAIT:  False
-    ## Defines if job is only to be executed in reruns. If not specified, defaults to false.
-    # RERUN_ONLY:  False
-    ## Wallclock to be submitted to the HPC queue in format HH:MM
-    # WALLCLOCK:  00:05
-    ## Processors number to be submitted to the HPC. If not specified, defaults to 1.
-    ## Wallclock chunk increase (WALLCLOCK will be increased according to the formula WALLCLOCK + WCHUNKINC * (chunk - 1)).
-    ## Ideal for sequences of jobs that change their expected running time according to the current chunk.
-    # WCHUNKINC:  00:01
-    # PROCESSORS:  1
-    ## Threads number to be submitted to the HPC. If not specified, defaults to 1.
-    # THREADS:  1
-    ## Tasks number to be submitted to the HPC. If not specified, defaults to 1.
-    # Tasks:  1
-    ## Enables hyper-threading. If not specified, defaults to false.
-    # HYPERTHREADING:  false
-    ## Memory requirements for the job in MB
-    # MEMORY:  4096
-    ##  Number of retrials if a job fails. If not specified, defaults to the value given on experiment's autosubmit.yml
-    # RETRIALS:  4
-    ##  Allows to put a delay between retries, of retrials if a job fails. If not specified, it will be static
-    # The ideal is to use the +(number) approach or plain(number) in case that the hpc platform has little issues or the experiment will run for a short period of time
-    # And *(10) in case that the filesystem is having large  delays or the experiment will run for a lot of time.
-    # DELAY_RETRY_TIME:  11
-    # DELAY_RETRY_TIME:  +11 # will wait 11 + number specified
-    # DELAY_RETRY_TIME:  *11 # will wait 11,110,1110,11110...* by 10 to prevent a too big number
-    ## Some jobs can not be checked before running previous jobs. Set this option to false if that is the case
-    # CHECK:  False
-    ## Select the interpreter that will run the job. Options: bash, python, r Default: bash
-    # TYPE:  bash
-    ## Specify the path to the interpreter. If empty, use system default based on job type  . Default: empty
-    # EXECUTABLE:  /my_python_env/python3
+        ## Job name
+        # JOBNAME:
+        ## Script to execute. If not specified, job will be omitted from workflow.
+        ## Path relative to the project directory
+        # FILE :
+        ## Platform to execute the job. If not specified, defaults to HPCARCH in expedf file.
+        ## LOCAL is always defined and refers to current machine
+        # PLATFORM :
+        ## Queue to add the job to. If not specified, uses PLATFORM default.
+        # QUEUE :
+        ## Defines dependencies from job as a list of parents jobs separated by spaces.
+        ## Dependencies to jobs in previous chunk, member o startdate, use -(DISTANCE)
+        # DEPENDENCIES:  INI SIM-1 CLEAN-2
+        ## Define if jobs runs once, once per stardate, once per member or once per chunk. Options: once, date, member, chunk.
+        ## If not specified, defaults to once
+        # RUNNING:  once
+        ## Specifies that job has only to be run after X dates, members or chunk. A job will always be created for the last
+        ## If not specified, defaults to 1
+        # FREQUENCY:  3
+        ## On a job with FREQUENCY > 1, if True, the dependencies are evaluated against all
+        ## jobs in the frequency interval, otherwise only evaluate dependencies against current
+        ## iteration.
+        ## If not specified, defaults to True
+        # WAIT:  False
+        ## Defines if job is only to be executed in reruns. If not specified, defaults to false.
+        # RERUN_ONLY:  False
+        ## Wallclock to be submitted to the HPC queue in format HH:MM
+        # WALLCLOCK:  00:05
+        ## Processors number to be submitted to the HPC. If not specified, defaults to 1.
+        ## Wallclock chunk increase (WALLCLOCK will be increased according to the formula WALLCLOCK + WCHUNKINC * (chunk - 1)).
+        ## Ideal for sequences of jobs that change their expected running time according to the current chunk.
+        # WCHUNKINC:  00:01
+        # PROCESSORS:  1
+        ## Threads number to be submitted to the HPC. If not specified, defaults to 1.
+        # THREADS:  1
+        ## Tasks number to be submitted to the HPC. If not specified, defaults to 1.
+        # Tasks:  1
+        ## Enables hyper-threading. If not specified, defaults to false.
+        # HYPERTHREADING:  false
+        ## Memory requirements for the job in MB
+        # MEMORY:  4096
+        ##  Number of retrials if a job fails. If not specified, defaults to the value given on experiment's autosubmit.yml
+        # RETRIALS:  4
+        ##  Allows to put a delay between retries, of retrials if a job fails. If not specified, it will be static
+        # The ideal is to use the +(number) approach or plain(number) in case that the hpc platform has little issues or the experiment will run for a short period of time
+        # And *(10) in case that the filesystem is having large  delays or the experiment will run for a lot of time.
+        # DELAY_RETRY_TIME:  11
+        # DELAY_RETRY_TIME:  +11 # will wait 11 + number specified
+        # DELAY_RETRY_TIME:  *11 # will wait 11,110,1110,11110...* by 10 to prevent a too big number
+        ## Some jobs can not be checked before running previous jobs. Set this option to false if that is the case
+        # CHECK:  False
+        ## Select the interpreter that will run the job. Options: bash, python, r Default: bash
+        # TYPE:  bash
+        ## Specify the path to the interpreter. If empty, use system default based on job type  . Default: empty
+        # EXECUTABLE:  /my_python_env/python3
 
 You can give a path to the ``EXECUTABLE`` setting of your job. Autosubmit will replace the ``shebang`` with the path you provided.
 
 Example:
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    POST:
-    FILE:  POST.sh
-    DEPENDENCIES:  SIM
-    RUNNING:  chunk
-    WALLCLOCK:  00:05
-    EXECUTABLE:  /my_python_env/python3
+    JOBS:
+        POST:
+            FILE:  POST.sh
+            DEPENDENCIES:  SIM
+            RUNNING:  chunk
+            WALLCLOCK:  00:05
+            EXECUTABLE:  /my_python_env/python3
 
 This job will use the python interpreter located in the relative path ``/my_python_env/python3/``
 
@@ -454,14 +415,15 @@ It is also possible to use variables in the ``EXECUTABLE`` path.
 
 Example:
 
-.. code-block:: ini
+.. code-block:: yaml
 
-    POST:
-    FILE: POST.sh
-    DEPENDENCIES: SIM
-    RUNNING: chunk
-    WALLCLOCK: 00:05
-    EXECUTABLE: %PROJDIR%/my_python_env/python3
+    JOBS:
+        POST:
+            FILE: POST.sh
+            DEPENDENCIES: SIM
+            RUNNING: chunk
+            WALLCLOCK: 00:05
+            EXECUTABLE: %PROJDIR%/my_python_env/python3
 
 The result is a ``shebang`` line ``#!/esarchive/autosubmit/my_python_env/python3``.
 
@@ -474,37 +436,37 @@ Your experiment is defined and correctly configured, but you want to create it o
 
     vi <experiments_directory>/cxxx/conf/expdef_cxxx.yml
 
-.. code-block:: ini
+.. code-block:: yaml
 
     DEFAULT:
-    # Experiment identifier
-    # No need to change
-    EXPID: cxxx
-    # HPC name.
-    # No need to change
-    HPCARCH: ithaca
+        # Experiment identifier
+        # No need to change
+        EXPID: cxxx
+        # HPC name.
+        # No need to change
+        HPCARCH: ithaca
 
     experiment:
-    # Supply the list of start dates. Available formats: YYYYMMDD YYYYMMDDhh YYYYMMDDhhmm
-    # Also you can use an abbreviated syntax for multiple dates with common parts:
-    # 200001[01 15] <=> 20000101 20000115
-    # DATELIST: 19600101 19650101 19700101
-    # DATELIST: 1960[0101 0201 0301]
-    DATELIST: 19900101
-    # Supply the list of members. LIST: fc0 fc1 fc2 fc3 fc4
-    MEMBERS: fc0
-    # Chunk size unit. STRING: hour, day, month, year
-    CHUNKSIZEUNIT: month
-    # Chunk size. NUMERIC: 4, 6, 12
-    CHUNKSIZE: 1
-    # Total number of chunks in experiment. NUMERIC: 30, 15, 10
-    NUMCHUNKS: 2
-    # Calendar used. LIST: standard, noleap
-    CALENDAR: standard
-    # List of members that can be included in this run. Optional.
-    # RUN_ONLY_MEMBERS: fc0 fc1 fc2 fc3 fc4
-    # RUN_ONLY_MEMBERS: fc[0-4]
-    RUN_ONLY_MEMBERS:
+        # Supply the list of start dates. Available formats: YYYYMMDD YYYYMMDDhh YYYYMMDDhhmm
+        # Also you can use an abbreviated syntax for multiple dates with common parts:
+        # 200001[01 15] <=> 20000101 20000115
+        # DATELIST: 19600101 19650101 19700101
+        # DATELIST: 1960[0101 0201 0301]
+        DATELIST: 19900101
+        # Supply the list of members. LIST: fc0 fc1 fc2 fc3 fc4
+        MEMBERS: fc0
+        # Chunk size unit. STRING: hour, day, month, year
+        CHUNKSIZEUNIT: month
+        # Chunk size. NUMERIC: 4, 6, 12
+        CHUNKSIZE: 1
+        # Total number of chunks in experiment. NUMERIC: 30, 15, 10
+        NUMCHUNKS: 2
+        # Calendar used. LIST: standard, noleap
+        CALENDAR: standard
+        # List of members that can be included in this run. Optional.
+        # RUN_ONLY_MEMBERS: fc0 fc1 fc2 fc3 fc4
+        # RUN_ONLY_MEMBERS: fc[0-4]
+        RUN_ONLY_MEMBERS:
 
 
 
@@ -535,13 +497,12 @@ In ``autosubmit_cxxx.yml``, regardless of the how your workflow is configured.
 
 For example:
 
-.. code-block:: ini
+.. code-block:: yaml
 
     config:
-    EXPID: ....
-    AUTOSUBMIT_VERSION: 3.13.0b
-    ...
-    PRESUBMISSION: TRUE
-    MAXWAITINGJOBS: 100
-    TOTALJOBS: 100
-    ...
+        EXPID: ....
+        AUTOSUBMIT_VERSION: 4.0.0
+        ...
+        MAXWAITINGJOBS: 100
+        TOTALJOBS: 100
+        ...

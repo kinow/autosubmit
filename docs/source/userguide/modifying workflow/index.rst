@@ -73,38 +73,38 @@ Example:
 
     vi <experiments_directory>/cxxx/conf/expdef_cxxx.yml
 
-.. code-block:: ini
+.. code-block:: yaml
 
     ...
 
     rerun:
-    RERUN: TRUE
-    RERUN_JOBLIST: RERUN_TEST_INI;SIM[19600101[C:3]],RERUN_TEST_INI_chunks[19600101[C:3]]
+        RERUN: TRUE
+        RERUN_JOBLIST: RERUN_TEST_INI;SIM[19600101[C:3]],RERUN_TEST_INI_chunks[19600101[C:3]]
     ...
 
     vi <experiments_directory>/cxxx/conf/jobs_cxxx.yml
 
-.. code-block:: ini
+.. code-block:: yaml
 
     PREPROCVAR:
-    FILE: templates/04_preproc_var.sh
-    RUNNING: chunk
-    PROCESSORS: 8
+        FILE: templates/04_preproc_var.sh
+        RUNNING: chunk
+        PROCESSORS: 8
 
     RERUN_TEST_INI_chunks:
-    FILE: templates/05b_sim.sh
-    RUNNING: chunk
-    RERUN_ONLY: true
+        FILE: templates/05b_sim.sh
+        RUNNING: chunk
+        RERUN_ONLY: true
 
     RERUN_TEST_INI:
-    FILE: templates/05b_sim.sh
-    RUNNING: once
-    RERUN_ONLY: true
+        FILE: templates/05b_sim.sh
+        RUNNING: once
+        RERUN_ONLY: true
 
     SIM:
-    DEPENDENCIES: RERUN_TEST_INI RERUN_TEST_INI_chunks PREPROCVAR SIM-1
-    RUNNING: chunk
-    PROCESSORS: 10
+        DEPENDENCIES: RERUN_TEST_INI RERUN_TEST_INI_chunks PREPROCVAR SIM-1
+        RUNNING: chunk
+        PROCESSORS: 10
 
     .. figure:: fig/rerun.png
        :name: rerun_result

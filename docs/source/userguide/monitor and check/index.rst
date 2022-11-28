@@ -40,7 +40,7 @@ There are two parameters related to check:
 
 * SHOW_CHECK_WARNINGS: For debugging purposes. It will print a lot of information regarding variables and substitution if it is set to TRUE.
 
-.. code-block:: ini
+.. code-block:: yaml
 
     CHECK: TRUE or FALSE or ON_SUBMISSION # Default is TRUE
     SHOW_CHECK_WARNINGS: TRUE or FALSE # Default is FALSE
@@ -62,24 +62,24 @@ There are two parameters related to check:
 
 For example:
 
-.. code-block:: ini
+.. code-block:: yaml
 
     LOCAL_SETUP:
-    FILE: filepath_that_exists
-    PLATFORM: LOCAL
-    WALLCLOCK: 05:00
-    CHECK: TRUE
-    SHOW_CHECK_WARNINGS: TRUE
-    ...
+        FILE: filepath_that_exists
+        PLATFORM: LOCAL
+        WALLCLOCK: 05:00
+        CHECK: TRUE
+        SHOW_CHECK_WARNINGS: TRUE
+        ...
     SIM:
-    FILE: filepath_that_no_exists_until_setup_is_processed
-    PLATFORM: bsc_es
-    DEPENDENCIES: LOCAL_SETUP SIM - 1
-    RUNNING: chunk
-    WALLCLOCK: 05:00
-    CHECK: ON_SUBMISSION
-    SHOW_CHECK_WARNINGS: FALSE
-    ...
+        FILE: filepath_that_no_exists_until_setup_is_processed
+        PLATFORM: bsc_es
+        DEPENDENCIES: LOCAL_SETUP SIM-1
+        RUNNING: chunk
+        WALLCLOCK: 05:00
+        CHECK: ON_SUBMISSION
+        SHOW_CHECK_WARNINGS: FALSE
+        ...
 
 How to generate cmd files
 -------------------------

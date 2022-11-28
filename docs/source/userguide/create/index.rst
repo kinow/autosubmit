@@ -37,7 +37,7 @@ In this autosubmitrc or .autosubmitrc file, include the configuration setting cu
 Example:
 ::
     conf:
-    custom_platforms: /home/Earth/user/custom.yml
+        custom_platforms: /home/Earth/user/custom.yml
 
 Where the specified path should be complete, as something you would get when executing pwd, and also include the filename of your custom platforms content.
 
