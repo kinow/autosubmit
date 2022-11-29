@@ -111,28 +111,28 @@ Configuration summary:
 
     * - File
       - Content
-    * - ``expdef.conf``
+    * - ``expdef.yml``
       -
         * It contains the default platform, the one set with -H.
         * Allows changing the start dates, members and chunks.
         * Allows changing the experiment project source ( git, local, svn or dummy)
-    * - ``platforms.conf``
+    * - ``platforms.yml``
       -
         * It contains the list of platforms to use in the experiment.
         * This file contains the definitions for managing clusters, fat-nodes and support computers.
         * This file must be filled-up with the platform(s) configuration(s).
         * Several platforms can be defined and used in the same experiment.
-    * - ``jobs.conf``
+    * - ``jobs.yml``
       -
         - It contains the tasks' definitions in sections. Depending on the parameters, one section can generate multiple similar tasks.
         - This file must be filled-up with the tasks' definitions.
         - Several sections can be defined and used in the same experiment.
-    * - ``autosubmit.conf``
+    * - ``autosubmit.yml``
       -
         - This file contains the definitions that impact the workflow behavior.
         - It changes workflow behavior with parameters such as job limitations, remote_dependendies and retrials.
         - It extends autosubmit functionalities with parameters such as wrappers and mail notification.
-    * - ``proj.conf``
+    * - ``proj.yml``
       -
         - This file contains the configuration used by the user scripts.
         - This file is fully customizable for the current experiment. Allows setting user- parameters that will be readable by the autosubmit jobs.
@@ -153,7 +153,7 @@ Final step: Modify and run
         EXPID: "a000"
         # Change for your new main platform name, ej. marenostrum4
         HPCARCH: "local"
-        # Locate and  change these parameters, per ej. numchunks = 3
+        # Locate and  change these parameters, per ej. numchunks: 3
         EXPERIMENT:
             DATELIST: 20000101
             MEMBERS: fc0

@@ -17,7 +17,7 @@ Autosubmit is a Python package provided in PyPI. Conda recipes can also be found
 
 It has contributed to various European research projects and runs different operational systems. During the following years, it will support some of the Earth Digital Twins as the Digital Twin Ocean.
 
-Concretely, it is currently used at Barcelona Supercomputing Centre (BSC) to run models (EC-Earth, MONARCH, NEMO, CALIOPE, HERMES...), operational toolchains (S2S4E), data-download workflows (ECMWF MARS), and many other. Autosubmit has run these workflows in different supercomputers in BSC, ECMWF, IC3, CESGA, EPCC, PDC, and OLCF.
+Concretely, it is currently used at Barcelona Supercomputing Centre (BSC) to run models (EC-Earth, MONARCH, NEMO, CALIOPE, HERMES…), operational toolchains (S2S4E), data-download workflows (ECMWF MARS), and many other. Autosubmit has run these workflows in different supercomputers in BSC, ECMWF, IC3, CESGA, EPCC, PDC, and OLCF.
 
 Get involved or contact us:      
                                      
@@ -79,7 +79,7 @@ This command assigns to the experiment a unique four alphanumerical characters i
 Experiment configuration
 ------------------------
 
-To configure the experiment, edit ``expdef_xxxx.conf``, ``jobs_xxxx.conf`` and ``platforms_xxxx.conf`` in the ``conf`` folder of the experiment (see contents in Figure :numref:`exp_config`).
+To configure the experiment, edit ``expdef_xxxx.yml``, ``jobs_xxxx.yml`` and ``platforms_xxxx.yml`` in the ``conf`` folder of the experiment (see contents in Figure :numref:`exp_config`).
 
 .. figure:: fig2.png
    :name: exp_config
@@ -94,7 +94,7 @@ After that, you are expected to run the command:
 
     autosubmit create xxxx
 
-This command creates the experiment project in the ``proj`` folder. The experiment project contains the scripts specified in ``jobs_xxxx.conf`` and a copy of model source code and data specified in ``expdef_xxxx.conf``.
+This command creates the experiment project in the ``proj`` folder. The experiment project contains the scripts specified in ``jobs_xxxx.yml`` and a copy of model source code and data specified in ``expdef_xxxx.yml``.
 
 Experiment run
 --------------
@@ -105,7 +105,7 @@ To run the experiment, just execute the command:
 
     autosubmit run xxxx
 
-Autosubmit will start submitting jobs to the relevant platforms (both HPC and supporting computers) by using the scripts specified in ``jobs_xxxx.conf``. Autosubmit will substitute variables present on scripts where handlers appear in *%variable_name%* format. Autosubmit provides variables for *current chunk*, *start date*, *member*, *computer configuration* and more, and also will replace variables form ``proj_xxxx.conf``.
+Autosubmit will start submitting jobs to the relevant platforms (both HPC and supporting computers) by using the scripts specified in ``jobs_xxxx.yml``. Autosubmit will substitute variables present on scripts where handlers appear in *%variable_name%* format. Autosubmit provides variables for *current chunk*, *start date*, *member*, *computer configuration* and more, and also will replace variables form ``proj_xxxx.yml``.
 
 To monitor the status of the experiment, issue the command:
 

@@ -98,13 +98,13 @@ Uncatalogued codes  - Critical Error codes [7060+]
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7063 | cp/rsync issues                     | Check if destination path exist.                                                                                       |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7064 | Git issues                          | Check that the proj folder is a well configured git folder. Also, check [GIT] expdef config.                           |
+| 7064 | Git issues                          | Check that the proj folder is a well configured git folder. Also, check GIT: expdef config.                           |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7065 | Wrong git configuration             | Invalid git url. Check [GIT] expdef config. If issue persists, check if proj folder is a well configured git folder.   |
+| 7065 | Wrong git configuration             | Invalid git url. Check GIT: expdef config. If issue persists, check if proj folder is a well configured git folder.   |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7066 | Pre-submission feature issues        | New feature, this message shouldn't be prompt. Please report it to Git.                                               |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7067 | Historical Database not found       | Configure [historicdb] PATH = <file_path>.                                                                             |
+| 7067 | Historical Database not found       | Configure historicdb: PATH:<file_path>.                                                                             |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7068 | Monitor output can't be loaded      | Try another output method// Check if the experiment is reachable.                                                      |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
@@ -133,7 +133,7 @@ Minor errors  - Error codes [6000+]
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6002 |     Failed reconnection                               | Automatically, if there aren't bigger issues                                                  |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
-| 6003 |     Failed connection, wrong configuration           | Check your platform.conf file                                                                  |
+| 6003 |     Failed connection, wrong configuration           | Check your platform.yml file                                                                  |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6004 |     Input output issues                              |  Automatically, if there aren't bigger issues                                                  |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
@@ -149,7 +149,7 @@ Minor errors  - Error codes [6000+]
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6010 |     Corrupted job_list using backup                  | Automatically, if it fails, Perform mv <expid>/pkl/job_list_backup.pkl <expid>/pkl/job_list.pkl|
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
-| 6011 |     Incorrect mail notifier configuration            | Double check your mail configuration on job.conf (job status) and autosubmit.conf (email)      |
+| 6011 |     Incorrect mail notifier configuration            | Double check your mail configuration on job.yml (job status) and autosubmit.yml (email)      |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6012 |     Migrate , archive/unarchive I/O issues           | Check migrate how-to configuration                                                             |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+

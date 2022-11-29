@@ -22,8 +22,13 @@ The workflow is defined using seven job types, as shown in the figure above. The
 - Clean: removes unnecessary outputs from the simulated chunk.
 - Transfer: transfers post-processed outputs to definitive storage.
 
-Since Autosubmit 2.2 the user can select the desired source repository for the experiment project and using a given concrete branch is possible.
-This introduce a better version control system for project and more options to create new experiments based on different developments by the user.
+Autosubmit can download the project from git, svn and local repositories via the parameter  `PROJECT.PROJECT_TYPE`. When the source is a git one, the user can specify the submodules, commit, branch, and tag.
+
+In addition, the user can also alter the git behaviour and specify  other optimization parameters such as:
+ - Fetching one single branch
+ - Depth of the submodules.
+
+
 The different projects contain the shell script to run, for each job type (local setup, remote setup, ini, sim, post, clean and transfer) that are platform independent.
 Additionally the user can modify the sources under proj folder.
 The executable scripts are created at runtime so the modifications on the sources can be done on the fly.
