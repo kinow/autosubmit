@@ -172,8 +172,33 @@ The resulting workflow can be seen in Figure :numref:`dependencies`
 
    Example showing dependencies between jobs running at different levels.
 
+Dependencies rework
+~~~~~~~~~~~~~~~~~~~
+
+The DEPENDENCIES key is used to define the dependencies of a job. It can be used in the following ways:
+
+- Basic: The dependencies are a list of jobs, separated by " ", that runs before the current task is submitted.
+- New: The dependencies is a list of YAML sections, separated by "\n", that runs before the current job is submitted.
+    - For each dependency section, you can designate the following keywords to control the current job-affected tasks:
+        - DATES_FROM: Selects the job dates that you want to alter.
+        - MEMBERS_FROM: Selects the job members that you want to alter.
+        - CHUNKS_FROM: Selects the job chunks that you want to alter.
+    - For each dependency section and *_FROM keyword, you can designate the following keywords to control the destination of the dependency:
+        - DATES_TO: Links current selected tasks to the dependency tasks of the dates specified.
+        - MEMBERS_TO: Links current selected tasks to the dependency tasks of the members specified.
+        - CHUNKS_TO: Links current selected tasks to the dependency tasks of the chunks specified.
+    - Important keywords for [DATES|MEMBERS|CHUNKS]_TO:
+        - "natural": Will keep the default linkage. Will link if it would be normally. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1.
+        - "all": Will link all selected tasks of the dependency with current selected tasks. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1, DA_FC00_CHUNK_2, DA_FC00_CHUNK_3...
+        - "none": Will unlink selected tasks of the dependency with current selected tasks.
+For the new format, consider that the priority is hierarchy and goes like this DATES_FROM -(includes)-> MEMBERS_FROM -(includes)-> CHUNKS_FROM.
+
+- You can define a DATES_FROM inside the DEPENDENCY.
+- You can define a MEMBERS_FROM inside the DEPENDENCY and DEPENDENCY.DATES_FROM.
+- You can define a CHUNKS_FROM inside the DEPENDENCY, DEPENDENCY.DATES_FROM, DEPENDENCY.MEMBERS_FROM, DEPENDENCY.DATES_FROM.MEMBERS_FROM
+
 Job frequency
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 Some times you just don't need a job to be run on every chunk or member. For example, you may want to launch the postprocessing
 job after various chunks have completed. This behaviour can be achieved using the FREQUENCY attribute. You can specify
@@ -520,3 +545,50 @@ Jobs_conf:
    :width: 100%
    :align: center
    :alt: select_members
+
+Loops definition
+~~~~~~~~~~~~~~~~
+
+You need to use the FOR and NAME keys to define a loop.
+
+To generate the following jobs:
+
+.. code-block:: YAML
+
+    POST_20:
+          FILE: POST.sh
+          RUNNING: chunk
+          WALLCLOCK: '00:05'
+          PROCESSORS: 20
+          THREADS: 1
+          DEPENDENCIES: SIM_20 POST_20-1
+    POST_40:
+          FILE: POST.sh
+          RUNNING: chunk
+          WALLCLOCK: '00:05'
+          PROCESSORS: 40
+          THREADS: 1
+          DEPENDENCIES: SIM_40 POST_40-1
+    POST_80:
+          FILE: POST.sh
+          RUNNING: chunk
+          WALLCLOCK: '00:05'
+          PROCESSORS: 80
+          THREADS: 1
+          DEPENDENCIES: SIM_80 POST_80-1
+
+One can now use the following configuration:
+
+.. code-block:: yaml
+
+    POST:
+        FOR:
+          NAME: [ 20,40,80 ]
+          PROCESSORS: [ 20,40,80 ]
+          THREADS: [ 1,1,1 ]
+          DEPENDENCIES: [ SIM_20 POST_20-1,SIM_40 POST_40-1,SIM_80 POST_80-1 ]
+        FILE: POST.sh
+        RUNNING: chunk
+        WALLCLOCK: '00:05'
+
+.. warning:: The mutable parameters must be inside the `FOR` key.
