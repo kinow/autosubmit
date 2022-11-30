@@ -124,6 +124,7 @@ class Job(object):
         self.log_retries = 5
         self.id = job_id
         self.file = None
+        self.additional_files = []
         self.executable = None
         self.x11 = False
         self._local_logs = ('', '')
@@ -1201,7 +1202,15 @@ class Job(object):
         self.parameters = parameters
 
         return parameters
-
+    def update_content_extra(self,as_conf,files):
+        additional_templates = []
+        for file in files:
+            if as_conf.get_project_type().lower() != "none":
+                template = "%DEFAULT.EXPID%"
+            else:
+                template = open(os.path.join(as_conf.get_project_dir(), file), 'r')
+            additional_templates += template
+        return additional_templates
     def update_content(self, as_conf):
         """
         Create the script content to be run for the job
@@ -1212,10 +1221,9 @@ class Job(object):
         :rtype: str
         """
         parameters = self.parameters
-        try:  # issue in tests with project_type variable while using threads
+        try:
             if as_conf.get_project_type().lower() != "none" and len(as_conf.get_project_type()) > 0:
-                template_file = open(os.path.join(
-                    as_conf.get_project_dir(), self.file), 'r')
+                template_file = open(os.path.join(as_conf.get_project_dir(), self.file), 'r')
                 template = ''
                 if as_conf.get_remote_dependencies() == "true":
                     if self.type == Type.BASH:
@@ -1252,10 +1260,9 @@ class Job(object):
             snippet = StatisticsSnippetR
         else:
             raise Exception('Job type {0} not supported'.format(self.type))
-        template_content = self._get_template_content(
-            as_conf, snippet, template)
-
-        return template_content
+        template_content = self._get_template_content(as_conf, snippet, template)
+        additional_content = self.update_content_extra(as_conf,self.additional_files)
+        return template_content,additional_content
 
     def get_wrapped_content(self, as_conf):
         snippet = StatisticsSnippetEmpty
@@ -1317,8 +1324,24 @@ class Job(object):
         :return: script's filename
         :rtype: str
         """
+
+        lang = locale.getlocale()[1]
+        if lang is None:
+            lang = locale.getdefaultlocale()[1]
+            if lang is None:
+                lang = 'UTF-8'
         parameters = self.parameters
-        template_content = self.update_content(as_conf)
+        template_content,additional_templates = self.update_content(as_conf)
+        for additional_template_content in additional_templates:
+            template_content += additional_template_content
+            for key, value in parameters.items():
+                additional_template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), additional_template_content,flags=re.I)
+            for variable in self.undefined_variables:
+                additional_template_content = re.sub('%(?<!%%)' + variable + '%(?!%%)', '', additional_template_content,flags=re.I)
+
+            additional_template_content = additional_template_content.replace("%%", "%")
+            open(os.path.join(self._tmp_path, os.path.splitext(additional_template_content)[0]), 'wb').write(additional_template_content.encode(lang))
+
         for key, value in parameters.items():
             template_content = re.sub(
                 '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,flags=re.I)
@@ -1328,11 +1351,7 @@ class Job(object):
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
         self.script_name = '{0}.cmd'.format(self.name)
-        lang = locale.getlocale()[1]
-        if lang is None:
-            lang = locale.getdefaultlocale()[1]
-            if lang is None:
-                lang = 'UTF-8'
+
         open(os.path.join(self._tmp_path, script_name),'wb').write(template_content.encode(lang))
 
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
@@ -1371,11 +1390,17 @@ class Job(object):
 
         out = False
         parameters = self.update_parameters(as_conf, parameters)
-        template_content = self.update_content(as_conf)
+        template_content,additional_templates = self.update_content(as_conf)
         if template_content is not False:
+
             variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template_content)
             variables = [variable[1:-1] for variable in variables]
             variables = [variable for variable in variables if variable not in self.default_parameters]
+            for template in additional_templates:
+                variables_tmp = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template)
+                variables_tmp = [variable[1:-1] for variable in variables_tmp]
+                variables_tmp = [variable for variable in variables_tmp if variable not in self.default_parameters]
+                variables.extend(variables_tmp)
             out = set(parameters).issuperset(set(variables))
 
             # Check if the variables in the templates are defined in the configurations

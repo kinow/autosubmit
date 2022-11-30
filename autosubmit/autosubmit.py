@@ -598,7 +598,7 @@ class Autosubmit:
             # update proj files
             subparser = subparsers.add_parser('upgrade', description='Updates autosubmit 3 proj files to autosubmit 4')
             subparser.add_argument('expid', help='experiment identifier')
-
+            subparser.add_argument('-f','--files',default='',type=str, help='list of files')
             # Readme
             subparsers.add_parser('readme', description='show readme')
 
@@ -687,7 +687,7 @@ class Autosubmit:
         elif args.command == 'updateversion':
             return Autosubmit.update_version(args.expid)
         elif args.command == 'upgrade':
-            return Autosubmit.upgrade_scripts(args.expid)
+            return Autosubmit.upgrade_scripts(args.expid,files=args.files)
         elif args.command == 'archive':
             return Autosubmit.archive(args.expid, noclean=args.noclean, uncompress=args.uncompress)
         elif args.command == 'unarchive':
@@ -3962,11 +3962,19 @@ class Autosubmit:
         return warn, sustituted
 
     @staticmethod
-    def upgrade_scripts(expid):
-        def get_files(root_dir_, extensions):
+    def upgrade_scripts(expid,files=""):
+        def get_files(root_dir_, extensions,files=""):
             all_files = []
-            for ext in extensions:
-                all_files.extend(root_dir_.rglob(ext))
+            if len(files) > 0:
+                for ext in extensions:
+                    all_files.extend(root_dir_.rglob(ext))
+            else:
+                if ',' in files:
+                    files = files.split(',')
+                elif ' ' in files:
+                    files = files.split(' ')
+                for file in files:
+                    all_files.append(file)
             return all_files
 
         Log.info("Checking if experiment exists...")

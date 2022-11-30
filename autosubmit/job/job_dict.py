@@ -381,6 +381,8 @@ class DicJobs:
         job.executable = str(parameters[section].get( "EXECUTABLE", ""))
         job.platform_name = str(parameters[section].get( "PLATFORM", "")).upper()
         job.file = str(parameters[section].get( "FILE", ""))
+        job.additional_files = parameters[section].get( "ADDITIONAL_FILES", [])
+
         job.queue = str(parameters[section].get( "QUEUE", ""))
         job.partition = str(parameters[section].get( "PARTITION", ""))
         if job.partition == "" and job.platform_name.upper() not in ["LOCAL",""]:
