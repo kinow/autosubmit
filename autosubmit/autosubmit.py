@@ -4148,11 +4148,12 @@ class Autosubmit:
             tmp_backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}_tmp.sql".format(expid))
             command = "sqlite3 {0} .dump > {1} ".format(database_path, tmp_backup_path)
             Log.debug("Backing up jobs_data...")
-            subprocess.call(command, shell=True)
-            if os.path.exists(tmp_backup_path) and os.path.exists(backup_path):
-                if os.path.getsize(tmp_backup_path) >= os.path.getsize(backup_path):
-                    command = "mv {0} {1} ".format(tmp_backup_path, backup_path)
-                    subprocess.call(command, shell=True)
+            if os.path.exists(database_path) and os.path.getsize(database_path) > 0: # Check if database has any data.
+                subprocess.call(command, shell=True)
+                if os.path.exists(tmp_backup_path) and os.path.exists(backup_path):
+                    if os.path.getsize(tmp_backup_path) >= os.path.getsize(backup_path): # Check if all data is still there.
+                        command = "mv {0} {1} ".format(tmp_backup_path, backup_path)
+                        subprocess.call(command, shell=True)
             Log.debug("Jobs_data database backup completed.")
         except BaseException as e:
             Log.debug("Jobs_data database backup failed.")
