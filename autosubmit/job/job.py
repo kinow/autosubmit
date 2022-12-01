@@ -1209,7 +1209,7 @@ class Job(object):
                 template = "%DEFAULT.EXPID%"
             else:
                 template = open(os.path.join(as_conf.get_project_dir(), file), 'r')
-            additional_templates += template
+            additional_templates += [template]
         return additional_templates
     def update_content(self, as_conf):
         """
@@ -1332,7 +1332,10 @@ class Job(object):
                 lang = 'UTF-8'
         parameters = self.parameters
         template_content,additional_templates = self.update_content(as_conf)
-        for additional_template_content in additional_templates:
+        #enumerate and get value
+
+
+        for file_n,additional_template_content in enumerate(additional_templates):
             template_content += additional_template_content
             for key, value in parameters.items():
                 additional_template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), additional_template_content,flags=re.I)
@@ -1340,7 +1343,7 @@ class Job(object):
                 additional_template_content = re.sub('%(?<!%%)' + variable + '%(?!%%)', '', additional_template_content,flags=re.I)
 
             additional_template_content = additional_template_content.replace("%%", "%")
-            open(os.path.join(self._tmp_path, os.path.splitext(additional_template_content)[0]), 'wb').write(additional_template_content.encode(lang))
+            open(os.path.join(self._tmp_path, os.path.splitext(self.additional_files[file_n])[0]), 'wb').write(additional_template_content.encode(lang))
 
         for key, value in parameters.items():
             template_content = re.sub(
