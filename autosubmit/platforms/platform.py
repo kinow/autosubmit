@@ -39,6 +39,7 @@ class Platform(object):
         self.exclusivity = ''
         self.type = ''
         self.scratch = ''
+        self.project_dir = ''
         self.temp_dir = ''
         self.root_dir = ''
         self.service = None
