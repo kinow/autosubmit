@@ -52,7 +52,7 @@ The experiments will be created in this folder, and the database named `autosubm
 
 
 
-For advanced options you can add ``--advanced`` to the configure command. It will allow you to choose different directories (they must exist) for the experiments and database,
+For advanced options you can add ``--advanced`` to the configure command. It will allow you to choose different directories (they must exist) for the experiments and database useful for a shared-file system between different users,
 as well as configure SMTP server and an email account in order to use the email notifications feature.
 
 
@@ -73,43 +73,45 @@ For installing the database for Autosubmit on the configured folder, when no dat
 
 .. danger:: Be careful ! autosubmit install will create a blank database.
 
-Lastly, if autosubmit configure doesn't work for you or you need to configure additional info create:
+Lastly, if autosubmit configure doesn't work for you or you need to configure autosubmit for all users ( with the aim of having a shared experiment database):
 
 Create or modify /etc/autosubmitrc file or ~/.autosubmitrc with the information as follows:
 
 .. code-block:: ini
 
-    database:
-    path: path to autosubmit db
-    filename: autosubmit.db
+    [database]
+    path = path to autosubmit db
+    filename = autosubmit.db
 
-    local:
-    path: path to experiment folders
+    [local]
+    path = path to experiment folders
 
-    conf:
-    jobs: path to any experiment  jobs conf # If not working on esarchive, you must create one from scratch check the how to.
-    platforms: path to any experiment  platform conf # If not working on esarchive, you must create one from scratch check the how to.
+    # This step is not necessary when using the default configuration that comes with autosubmit4configparser
+    [conf]
+    jobs = path to any platforms.yml
+    platforms = path to any jobs.yml
 
-    mail:
-    smtp_server:mail.bsc.es
-    mail_from:automail@bsc.es
+    # This depends on your email server
+    [mail]
+    smtp_server = mail.bsc.es
+    mail_from = automail@bsc.es
 
-    structures:
-    path:   path to experiment folders
+    [structures]
+    path = path to experiment folders
 
-    globallogs:
-    path:   path to global logs (for expid,delete and migrate commands)
+    [globallogs]
+    path = path to global logs (for expid,delete and migrate commands)
 
-    historicdb:
-    path: <experiment_folder>/historic
+    [historicdb]
+    path = <experiment_folder>/historic
 
-    autosubmitapi:
-    url:  url of Autosubmit API (The API is provided inside the BSC network)
+    [autosubmitapi]
+    url = url of Autosubmit API (The API is provided inside the BSC network)
     # Autosubmit API provides extra information for some Autosubmit functions. It is not mandatory to have access to it to use Autosubmit.
 
-    hosts:
-    authorized:  [run bscearth000,bscesautosubmit01,bscesautosubmit02] [stats,clean,describe,check,report,dbfix,pklfix,updatedescript,updateversion all]
-    forbidden:  [expìd,create,recovery,delete,inspect,monitor,recovery,migrate,configure,setstatus,testcase,test,refresh,archive,unarchive bscearth000,bscesautosubmit01,bscesautosubmit02]
+    [hosts]
+    authorized =  [run bscearth000,bscesautosubmit01,bscesautosubmit02] [stats,clean,describe,check,report,dbfix,pklfix,updatedescript,updateversion all]
+    forbidden =  [expìd,create,recovery,delete,inspect,monitor,recovery,migrate,configure,setstatus,testcase,test,refresh,archive,unarchive bscearth000,bscesautosubmit01,bscesautosubmit02]
 
 
 Hosts:

@@ -715,6 +715,12 @@ class Autosubmit:
     @staticmethod
     def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
         Log.set_console_level(console_level)
+        if args.command != "configure":
+            if not BasicConfig.CONFIG_FILE_FOUND:
+                raise AutosubmitCritical('No configuration file(autosubmitrc) found in this filesystem. Please run "autosubmit configure" first.',7006)
+            if args.command != "install":
+                if not os.path.exists(BasicConfig.DB_PATH):
+                    raise AutosubmitCritical('Experiments database not found in this filesystem. Please run "autosubmit installation" first.',7072)
 
         expid_less = ["expid", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]
