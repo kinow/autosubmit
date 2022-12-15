@@ -60,7 +60,7 @@ Example:
 
     autosubmit expid -y cxxx -H ithaca -d "experiment is about..."
     autosubmit expid -y cxxx -p "/esarchive/autosubmit/genericFiles/conf" -H marenostrum4 -d "experiment is about..."
-.. warning:: You can only copy experiments created with Autosubmit 3.0 or above.
+.. warning:: You can only copy experiments created with Autosubmit 3.11 or above.
 
 If there is an autosubmitrc or .autosubmitrc file in your home directory (cd ~), you can setup a default file from where the contents of platforms_expid.yml should be copied.
 

@@ -553,7 +553,7 @@ You need to use the FOR and NAME keys to define a loop.
 
 To generate the following jobs:
 
-.. code-block:: YAML
+.. code-block:: yaml
 
     POST_20:
           FILE: POST.sh

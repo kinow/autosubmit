@@ -101,9 +101,11 @@ Experiment run
 
 To run the experiment, just execute the command:
 
-::
+    .. code-block:: bash
 
-    autosubmit run xxxx
+        # Add your key to ssh agent ( if encrypted )
+        ssh-add ~/.ssh/id_rsa
+        autosubmit run a000
 
 Autosubmit will start submitting jobs to the relevant platforms (both HPC and supporting computers) by using the scripts specified in ``jobs_xxxx.yml``. Autosubmit will substitute variables present on scripts where handlers appear in *%variable_name%* format. Autosubmit provides variables for *current chunk*, *start date*, *member*, *computer configuration* and more, and also will replace variables form ``proj_xxxx.yml``.
 

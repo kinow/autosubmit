@@ -19,6 +19,19 @@ Ensure that you have a **password-less** connection to all platforms you want to
 - Open a terminal and prompt ``ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM``
 - Copy the resulting key to your platform of choice. Via SCP or ssh-copy-key.
 
+example:
+
+.. code-block:: bash
+
+        # Generate a key pair for password-less ssh, PEM format is recommended as others can cause problems
+        ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM
+
+        # Copy the public key to the remote machine
+        ssh-copy-id -i ~/.ssh/id_rsa.pub user@remotehost
+
+        # Add your key to ssh agent ( if encrypted )
+        ssh-add ~/.ssh/id_rsa
+
 Description of most used commands
 =================================
 
@@ -79,6 +92,7 @@ Then, execute ``autosubmit create <expid> -np`` and Autosubmit will generate the
 
 Run and monitoring:
 ===============
+
  To run an experiment, use ```autosubmit run <expid>```. Autosubmit runs experiments performing the following operations:
 
  - First, it **checks the experiment configuration**. If it is wrong, it won't proceed further.
@@ -162,7 +176,7 @@ Final step: Modify and run
 
 Now open platforms.yml. Note: This will be an example for marenostrum4
 
-.. code-block:: yml
+.. code-block:: yaml
 
     PLATFORMS:
         marenostrum4:
@@ -170,7 +184,7 @@ Now open platforms.yml. Note: This will be an example for marenostrum4
             # scheduler type
             TYPE: slurm
             HOST: mn1.bsc.es,mn2.bsc.es,mn3.bsc.es
-            # <- your project
+            # your project
             PROJECT: bsc32
             # <- your user
             USER: bsc32070
@@ -185,3 +199,6 @@ Now open platforms.yml. Note: This will be an example for marenostrum4
             QUEUE: debug
 
 ``autosubmit create <expid>** (without -np)`` will generate the new workflow and ``autosubmit run <expid>`` will run the experiment with the latest changes.
+
+.. warning::
+    If you are using an encrypted key, you will need to add it to the ssh-agent before running the experiment. To do so, run ``ssh-add <path_to_key>``.

@@ -5,8 +5,11 @@ Run an experiment
 -------------------
 
 Launch Autosubmit with the command:
-::
 
+.. code-block:: bash
+
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     autosubmit run EXPID
 
 *EXPID* is the experiment identifier.
@@ -30,19 +33,24 @@ Options:
       -h, --help  show this help message and exit
 
 Example:
-::
 
+.. code-block:: bash
+
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     autosubmit run cxxx
 
 .. important:: If the autosubmit version is set on autosubmit.yml it must match the actual autosubmit version
 .. hint:: It is recommended to launch it in background and with ``nohup`` (continue running although the user who launched the process logs out).
 
-Example:
-::
+.. code-block:: bash
 
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     nohup autosubmit run cxxx &
 
 .. important:: Before launching Autosubmit check password-less ssh is feasible (*HPCName* is the hostname):
+.. important:: Add encryption key to ssh agent for each session (if your ssh key is encrypted)
 
 .. important:: The host machine has to be able to access HPC's/Clusters via password-less ssh. Make sure that the ssh key is in PEM format `ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM`.
 
@@ -58,13 +66,18 @@ How to run an experiment that was created with another version
 .. important:: First of all you have to stop your Autosubmit instance related with the experiment
 
 Once you've already loaded / installed the Autosubmit version do you want:
-::
+
+.. code-block:: bash
 
     autosubmit create $EXPID -np
     autosubmit recovery $EXPID -s --all -f -np
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     autosubmit run $EXPID -v
     or
     autosubmit updateversion $EXPID
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     autosubmit run $EXPID -v
 
 *EXPID* is the experiment identifier.
@@ -78,13 +91,19 @@ How to run an experiment that was created with version <= 4.0.0
 .. important:: First of all you have to stop your Autosubmit instance related with the experiment.
 
 Once you've already loaded / installed the Autosubmit version do you want:
-::
+
+.. code-block:: bash
+
     autosubmit upgrade $expid
     autosubmit create $EXPID -np
     autosubmit recovery $EXPID -s --all -f -np
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     autosubmit run $EXPID -v
     or
     autosubmit updateversion $EXPID
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     autosubmit run $EXPID -v
 
 *EXPID* is the experiment identifier.
@@ -96,9 +115,12 @@ How to run only selected members
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To run only a subset of selected members you can execute the command:
-::
 
-    autosubmit run EXPID -rm MEMBERS
+    .. code-block:: bash
+
+        # Add your key to ssh agent ( if encrypted )
+        ssh-add ~/.ssh/id_rsa
+        autosubmit run EXPID -rm MEMBERS
 
 *EXPID* is the experiment identifier, the experiment you want to run.
 
@@ -107,9 +129,11 @@ To run only a subset of selected members you can execute the command:
 Then, your experiment will start running jobs belonging to those members only. If the experiment was previously running and autosubmit was stopped when some jobs belonging to other members (not the ones from your input) where running, those jobs will be tracked and finished in the new exclusive run.
 
 Furthermore, if you wish to run a sequence of only members execution; then, instead of running `autosubmit run -rm "member_1"` ... `autosubmit run -rm "member_n"`, you can make a bash file with that sequence and run the bash file. Example:
-::
 
-    #!/bin/bash
+.. code-block:: bash
+
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     autosubmit run EXPID -rm MEMBER_1
     autosubmit run EXPID -rm MEMBER_2
     autosubmit run EXPID -rm MEMBER_3
@@ -120,8 +144,11 @@ How to start an experiment at a given time
 ------------------------------------------
 
 To start an experiment at a given time, use the command:
-::
 
+.. code-block:: bash
+
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     autosubmit run EXPID -st INPUT
 
 *EXPID* is the experiment identifier
@@ -141,8 +168,11 @@ How to start an experiment after another experiment is finished
 ---------------------------------------------------------------
 
 To start an experiment after another experiment is finished, use the command:
-::
 
+.. code-block:: bash
+
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     autosubmit run EXPID -sa EXPIDB
 
 *EXPID* is the experiment identifier, the experiment you want to start.
@@ -354,8 +384,11 @@ Example 2: Crossdate wrappers using the the new dependencies
 
 
 Finally, you can launch Autosubmit *run* in background and with ``nohup`` (continue running although the user who launched the process logs out).
-::
 
+.. code-block:: bash
+
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     nohup autosubmit run cxxx &
 
 How to stop the experiment

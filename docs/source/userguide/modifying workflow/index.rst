@@ -111,7 +111,11 @@ Example:
        :align: center
        :alt: rerun_result
 
+Run the command:
 
-::
+.. code-block:: bash
 
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
     nohup autosubmit run cxxx &
+

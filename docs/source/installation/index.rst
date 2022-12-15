@@ -164,8 +164,20 @@ Sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
     # Since it was a new install the expid will be a000
     autosubmit create a000
 
+    # In case you want to use a remote platform
+
+    # Generate a key pair for password-less ssh, PEM format is recommended as others can cause problems
+    ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM
+
+    # Copy the public key to the remote machine
+    ssh-copy-id -i ~/.ssh/id_rsa.pub user@remotehost
+
+    # Add your key to ssh agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
+
     # run
     autosubmit run a000
+
 Sequence of instructions to install Autosubmit and its dependencies with conda.
 -------------------------------------------------------------------------------
 
