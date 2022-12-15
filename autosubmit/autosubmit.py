@@ -721,6 +721,15 @@ class Autosubmit:
             if args.command != "install":
                 if not os.path.exists(BasicConfig.DB_PATH):
                     raise AutosubmitCritical('Experiments database not found in this filesystem. Please run "autosubmit installation" first.',7072)
+                else:
+                    permissions = os.access(BasicConfig.DB_PATH, os.R_OK)  # Check for read access
+                    if not permissions:
+                        raise AutosubmitCritical('Experiments database {0} not readable. Please check permissions.'.format(BasicConfig.DB_PATH),7007)
+                    permissions = os.access(BasicConfig.DB_PATH, os.W_OK)  # Check for write access
+                    if not permissions:
+                        raise AutosubmitCritical('Experiments database {0} not writable. Please check permissions.'.format(BasicConfig.DB_PATH),7007)
+
+
 
         expid_less = ["expid", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]

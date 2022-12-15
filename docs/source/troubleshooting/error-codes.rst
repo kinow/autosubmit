@@ -29,6 +29,8 @@ Database Issues  - Critical Error codes [7001-7005]
 +------+-----------------------------------------------+-----------------------------------------------------------------+
 | 7006 | Experiment database not found                 | Please, ask your administrator to run `autosubmit install       |
 +------+-----------------------------------------------+-----------------------------------------------------------------+
+| 7007 | Experiment database Permissions               | Invalid permissions, ask your administrator to add R/W          |
++------+-----------------------------------------------+-----------------------------------------------------------------+
 
 Default Solution
 ----------------
