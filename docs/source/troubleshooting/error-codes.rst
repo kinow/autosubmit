@@ -121,7 +121,9 @@ Uncatalogued codes  - Critical Error codes [7060+]
 | 7072 | Basic configuration not found                 | Administrator: run `autosubmit configure --advanced` or create a common file in /etc/autosubmitrc.                                                                               |
 |      |                                               | User: run `autosubmit configure` or create a $HOME/.autosubmitrc. Following the skeleton of installation page                                                                    |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-
+| 7073 | Private key is encrypted                      | Each Sesion: Add your key into the ssh agent. ex. ssh-add $HOME/.ssh/id_rsa, then launch autosubmit.                                                                             |
+|      |                                               | Alternative: You can use a non-encrypted key, just make sure that nobody except you has access to the file.                                                                      |
++------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 Default Solution
 ----------------
