@@ -33,7 +33,7 @@ Mayor mentions:
 .. warning:: updateproj may not translate all the scripts, we recommend to revise your scripts before run AS.
 
 Configuration changes
----------------------
+=====================
 
 Now autosubmit is composed by two kind of YAML configurations, the default ones, which are the same as always, and the custom ones.
 
@@ -51,7 +51,7 @@ Additionally, you must be aware of the following changes:
  - YAML has into account the type.
 
 Examples
---------
+========
 
 List of example with the new configuration and the structure as follows
 
@@ -63,7 +63,7 @@ List of example with the new configuration and the structure as follows
     more_jobs.yml
 
 Configuration
-~~~~~~~~~~~~~
+=============
 
     `autosubmit_expid.yml`
 
@@ -274,7 +274,7 @@ Configuration
 
 
 Wrappers definition
-~~~~~~~~~~~~~~~~~~~
+===================
 
 To define a the wrappers:
 
@@ -289,7 +289,7 @@ To define a the wrappers:
         JOBS_IN_WRAPPER: "SIM_40"
 
 Loops definition
-~~~~~~~~~~~~~~~~~~~
+================
 
 To define a loop, you need to use the FOR key and also the NAME key.
 
@@ -336,7 +336,7 @@ One can use now the following configuration:
 .. warning:: Only the parameters that changes must be included inside the `FOR` key.
 
 Dependencies rework
--------------------
+===================
 
 The DEPENDENCIES key is used to define the dependencies of a job. It can be used in the following ways:
 
@@ -369,7 +369,7 @@ For the examples, we will consider that our experiment has the following configu
         MEMBERS: FC1 FC2
         NUMCHUNKS: 4
 Basic
-~~~~~
+=====
 
 .. code-block:: yaml
 
@@ -399,7 +399,7 @@ Basic
         RUNNING: chunk
 
 New format
-~~~~~~~~~~
+==========
 
 .. code-block:: yaml
 
@@ -458,7 +458,7 @@ New format
    :alt: new_dependencies
 
 Example 1: New format with specific dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------
 
 
 In the following example, we want to launch the next member SIM after the last SIM chunk of the previous member is finished.
@@ -513,7 +513,7 @@ In the following example, we want to launch the next member SIM after the last S
    :alt: new_dependencies
 
 Example 2: Crossdate wrappers using the the new dependencies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------------------------------------------
 
 .. code-block:: yaml
 

@@ -44,7 +44,7 @@ def main():
             if e.trace != "": # trace might be int.
                 Log.error("Trace: {0}", e.trace)
         Log.critical("{1} [eCode={0}]", e.code, e.message)
-        Log.info("More info at https://autosubmit.readthedocs.io/en/latest/faq.html")
+        Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")
         os._exit(1)
     except AutosubmitCritical as e:
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
@@ -54,7 +54,7 @@ def main():
             Log.error("Trace: {0}", e.trace)
         Log.critical("{1} [eCode={0}]", e.code, e.message)
 
-        Log.info("More info at https://autosubmit.readthedocs.io/en/latest/faq.html")
+        Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")
         os._exit(1)
     except Exception as e:
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):

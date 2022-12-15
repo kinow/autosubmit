@@ -2224,6 +2224,7 @@ class Autosubmit:
         issues = ""
         platform_issues = ""
         ssh_config_issues = ""
+        private_key_error = "Please, add your private key to the ssh-agent ( ssh-add <path_to_key> ) or use a non-encrypted key\n"
         for platform in platform_to_test:
             platform_issues = ""
             try:
@@ -2235,6 +2236,9 @@ class Autosubmit:
                         ssh_config_issues += message
                     elif message.find("Authentication failed") != -1:
                         ssh_config_issues += message + ". Please, check the user and project of this platform\nIf it is correct, try another host"
+                    elif message.find("private key file is encrypted") != -1:
+                        if private_key_error not in ssh_config_issues:
+                            ssh_config_issues += private_key_error
                     else:
                         ssh_config_issues += message + " this is an PARAMIKO SSHEXCEPTION: indicates that there is something incompatible in the ssh_config for host:{0}\n maybe you need to contact your sysadmin".format(
                             platform.host)
@@ -2264,8 +2268,11 @@ class Autosubmit:
                 platform.connected = False
                 Log.printlog("[{1}] Connection failed to host {0}".format(platform.host, platform.name), Log.WARNING)
         if issues != "":
-            raise AutosubmitCritical(
-                "Issues while checking the connectivity of platforms.", 7010, issues + "\n" + ssh_config_issues)
+            if ssh_config_issues.find(private_key_error[:-2]) != -1:
+                raise AutosubmitCritical("Private key is encrypted, Autosubmit does not run in interative mode.\nPlease, add the key to the ssh agent(ssh-add <path_to_key>).\nIt will remain open as long as session is active, for force clean you can prompt ssh-add -D",7073, issues + "\n" + ssh_config_issues)
+            else:
+                raise AutosubmitCritical(
+                    "Issues while checking the connectivity of platforms.", 7010, issues + "\n" + ssh_config_issues)
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,

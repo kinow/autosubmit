@@ -55,6 +55,7 @@ Welcome to autosubmit's documentation!
 
    /troubleshooting/index
    /troubleshooting/error-codes
+   /troubleshooting/changelog
 
 .. toctree::
    :caption: Module Documentation
