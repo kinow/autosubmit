@@ -41,6 +41,7 @@ Welcome to autosubmit's documentation!
    /userguide/manage/index
    /userguide/monitor and check/index
    /userguide/set and share the configuration/index
+
 .. toctree::
    :caption: Developer Guide
    :maxdepth: 1
