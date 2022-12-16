@@ -112,7 +112,7 @@ The expid command can generate a sample structure containing all the parameters 
 
 The advanced configuration is activated when the user sets the `DEFAULT.CUSTOM_CONFIG` parameter inside the `expdef.yml` file.
 
-.. warning: a new flag is in the works to simplify the setup.
+.. warning: A new flag is in the works to simplify the setup.
 
 .. code-block:: bash
 
@@ -175,6 +175,6 @@ The expid command can copy another user's existing expid to work correctly.
 	autosubmit_a004.yml  expdef_a004.yml  platforms_a004.yml
     jobs_a004.yml    proj_a004.yml
 
-.. warning:: you must share the same experiment autosubmit. DB for this to work.
+.. warning:: All users must share the same experiment autosubmit.db for this to work.
 
 Sharing an experiment configuration across filesystems is possible only by including the same `DEFAULT.CUSTOM_CONFIG` and `GIT.PROJECT_ORIGIN`, `GIT.PROJECT_BRANCH` and `GIT.PROJECT_TAG` inside the expdef.yml file.
