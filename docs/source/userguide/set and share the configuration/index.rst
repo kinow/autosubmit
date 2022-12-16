@@ -49,7 +49,7 @@ The following table summarizes what configuration files autosubmit expects and w
         - This file contains the configuration used by the user scripts.
         - This file is fully customizable for the current experiment. Allows setting user- parameters that will be readable by the autosubmit jobs.
 
-It is worth mentioning that for Autosubmit4, these files merged as one.
+It is worth mentioning that for Autosubmit4, these files are seen one.
 
 Advanced configuration structure and restrictions
 -------------------------------------------------
