@@ -2,7 +2,6 @@
 Tutorial start guide
 ====================
 
-
 This tutorial is a starter’s guide to run a dummy experiment with Autosubmit.
 
 Dummy experiments run workflows with inexpensive empty tasks and therefore are ideal for teaching and testing purposes.
@@ -19,16 +18,12 @@ Ensure that you have a **password-less** connection to all platforms you want to
 - Open a terminal and prompt ``ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM``
 - Copy the resulting key to your platform of choice. Via SCP or ssh-copy-key.
 
-example:
-
 .. code-block:: bash
 
         # Generate a key pair for password-less ssh, PEM format is recommended as others can cause problems
         ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM
-
         # Copy the public key to the remote machine
         ssh-copy-id -i ~/.ssh/id_rsa.pub user@remotehost
-
         # Add your key to ssh agent ( if encrypted )
         ssh-add ~/.ssh/id_rsa
 

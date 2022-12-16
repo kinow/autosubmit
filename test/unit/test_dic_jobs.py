@@ -352,6 +352,8 @@ class TestDicJobs(TestCase):
         self.job_list.jobs_data[section] = options
         self.dictionary.experiment_data = dict()
         self.dictionary.experiment_data["JOBS"] = self.job_list.jobs_data
+        self.dictionary.experiment_data["PLATFORMS"] = {}
+        self.dictionary.experiment_data["PLATFORMS"]["FAKE-PLATFORM"] = {}
         job_list_mock = Mock()
         job_list_mock.append = Mock()
         self.dictionary._jobs_list.get_job_list = Mock(return_value=job_list_mock)

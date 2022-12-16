@@ -214,6 +214,7 @@ class TestJob(TestCase):
         self.job.parameters['NUMTASK'] = 666
 
         update_content_mock = Mock(return_value='some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK%')
+        #todo
         self.job.update_content = update_content_mock
 
         update_parameters_mock = Mock(return_value=self.job.parameters)
