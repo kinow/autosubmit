@@ -35,12 +35,12 @@ Welcome to autosubmit's documentation!
    /userguide/create/index
    /userguide/configure/index
    /userguide/defining workflows/index
-   /userguide/wrappers/index.rst
+   /userguide/wrappers/index
    /userguide/run/index
-   /userguide/modifying workflows/index.rst
+   /userguide/modifying workflows/index
    /userguide/manage/index
    /userguide/monitor and check/index
-
+   /userguide/set and share the configuration/index
 .. toctree::
    :caption: Developer Guide
    :maxdepth: 1
