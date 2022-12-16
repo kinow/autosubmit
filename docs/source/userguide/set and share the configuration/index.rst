@@ -1,8 +1,8 @@
 Configuration details, setup and sharing
 ========================================
 
-Experiment configuration:
-=========================
+Experiment configuration
+------------------------
 
 Since the beginning, Autosubmit has always been composed of five files in the folder ``<expid>/conf that define the experiment configuration.
 
@@ -12,7 +12,7 @@ Autosubmit v4.00.0 configuration must be composed of yml files.
 
 This document will teach you how to set up an experiment configuration using the different available methods and what Autosubmit expects to find in the configuration.
 
-Standard configuration structure:
+Standard configuration structure
 ---------------------------------
 
 The following table summarizes what configuration files autosubmit expects and what parameters you can define there.
@@ -64,17 +64,17 @@ Also, this configuration is seen as one, meaning that the overwriting is per par
 
 There are a few restrictions:
 
-`$EXPID/conf/expdef.yml` and `$EXPID/conf/autosubmit.yml` files must exist.
-The reason is that some parameters need to exist as a pre-step for the merging.
-The user has to define the `CONFIG_DIR` parameter under the `DEFAULT` section, located in `$EXPID/conf/expdef.yml`.
+* `$EXPID/conf/expdef.yml` and `$EXPID/conf/autosubmit.yml` files must exist. The reason is that some parameters need to exist as a pre-step for the merging.
+
+* The user has to define the `CONFIG_DIR` parameter under the `DEFAULT` section, located in `$EXPID/conf/expdef.yml`.
 
 How to set and share the configuration
-======================================
+--------------------------------------
 
 This section contains examples of setting a standard configuration and an advanced one from a newly made experiment.
 
 Standard Configuration
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 The expid command can generate a sample structure containing all the parameters that autosubmit needs to work correctly.
 
@@ -89,7 +89,7 @@ The expid command can generate a sample structure containing all the parameters 
         jobs_a01y.yml    proj_a01y.yml
 
 Sharing a standard Configuration
---------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The expid command can copy another user's existing expid to work correctly.
 
@@ -106,7 +106,7 @@ The expid command can copy another user's existing expid to work correctly.
 .. warning:: you must share the same experiment autosubmit. DB for this to work.
 
 Advanced Configuration
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
 
 The expid command can generate a sample structure containing all the parameters that autosubmit needs to work, but by default, it doesn't contemplate the advanced configuration.
 
@@ -161,7 +161,7 @@ Edit `expdef_a01y.yml` and change only the following parameters, leaving the res
 .. warning: Keep in mind that no parameters are disabled when custom_config is activated, including the jobs definitions.
 
 Sharing an advanced configuration
----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The expid command can copy another user's existing expid to work correctly.
 
