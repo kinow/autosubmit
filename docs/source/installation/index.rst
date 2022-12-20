@@ -36,8 +36,10 @@ Or download, unpack and:
 .. hint::
     To see the changelog, use ``autosubmit changelog``
 
-The sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
-----------------------------------------------------------------------------------
+The sequence of instructions to install Autosubmit and its dependencies with pip using Ubuntu.
+----------------------------------------------------------------------------------------------
+
+.. warning:: The following instructions are for Ubuntu 20.04 LTS. The instructions may vary for other UNIX distributions.
 
 .. code-block:: bash
 
