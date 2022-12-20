@@ -30,15 +30,90 @@ Or download, unpack and:
 .. hint::
     To check if Autosubmit is installed, run ``autosubmit -v.`` This command will print Autosubmit's current version
 
-
 .. hint::
     To read Autosubmit's readme file, run ``autosubmit readme``
 
 .. hint::
     To see the changelog, use ``autosubmit changelog``
 
-How to configure and install Autosubmit
-=======================================
+The sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
+----------------------------------------------------------------------------------
+
+.. code-block:: bash
+
+    # Update repositories
+    apt update
+
+    # Avoid interactive stuff
+    export DEBIAN_FRONTEND=noninteractive
+
+    # Dependencies
+    apt install wget curl python3 python3-tk python3-dev graphviz -y -q
+
+    # Additional dependencies related with pycrypto
+    apt install build-essential libssl-dev libffi-dev -y -q
+
+    # Install autosubmit using pip
+    pip3 install autosubmit
+
+    # Check that we can execute autosubmit commands
+    autosubmit -h
+
+    # Configure
+    autosubmit configure
+
+    # Install
+    autosubmit install
+
+    # Get expid
+    autosubmit expid -H "local" -d "Test exp in local."
+
+    # Create with
+    # Since it was a new install, the expid will be a000
+    autosubmit create a000
+
+    # In case you want to use a remote platform
+
+    # Generate a key pair for password-less ssh. PEM format is recommended as others can cause problems
+    ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM
+
+    # Copy the public key to the remote machine
+    ssh-copy-id -i ~/.ssh/id_rsa.pub user@remotehost
+
+    # Add your key to the ssh-agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
+
+    # run
+    autosubmit run a000
+
+The sequence of instructions to install Autosubmit and its dependencies with conda.
+-----------------------------------------------------------------------------------
+
+.. code-block:: bash
+
+    # Download conda
+    wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh
+    # Launch it
+    chmod +x ./Miniconda3-py39_4.12.0-Linux-x86_64.sh ; ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
+    # Download git
+    apt install git -y -q
+    # Download autosubmit
+    git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v4.0.0b
+    cd autosubmit
+    # Create a Conda environment
+    conda env update -f environment.yml -n autosubmit python=3.7
+    # Activate env
+    conda activate autosubmit
+    # Test autosubmit
+    autosubmit -v
+    # Configure autosubmitrc and install the database as indicated in the installation instructions above this section
+
+.. hint::
+    After installing the Conda, you may need to close the terminal and re-open it so the installation takes effect.
+
+
+How to configure Autosubmit and install the experiment database
+===============================================================
 
 There are two methods of configuring the Autosubmit main paths.
 
@@ -222,10 +297,10 @@ Example - BSC - /etc/autosubmitrc skeleton
         authorized =  [run bscearth000,bscesautosubmit01,bscesautosubmit02] [stats, clean, describe, check, report,dbfix,pklfix, upgrade,updateversion all]
         forbidden =  [expìd, create, recovery, delete, inspect, monitor, recovery, migrate, configure,setstatus,testcase, test, refresh, archive, unarchive bscearth000,bscesautosubmit01,bscesautosubmit02]
 
-Database installation
-~~~~~~~~~~~~~~~~~~~~~
+Experiments database installation
+---------------------------------
 
-You now have to install the Autosubmit database. To do so, execute  ``autosubmit install``.
+As a last step, ensure to install the Autosubmit database. To do so, execute  ``autosubmit install``.
 
 .. code-block:: bash
 
@@ -234,77 +309,3 @@ You now have to install the Autosubmit database. To do so, execute  ``autosubmit
 This command will generate a blank database in the specified configuration path.
 
 
-The sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
-------------------------------------------------------------------------------
-
-.. code-block:: bash
-
-    # Update repositories
-    apt update
-
-    # Avoid interactive stuff
-    export DEBIAN_FRONTEND=noninteractive
-
-    # Dependencies
-    apt install wget curl python3 python3-tk python3-dev graphviz -y -q
-
-    # Additional dependencies related with pycrypto
-    apt install build-essential libssl-dev libffi-dev -y -q
-
-    # Install autosubmit using pip
-    pip3 install autosubmit
-
-    # Check that we can execute autosubmit commands
-    autosubmit -h
-
-    # Configure
-    autosubmit configure
-
-    # Install
-    autosubmit install
-
-    # Get expid
-    autosubmit expid -H "local" -d "Test exp in local."
-
-    # Create with
-    # Since it was a new install, the expid will be a000
-    autosubmit create a000
-
-    # In case you want to use a remote platform
-
-    # Generate a key pair for password-less ssh. PEM format is recommended as others can cause problems
-    ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM
-
-    # Copy the public key to the remote machine
-    ssh-copy-id -i ~/.ssh/id_rsa.pub user@remotehost
-
-    # Add your key to the ssh-agent ( if encrypted )
-    ssh-add ~/.ssh/id_rsa
-
-    # run
-    autosubmit run a000
-
-The sequence of instructions to install Autosubmit and its dependencies with conda.
--------------------------------------------------------------------------------
-
-.. code-block:: bash
-
-    # Download conda
-    wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh
-    # Launch it
-    chmod +x ./Miniconda3-py39_4.12.0-Linux-x86_64.sh ; ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
-    # Download git
-    apt install git -y -q
-    # Download autosubmit
-    git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v4.0.0b
-    cd autosubmit
-    # Create a Conda environment
-    conda env update -f environment.yml -n autosubmit python=3.7
-    # Activate env
-    conda activate autosubmit
-    # Test autosubmit
-    autosubmit -v
-    # Configure autosubmitrc and install the database as indicated in the installation instructions above this section
-
-.. hint::
-    After installing the Conda, you may need to close the terminal and re-open it so the installation takes effect.
