@@ -36,8 +36,8 @@ Or download, unpack and:
 .. hint::
     To see the changelog, use ``autosubmit changelog``
 
-The sequence of instructions to install Autosubmit and its dependencies with pip using Ubuntu.
-----------------------------------------------------------------------------------------------
+The sequence of instructions to install Autosubmit and its dependencies with pip.
+---------------------------------------------------------------------------------
 
 .. warning:: The following instructions are for Ubuntu 20.04 LTS. The instructions may vary for other UNIX distributions.
 
@@ -90,6 +90,8 @@ The sequence of instructions to install Autosubmit and its dependencies with pip
 
 The sequence of instructions to install Autosubmit and its dependencies with conda.
 -----------------------------------------------------------------------------------
+
+.. warning:: The following instructions are for Ubuntu 20.04 LTS. The instructions may vary for other UNIX distributions.
 
 .. code-block:: bash
 
@@ -184,10 +186,8 @@ Example - Local - .autosubmitrc skeleton
 
 Production environment installation - Shared-Filesystem database
 ----------------------------------------------------------------
-.. warning:: Keep in mind the .autosubmitrc precedence. If you, as a user, have a .autosubmitrc generated in the quick-installation, you have to delete or rename it before using the production environment installation.
 
-Configuration
---------------
+.. warning:: Keep in mind the .autosubmitrc precedence. If you, as a user, have a .autosubmitrc generated in the quick-installation, you have to delete or rename it before using the production environment installation.
 
 Create an ``/etc/autosubmitrc`` file or move it from ``$HOME/.autosubmitrc`` to ``/etc/autosubmitrc`` with the information as follows:
 
@@ -230,8 +230,6 @@ The following parameters are the autosubmit metadata, it is not mandatory, but i
 
 	[historiclog]
 	path = /home/dbeltran/autosubmit/metadata/logs
-
-
 
 Optional parameters of /etc/autosubmit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
