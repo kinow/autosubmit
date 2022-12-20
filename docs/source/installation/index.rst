@@ -5,7 +5,7 @@ Installation
 How to install
 ==============
 
-The Autosubmit code is in *PyPi* and git, the primary source for python packages.
+The Autosubmit code is hosted in Git, at the BSC GitLab public repository. The Autosubmit Python package is available through PyPI, the primary source for Python packages.
 
 - Pre-requisites: bash, python3, sqlite3, git-scm > 1.8.2, subversion, dialog, curl, python-tk(tkinter in centOS), graphviz >= 2.41, pip3
 
@@ -61,11 +61,17 @@ The sequence of instructions to install Autosubmit and its dependencies with pip
     # Check that we can execute autosubmit commands
     autosubmit -h
 
-    # Configure
+Now you can follow the following instructions to configure autosubmit at the user level and perform a quick test or jump to the detailed section.
+
+.. code-block:: bash
+
+    # Quick-configure ( user-level database)
     autosubmit configure
 
     # Install
     autosubmit install
+
+    # Quick-start
 
     # Get expid
     autosubmit expid -H "local" -d "Test exp in local."
@@ -88,10 +94,13 @@ The sequence of instructions to install Autosubmit and its dependencies with pip
     # run
     autosubmit run a000
 
+
 The sequence of instructions to install Autosubmit and its dependencies with conda.
 -----------------------------------------------------------------------------------
 
 .. warning:: The following instructions are for Ubuntu 20.04 LTS. The instructions may vary for other UNIX distributions.
+
+.. warning:: This procedure is still WIP. You can follow the process at #864. We strongly recommend using the pip procedure.
 
 .. code-block:: bash
 
@@ -110,7 +119,38 @@ The sequence of instructions to install Autosubmit and its dependencies with con
     conda activate autosubmit
     # Test autosubmit
     autosubmit -v
-    # Configure autosubmitrc and install the database as indicated in the installation instructions above this section
+
+Now you can follow the following instructions to configure autosubmit at the user level and perform a quick test or jump to the detailed section.
+
+.. code-block:: bash
+
+    # Quick-configure ( user-level database)
+    autosubmit configure
+
+    # Install
+    autosubmit install
+
+    # Quick-start
+    # Get expid
+    autosubmit expid -H "local" -d "Test exp in local."
+
+    # Create with
+    # Since it was a new install, the expid will be a000
+    autosubmit create a000
+
+    # In case you want to use a remote platform
+
+    # Generate a key pair for password-less ssh. PEM format is recommended as others can cause problems
+    ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM
+
+    # Copy the public key to the remote machine
+    ssh-copy-id -i ~/.ssh/id_rsa.pub user@remotehost
+
+    # Add your key to the ssh-agent ( if encrypted )
+    ssh-add ~/.ssh/id_rsa
+
+    # run
+    autosubmit run a000
 
 .. hint::
     After installing the Conda, you may need to close the terminal and re-open it so the installation takes effect.
@@ -121,13 +161,13 @@ How to configure Autosubmit
 
 There are two methods of configuring the Autosubmit main paths.
 
-``autosubmit configure`` is suited for a personal/single user who wants to test autosubmit in the scope of ``$HOME``. Will generate an ``$HOME/.autosubmit`` file that overrides the machine configuration.
+``autosubmit configure`` is suited for a personal/single user who wants to test autosubmit in the scope of ``$HOME``. It will generate an ``$HOME/.autosubmit`` file that overrides the machine configuration.
 Generate an ``autosubmitrc`` file in  ``/etc/autosubmitrc``, suited for a workgroup or production environment that wants to use Autosubmit in a shared database in a manner that multiple users can share and view others' experiments.
 
 .. important::  `.autosubmitrc` user level and user level precedes system configuration. `$HOME/.autosubmitrc > /etc/autosubmitrc`
 
 Quick Installation - Non-shared database (user level)
------------------------------------------------------
+------------------------------------------------------
 
 After the package installation, you have to configure at least the database and path for Autosubmit.
 
@@ -156,41 +196,29 @@ Additionally, it also provides the possibility of configuring an SMTP server and
 .. hint::
     The ``dialog`` (GUI) library is optional. Otherwise, the configuration parameters will be prompted (CLI). Use ``autosubmit configure -h`` to see all the allowed options.
 
-Database installation
-~~~~~~~~~~~~~~~~~~~~~
-
-You now have to install the Autosubmit database. To do so, execute  ``autosubmit install``.
-
-.. code-block:: bash
-
-    autosubmit install
-
-This command will generate a blank database in the specified configuration path.
-
 Example - Local - .autosubmitrc skeleton
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: ini
 
-	[database]
-	path = /home/dbeltran/autosubmit
-	filename = autosubmit.db
+   [database]
+   path = /home/dbeltran/autosubmit
+   filename = autosubmit.db
 
-	[local]
-	path = /home/dbeltran/autosubmit
+   [local]
+   path = /home/dbeltran/autosubmit
 
-	[globallogs]
-	path = /home/dbeltran/autosubmit/logs
+   [globallogs]
+   path = /home/dbeltran/autosubmit/logs
 
-	[structures]
-	path = /home/dbeltran/autosubmit/metadata/structures
+   [structures]
+   path = /home/dbeltran/autosubmit/metadata/structures
 
-	[historicdb]
-	path = /home/dbeltran/autosubmit/metadata/data
+   [historicdb]
+   path = /home/dbeltran/autosubmit/metadata/data
 
-	[historiclog]
-	path = /home/dbeltran/autosubmit/metadata/logs
-
+   [historiclog]
+   path = /home/dbeltran/autosubmit/metadata/logs
 
 
 Production environment installation - Shared-Filesystem database
@@ -213,7 +241,7 @@ Mandatory parameters of /etc/autosubmit
     # Experiment database name can be whatever.
     filename = autosubmit.db
 
-    # Accesible for all users of the filesystem, can be the same as    database_path
+    # Accesible for all users of the filesystem, can be the same as database_path
     [local]
     path = <experiment_path>
 
@@ -233,14 +261,14 @@ The following parameters are the autosubmit metadata, it is not mandatory, but i
 
 .. code-block:: ini
 
-	[structures]
-	path = /home/dbeltran/autosubmit/metadata/structures
+   [structures]
+   path = /home/dbeltran/autosubmit/metadata/structures
 
-	[historicdb]
-	path = /home/dbeltran/autosubmit/metadata/data
+   [historicdb]
+   path = /home/dbeltran/autosubmit/metadata/data
 
-	[historiclog]
-	path = /home/dbeltran/autosubmit/metadata/logs
+   [historiclog]
+   path = /home/dbeltran/autosubmit/metadata/logs
 
 Optional parameters of /etc/autosubmit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -272,45 +300,34 @@ From 3.14+ onwards, the users can tailor autosubmit commands to run on specific 
 * authorized =  [<command1,commandN> <machine1,machineN>] list of machines that can run given autosubmit commands. If the list is empty, all machines are allowed.
 * forbidden =   [<command1,commandN> <machine1,machineN>] list of machines that cannot run given autosubmit commands. If the list is empty, no machine is forbidden.
 
-Database installation
-~~~~~~~~~~~~~~~~~~~~~
-
-You now have to install the Autosubmit database. To do so, execute  ``autosubmit install``.
-
-.. code-block:: bash
-
-    autosubmit install
-
-This command will generate a blank database in the specified configuration path.
-
 Example - BSC - /etc/autosubmitrc skeleton
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: ini
 
-	[database]
-	path = /esarchive/autosubmit
-	filename = ecearth.db
+   [database]
+   path = /esarchive/autosubmit
+   filename = ecearth.db
 
-	[local]
-	path = /esarchive/autosubmit
+   [local]
+   path = /esarchive/autosubmit
 
-	[conf]
-	jobs = /esarchive/autosubmit/default
-	platforms = /esarchive/autosubmit/default
+   [conf]
+   jobs = /esarchive/autosubmit/default
+   platforms = /esarchive/autosubmit/default
 
-	[mail]
-	smtp_server = mail.bsc.es
-	mail_from = automail@bsc.es
+   [mail]
+   smtp_server = mail.bsc.es
+   mail_from = automail@bsc.es
 
-	[hosts]
+   [hosts]
         authorized =  [run bscearth000,bscesautosubmit01,bscesautosubmit02] [stats, clean, describe, check, report,dbfix,pklfix, upgrade,updateversion all]
         forbidden =  [expìd, create, recovery, delete, inspect, monitor, recovery, migrate, configure,setstatus,testcase, test, refresh, archive, unarchive bscearth000,bscesautosubmit01,bscesautosubmit02]
 
 Experiments database installation
 =================================
 
-As a last step, ensure to install the Autosubmit database. To do so, execute  ``autosubmit install``.
+As the last step, ensure to install the Autosubmit database. To do so, execute  ``autosubmit install``.
 
 .. code-block:: bash
 
