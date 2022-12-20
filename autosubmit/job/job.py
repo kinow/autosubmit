@@ -155,6 +155,7 @@ class Job(object):
         self.running = "once"
         self.start_time = None
         self.edge_info = dict()
+        self.partition = ""
 
 
     def __getstate__(self):
@@ -1343,8 +1344,10 @@ class Job(object):
                 additional_template_content = re.sub('%(?<!%%)' + variable + '%(?!%%)', '', additional_template_content,flags=re.I)
 
             additional_template_content = additional_template_content.replace("%%", "%")
-            open(os.path.join(self._tmp_path, os.path.splitext(self.additional_files[file_n])[0]), 'wb').write(additional_template_content.encode(lang))
-
+            try:
+                open(os.path.join(self._tmp_path, os.path.splitext(self.additional_files[file_n])[0]), 'wb').write(additional_template_content.encode(lang))
+            except:
+                pass
         for key, value in parameters.items():
             template_content = re.sub(
                 '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,flags=re.I)
@@ -1395,7 +1398,6 @@ class Job(object):
         parameters = self.update_parameters(as_conf, parameters)
         template_content,additional_templates = self.update_content(as_conf)
         if template_content is not False:
-
             variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template_content)
             variables = [variable[1:-1] for variable in variables]
             variables = [variable for variable in variables if variable not in self.default_parameters]

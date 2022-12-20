@@ -167,7 +167,7 @@ class TestJob(TestCase):
 
         self.job._tmp_path = '/dummy/tmp/path'
 
-        update_content_mock = Mock(return_value='some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK% %% %%')
+        update_content_mock = Mock(return_value=('some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK% %% %%','some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK% %% %%'))
         self.job.update_content = update_content_mock
 
         config = Mock(spec=AutosubmitConfig)
@@ -184,14 +184,14 @@ class TestJob(TestCase):
         # assert
         update_content_mock.assert_called_with(config)
         open_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 'wb')
-        write_mock.write.assert_called_with(b'some-content: 999, 777, 666 % %')
+        write_mock.write.assert_called_with(b'some-content: 999, 777, 666 % %some-content: 999, 777, 666 % %')
         chmod_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 0o755)
 
     def test_that_check_script_returns_false_when_there_is_an_unbound_template_variable(self):
         # arrange
-        update_content_mock = Mock(return_value='some-content: %UNBOUND%')
+        update_content_mock = Mock(return_value=('some-content: %UNBOUND%','some-content: %UNBOUND%'))
         self.job.update_content = update_content_mock
-
+        #template_content = update_content_mock
         update_parameters_mock = Mock(return_value=self.job.parameters)
         self.job.update_parameters = update_parameters_mock
 
@@ -213,7 +213,7 @@ class TestJob(TestCase):
         self.job.parameters['NUMTHREADS'] = 777
         self.job.parameters['NUMTASK'] = 666
 
-        update_content_mock = Mock(return_value='some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK%')
+        update_content_mock = Mock(return_value=('some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK%','some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK%'))
         #todo
         self.job.update_content = update_content_mock
 
