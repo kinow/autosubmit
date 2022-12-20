@@ -13,7 +13,7 @@ Mayor mentions:
  - All parameters, except for job related ones, have now an hierarchy.
  - An special key, FOR:, has been added. This key allows to create multiple jobs with almost the same configuration.
  - The configuration of autosubmit is now more flexible.
-- New command added, updateproj. This command will update all the scripts and autosubmit configuration.
+- New command added, upgrade. This command will update all the scripts and autosubmit configuration.
 - Wrapper definition has changed.
 - Tasks dependencies system has changed.
 - Added the parameter DELETE_WHEN_EDGELESS ( boolean ) to the section JOBS. This parameter allows to delete a job when it has no edges. ( default TRUE)
@@ -28,9 +28,9 @@ Mayor mentions:
     The tasks dependencies system has changed. Please, check the new tasks dependencies system.
 
 .. warning::
-    edgeless jobs are now deleted by default. Please, check the new parameter DELETE_WHEN_EDGELESS.
+    Edgeless jobs are now deleted by default. Please, check the new parameter DELETE_WHEN_EDGELESS.
 
-.. warning:: updateproj may not translate all the scripts, we recommend to revise your scripts before run AS.
+.. warning:: upgrade may not translate all the scripts, we recommend to revise your scripts before run AS.
 
 Configuration changes
 =====================
@@ -38,7 +38,7 @@ Configuration changes
 Now autosubmit is composed by two kind of YAML configurations, the default ones, which are the same as always, and the custom ones.
 
 The custom ones, allows to define custom configurations that will override the default ones, in order to do this, you only have to put the key in the custom configuration file.
-These custom ones, can be anywhere and have any name, by default they're inside `<expid>/conf` but you can change this path in the expdef.yml file. `DEFAULT.CUSTOM_CONFIG_DIR`
+These custom ones, can be anywhere and have any name, by default they're inside `<expid>/conf` but you can change this path in the expdef.yml file. `DEFAULT.CUSTOM_CONFIG`
 
 Additionally, you must be aware of the following changes:
 
@@ -86,7 +86,7 @@ Configuration
         DEFAULT:
           EXPID: a02u
           HPCARCH: local
-          CUSTOM_CONFIG_DIR: %ROOTDIR%/conf/custom_conf
+          CUSTOM_CONFIG: %ROOTDIR%/conf/custom_conf
         experiment:
           DATELIST: '20210811'
           MEMBERS: CompilationEfficiency HardwareBenchmarks WeakScaling StrongScaling
