@@ -298,7 +298,7 @@ Example - BSC - /etc/autosubmitrc skeleton
         forbidden =  [expìd, create, recovery, delete, inspect, monitor, recovery, migrate, configure,setstatus,testcase, test, refresh, archive, unarchive bscearth000,bscesautosubmit01,bscesautosubmit02]
 
 Experiments database installation
----------------------------------
+=================================
 
 As a last step, ensure to install the Autosubmit database. To do so, execute  ``autosubmit install``.
 
