@@ -103,7 +103,7 @@ The expid command can copy another user's existing expid to work correctly.
    autosubmit_a001.yml  expdef_a001.yml  platforms_a001.yml
     jobs_a001.yml    proj_a001.yml
 
-.. warning:: You must share the same Autosubmit experiment database for this to work. :ref:`Shared-Filesystem`.
+.. warning:: You must share the same Autosubmit experiment database for this to work.
 
 Advanced Configuration
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -122,7 +122,7 @@ The advanced configuration is activated when the user sets the `DEFAULT.CUSTOM_C
    cd $autosubmit_experiment_folder/a002
    ls conf
    autosubmit_a01y.yml  expdef_a01y.yml  platforms_a01y.yml
-        jobs_a01y.yml    proj_a01y.yml
+   jobs_a01y.yml    proj_a01y.yml
 
 To give a practical example, we will show an example using git. However, using a non-git folder is also possible.
 
@@ -130,35 +130,35 @@ Edit `expdef_a01y.yml` and change only the following parameters, leaving the res
 
 .. code-block:: yaml
 
-   DEFAULT:
-      #ADD, note that %ROOTDIR% is an special AS_PLACEHOLDER that points to the expid folder.
-      #Syntax: <model-specific_configuration_folder_path>,<user-file>,<user-file2_path>
-      CUSTOM_CONFIG: %ROOTDIR%/proj/git_project/<path_to_as_conf>,<user_platforms_path>
-   PROJECT:
-      #CHANGE
-      PROJECT_TYPE: "git"
-                #CHANGE  note that custom_config is pointing to the same name as this parameter
-      PROJECT_DESTINATION: "git_project"
-   GIT:
-      #CHANGE
-      PROJECT_ORIGIN: "TO_FILL"
-      #CHANGE
-      PROJECT_BRANCH: "TO_FILL"
-      #CHANGE
-      PROJECT_COMMIT: "TO_FILL"
-      #CHANGE
-      PROJECT_SUBMODULES: "TO_FILL"
-      #CHANGE
-      FETCH_SINGLE_BRANCH: True
+    DEFAULT:
+        #ADD, note that %ROOTDIR% is an special AS_PLACEHOLDER that points to the expid folder.
+        #Syntax: <model-specific_configuration_folder_path>,<user-file>,<user-file2_path>
+        CUSTOM_CONFIG: %ROOTDIR%/proj/git_project/<path_to_as_conf>,<user_platforms_path>
+    PROJECT:
+        #CHANGE
+        PROJECT_TYPE: "git"
+        #CHANGE  note that custom_config is pointing to the same name as this parameter
+        PROJECT_DESTINATION: "git_project"
+    GIT:
+        #CHANGE
+        PROJECT_ORIGIN: "TO_FILL"
+        #CHANGE
+        PROJECT_BRANCH: "TO_FILL"
+        #CHANGE
+        PROJECT_COMMIT: "TO_FILL"
+        #CHANGE
+        PROJECT_SUBMODULES: "TO_FILL"
+        #CHANGE
+        FETCH_SINGLE_BRANCH: True
 
-.. code_block: bash
+.. code-block:: yaml
 
    # Download the git project
    autosubmit refresh a002
 
-.. warning: Keep in mind the parameter overwriting mechanism priority, CUSTOM_CONFIG_USER_FILES > CUSTOM_CONFIG_FOLDER > $EXPID/conf
+.. warning:: Keep in mind the parameter overwriting mechanism priority, CUSTOM_CONFIG_USER_FILES > CUSTOM_CONFIG_FOLDER > $EXPID/conf
 
-.. warning: Keep in mind that no parameters are disabled when custom_config is activated, including the jobs definitions.
+.. warning:: Keep in mind that no parameters are disabled when custom_config is activated, including the jobs definitions.
 
 Sharing an advanced configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
