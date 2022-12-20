@@ -15,7 +15,7 @@ This document will teach you how to set up an experiment configuration using the
 Standard configuration structure
 ---------------------------------
 
-The following table summarizes what configuration files autosubmit expects and what parameters you can define there.
+The following table summarizes what configuration files Autosubmit expects and what parameters you can define there.
 
 .. list-table::
     :header-rows: 1
@@ -43,11 +43,11 @@ The following table summarizes what configuration files autosubmit expects and w
       -
         - This file contains the definitions that impact the workflow behavior.
         - It changes workflow behavior with parameters such as job limitations, remote_dependendies and retrials.
-        - It extends autosubmit functionalities with parameters such as wrappers and mail notifications.
+        - It extends Autosubmit functionalities with parameters such as wrappers and mail notifications.
     * - ``proj.yml``
       -
         - This file contains the configuration used by the user scripts.
-        - This file is fully customizable for the current experiment. Allows setting user- parameters that will be readable by the autosubmit jobs.
+        - This file is fully customizable for the current experiment. Allows setting user- parameters that will be readable by the Autosubmit jobs.
 
 It is worth mentioning that for Autosubmit4, these files are seen one.
 
@@ -76,7 +76,7 @@ This section contains examples of setting a standard configuration and an advanc
 Standard Configuration
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The expid command can generate a sample structure containing all the parameters that autosubmit needs to work correctly.
+The expid command can generate a sample structure containing all the parameters that Autosubmit needs to work correctly.
 
 .. code-block:: bash
 
@@ -108,7 +108,7 @@ The expid command can copy another user's existing expid to work correctly.
 Advanced Configuration
 ~~~~~~~~~~~~~~~~~~~~~~
 
-The expid command can generate a sample structure containing all the parameters that autosubmit needs to work, but by default, it doesn't contemplate the advanced configuration.
+The expid command can generate a sample structure containing all the parameters that Autosubmit needs to work, but by default, it doesn't contemplate the advanced configuration.
 
 The advanced configuration is activated when the user sets the `DEFAULT.CUSTOM_CONFIG` parameter inside the `expdef.yml` file.
 
