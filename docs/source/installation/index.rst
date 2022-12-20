@@ -189,15 +189,15 @@ These parameters provide extra functionalities to Autosubmit.
 
     # Used for controlling the traffic that comes from Autosubmit.
     [hosts]
-    authorized:  [<command1,commandN> <machine1,machineN>]
-    forbidden:    [<command1,commandN> <machine1,machineN>]
+    authorized =  [<command1,commandN> <machine1,machineN>]
+    forbidden =   [<command1,commandN> <machine1,machineN>]
 
 About hosts parameters:
 
 From 3.14+ onwards, the users can tailor autosubmit commands to run on specific machines. Previously, only the run was affected by the deprecated whitelist parameter.
 
-* authorized: [<command1,commandN> <machine1,machineN>] list of machines that can run given autosubmit commands. If the list is empty, all machines are allowed.
-* forbidden:  [<command1,commandN> <machine1,machineN>] list of machines that cannot run given autosubmit commands. If the list is empty, no machine is forbidden.
+* authorized =  [<command1,commandN> <machine1,machineN>] list of machines that can run given autosubmit commands. If the list is empty, all machines are allowed.
+* forbidden =   [<command1,commandN> <machine1,machineN>] list of machines that cannot run given autosubmit commands. If the list is empty, no machine is forbidden.
 
 
 EXAMPLE - BSC - /etc/autosubmitrc skeleton
