@@ -100,7 +100,7 @@ The sequence of instructions to install Autosubmit and its dependencies with con
 
 .. warning:: The following instructions are for Ubuntu 20.04 LTS. The instructions may vary for other UNIX distributions.
 
-.. warning:: This procedure is still WIP. You can follow the process at `issue #886 <https://earth.bsc.es/gitlab/es/autosubmit/-/issues/886>`_. We strongly recommend using the pip procedure.
+.. warning:: This procedure is still WIP. You can follow the process at `issue #864 <https://earth.bsc.es/gitlab/es/autosubmit/-/issues/886>`_. We strongly recommend using the pip procedure.
 
 .. code-block:: bash
 
