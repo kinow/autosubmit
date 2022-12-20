@@ -116,8 +116,8 @@ The sequence of instructions to install Autosubmit and its dependencies with con
     After installing the Conda, you may need to close the terminal and re-open it so the installation takes effect.
 
 
-How to configure Autosubmit and install the experiment database
-===============================================================
+How to configure Autosubmit
+===========================
 
 There are two methods of configuring the Autosubmit main paths.
 
@@ -126,9 +126,8 @@ Generate an ``autosubmitrc`` file in  ``/etc/autosubmitrc``, suited for a workgr
 
 .. important::  `.autosubmitrc` user level and user level precedes system configuration. `$HOME/.autosubmitrc > /etc/autosubmitrc`
 
-
-Quick Installation - Single-user case
--------------------------------------
+Quick Installation - Non-shared database (user level)
+-----------------------------------------------------
 
 After the package installation, you have to configure at least the database and path for Autosubmit.
 
@@ -139,8 +138,6 @@ To use the default settings, create a directory called ``autosubmit`` in your ho
     autosubmit configure
 
 ``autosubmit generate`` will always generate a file called ``.autosubmitrc`` in your ``$HOME``.
-
-
 
 You can add ``--advanced`` to the configure command for advanced options.
 
@@ -244,7 +241,6 @@ These parameters provide extra functionalities to Autosubmit.
     # Allows using a different platforms.yml default template on `autosubmit expid `
     platforms = <path_platforms>platforms.yml> path to any jobs.yml
 
-
     # Autosubmit API includes extra information for some Autosubmit functions. It is optional to have access to it to use Autosubmit.
     [autosubmitapi]
     # Autosubmit API (The API is right now only provided inside the BSC network), which enables extra features for the Autosubmit GUI
@@ -264,6 +260,7 @@ From 3.14+ onwards, the users can tailor autosubmit commands to run on specific 
 
 Database installation
 ~~~~~~~~~~~~~~~~~~~~~
+
 You now have to install the Autosubmit database. To do so, execute  ``autosubmit install``.
 
 .. code-block:: bash
@@ -271,7 +268,6 @@ You now have to install the Autosubmit database. To do so, execute  ``autosubmit
     autosubmit install
 
 This command will generate a blank database in the specified configuration path.
-
 
 Example - BSC - /etc/autosubmitrc skeleton
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
