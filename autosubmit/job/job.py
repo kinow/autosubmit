@@ -1335,7 +1335,7 @@ class Job(object):
         template_content,additional_templates = self.update_content(as_conf)
         #enumerate and get value
 
-
+        #todo revise pipeline that check this, additional templates value is not Mocked well
         for file_n,additional_template_content in enumerate(additional_templates):
             template_content += additional_template_content
             for key, value in parameters.items():
