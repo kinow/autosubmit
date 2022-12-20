@@ -106,8 +106,7 @@ Example - Local - .autosubmitrc skeleton
 
 
 Production environment installation - Shared-Filesystem database
-================================================================
-
+----------------------------------------------------------------
 .. warning:: Keep in mind the .autosubmitrc precedence. If you, as a user, have a .autosubmitrc generated in the quick-installation, you have to delete or rename it before using the production environment installation.
 
 Configuration
