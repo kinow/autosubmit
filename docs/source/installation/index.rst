@@ -39,7 +39,7 @@ Or download, unpack and:
     To see the changelog, use ``autosubmit changelog``
 
 How to configure and install Autosubmit
-=============================
+=======================================
 
 There are two methods of configuring the Autosubmit main paths.
 
@@ -50,7 +50,7 @@ Generate an ``autosubmitrc`` file in  ``/etc/autosubmitrc``, suited for a workgr
 
 
 Quick Installation - Single-user case
---------------------------------------
+-------------------------------------
 
 After the package installation, you have to configure at least the database and path for Autosubmit.
 
@@ -81,18 +81,8 @@ Additionally, it also provides the possibility of configuring an SMTP server and
 .. hint::
     The ``dialog`` (GUI) library is optional. Otherwise, the configuration parameters will be prompted (CLI). Use ``autosubmit configure -h`` to see all the allowed options.
 
-Database installation
-----------------------
-You now have to install the Autosubmit database. To do so, execute  ``autosubmit install``.
-
-.. code-block:: bash
-
-    autosubmit install
-
-This command will generate a blank database in the specified configuration path.
-
-EXAMPLE - LOCAL - .autosubmitrc skeleton
----------------------------------------------
+Example - LOCAL - .autosubmitrc skeleton
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: ini
 
@@ -117,7 +107,7 @@ EXAMPLE - LOCAL - .autosubmitrc skeleton
 
 
 Production environment installation - Shared-Filesystem database
-================================================
+================================================================
 
 .. warning:: Keep in mind the .autosubmitrc precedence. If you, as a user, have a .autosubmitrc generated in the quick-installation, you have to delete or rename it before using the production environment installation.
 
@@ -169,7 +159,7 @@ The following parameters are the autosubmit metadata, it is not mandatory, but i
 
 
 Optional parameters of /etc/autosubmit
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 These parameters provide extra functionalities to Autosubmit.
 
@@ -199,9 +189,19 @@ From 3.14+ onwards, the users can tailor autosubmit commands to run on specific 
 * authorized =  [<command1,commandN> <machine1,machineN>] list of machines that can run given autosubmit commands. If the list is empty, all machines are allowed.
 * forbidden =   [<command1,commandN> <machine1,machineN>] list of machines that cannot run given autosubmit commands. If the list is empty, no machine is forbidden.
 
+Database installation
+~~~~~~~~~~~~~~~~~~~~~
+You now have to install the Autosubmit database. To do so, execute  ``autosubmit install``.
 
-EXAMPLE - BSC - /etc/autosubmitrc skeleton
-----------------------------------------------
+.. code-block:: bash
+
+    autosubmit install
+
+This command will generate a blank database in the specified configuration path.
+
+
+Example - BSC - /etc/autosubmitrc skeleton
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: ini
 
@@ -223,6 +223,18 @@ EXAMPLE - BSC - /etc/autosubmitrc skeleton
 	[hosts]
         authorized =  [run bscearth000,bscesautosubmit01,bscesautosubmit02] [stats, clean, describe, check, report,dbfix,pklfix, upgrade,updateversion all]
         forbidden =  [expìd, create, recovery, delete, inspect, monitor, recovery, migrate, configure,setstatus,testcase, test, refresh, archive, unarchive bscearth000,bscesautosubmit01,bscesautosubmit02]
+
+Database installation
+~~~~~~~~~~~~~~~~~~~~~
+
+You now have to install the Autosubmit database. To do so, execute  ``autosubmit install``.
+
+.. code-block:: bash
+
+    autosubmit install
+
+This command will generate a blank database in the specified configuration path.
+
 
 The sequence of instructions to install Autosubmit and its dependencies in Ubuntu.
 ------------------------------------------------------------------------------
