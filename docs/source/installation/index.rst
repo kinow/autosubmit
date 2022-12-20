@@ -156,6 +156,17 @@ Additionally, it also provides the possibility of configuring an SMTP server and
 .. hint::
     The ``dialog`` (GUI) library is optional. Otherwise, the configuration parameters will be prompted (CLI). Use ``autosubmit configure -h`` to see all the allowed options.
 
+Database installation
+~~~~~~~~~~~~~~~~~~~~~
+
+You now have to install the Autosubmit database. To do so, execute  ``autosubmit install``.
+
+.. code-block:: bash
+
+    autosubmit install
+
+This command will generate a blank database in the specified configuration path.
+
 Example - Local - .autosubmitrc skeleton
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
