@@ -4,11 +4,11 @@ Configuration details, setup and sharing
 Experiment configuration
 ------------------------
 
-Since the beginning, Autosubmit has always been composed of five files in the folder ``<expid>/conf that define the experiment configuration.
+Since the beginning, Autosubmit has always been composed of five files in the folder ``$expid/conf`` that define the experiment configuration.
 
 However, from Autosubmit v4.00.0, the configuration is no longer bound to one specific location.
 
-Autosubmit v4.00.0 configuration must be composed of yml files.
+Autosubmit v4.00.0 configuration is composed of yml files.
 
 This document will teach you how to set up an experiment configuration using the different available methods and what Autosubmit expects to find in the configuration.
 
@@ -54,7 +54,7 @@ It is worth mentioning that for Autosubmit4, these files are seen one.
 Advanced configuration structure and restrictions
 -------------------------------------------------
 
-From Autosubmit4, the configuration structure can be split into multiple locations and different files. This advanced configuration has a priority system in which user-specific parameters overwrite the project-specific parameters, and they overwrite the experiment-specific ones.
+From Autosubmit4, the configuration structure can be split into multiple locations and different files. This advanced configuration has a priority system in which user-specific parameters override the project-specific parameters, and they overwrite the experiment-specific ones.
 
 Also, this configuration is seen as one, meaning that the overwriting is per parameter, not file.
 
@@ -66,7 +66,7 @@ There are a few restrictions:
 
 * `$EXPID/conf/expdef.yml` and `$EXPID/conf/autosubmit.yml` files must exist. The reason is that some parameters need to exist as a pre-step for the merging.
 
-* The user has to define the `CONFIG_DIR` parameter under the `DEFAULT` section, located in `$EXPID/conf/expdef.yml`.
+* When the `CONFIG_DIR` parameter is not defined, the user must define it under the `DEFAULT` section, located in `$EXPID/conf/expdef.yml`.
 
 How to set and share the configuration
 --------------------------------------
@@ -80,12 +80,12 @@ The expid command can generate a sample structure containing all the parameters 
 
 .. code-block:: bash
 
-	#Create a new experiment.
-	autosubmit expid  -H "LOCAL" -d "Standard configuration."
-	# Get the expid from the output. Ex. expid=a000
-	cd $autosubmit_experiment_folder/a000
-	ls conf
-	autosubmit_a01y.yml  expdef_a01y.yml  platforms_a01y.yml
+   #Create a new experiment.
+   autosubmit expid  -H "LOCAL" -d "Standard configuration."
+   # Get the expid from the output. Ex. expid=a000
+   cd $autosubmit_experiment_folder/a000
+   ls conf
+   autosubmit_a01y.yml  expdef_a01y.yml  platforms_a01y.yml
         jobs_a01y.yml    proj_a01y.yml
 
 Sharing a standard Configuration
@@ -95,15 +95,15 @@ The expid command can copy another user's existing expid to work correctly.
 
 .. code-block:: bash
 
-	#Create a new experiment.
-	autosubmit expid  --copy a000 -H "LOCAL" -d "Standard configuration. --copy of a000"
-	# Get the expid from the output. Ex. expid=a001
-	cd $autosubmit_experiment_folder/a001
-	ls conf
-	autosubmit_a001.yml  expdef_a001.yml  platforms_a001.yml
+   #Create a new experiment.
+   autosubmit expid  --copy a000 -H "LOCAL" -d "Standard configuration. --copy of a000"
+   # Get the expid from the output. Ex. expid=a001
+   cd $autosubmit_experiment_folder/a001
+   ls conf
+   autosubmit_a001.yml  expdef_a001.yml  platforms_a001.yml
     jobs_a001.yml    proj_a001.yml
 
-.. warning:: you must share the same experiment autosubmit. DB for this to work.
+.. warning:: You must share the same Autosubmit experiment database for this to work. :ref:`Shared-Filesystem`.
 
 Advanced Configuration
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -116,12 +116,12 @@ The advanced configuration is activated when the user sets the `DEFAULT.CUSTOM_C
 
 .. code-block:: bash
 
-	#Create a new experiment.
-	autosubmit expid  -H "LOCAL" -d "Advanced configuration."
-	# Get the expid from the output. Ex. expid=a002
-	cd $autosubmit_experiment_folder/a002
-	ls conf
-	autosubmit_a01y.yml  expdef_a01y.yml  platforms_a01y.yml
+   #Create a new experiment.
+   autosubmit expid  -H "LOCAL" -d "Advanced configuration."
+   # Get the expid from the output. Ex. expid=a002
+   cd $autosubmit_experiment_folder/a002
+   ls conf
+   autosubmit_a01y.yml  expdef_a01y.yml  platforms_a01y.yml
         jobs_a01y.yml    proj_a01y.yml
 
 To give a practical example, we will show an example using git. However, using a non-git folder is also possible.
@@ -130,31 +130,31 @@ Edit `expdef_a01y.yml` and change only the following parameters, leaving the res
 
 .. code-block:: yaml
 
-	DEFAULT:
-		#ADD, note that %ROOTDIR% is an special AS_PLACEHOLDER that points to the expid folder.
-		#Syntax: <model-specific_configuration_folder_path>,<user-file>,<user-file2_path>
-  		CUSTOM_CONFIG: %ROOTDIR%/proj/git_project/<path_to_as_conf>,<user_platforms_path>
-	PROJECT:
-		#CHANGE
-  		PROJECT_TYPE: "git"
+   DEFAULT:
+      #ADD, note that %ROOTDIR% is an special AS_PLACEHOLDER that points to the expid folder.
+      #Syntax: <model-specific_configuration_folder_path>,<user-file>,<user-file2_path>
+      CUSTOM_CONFIG: %ROOTDIR%/proj/git_project/<path_to_as_conf>,<user_platforms_path>
+   PROJECT:
+      #CHANGE
+      PROJECT_TYPE: "git"
                 #CHANGE  note that custom_config is pointing to the same name as this parameter
-  		PROJECT_DESTINATION: "git_project"
-	GIT:
-		#CHANGE
-  		PROJECT_ORIGIN: "TO_FILL"
-		#CHANGE
-  		PROJECT_BRANCH: "TO_FILL"
-  		#CHANGE
-		PROJECT_COMMIT: "TO_FILL"
-  		#CHANGE
-		PROJECT_SUBMODULES: "TO_FILL"
-  		#CHANGE
-		FETCH_SINGLE_BRANCH: True
+      PROJECT_DESTINATION: "git_project"
+   GIT:
+      #CHANGE
+      PROJECT_ORIGIN: "TO_FILL"
+      #CHANGE
+      PROJECT_BRANCH: "TO_FILL"
+      #CHANGE
+      PROJECT_COMMIT: "TO_FILL"
+      #CHANGE
+      PROJECT_SUBMODULES: "TO_FILL"
+      #CHANGE
+      FETCH_SINGLE_BRANCH: True
 
 .. code_block: bash
 
-	# Download the git project
-	autosubmit refresh a002
+   # Download the git project
+   autosubmit refresh a002
 
 .. warning: Keep in mind the parameter overwriting mechanism priority, CUSTOM_CONFIG_USER_FILES > CUSTOM_CONFIG_FOLDER > $EXPID/conf
 
@@ -167,12 +167,12 @@ The expid command can copy another user's existing expid to work correctly.
 
 .. code-block:: bash
 
-	#Create a new experiment.
-	autosubmit expid  --copy a002 -H "LOCAL" -d "Advanced configuration. --copy of a002"
-	# Get the expid from the output. Ex. expid=a004
-	cd $autosubmit_experiment_folder/a004
-	ls conf
-	autosubmit_a004.yml  expdef_a004.yml  platforms_a004.yml
+   #Create a new experiment.
+   autosubmit expid  --copy a002 -H "LOCAL" -d "Advanced configuration. --copy of a002"
+   # Get the expid from the output. Ex. expid=a004
+   cd $autosubmit_experiment_folder/a004
+   ls conf
+   autosubmit_a004.yml  expdef_a004.yml  platforms_a004.yml
     jobs_a004.yml    proj_a004.yml
 
 .. warning:: All users must share the same experiment autosubmit.db for this to work.
