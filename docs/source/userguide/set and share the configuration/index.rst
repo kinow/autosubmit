@@ -147,6 +147,9 @@ Edit `expdef_a002.yml` and change only the following parameters, leaving the res
         #CHANGE
         FETCH_SINGLE_BRANCH: True
 
+.. note:: The `CUSTOM_CONFIG` parameter is a list of paths separated by ",". The first path is the model-specific configuration folder. The rest of the paths are the user-specific configuration files.
+.. note:: To only use user-specific configuration files, leave the first path empty. Ex. `CUSTOM_CONFIG: ",<user-file>"`
+
 .. code-block:: yaml
 
    # Download the git project
@@ -175,7 +178,7 @@ Advanced configuration - Full dummy example (reproducible)
 .. code-block:: yaml
 
 	CONFIG:
-  		AUTOSUBMIT_VERSION: 4.0.0
+      AUTOSUBMIT_VERSION: 4.0.0
 
 .. code-block:: bash
 
