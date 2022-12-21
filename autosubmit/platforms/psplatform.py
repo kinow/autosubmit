@@ -118,7 +118,6 @@ class PsPlatform(ParamikoPlatform):
             except Exception as e:
                 pass
             self.send_command(self.mkdir_checker)
-            pass
             self.send_command(self.remove_checker)
             return True
         except Exception as e:
