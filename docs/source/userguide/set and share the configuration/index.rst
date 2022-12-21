@@ -177,8 +177,8 @@ Advanced configuration - Full dummy example (reproducible)
 
 .. code-block:: yaml
 
-	CONFIG:
-      AUTOSUBMIT_VERSION: 4.0.0
+    CONFIG:
+        AUTOSUBMIT_VERSION: 4.0.0
 
 .. code-block:: bash
 
