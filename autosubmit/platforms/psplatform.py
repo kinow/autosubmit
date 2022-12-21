@@ -110,6 +110,7 @@ class PsPlatform(ParamikoPlatform):
     def check_Alljobs(self, job_list, as_conf, retries=5):
         for job,prev_status in job_list:
             self.check_job(job)
+
     def check_remote_permissions(self):
         try:
             try:
