@@ -82,13 +82,13 @@ class ParamikoSubmitter(Submitter):
         platforms_used.append(hpcarch)
 
         # Traverse jobs defined in jobs_.conf and add platforms found if not already included
-        jobs_data = exp_data['JOBS']
+        jobs_data = exp_data.get('JOBS', {})
         for job in jobs_data:
             hpc = jobs_data[job].get('PLATFORM', hpcarch).upper()
             if hpc not in platforms_used:
                 platforms_used.append(hpc)
 
-        platform_data = exp_data['PLATFORMS']
+        platform_data = exp_data.get('PLATFORMS', {})
         # Declare platforms dictionary, key: Platform Name, Value: Platform Object
         platforms = dict()
 
