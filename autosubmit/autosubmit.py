@@ -4431,7 +4431,7 @@ class Autosubmit:
                         "Preparing .lock file to avoid multiple instances with same expid.")
 
                     as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-                    as_conf.check_conf_files(False)
+                    as_conf.check_conf_files(True)
 
                     project_type = as_conf.get_project_type()
                     # Getting output type provided by the user in config, 'pdf' as default
