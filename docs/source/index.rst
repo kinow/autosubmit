@@ -43,6 +43,13 @@ Welcome to autosubmit's documentation!
    /userguide/set and share the configuration/index
 
 .. toctree::
+   :caption: Database Documentation
+   :maxdepth: 1
+   :hidden:
+
+   /database/index
+
+.. toctree::
    :caption: Developer Guide
    :maxdepth: 1
    :hidden:
