@@ -19,6 +19,7 @@ Welcome to autosubmit's documentation!
    :hidden:
 
    /qstartguide/index
+   /devguide/index
 
 .. toctree::
    :caption: Installation

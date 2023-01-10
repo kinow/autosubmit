@@ -55,13 +55,13 @@ The sequence of instructions to install Autosubmit and its dependencies with pip
     # Additional dependencies related with pycrypto
     apt install build-essential libssl-dev libffi-dev -y -q
 
-    # Install autosubmit using pip
+    # Install Autosubmit using pip
     pip3 install autosubmit
 
     # Check that we can execute autosubmit commands
     autosubmit -h
 
-Now you can follow the following instructions to configure autosubmit at the user level and perform a quick test or jump to the detailed section.
+For a very quick test, you can follow the next instructions to configure and run Autosubmit at the user level. Otherwise, please go directly to `How to configure Autosubmit <https://autosubmit.readthedocs.io/en/master/installation/index.html#how-to-configure-autosubmit>`_ .
 
 .. code-block:: bash
 
@@ -120,7 +120,7 @@ The sequence of instructions to install Autosubmit and its dependencies with con
     # Test autosubmit
     autosubmit -v
 
-Now you can follow the following instructions to configure autosubmit at the user level and perform a quick test or jump to the detailed section.
+For a very quick test, you can follow the next instructions to configure and run Autosubmit at the user level. Otherwise, please go directly to `How to configure Autosubmit <https://autosubmit.readthedocs.io/en/master/installation/index.html#how-to-configure-autosubmit>`_
 
 .. code-block:: bash
 
@@ -161,8 +161,9 @@ How to configure Autosubmit
 
 There are two methods of configuring the Autosubmit main paths.
 
-``autosubmit configure`` is suited for a personal/single user who wants to test autosubmit in the scope of ``$HOME``. It will generate an ``$HOME/.autosubmit`` file that overrides the machine configuration.
-Generate an ``autosubmitrc`` file in  ``/etc/autosubmitrc``, suited for a workgroup or production environment that wants to use Autosubmit in a shared database in a manner that multiple users can share and view others' experiments.
+* ``autosubmit configure`` is suited for a personal/single user who wants to test Autosubmit in the scope of ``$HOME``. It will generate an ``$HOME/.autosubmitrc`` file that overrides the machine configuration.
+
+* Manually generate an ``autosubmitrc`` file in  ``/etc/autosubmitrc``, suited for a workgroup or production environment that wants to use Autosubmit in a shared database in a manner that multiple users can share and view others' experiments.
 
 .. important::  `.autosubmitrc` user level and user level precedes system configuration. `$HOME/.autosubmitrc > /etc/autosubmitrc`
 
@@ -171,7 +172,7 @@ Quick Installation - Non-shared database (user level)
 
 After the package installation, you have to configure at least the database and path for Autosubmit.
 
-To use the default settings, create a directory called ``autosubmit`` in your home directory before running the ``configure`` command.
+To use the default settings, create a directory called ``autosubmit`` (``mkdir $HOME/autosubmit``) in your home directory before running the ``configure`` command.
 
 ::
 
@@ -187,9 +188,9 @@ You can add ``--advanced`` to the configure command for advanced options.
 
 It will allow you to choose different directories:
 
-* Experiments path and database name ``$HOME/autosubmit/`` and ``$HOME/autosubmit/autosubmit.db``
-* Global logs path which are the ones no belongs to any experiment. # Default, experiment path  ``$HOME/autosubmit/logs``
-* Autosubmit metadata # default,  ``$HOME/autosubmit/metadata/``
+* Experiments path and database name ( ``$HOME/autosubmit/`` by default ) and database name ( ``$HOME/autosubmit/autosubmit.db``  by default )
+* Path for the global logs (those not belonging to any experiment). Default is ``$HOME/autosubmit/logs``.
+* Autosubmit metadata. Default is ``$HOME/autosubmit/metadata/``
 
 Additionally, it also provides the possibility of configuring an SMTP server and an email account to use the email notifications feature.
 
@@ -257,7 +258,7 @@ Mandatory parameters of /etc/autosubmit
 Recommendable parameters of /etc/autosubmit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following parameters are the autosubmit metadata, it is not mandatory, but it is recommendable to have them set up as some of them can positively affect the Autosubmit performance.
+The following parameters are the Autosubmit metadata, it is not mandatory, but it is recommendable to have them set up as some of them can positively affect the Autosubmit performance.
 
 .. code-block:: ini
 
@@ -295,7 +296,7 @@ These parameters provide extra functionalities to Autosubmit.
 
 About hosts parameters:
 
-From 3.14+ onwards, the users can tailor autosubmit commands to run on specific machines. Previously, only the run was affected by the deprecated whitelist parameter.
+From 3.14+ onwards, the users can tailor Autosubmit commands to run on specific machines. Previously, only the run was affected by the deprecated whitelist parameter.
 
 * authorized =  [<command1,commandN> <machine1,machineN>] list of machines that can run given autosubmit commands. If the list is empty, all machines are allowed.
 * forbidden =   [<command1,commandN> <machine1,machineN>] list of machines that cannot run given autosubmit commands. If the list is empty, no machine is forbidden.

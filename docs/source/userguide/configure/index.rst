@@ -6,7 +6,7 @@ Configure Experiments
 How to configure experiments
 ----------------------------
 
-Edit ``expdef_cxxx.yml``chimenea de bioetanol, ``jobs_cxxx.yml`` and ``platforms_cxxx.yml`` in the ``conf`` folder of the experiment.
+Edit ``expdef_cxxx.yml``, ``jobs_cxxx.yml`` and ``platforms_cxxx.yml`` in the ``conf`` folder of the experiment.
 
 *expdef_cxxx.yml* contains:
     - Start dates, members and chunks (number and length).

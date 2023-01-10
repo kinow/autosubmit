@@ -995,7 +995,10 @@ class Autosubmit:
                         raise AutosubmitCritical(
                             'Current user is not the owner of the experiment. {0} can not be deleted!'.format(
                                 expid_delete), 7012)
-                Log.printlog(message, Log.RESULT)
+                if error_message == "":
+                    Log.printlog(message, Log.RESULT)
+                else:
+                    Log.printlog(error_message, Log.ERROR)
             except Exception as e:
                 # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
                 error_message += "Couldn't delete the experiment".format(str(e))
