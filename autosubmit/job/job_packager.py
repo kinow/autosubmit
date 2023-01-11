@@ -88,6 +88,7 @@ class JobPackager(object):
 
 
         #todo add default values
+        #Wrapper building starts here
         for wrapper_section,wrapper_data in self._as_config.experiment_data.get("WRAPPERS",{}).items():
             if isinstance(wrapper_data,collections.abc.Mapping ):
                 self.wrapper_type[wrapper_section] = self._as_config.get_wrapper_type(wrapper_data)
@@ -213,11 +214,13 @@ class JobPackager(object):
         for job in failed_wrapped_jobs:
             job.packed = False
         jobs_to_submit_by_section = self._divide_list_by_section(jobs_to_submit)
-        # create wrapped package jobs
+        # create wrapped package jobs Wrapper building starts here
         for wrapper_name,section_jobs in jobs_to_submit_by_section.items():
             self.current_wrapper_section = wrapper_name
             for section,jobs in section_jobs.items():
                 if len(jobs) > 0:
+                    if not self._platform.allow_wrappers:
+                        Log.warning("Platform {0} does not allow wrappers, submitting jobs individually".format(self._platform.name))
                     if  wrapper_name != "SIMPLE" and self._platform.allow_wrappers and self.wrapper_type[self.current_wrapper_section] in ['horizontal', 'vertical','vertical-horizontal', 'horizontal-vertical'] :
                         # Trying to find the value in jobs_parser, if not, default to an autosubmit_.yml value (Looks first in [wrapper] section)
                         wrapper_limits = dict()
