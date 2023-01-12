@@ -682,7 +682,7 @@ class JobPackageHorizontal(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower())
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition)
 
 class JobPackageHybrid(JobPackageThread):
     """
@@ -727,7 +727,7 @@ class JobPackageVerticalHorizontal(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower())
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition)
 
 
 class JobPackageHorizontalVertical(JobPackageHybrid):
@@ -738,5 +738,5 @@ class JobPackageHorizontalVertical(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower())
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition)
 
