@@ -677,7 +677,7 @@ class JobPackager(object):
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
                                             jobs_resources=jobs_resources, method=self.wrapper_method[self.current_wrapper_section], configuration=self._as_config, wrapper_section=self.current_wrapper_section )
 
-
+#TODO rename and unite JobPackerVerticalMixed to JobPackerVertical since the distinguisment between the two is not needed anymore
 class JobPackagerVertical(object):
     """
     Vertical Packager Parent Class
