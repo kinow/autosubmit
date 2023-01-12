@@ -2227,7 +2227,7 @@ class Autosubmit:
         issues = ""
         platform_issues = ""
         ssh_config_issues = ""
-        private_key_error = "Please, add your private key to the ssh-agent ( ssh-add <path_to_key> ) or use a non-encrypted key\n"
+        private_key_error = "Please, add your private key to the ssh-agent ( ssh-add <path_to_key> ) or use a non-encrypted key\nIf ssh agent is not inicializated, prompt first eval `ssh-agent -s`"
         for platform in platform_to_test:
             platform_issues = ""
             try:

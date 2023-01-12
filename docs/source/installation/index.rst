@@ -88,8 +88,15 @@ For a very quick test, you can follow the next instructions to configure and run
     # Copy the public key to the remote machine
     ssh-copy-id -i ~/.ssh/id_rsa.pub user@remotehost
 
+
     # Add your key to the ssh-agent ( if encrypted )
+
+    # If not initialized, initialize it
+    eval `ssh-agent -s`
+
+    # Add the key
     ssh-add ~/.ssh/id_rsa
+    # Where ~/.ssh/id_rsa is the path to your private key
 
     # run
     autosubmit run a000
@@ -146,8 +153,12 @@ For a very quick test, you can follow the next instructions to configure and run
     # Copy the public key to the remote machine
     ssh-copy-id -i ~/.ssh/id_rsa.pub user@remotehost
 
-    # Add your key to the ssh-agent ( if encrypted )
+    # Add your key to ssh agent ( if encrypted )
+    # If not initialized, initialize it
+    eval `ssh-agent -s`
+    # Add the key
     ssh-add ~/.ssh/id_rsa
+    # Where ~/.ssh/id_rsa is the path to your private key
 
     # run
     autosubmit run a000

@@ -25,7 +25,12 @@ Ensure that you have a **password-less** connection to all platforms you want to
         # Copy the public key to the remote machine
         ssh-copy-id -i ~/.ssh/id_rsa.pub user@remotehost
         # Add your key to ssh agent ( if encrypted )
+        # If not initialized, initialize it
+        eval `ssh-agent -s`
+        # Add the key
         ssh-add ~/.ssh/id_rsa
+        # Where ~/.ssh/id_rsa is the path to your private key
+
 
 Description of most used commands
 =================================
