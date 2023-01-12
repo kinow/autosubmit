@@ -16,6 +16,7 @@ dependencies:
 - mock
 - portalocker
 - networkx
+- sqlite
 - pip:
   - autosubmitconfigparser==0.0.74
   - argparse>=1.4.0
