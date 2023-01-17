@@ -622,7 +622,7 @@ class SlurmPlatform(ParamikoPlatform):
 
     @staticmethod
     def allocated_nodes():
-        return """os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")"""
+        return """os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list_{0}".format(node_id))"""
 
     def check_file_exists(self, filename,wrapper_failed=False):
         file_exist = False

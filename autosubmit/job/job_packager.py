@@ -717,7 +717,7 @@ class JobPackagerVertical(object):
         # self.jobs_list starts as only 1 member, but wrapped jobs are added in the recursion
         if len(self.jobs_list) >= self.wrapper_limits["max_v"] or len(self.jobs_list) >= self.wrapper_limits["max_by_section"][job.section] or len(self.jobs_list) >= self.wrapper_limits["max"]:
             return self.jobs_list
-        child = self.get_wrappable_child(job)
+        child = self.get_wrappable_child(job,section=job.section)
         # If not None, it is wrappable
         if child is not None and len(str(child)) > 0:
             # Calculate total wallclock per possible wrapper
@@ -734,7 +734,7 @@ class JobPackagerVertical(object):
         # Wrapped jobs are accumulated and returned in this list
         return self.jobs_list
 
-    def get_wrappable_child(self, job):
+    def get_wrappable_child(self, job, section=None):
         """
         Goes through the jobs with the same date and member than the input job, and return the first that satisfies self._is_wrappable()
 
@@ -743,9 +743,11 @@ class JobPackagerVertical(object):
         :return: job that is wrappable. \n
         :rtype: Job Object
         """
-        # Unnecessary assignment
-        sorted_jobs = self.sorted_jobs
-
+        if section is  None:
+            sorted_jobs = self.sorted_jobs
+        else:
+            #filter the jobs with the same section name
+            sorted_jobs = [job for job in self.sorted_jobs if job.section == section]
         for index in range(self.index, len(sorted_jobs)):
             child = sorted_jobs[index]
             if self._is_wrappable(child):
@@ -809,9 +811,9 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
             member = ready_job.member
         # Extract list of sorted jobs per date and member
         self.sorted_jobs = self.dict_jobs[date][member]
-        self.index = 0
+        self.index = 1
 
-    def get_wrappable_child(self, job):
+    def get_wrappable_child(self, job, section=None):
         """
         Goes through the jobs with the same date and member than the input job, and return the first that satisfies self._is_wrappable()
 
@@ -821,8 +823,11 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         :rtype: Job Object
         """
         # Unnecessary assignment
-        sorted_jobs = self.sorted_jobs
-
+        if section is None:
+            sorted_jobs = self.sorted_jobs
+        else:
+            #filter the jobs with the same section name
+            sorted_jobs = [job for job in self.sorted_jobs if job.section == section]
         for index in range(self.index, len(sorted_jobs)):
             child = sorted_jobs[index]
             if self._is_wrappable(child):
