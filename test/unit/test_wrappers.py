@@ -11,6 +11,7 @@ from autosubmit.job.job_list_persistence import JobListPersistenceDb
 from autosubmit.job.job_common import Status
 from random import randrange
 from collections import OrderedDict
+import pytest
 
 
 class TestWrappers(TestCase):

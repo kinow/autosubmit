@@ -550,7 +550,10 @@ class JobPackager(object):
             for job in jobs_list:
                 if job.section.upper() in section_name.split("&"):
                     jobs_by_section[wrapper_name][section_name].append(job)
-                    remaining_jobs.remove(job)
+                    try:
+                        remaining_jobs.remove(job)
+                    except ValueError:
+                        pass
         for job in remaining_jobs:
             jobs_by_section["SIMPLE"][job.section].append(job)
         return jobs_by_section
@@ -660,7 +663,6 @@ class JobPackager(object):
                 if job.section == section:
                     horizontal_packager.wrapper_limits["max_by_section"][section] = horizontal_packager.wrapper_limits["max_by_section"][section] - 1
         horizontal_packager.wrapper_limits["max"] = horizontal_packager.wrapper_limits["max"] - actual_wrapped_jobs
-
         for job in horizontal_package:
             dict_jobs = self._jobs_list.get_ordered_jobs_by_date_member(self.current_wrapper_section)
             job_list = JobPackagerVerticalMixed(dict_jobs, job, [job], job.wallclock,
@@ -717,7 +719,7 @@ class JobPackagerVertical(object):
         # self.jobs_list starts as only 1 member, but wrapped jobs are added in the recursion
         if len(self.jobs_list) >= self.wrapper_limits["max_v"] or len(self.jobs_list) >= self.wrapper_limits["max_by_section"][job.section] or len(self.jobs_list) >= self.wrapper_limits["max"]:
             return self.jobs_list
-        child = self.get_wrappable_child(job,section=job.section)
+        child = self.get_wrappable_child(job)
         # If not None, it is wrappable
         if child is not None and len(str(child)) > 0:
             # Calculate total wallclock per possible wrapper
@@ -734,27 +736,8 @@ class JobPackagerVertical(object):
         # Wrapped jobs are accumulated and returned in this list
         return self.jobs_list
 
-    def get_wrappable_child(self, job, section=None):
-        """
-        Goes through the jobs with the same date and member than the input job, and return the first that satisfies self._is_wrappable()
-
-        :param job: job to be evaluated. \n
-        :type job: Job Object \n
-        :return: job that is wrappable. \n
-        :rtype: Job Object
-        """
-        if section is  None:
-            sorted_jobs = self.sorted_jobs
-        else:
-            #filter the jobs with the same section name
-            sorted_jobs = [job for job in self.sorted_jobs if job.section == section]
-        for index in range(self.index, len(sorted_jobs)):
-            child = sorted_jobs[index]
-            if self._is_wrappable(child):
-                self.index = index + 1
-                return child
-            continue
-        return None
+    def get_wrappable_child(self, job):
+        pass
 
     def _is_wrappable(self, job):
         """
@@ -768,7 +751,7 @@ class JobPackagerVertical(object):
         """
         if job.packed is False and (job.status == Status.READY or job.status == Status.WAITING):
             for parent in job.parents:
-                # First part of this conditional is always going to be true because otherwise there would be a cycle
+                # First part of this conditional is true only if the parent is already on the wrapper package ( job_lists == current_wrapped jobs there )
                 # Second part is actually relevant, parents of a wrapper should be COMPLETED
                 if parent not in self.jobs_list and parent.status != Status.COMPLETED:
                     return False
@@ -810,10 +793,11 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         if ready_job.member is not None and len(str(ready_job.member)) > 0:
             member = ready_job.member
         # Extract list of sorted jobs per date and member
-        self.sorted_jobs = self.dict_jobs[date][member]
-        self.index = 1
+        self.sorted_jobs = dict_jobs[date][member]
+        self.index = 0
 
-    def get_wrappable_child(self, job, section=None):
+
+    def get_wrappable_child(self, job):
         """
         Goes through the jobs with the same date and member than the input job, and return the first that satisfies self._is_wrappable()
 
@@ -822,12 +806,8 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         :return: job that is wrappable. \n
         :rtype: Job Object
         """
-        # Unnecessary assignment
-        if section is None:
-            sorted_jobs = self.sorted_jobs
-        else:
-            #filter the jobs with the same section name
-            sorted_jobs = [job for job in self.sorted_jobs if job.section == section]
+        sorted_jobs = self.sorted_jobs
+
         for index in range(self.index, len(sorted_jobs)):
             child = sorted_jobs[index]
             if self._is_wrappable(child):
@@ -835,6 +815,14 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
                 return child
             continue
         return None
+        # Not passing tests but better wrappers result to check
+        # for child in job.children:
+        #     if child.name != job.name:
+        #         if self._is_wrappable(child):
+        #             self.index = self.index + 1
+        #             return child
+        #     continue
+        # return None
 
     def _is_wrappable(self, job):
         """
@@ -848,7 +836,7 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         """
         if job.packed is False and (job.status == Status.READY or job.status == Status.WAITING):
             for parent in job.parents:
-                # First part of this conditional is always going to be true because otherwise there would be a cycle
+                # First part of this conditional is true only if the parent is already on the wrapper package ( job_lists == current_wrapped jobs there )
                 # Second part is actually relevant, parents of a wrapper should be COMPLETED
                 if parent not in self.jobs_list and parent.status != Status.COMPLETED:
                     return False
