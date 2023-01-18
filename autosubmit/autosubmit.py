@@ -2244,6 +2244,8 @@ class Autosubmit:
                     elif message.find("private key file is encrypted") != -1:
                         if private_key_error not in ssh_config_issues:
                             ssh_config_issues += private_key_error
+                    elif message.find("Invalid certificate") != -1:
+                        ssh_config_issues += message + ".Please, the eccert expiration date"
                     else:
                         ssh_config_issues += message + " this is an PARAMIKO SSHEXCEPTION: indicates that there is something incompatible in the ssh_config for host:{0}\n maybe you need to contact your sysadmin".format(
                             platform.host)
