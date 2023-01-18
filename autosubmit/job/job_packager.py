@@ -668,7 +668,7 @@ class JobPackager(object):
             job_list = JobPackagerVerticalMixed(dict_jobs, job, [job], job.wallclock,
                                                              horizontal_packager.wrapper_limits["max"], horizontal_packager.wrapper_limits,
                                                              self._platform.max_wallclock).build_vertical_package(job)
-            current_package.append(job_list)
+            current_package.append(list(set(job_list)))
 
         for job in current_package[-1]:
             total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
@@ -808,21 +808,21 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         """
         sorted_jobs = self.sorted_jobs
 
-        # for index in range(self.index, len(sorted_jobs)):
-        #     child = sorted_jobs[index]
-        #     if self._is_wrappable(child):
-        #         self.index = index + 1
-        #         return child
-        #     continue
-        # return None
-        # Not passing tests but better wrappers result to check
-        for child in job.children:
-            if child.name != job.name:
-                if self._is_wrappable(child):
-                    self.index = self.index + 1
-                    return child
+        for index in range(self.index, len(sorted_jobs)):
+            child = sorted_jobs[index]
+            if self._is_wrappable(child):
+                self.index = index + 1
+                return child
             continue
         return None
+        # Not passing tests but better wrappers result to check
+        # for child in job.children:
+        #     if child.name != job.name:
+        #         if self._is_wrappable(child):
+        #             self.index = self.index + 1
+        #             return child
+        #     continue
+        # return None
 
     def _is_wrappable(self, job):
         """
