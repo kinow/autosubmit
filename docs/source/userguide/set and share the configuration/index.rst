@@ -240,7 +240,17 @@ Model configuration is distributed at `git. <https://earth.bsc.es/gitlab/ces/aut
 
    # Create and run the experiment, since it contains all the info!
    autosubmit create a04b
+   autosubmit refresh a04b
    autosubmit run a04b
+
+The following figure shows the flow of the execution.
+
+.. figure:: ../fig/advanced_conf_v2.jpg
+   :width: 100%
+   :align: center
+   :alt: Advanced configuration example
+
+   Advanced configuration example
 
 Sharing an advanced configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

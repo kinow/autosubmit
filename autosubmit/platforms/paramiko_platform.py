@@ -534,8 +534,8 @@ class ParamikoPlatform(Platform):
                         job.start_time = datetime.datetime.now() # URi: start time
                     if job.start_time is not None and str(job.wrapper_type).lower() == "none":
                         wallclock = job.wallclock
-                        if job.wallclock == "00:00":
-                            wallclock == job.platform.max_wallclock
+                        if job.wallclock == "00:00" or job.wallclock is None:
+                            wallclock = job.platform.max_wallclock
                         if wallclock != "00:00" and wallclock != "00:00:00" and wallclock != "":
                             if job.is_over_wallclock(job.start_time,wallclock):
                                 try:

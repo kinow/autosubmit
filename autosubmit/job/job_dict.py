@@ -401,6 +401,8 @@ class DicJobs:
             job.wallclock = "01:59"
         elif job.wallclock is None and job.platform_name.upper() != "LOCAL":
             job.wallclock = "00:00"
+        elif job.wallclock is None:
+            job.wallclock = "00:00"
         if job.retrials == -1:
             job.retrials = None
         notify_on = parameters[section].get("NOTIFY_ON",None)

@@ -1163,6 +1163,8 @@ class Job(object):
             parameters['WRAPPER' + "_EXTENSIBLE"] = as_conf.get_extensible_wallclock()
 
         for wrapper_section,wrapper_val in wrappers.items():
+            if type(wrapper_val) is not dict:
+                continue
             parameters[wrapper_section] = as_conf.get_wrapper_type(as_conf.experiment_data["WRAPPERS"].get(wrapper_section))
             parameters[wrapper_section+"_POLICY"] = as_conf.get_wrapper_policy(as_conf.experiment_data["WRAPPERS"].get(wrapper_section))
             parameters[wrapper_section+"_METHOD"] = as_conf.get_wrapper_method(as_conf.experiment_data["WRAPPERS"].get(wrapper_section)).lower()
@@ -1967,9 +1969,14 @@ class WrapperJob(Job):
         self._platform.send_command(
             self._platform.cancel_cmd + " " + str(self.id))
         for job in self.job_list:
+            #if job.status == Status.RUNNING:
+                #job.inc_fail_count()
+            #    job.packed = False
+            #    job.status = Status.FAILED
             if job.status not in [Status.COMPLETED, Status.FAILED]:
                 job.packed = False
                 job.status = Status.WAITING
+
 
     def _update_completed_jobs(self):
         for job in self.job_list:

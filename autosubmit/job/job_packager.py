@@ -88,6 +88,7 @@ class JobPackager(object):
 
 
         #todo add default values
+        #Wrapper building starts here
         for wrapper_section,wrapper_data in self._as_config.experiment_data.get("WRAPPERS",{}).items():
             if isinstance(wrapper_data,collections.abc.Mapping ):
                 self.wrapper_type[wrapper_section] = self._as_config.get_wrapper_type(wrapper_data)
@@ -213,11 +214,13 @@ class JobPackager(object):
         for job in failed_wrapped_jobs:
             job.packed = False
         jobs_to_submit_by_section = self._divide_list_by_section(jobs_to_submit)
-        # create wrapped package jobs
+        # create wrapped package jobs Wrapper building starts here
         for wrapper_name,section_jobs in jobs_to_submit_by_section.items():
             self.current_wrapper_section = wrapper_name
             for section,jobs in section_jobs.items():
                 if len(jobs) > 0:
+                    if not self._platform.allow_wrappers:
+                        Log.warning("Platform {0} does not allow wrappers, submitting jobs individually".format(self._platform.name))
                     if  wrapper_name != "SIMPLE" and self._platform.allow_wrappers and self.wrapper_type[self.current_wrapper_section] in ['horizontal', 'vertical','vertical-horizontal', 'horizontal-vertical'] :
                         # Trying to find the value in jobs_parser, if not, default to an autosubmit_.yml value (Looks first in [wrapper] section)
                         wrapper_limits = dict()
@@ -547,7 +550,10 @@ class JobPackager(object):
             for job in jobs_list:
                 if job.section.upper() in section_name.split("&"):
                     jobs_by_section[wrapper_name][section_name].append(job)
-                    remaining_jobs.remove(job)
+                    try:
+                        remaining_jobs.remove(job)
+                    except ValueError:
+                        pass
         for job in remaining_jobs:
             jobs_by_section["SIMPLE"][job.section].append(job)
         return jobs_by_section
@@ -658,11 +664,11 @@ class JobPackager(object):
                     horizontal_packager.wrapper_limits["max_by_section"][section] = horizontal_packager.wrapper_limits["max_by_section"][section] - 1
         horizontal_packager.wrapper_limits["max"] = horizontal_packager.wrapper_limits["max"] - actual_wrapped_jobs
         for job in horizontal_package:
-            job_list = JobPackagerVertical([job], job.wallclock, horizontal_packager.wrapper_limits["max"],
-                                           horizontal_packager.wrapper_limits,
-                                           self._platform.max_wallclock, self.wrapper_type).build_vertical_package(job)
-
-            current_package.append(job_list)
+            dict_jobs = self._jobs_list.get_ordered_jobs_by_date_member(self.current_wrapper_section)
+            job_list = JobPackagerVerticalMixed(dict_jobs, job, [job], job.wallclock,
+                                                             horizontal_packager.wrapper_limits["max"], horizontal_packager.wrapper_limits,
+                                                             self._platform.max_wallclock).build_vertical_package(job)
+            current_package.append(list(set(job_list)))
 
         for job in current_package[-1]:
             total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
@@ -673,7 +679,7 @@ class JobPackager(object):
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
                                             jobs_resources=jobs_resources, method=self.wrapper_method[self.current_wrapper_section], configuration=self._as_config, wrapper_section=self.current_wrapper_section )
 
-
+#TODO rename and unite JobPackerVerticalMixed to JobPackerVertical since the distinguisment between the two is not needed anymore
 class JobPackagerVertical(object):
     """
     Vertical Packager Parent Class
@@ -734,9 +740,23 @@ class JobPackagerVertical(object):
         pass
 
     def _is_wrappable(self, job):
-        pass
+        """
+        Determines if a job is wrappable. Basically, the job shouldn't have been packed already and the status must be READY or WAITING,
+        Its parents should be COMPLETED.
 
-
+        :param job: job to be evaluated. \n
+        :type job: Job Object \n
+        :return: True if wrappable, False otherwise. \n
+        :rtype: Boolean
+        """
+        if job.packed is False and (job.status == Status.READY or job.status == Status.WAITING):
+            for parent in job.parents:
+                # First part of this conditional is true only if the parent is already on the wrapper package ( job_lists == current_wrapped jobs there )
+                # Second part is actually relevant, parents of a wrapper should be COMPLETED
+                if parent not in self.jobs_list and parent.status != Status.COMPLETED:
+                    return False
+            return True
+        return False
 
 class JobPackagerVerticalMixed(JobPackagerVertical):
     """
@@ -776,6 +796,7 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         self.sorted_jobs = dict_jobs[date][member]
         self.index = 0
 
+
     def get_wrappable_child(self, job):
         """
         Goes through the jobs with the same date and member than the input job, and return the first that satisfies self._is_wrappable()
@@ -785,7 +806,6 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         :return: job that is wrappable. \n
         :rtype: Job Object
         """
-        # Unnecessary assignment
         sorted_jobs = self.sorted_jobs
 
         for index in range(self.index, len(sorted_jobs)):
@@ -795,6 +815,14 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
                 return child
             continue
         return None
+        # Not passing tests but better wrappers result to check
+        # for child in job.children:
+        #     if child.name != job.name:
+        #         if self._is_wrappable(child):
+        #             self.index = self.index + 1
+        #             return child
+        #     continue
+        # return None
 
     def _is_wrappable(self, job):
         """
@@ -808,7 +836,7 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         """
         if job.packed is False and (job.status == Status.READY or job.status == Status.WAITING):
             for parent in job.parents:
-                # First part of this conditional is always going to be true because otherwise there would be a cycle
+                # First part of this conditional is true only if the parent is already on the wrapper package ( job_lists == current_wrapped jobs there )
                 # Second part is actually relevant, parents of a wrapper should be COMPLETED
                 if parent not in self.jobs_list and parent.status != Status.COMPLETED:
                     return False

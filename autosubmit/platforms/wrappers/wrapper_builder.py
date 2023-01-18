@@ -108,7 +108,7 @@ class PythonWrapperBuilder(WrapperBuilder):
         sample_list = list(sample_str)
         random.shuffle(sample_list)
         final_string = ''.join(sample_list)
-        return final_string+"_FAILED"
+        return final_string
     def build_imports(self):
 
         return textwrap.dedent("""
@@ -133,9 +133,9 @@ class PythonWrapperBuilder(WrapperBuilder):
                self.stream.flush()
            def __getattr__(self, attr):
                return getattr(self.stream, attr)
-        
         sys.stdout = Unbuffered(sys.stdout)
-        wrapper_id = "{1}"
+        node_id = "{1}"
+        wrapper_id = "{1}_FAILED"
         # Defining scripts to be run
         scripts= {0}
         """).format(str(self.job_scripts), self.get_random_alphanumeric_string(5,5),'\n'.ljust(13))
@@ -172,10 +172,15 @@ class PythonWrapperBuilder(WrapperBuilder):
         {0}
         os.system("mkdir -p machinefiles")
 
-        with open('node_list', 'r') as file:
+        with open("node_list_{{0}}".format(node_id), 'r') as file:
              all_nodes = file.read()
+        os.remove("node_list_{{0}}".format(node_id))
+
 
         all_nodes = all_nodes.split("_NEWLINE_")
+        if all_nodes[-1] == "":
+            all_nodes = all_nodes[:-1]
+        print(all_nodes)
         """).format(self.allocated_nodes, '\n'.ljust(13))
 
     def build_cores_list(self):
@@ -191,9 +196,11 @@ while total_cores > 0:
         total_cores -= 1
         all_cores.append(all_nodes[idx])
     else:
-        idx += 1
+        if idx < len(all_nodes)-1:
+            idx += 1
         processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
 processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+
         """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
 
     def build_machinefiles(self):
@@ -312,6 +319,7 @@ processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
         parallel_threads_launcher = textwrap.dedent("""
 pid_list = []
 for i in range(len({0})):
+    print("Starting job ", {0}[i])
     if type({0}[i]) != list:
         job = {0}[i]
         jobname = job.replace(".cmd", '')
@@ -344,6 +352,8 @@ for i in range(len(pid_list)):
         parallel_threads_launcher = textwrap.dedent("""
 pid_list = []
 for i in range(len({0})):
+    print("Starting job ", {0}[i])
+
     if type({0}[i]) != list:
         job = {0}[i]
         jobname = job.replace(".cmd", '')
@@ -380,6 +390,8 @@ for i in range(len(pid_list)):
         parallel_threads_launcher = textwrap.dedent("""
 pid_list = []
 for i in range(len({0})):
+    print("Starting job ", {0}[i])
+
     if type({0}[i]) != list:
         job = {0}[i]
         jobname = job.replace(".cmd", '')
@@ -537,6 +549,7 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
         parallel_threads_launcher = textwrap.dedent("""
 pid_list = []
 for i in range(len({0})):
+    print("Starting job ", {0}[i])
     if type({0}[i]) != list:
         job = {0}[i]
         jobname = job.replace(".cmd", '')
@@ -678,10 +691,14 @@ class SrunWrapperBuilder(WrapperBuilder):
         {0}
         os.system("mkdir -p machinefiles")
 
-        with open('node_list', 'r') as file:
+        with open("node_list_{{0}}".format(node_id), 'r') as file:
              all_nodes = file.read()
+        os.remove("node_list_{{0}}".format(node_id))
 
         all_nodes = all_nodes.split("_NEWLINE_")
+        if all_nodes[-1] == "":
+            all_nodes = all_nodes[:-1]
+        print(all_nodes)
         """).format(self.allocated_nodes, '\n'.ljust(13))
 
     def build_cores_list(self):
@@ -697,8 +714,10 @@ while total_cores > 0:
         total_cores -= 1
         all_cores.append(all_nodes[idx])
     else:
-        idx += 1
+        if idx < len(all_nodes)-1:
+            idx += 1
         processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+
 processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
         """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
 
