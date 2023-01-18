@@ -808,21 +808,21 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         """
         sorted_jobs = self.sorted_jobs
 
-        for index in range(self.index, len(sorted_jobs)):
-            child = sorted_jobs[index]
-            if self._is_wrappable(child):
-                self.index = index + 1
-                return child
-            continue
-        return None
-        # Not passing tests but better wrappers result to check
-        # for child in job.children:
-        #     if child.name != job.name:
-        #         if self._is_wrappable(child):
-        #             self.index = self.index + 1
-        #             return child
+        # for index in range(self.index, len(sorted_jobs)):
+        #     child = sorted_jobs[index]
+        #     if self._is_wrappable(child):
+        #         self.index = index + 1
+        #         return child
         #     continue
         # return None
+        # Not passing tests but better wrappers result to check
+        for child in job.children:
+            if child.name != job.name:
+                if self._is_wrappable(child):
+                    self.index = self.index + 1
+                    return child
+            continue
+        return None
 
     def _is_wrappable(self, job):
         """

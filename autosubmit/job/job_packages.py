@@ -280,7 +280,7 @@ class JobPackageArray(JobPackageBase):
         self._common_script = None
         self._array_size_id = "[1-" + str(len(jobs)) + "]"
         self._wallclock = '00:00'
-        self._num_processors = '1'
+        self._num_processors = '0'
         for job in jobs:
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
@@ -363,7 +363,7 @@ class JobPackageThread(JobPackageBase):
         self._job_dependency = dependency
         self._common_script = None
         self._wallclock = '00:00'
-        self._num_processors = '1'
+        self._num_processors = '0'
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
         self.current_wrapper_section = wrapper_section
@@ -410,7 +410,7 @@ class JobPackageThread(JobPackageBase):
         return jobs_scripts
     @property
     def queue(self):
-        if str(self._num_processors) == '1':
+        if str(self._num_processors) == '1' or str(self._num_processors) == '0':
             return self.platform.serial_platform.serial_queue
         else:
             return self._queue
@@ -522,7 +522,7 @@ class JobPackageThreadWrapped(JobPackageThread):
 
     @property
     def queue(self):
-        if str(self._num_processors) == '1':
+        if str(self._num_processors) == '1' or str(self._num_processors) == '0':
             return self.platform.serial_platform.serial_queue
         else:
             return self.platform.queue
