@@ -10,7 +10,7 @@ dependencies:
 - graphviz
 - python-dateutil
 - pyparsing
-- numpy>=1.16
+- numpy<1.22
 - matplotlib
 - pip
 - mock
@@ -22,7 +22,7 @@ dependencies:
   - argparse>=1.4.0
   - python-dateutil>=2.8.2
   - matplotlib>=3.5.1
-  - numpy>=1.16
+  - numpy<1.22
   - py3dotplus>=1.1.0
   - pyparsing>=3.0.7
   - paramiko>=2.9.2
