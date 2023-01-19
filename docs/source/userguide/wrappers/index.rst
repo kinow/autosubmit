@@ -17,7 +17,7 @@ Job packages, or "wrappers", are jobs created as bundles of different tasks (sub
 	autosubmit inspect <expid> -cw -f # Visualize wrapper cmds
 
 Basic configuration
-===================
+-------------------
 
 To configure a new wrapper, the user has to define a `WRAPPERS` section in any configuration file. When using the standard configuration, this one is autosubmit.yml.
 
@@ -55,10 +55,10 @@ When using multiple wrappers or 2-dim wrappers is essential to define the `JOBS_
 .. important:: Autosubmit will not wrap tasks with external and non-fulfilled dependencies.
 
 Wrapper parameters description
-------------------------------      
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Type
-~~~~
+^^^^
 
 The type parameter allow the user to determine the wrapper algorithm. 
 
@@ -71,7 +71,7 @@ It affects tasks in wrapper order executions, and in hybrid cases, it adds some 
       TYPE: "horizontal"
 
 Jobs_in_wrapper
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 The jobs_in_wrapper parameter allow the user to determine the tasks inside a wrapper by giving the job_section name. It can group multiple tasks by providing more than one job_section name. 
 
@@ -84,7 +84,7 @@ The jobs_in_wrapper parameter allow the user to determine the tasks inside a wra
       
 
 Method
-~~~~~~
+^^^^^^
 
 The method parameter allow the user to determine if the wrapper will use machine files or threads. 
 
@@ -119,7 +119,7 @@ This allows to form a wrapper with shared-memory paradigm instead of rely in mac
       METHOD: SRUN
 
 Extend_wallclock
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 The extend_wallclock parameter allow the users to provide extra headroom for the wrapper. The accepted value is an integer. Autosubmit will translate this value automatically to the max_wallclock of the sum of wrapper inner-tasks wallclock at the horizontal level. 
 
@@ -132,7 +132,7 @@ The extend_wallclock parameter allow the users to provide extra headroom for the
       extend_wallclock: 1
 
 Retrials
-~~~~~~~~
+^^^^^^^^
 
 The retrials parameter allows the users to enable or disable the wrapper's retrial mechanism. This value overrides the general tasks defined. 
 
@@ -147,7 +147,7 @@ Vertical wrappers will retry the jobs without resubmitting the wrapper.
       RETRIALS: 2
 
 Queue
-~~~~~~
+^^^^^
 
 The queue parameter allows the users to define a different queue for the wrapper. This value overrides the platform queue and job queue.
 
@@ -160,7 +160,7 @@ The queue parameter allows the users to define a different queue for the wrapper
       QUEUE: BSC_ES
 
 Export
-~~~~~~
+^^^^^^
 
 The queue parameter allows the users to define a path to a script that will load environment scripts before running the wrapper tasks. This value overrides the job queue.
 
@@ -175,7 +175,7 @@ The queue parameter allows the users to define a path to a script that will load
 
 
 Check_time_wrapper
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 The CHECK_TIME_WRAPPER parameter defines the frequency, in seconds, on which Autosubmit will check the remote platform status of all the wrapper tasks. This affects all wrappers.
 
@@ -191,7 +191,7 @@ The CHECK_TIME_WRAPPER parameter defines the frequency, in seconds, on which Aut
       JOBS_IN_WRAPPER: "SIM1"
 
 Number of jobs in a wrapper({MIN/MAX}_WRAPPED{_H/_V}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 Users can configure the maximum and the minimum number of jobs in each wrapper by configuring MAX_WRAPPED and MIN_WRAPPED inside the wrapper section. If the user doesn't set them, Autosubmit will default to MAX_WRAPPED: “infinite” and MIN_WRAPPED: 2.
@@ -225,7 +225,7 @@ For 2-dim wrappers, {MAX_MIN}_WRAPPED_{V/H} must be used instead of the general 
     JOBS_IN_WRAPPER: "SIM SIM1"
 
 Policy
-~~~~~~
+^^^^^^
 
 
 Autosubmit will wrap as many tasks as possible while respecting the limits set in the configuration(MAX_WRAPPED, MAX_WRAPPED_H, MAX_WRAPPED_V, MIN_WRAPPED, MIN_WRAPPED_V, and MIN_WRAPPED_H parameters). However, users have three different policies available to tune the behavior in situations where there aren’t enough tasks in general, or there are uncompleted tasks remaining from a failed wrapper job:
@@ -248,7 +248,7 @@ Autosubmit will wrap as many tasks as possible while respecting the limits set i
 .. _Vertical:
 
 Vertical wrapper
-================
+----------------
 
 Vertical wrappers are suited for sequential dependent jobs (e.x. chunks of SIM tasks that depend on the previous chunk). Defining the platform’s  `MAX_WALLCLOCK` is essential since the wrapper's total wallclock time will be the sum of each job and will be a limiting factor for the creation of the wrapper, which will not bundle more jobs than the ones fitting in the wallclock time.
 
@@ -269,7 +269,7 @@ Autosubmit supports wrapping together vertically jobs of different types.
 .. _Horizontal:
 
 Horizontal wrapper
-==================
+------------------
 
 Horizontal wrappers are suited for jobs that must run parallel (e.x. members of SIM tasks). Defining the platform’s  `MAX_PROCESSORS` is essential since the wrapper processor amount will be the sum of each job and will be a limiting factor for the creation of the wrapper, which will not bundle more jobs than the ones fitting in the `MAX_PROCESSORS` of the platform.
 
@@ -290,7 +290,7 @@ Horizontal wrappers are suited for jobs that must run parallel (e.x. members of 
 .. _Vertical-horizontal:
 
 Vertical-horizontal wrapper
-===========================
+---------------------------
 
 The vertical-horizontal wrapper allows bundling together a vertical sequence of tasks independent of the horizontal ones. Therefore, all horizontal tasks do not need to finish to progress to the next horizontal level.
 
@@ -303,7 +303,7 @@ The vertical-horizontal wrapper allows bundling together a vertical sequence of 
 .. _Horizontal-vertical:
 
 Horizontal-vertical wrapper
-===========================
+---------------------------
 
 The horizontal-vertical wrapper allows bundling together tasks that could run simultaneously but need to communicate before progressing to the next horizontal level.
 
@@ -316,7 +316,7 @@ The horizontal-vertical wrapper allows bundling together tasks that could run si
 
 
 Advanced example: Set-up an crossdate wrapper
----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Considering the following configuration:
 
