@@ -2266,17 +2266,19 @@ class JobList(object):
 
         # Find root
         root = None
+        roots = []
         for job in allJobs:
-            if job.has_parents() is False:
-                root = job
+            if len(job.parents) == 0:
+                roots.append(job)
         visited = list()
         #print(root)
         # root exists
-        if root is not None and len(str(root)) > 0:
-            result += self._recursion_print(root, 0, visited,
-                                            statusChange=statusChange, nocolor=nocolor)
-        else:
-            result += "\nCannot find root."
+        for root in roots:
+            if root is not None and len(str(root)) > 0:
+                result += self._recursion_print(root, 0, visited,
+                                                statusChange=statusChange, nocolor=nocolor)
+            else:
+                result += "\nCannot find root."
 
         return result
 
