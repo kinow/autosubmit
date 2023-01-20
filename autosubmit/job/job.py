@@ -993,6 +993,8 @@ class Job(object):
         """
         chunk = 1
         as_conf.reload()
+        parameters = as_conf.sustitute_dynamic_variables(parameters,25)
+
         parameters = parameters.copy()
         parameters.update(default_parameters)
         parameters['JOBNAME'] = self.name
@@ -1188,24 +1190,9 @@ class Job(object):
 
             parameters['EXPORT'] = self.export
         parameters['PROJECT_TYPE'] = as_conf.get_project_type()
-        substituted = False
-        max_deep = 25
-        dynamic_variables = []
-        backup_variables = as_conf.dynamic_variables
-        while len(as_conf.dynamic_variables) > 0 and max_deep > 0:
-            dynamic_variables = []
-            for dynamic_var in as_conf.dynamic_variables:
-                substituted,new_param = as_conf.sustitute_placeholder_variables(dynamic_var[0],dynamic_var[1],parameters)
-                if not substituted:
-                    dynamic_variables.append(dynamic_var)
-                else:
-                    parameters= new_param
-            as_conf.dynamic_variables = dynamic_variables
-            max_deep = max_deep - 1
-        as_conf.dynamic_variables = backup_variables
-        self.parameters = parameters
+        self.parameters = as_conf.sustitute_dynamic_variables(parameters,25)
 
-        return parameters
+        return self.parameters
     def update_content_extra(self,as_conf,files):
         additional_templates = []
         for file in files:
