@@ -4180,12 +4180,7 @@ class Autosubmit:
             tmp_backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}_tmp.sql".format(expid))
             command = "sqlite3 {0} .dump > {1} ".format(database_path, tmp_backup_path)
             Log.debug("Backing up jobs_data...")
-            if os.path.exists(database_path) and os.path.getsize(database_path) > 0: # Check if database has any data.
-                subprocess.call(command, shell=True)
-                if os.path.exists(tmp_backup_path) and os.path.exists(backup_path):
-                    if os.path.getsize(tmp_backup_path) >= os.path.getsize(backup_path): # Check if all data is still there.
-                        command = "mv {0} {1} ".format(tmp_backup_path, backup_path)
-                        subprocess.call(command, shell=True)
+            out = subprocess.call(command, shell=True)
             Log.debug("Jobs_data database backup completed.")
         except BaseException as e:
             Log.debug("Jobs_data database backup failed.")
@@ -4212,15 +4207,16 @@ class Autosubmit:
         try:
             if os.path.exists(database_path):
                 result = os.popen("mv {0} {1}".format(database_path, corrupted_db_path)).read()
-                time.sleep(10)
+                time.sleep(1)
                 Log.info("Original database moved.")
             try:
                 exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
                                                 historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-                exp_history.initialize_database()
                 Log.info("Restoring from sql")
                 result = os.popen(bash_command).read()
-            except Exception as e:
+                exp_history.initialize_database()
+
+            except:
                 Log.warning("It was not possible to restore the jobs_data.db file... , a new blank db will be created")
                 result = os.popen("rm {0}".format(database_path)).read()
 
