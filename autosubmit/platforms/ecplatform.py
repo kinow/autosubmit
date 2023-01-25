@@ -26,7 +26,7 @@ from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import EcWrapperFactory
 from time import sleep
-
+import locale
 class EcPlatform(ParamikoPlatform):
     """
     Class to manage queues with ecaccess
@@ -95,7 +95,7 @@ class EcPlatform(ParamikoPlatform):
         self._checkjob_cmd = "ecaccess-job-list "
         self._checkhost_cmd = "ecaccess-certificate-list"
         self._checkvalidcert_cmd = "ecaccess-gateway-connected"
-        self._submit_cmd = ("ecaccess-job-submit -distant -queueName " + self.queue + " " + self.host + ":" +
+        self._submit_cmd = ("ecaccess-job-submit -distant -queueName " + self.ec_queue + " " + self.host + ":" +
                             self.remote_log_dir + "/")
         self._submit_command_name = "ecaccess-job-submit"
         self.put_cmd = "ecaccess-file-put"
@@ -241,6 +241,7 @@ class EcPlatform(ParamikoPlatform):
             while not process_ok and retries < 5:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,stderr=FNULL)
                 out, _ = process.communicate()
+                out=out.decode(locale.getlocale()[1])
                 if 'No such file' in out or process.returncode != 0:
                     retries = retries + 1
                     process_ok = False
@@ -273,6 +274,7 @@ class EcPlatform(ParamikoPlatform):
             while not process_ok and retries < 5:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,stderr=FNULL)
                 out, _ = process.communicate()
+                out = out.decode(locale.getlocale()[1])
                 if 'No such file' in out or process.returncode != 0:
                     retries = retries + 1
                     process_ok = False
