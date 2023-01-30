@@ -1017,10 +1017,10 @@ class Job(object):
                 chunk = self.chunk
 
             parameters['CHUNK'] = chunk
-            total_chunk = int(parameters.get('EXPERIMENT.NUMCHUNKS'))
-            chunk_length = int(parameters['EXPERIMENT.CHUNKSIZE'])
-            chunk_unit = str(parameters['EXPERIMENT.CHUNKSIZEUNIT']).lower()
-            cal = str(parameters['EXPERIMENT.CALENDAR']).lower()
+            total_chunk = int(parameters.get('EXPERIMENT.NUMCHUNKS',1))
+            chunk_length = int(parameters.get('EXPERIMENT.CHUNKSIZE',1))
+            chunk_unit = str(parameters.get('EXPERIMENT.CHUNKSIZEUNIT',"")).lower()
+            cal = str(parameters.get('EXPERIMENT.CALENDAR',"")).lower()
             chunk_start = chunk_start_date(
                 self.date, chunk, chunk_length, chunk_unit, cal)
             chunk_end = chunk_end_date(
@@ -1035,36 +1035,30 @@ class Job(object):
 
             parameters['RUN_DAYS'] = str(
                 subs_dates(chunk_start, chunk_end, cal))
-            parameters['Chunk_End_IN_DAYS'] = str(
+            parameters['CHUNK_END_IN_DAYS'] = str(
                 subs_dates(self.date, chunk_end, cal))
 
-            #parameters['Chunk_START_DATE'] = date2str(
-            #    chunk_start, self.date_format)
-            #parameters['Chunk_START_YEAR'] = str(chunk_start.year)
-            #parameters['Chunk_START_MONTH'] = str(chunk_start.month).zfill(2)
-            #parameters['Chunk_START_DAY'] = str(chunk_start.day).zfill(2)
-            #parameters['Chunk_START_HOUR'] = str(chunk_start.hour).zfill(2)
-            parameters['Chunk_START_DATE'] = date2str(
+            parameters['CHUNK_START_DATE'] = date2str(
                 chunk_start, self.date_format)
-            parameters['Chunk_START_YEAR'] = str(chunk_start.year)
-            parameters['Chunk_START_MONTH'] = str(chunk_start.month).zfill(2)
-            parameters['Chunk_START_DAY'] = str(chunk_start.day).zfill(2)
-            parameters['Chunk_START_HOUR'] = str(chunk_start.hour).zfill(2)
+            parameters['CHUNK_START_YEAR'] = str(chunk_start.year)
+            parameters['CHUNK_START_MONTH'] = str(chunk_start.month).zfill(2)
+            parameters['CHUNK_START_DAY'] = str(chunk_start.day).zfill(2)
+            parameters['CHUNK_START_HOUR'] = str(chunk_start.hour).zfill(2)
 
 
-            parameters['Chunk_SECOND_TO_LAST_DATE'] = date2str(
+            parameters['CHUNK_SECOND_TO_LAST_DATE'] = date2str(
                 chunk_end_1, self.date_format)
-            parameters['Chunk_SECOND_TO_LAST_YEAR'] = str(chunk_end_1.year)
-            parameters['Chunk_SECOND_TO_LAST_MONTH'] = str(chunk_end_1.month).zfill(2)
-            parameters['Chunk_SECOND_TO_LAST_DAY'] = str(chunk_end_1.day).zfill(2)
-            parameters['Chunk_SECOND_TO_LAST_HOUR'] = str(chunk_end_1.hour).zfill(2)
+            parameters['CHUNK_SECOND_TO_LAST_YEAR'] = str(chunk_end_1.year)
+            parameters['CHUNK_SECOND_TO_LAST_MONTH'] = str(chunk_end_1.month).zfill(2)
+            parameters['CHUNK_SECOND_TO_LAST_DAY'] = str(chunk_end_1.day).zfill(2)
+            parameters['CHUNK_SECOND_TO_LAST_HOUR'] = str(chunk_end_1.hour).zfill(2)
 
-            parameters['Chunk_END_DATE'] = date2str(
+            parameters['CHUNK_END_DATE'] = date2str(
                 chunk_end_1, self.date_format)
-            parameters['Chunk_END_YEAR'] = str(chunk_end.year)
-            parameters['Chunk_END_MONTH'] = str(chunk_end.month).zfill(2)
-            parameters['Chunk_END_DAY'] = str(chunk_end.day).zfill(2)
-            parameters['Chunk_END_HOUR'] = str(chunk_end.hour).zfill(2)
+            parameters['CHUNK_END_YEAR'] = str(chunk_end.year)
+            parameters['CHUNK_END_MONTH'] = str(chunk_end.month).zfill(2)
+            parameters['CHUNK_END_DAY'] = str(chunk_end.day).zfill(2)
+            parameters['CHUNK_END_HOUR'] = str(chunk_end.hour).zfill(2)
 
             parameters['PREV'] = str(subs_dates(self.date, chunk_start, cal))
 
