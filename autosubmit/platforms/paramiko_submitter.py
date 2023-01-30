@@ -182,6 +182,8 @@ class ParamikoSubmitter(Submitter):
             remote_platform._serial_queue = platform_data[section].get('SERIAL_QUEUE', "")
             remote_platform.ec_queue = platform_data[section].get('EC_QUEUE', "hpc")
 
+            remote_platform.ec_queue = platform_data[section].get('EC_QUEUE', "hpc")
+
             remote_platform.processors_per_node = platform_data[section].get('PROCESSORS_PER_NODE',"1")
             remote_platform.custom_directives = platform_data[section].get('CUSTOM_DIRECTIVES',"")
             if len(remote_platform.custom_directives) > 0:
