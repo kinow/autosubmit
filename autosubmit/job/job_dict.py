@@ -379,7 +379,8 @@ class DicJobs:
         elif job_type == 'r':
             job.type = Type.R
         job.executable = str(parameters[section].get( "EXECUTABLE", ""))
-        job.platform_name = str(parameters[section].get( "PLATFORM", self.experiment_data["DEFAULT"].get("HPCARCH",''))).upper()
+        default_data = self.experiment_data.get("DEFAULT",{})
+        job.platform_name = str(parameters[section].get( "PLATFORM", default_data.get("HPCARCH",''))).upper()
         job.file = str(parameters[section].get( "FILE", ""))
         job.additional_files = parameters[section].get( "ADDITIONAL_FILES", [])
 
