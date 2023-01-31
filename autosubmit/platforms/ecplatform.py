@@ -26,7 +26,7 @@ from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import EcWrapperFactory
 from time import sleep
-
+import locale
 class EcPlatform(ParamikoPlatform):
     """
     Class to manage queues with ecaccess
@@ -51,6 +51,7 @@ class EcPlatform(ParamikoPlatform):
 
     def __init__(self, expid, name, config, scheduler):
         ParamikoPlatform.__init__(self, expid, name, config)
+        #version=scheduler
         if scheduler == 'pbs':
             self._header = EcCcaHeader()
         elif scheduler == 'loadleveler':
@@ -93,7 +94,8 @@ class EcPlatform(ParamikoPlatform):
         self.cancel_cmd = "eceaccess-job-delete"
         self._checkjob_cmd = "ecaccess-job-list "
         self._checkhost_cmd = "ecaccess-certificate-list"
-        self._submit_cmd = ("ecaccess-job-submit -distant -queueName " + self.host + " " + self.host + ":" +
+        self._checkvalidcert_cmd = "ecaccess-gateway-connected"
+        self._submit_cmd = ("ecaccess-job-submit -distant -queueName " + self.ec_queue + " " + self.host + ":" +
                             self.remote_log_dir + "/")
         self._submit_command_name = "ecaccess-job-submit"
         self.put_cmd = "ecaccess-file-put"
@@ -113,6 +115,9 @@ class EcPlatform(ParamikoPlatform):
 
     def get_mkdir_cmd(self):
         return self.mkdir_cmd
+    def set_submit_cmd(self,ec_queue="hpc"):
+        self._submit_cmd = ("ecaccess-job-submit -distant -queueName " + ec_queue + " " + self.host + ":" +
+                            self.remote_log_dir + "/")
 
     def check_Alljobs(self, job_list, as_conf, retries=5):
         for job,prev_status in job_list:
@@ -142,6 +147,7 @@ class EcPlatform(ParamikoPlatform):
         return self._checkjob_cmd + str(job_id)
 
     def get_submit_cmd(self, job_script, job, hold=False, export=""):
+        self.set_submit_cmd(job.ec_queue)
         if (export is None or export == "none") or len(export) == 0:
             export = ""
         else:
@@ -155,7 +161,11 @@ class EcPlatform(ParamikoPlatform):
         :return: True
         :rtype: bool
         """
-        self.connected = True
+        output = subprocess.check_output(self._checkvalidcert_cmd, shell=True).decode(locale.getlocale()[1])
+        if output.lower().find("yes") != -1:
+            self.connected = True
+        else:
+            self.connected = False
     def restore_connection(self):
         """
         In this case, it does nothing because connection is established for each command
@@ -163,7 +173,11 @@ class EcPlatform(ParamikoPlatform):
         :return: True
         :rtype: bool
         """
-        self.connected = True
+        output = subprocess.check_output(self._checkvalidcert_cmd, shell=True).decode(locale.getlocale()[1])
+        if output.lower().find("yes") != -1:
+            self.connected = True
+        else:
+            self.connected = False
     def test_connection(self):
         """
         In this case, it does nothing because connection is established for each command
@@ -171,34 +185,43 @@ class EcPlatform(ParamikoPlatform):
         :return: True
         :rtype: bool
         """
-        self.connected = True
+        output = subprocess.check_output(self._checkvalidcert_cmd, shell=True).decode(locale.getlocale()[1])
+        if output.lower().find("yes") != -1:
+            self.connected = True
+            return "OK"
+        else:
+            self.connected = False
+            return "Invalid certificate"
+
 
     def check_remote_permissions(self):
         try:
             try:
-                output = subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=True)
+                subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=False)
             except Exception as e:
                 pass
-            output = subprocess.check_output(self.check_remote_permissions_cmd, shell=True)
+            subprocess.check_output(self.check_remote_permissions_cmd, shell=True)
             pass
-            output = subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=True)
+            subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=True)
             return True
         except Exception as e:
             return False
 
     def send_command(self, command, ignore_log=False, x11 = False):
-        try:
-            output = subprocess.check_output(command, shell=True)
-        except subprocess.CalledProcessError as e:
-            if not ignore_log:
-                raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,str(e))
-            return False
         lang = locale.getlocale()[1]
         if lang is None:
             lang = locale.getdefaultlocale()[1]
             if lang is None:
                 lang = 'UTF-8'
-        self._ssh_output = output.decode(lang)
+        try:
+            output = subprocess.check_output(command, shell=True).decode(lang)
+        except subprocess.CalledProcessError as e:
+            if command.find("ecaccess-job-submit") != -1:
+                raise AutosubmitError("bad parameters. Error submitting job.")
+            if not ignore_log:
+                raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,str(e))
+            return False
+        self._ssh_output = output
         return True
 
     def send_file(self, filename, check=True):
@@ -222,6 +245,7 @@ class EcPlatform(ParamikoPlatform):
             while not process_ok and retries < 5:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,stderr=FNULL)
                 out, _ = process.communicate()
+                out=out.decode(locale.getlocale()[1])
                 if 'No such file' in out or process.returncode != 0:
                     retries = retries + 1
                     process_ok = False
@@ -254,6 +278,7 @@ class EcPlatform(ParamikoPlatform):
             while not process_ok and retries < 5:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,stderr=FNULL)
                 out, _ = process.communicate()
+                out = out.decode(locale.getlocale()[1])
                 if 'No such file' in out or process.returncode != 0:
                     retries = retries + 1
                     process_ok = False

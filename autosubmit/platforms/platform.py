@@ -28,6 +28,7 @@ class Platform(object):
         self._serial_platform = None
         self._serial_queue = None
         self._default_queue = None
+        self.ec_queue = "hpc"
         self.processors_per_node = "1"
         self.scratch_free_space = None
         self.custom_directives = None
@@ -252,6 +253,8 @@ class Platform(object):
         parameters['{0}ARCH'.format(prefix)] = self.name
         parameters['{0}HOST'.format(prefix)] = self.host
         parameters['{0}QUEUE'.format(prefix)] = self.queue
+        parameters['{0}EC_QUEUE'.format(prefix)] = self.ec_queue
+
         parameters['{0}USER'.format(prefix)] = self.user
         parameters['{0}PROJ'.format(prefix)] = self.project
         parameters['{0}BUDG'.format(prefix)] = self.budget
