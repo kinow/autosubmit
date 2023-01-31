@@ -379,7 +379,11 @@ class DicJobs:
         elif job_type == 'r':
             job.type = Type.R
         job.executable = str(parameters[section].get( "EXECUTABLE", ""))
-        job.platform_name = str(parameters[section].get( "PLATFORM", "")).upper()
+        hpcarch = self.experiment_data.get("DEFAULT",{})
+        hpcarch = hpcarch.get("HPCARCH","")
+        job.platform_name = str(parameters[section].get("PLATFORM", hpcarch)).upper()
+        if self.experiment_data["PLATFORMS"].get(job.platform_name, "") == "" and job.platform_name.upper() != "LOCAL":
+            raise AutosubmitCritical("Platform does not exists, check the value of %JOBS.{0}.PLATFORM% = {1} parameter".format(job.section,job.platform_name),7000,"List of platforms: {0} ".format(self.experiment_data["PLATFORMS"].keys()) )
         job.file = str(parameters[section].get( "FILE", ""))
         job.additional_files = parameters[section].get( "ADDITIONAL_FILES", [])
 
