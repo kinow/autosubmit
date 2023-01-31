@@ -49,8 +49,8 @@ def main():
     except AutosubmitCritical as e:
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
             os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
-        Log.error(str(traceback.print_exc()))
-        if e.trace is not None:
+        str(traceback.print_exc())
+        if e.trace is not None or e.trace == "":
             Log.error("Trace: {0}", e.trace)
         Log.critical("{1} [eCode={0}]", e.code, e.message)
 

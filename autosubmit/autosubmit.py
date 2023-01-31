@@ -4438,14 +4438,17 @@ class Autosubmit:
                         "Preparing .lock file to avoid multiple instances with same expid.")
 
                     as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-                    as_conf.check_conf_files(True)
-
+                    # Get original configuration
+                    as_conf.check_conf_files(False)
                     project_type = as_conf.get_project_type()
                     # Getting output type provided by the user in config, 'pdf' as default
                     output_type = as_conf.get_output_type()
 
                     if not Autosubmit._copy_code(as_conf, expid, project_type, False):
                         return False
+                    # Update configuration with the new config in the dist ( if any )
+                    as_conf.check_conf_files(False)
+
                     if not os.path.exists(os.path.join(exp_path, "pkl")):
                         raise AutosubmitCritical(
                             "The pkl folder doesn't exists. Make sure that the 'pkl' folder exists in the following path: {}".format(
