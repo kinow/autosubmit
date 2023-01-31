@@ -219,7 +219,7 @@ class JobPackager(object):
             self.current_wrapper_section = wrapper_name
             for section,jobs in section_jobs.items():
                 if len(jobs) > 0:
-                    if not self._platform.allow_wrappers:
+                    if self.current_wrapper_section != "SIMPLE" and not self._platform.allow_wrappers:
                         Log.warning("Platform {0} does not allow wrappers, submitting jobs individually".format(self._platform.name))
                     if  wrapper_name != "SIMPLE" and self._platform.allow_wrappers and self.wrapper_type[self.current_wrapper_section] in ['horizontal', 'vertical','vertical-horizontal', 'horizontal-vertical'] :
                         # Trying to find the value in jobs_parser, if not, default to an autosubmit_.yml value (Looks first in [wrapper] section)

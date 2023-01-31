@@ -2244,6 +2244,8 @@ class Autosubmit:
                     elif message.find("private key file is encrypted") != -1:
                         if private_key_error not in ssh_config_issues:
                             ssh_config_issues += private_key_error
+                    elif message.find("Invalid certificate") != -1:
+                        ssh_config_issues += message + ".Please, the eccert expiration date"
                     else:
                         ssh_config_issues += message + " this is an PARAMIKO SSHEXCEPTION: indicates that there is something incompatible in the ssh_config for host:{0}\n maybe you need to contact your sysadmin".format(
                             platform.host)
@@ -2320,7 +2322,7 @@ class Autosubmit:
                 if not inspect and len(valid_packages_to_submit) > 0:
                     job_list.save()
                 save_2 = False
-                if platform.type == "slurm" and not inspect and not only_wrappers:  # return to ==
+                if platform.type == "slurm" and not inspect and not only_wrappers:
                     # Process the script generated in submit_ready_jobs
                     save_2, valid_packages_to_submit = platform.process_batch_ready_jobs(valid_packages_to_submit,
                                                                                          failed_packages,
