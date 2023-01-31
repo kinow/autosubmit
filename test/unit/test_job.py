@@ -166,8 +166,9 @@ class TestJob(TestCase):
         self.job.parameters['NUMTASK'] = 666
 
         self.job._tmp_path = '/dummy/tmp/path'
+        self.job.additional_files = '/dummy/tmp/path_additional_file'
 
-        update_content_mock = Mock(return_value=('some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK% %% %%','some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK% %% %%'))
+        update_content_mock = Mock(return_value=('some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK% %% %%',['some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK% %% %%']))
         self.job.update_content = update_content_mock
 
         config = Mock(spec=AutosubmitConfig)

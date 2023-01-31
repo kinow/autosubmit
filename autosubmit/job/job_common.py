@@ -347,6 +347,7 @@ def increase_wallclock_by_chunk(current, increase, chunk):
     :return: HH:MM wallclock 
     :rtype: str 
     """
+    # Pipeline is not testing this since mock is not well made
     try:
         if current and increase and chunk and chunk > 0:
             wallclock = current.split(":")
