@@ -2170,8 +2170,11 @@ class JobList(object):
         Updates job list to rerun the jobs specified by a job list
         :param job_list_unparsed: list of jobs to rerun
         :type job_list_unparsed: str
+        :param as_conf: experiment configuration
+        :type as_conf: AutosubmitConfig
         :param monitor: if True, the job list will be monitored
         :type monitor: bool
+
         """
         self.parse_jobs_by_filter(job_list_unparsed,two_step_start=False)
         member_list = set()
