@@ -77,8 +77,9 @@ class SlurmHeader(object):
         :rtype: str
         """
         # There is no account, so directive is empty
-        if job.parameters.get('NODES',"") != '':
-            return "SBATCH -N {0}".format(job.parameters.get('NODES',""))
+        nodes = job.parameters.get('NODES',"")
+        if nodes != '':
+            return "SBATCH -N {0}".format(nodes)
         return ""
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def get_memory_directive(self, job):
