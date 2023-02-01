@@ -2274,7 +2274,7 @@ class Autosubmit:
             else:
                 if platform.connected:
                     platform.connected = False
-                    Log.printlog("[{1}] Connection sucessful to host {0}, however there are issues with %hpcroot%".format(platform.host, platform.name),
+                    Log.printlog("[{1}] Connection sucessful to host {0}, however there are issues with %HPCROOT%".format(platform.host, platform.name),
                                  Log.WARNING)
                 else:
                     Log.printlog("[{1}] Connection failed to host {0}".format(platform.host, platform.name), Log.WARNING)

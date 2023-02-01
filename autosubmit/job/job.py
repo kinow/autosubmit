@@ -1084,7 +1084,9 @@ class Job(object):
             self.tasks = job_platform.processors_per_node
         self.memory = str(as_conf.jobs_data[self.section].get("MEMORY",""))
         self.memory_per_task = str(as_conf.jobs_data[self.section].get("MEMORY_PER_TASK",""))
-        self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK",None)
+        remote_max_wallclock = as_conf.experiment_data["PLATFORMS"].get(self.platform_name,{})
+        remote_max_wallclock = remote_max_wallclock.get("MAX_WALLCLOCK",None)
+        self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK",remote_max_wallclock)
         self.wchunkinc = str(as_conf.jobs_data[self.section].get("WCHUNKINC",""))
         if self.wallclock is None and job_platform.type not in ['ps',"local","PS","LOCAL"]:
             self.wallclock = "01:59"
