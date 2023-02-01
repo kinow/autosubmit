@@ -125,8 +125,11 @@ class ParamikoPlatform(Platform):
                 except BaseException as e:
                     message = str(e)
                 if message.find("t accept remote connections") == -1:
-                    transport = self._ssh.get_transport()
-                    transport.send_ignore()
+                    try:
+                        transport = self._ssh.get_transport()
+                        transport.send_ignore()
+                    except:
+                        message = "Timeout connection"
                 return message
         except EOFError as e:
             self.connected = False
@@ -147,8 +150,6 @@ class ParamikoPlatform(Platform):
             retry = 0
             try:
                 self.connect()
-            except SSHException as e:
-                raise
             except Exception as e:
                 if ',' in self.host:
                     Log.printlog("Connection Failed to {0}, will test another host".format(
@@ -168,7 +169,7 @@ class ParamikoPlatform(Platform):
                 raise AutosubmitCritical(
                     'Experiment cant no continue without unexpected behaviour, Stopping Autosubmit', 7050, trace)
 
-        except AutosubmitCritical:
+        except AutosubmitCritical as e:
             raise
         except SSHException as e:
             raise
@@ -207,24 +208,25 @@ class ParamikoPlatform(Platform):
                         0]
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
-
+            #pkey = paramiko.Ed25519Key.from_private_key_file(self._host_config_id[0])
+            port = int(self._host_config.get('port',22))
             if 'proxycommand' in self._host_config:
                 self._proxy = paramiko.ProxyCommand(
                     self._host_config['proxycommand'])
                 try:
-                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
+                    self._ssh.connect(self._host_config['hostname'], port, username=self.user,
                                       key_filename=self._host_config_id, sock=self._proxy, timeout=120 , banner_timeout=120)
                 except Exception as e:
-                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
+                    self._ssh.connect(self._host_config['hostname'], port, username=self.user,
                                       key_filename=self._host_config_id, sock=self._proxy, timeout=120,
                                       banner_timeout=120,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
             else:
                 try:
-                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                      key_filename=self._host_config_id, timeout=120 , banner_timeout=120)
+                    self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                      key_filename=self._host_config_id, timeout=60 , banner_timeout=60)
                 except Exception as e:
-                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                      key_filename=self._host_config_id, timeout=120 , banner_timeout=120,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+                    self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                      key_filename=self._host_config_id, timeout=60 , banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
             self.transport = self._ssh.get_transport()
             #self.transport = paramiko.Transport((self._host_config['hostname'], 22))
             #self.transport.connect(username=self.user)
@@ -236,12 +238,12 @@ class ParamikoPlatform(Platform):
         except SSHException as e:
             raise
         except IOError as e:
-            if "refused" in e.strerror.lower():
+            if "refused" in str(e.strerror).lower():
                 raise SSHException(" {0} doesn't accept remote connections. Check if there is an typo in the hostname".format(self.host))
-            elif "name or service not known" in e.strerror.lower():
+            elif "name or service not known" in str(e.strerror).lower():
                 raise SSHException(" {0} doesn't accept remote connections. Check if there is an typo in the hostname".format(self.host))
             else:
-                raise AutosubmitError("File can't be located due an slow connection", 6016, str(e))
+                raise AutosubmitError("File can't be located due an slow or timeout connection", 6016, str(e))
         except BaseException as e:
             self.connected = False
             if "Authentication failed." in str(e):
