@@ -4510,7 +4510,7 @@ class Autosubmit:
                                       jobs_data=as_conf.experiment_data, as_conf=as_conf)
 
                     if str(rerun).lower() == "true":
-                        job_list.rerun(as_conf.get_rerun_jobs())
+                        job_list.rerun(as_conf.get_rerun_jobs(),as_conf)
                     else:
                         job_list.remove_rerun_only_jobs(notransitive)
                     Log.info("\nSaving the jobs list...")
@@ -5778,7 +5778,7 @@ class Autosubmit:
                           jobs_data=as_conf.experiment_data, as_conf=as_conf)
         if str(rerun).lower() == "true":
             rerun_jobs = as_conf.get_rerun_jobs()
-            job_list.rerun(rerun_jobs, monitor=monitor)
+            job_list.rerun(rerun_jobs,as_conf, monitor=monitor)
         else:
             job_list.remove_rerun_only_jobs(notransitive)
 
