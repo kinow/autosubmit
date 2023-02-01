@@ -43,6 +43,7 @@ This variables are relatives to the current job.
 - **NUMPROC**: Number of processors that the job will use.
 - **NUMTHREADS**: Number of threads that the job will use.
 - **NUMTASKS**: Number of tasks that the job will use.
+- **NODES**: Number of nodes that the job will use.
 - **HYPERTHREADING**: Detects if hyperthreading is enabled or not.
 - **WALLCLOCK**: Number of processors that the job will use.
 - **SCRATCH_FREE_SPACE**: Percentage of free space required on the ``scratch``.
