@@ -97,6 +97,7 @@ class Job(object):
         self.wallclock = None # type: str
         self.wchunkinc = None
         self.tasks = '1'
+        self.nodes = ""
         self.default_parameters = {'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
                               'M': '%M%', 'M_': '%M_%', 'm': '%m%', 'm_': '%m_%'}
         self.threads = '1'
@@ -1077,6 +1078,8 @@ class Job(object):
         self.processors = str(as_conf.jobs_data[self.section].get("PROCESSORS","1"))
         self.threads = str(as_conf.jobs_data[self.section].get("THREADS","1"))
         self.tasks = str(as_conf.jobs_data[self.section].get("TASKS","1"))
+        self.nodes = str(as_conf.jobs_data[self.section].get("NODES",""))
+
         self.hyperthreading = str(as_conf.jobs_data[self.section].get("HYPERTHREADING","none"))
         if self.hyperthreading == 'none' and len(self.hyperthreading) > 0:
             self.hyperthreading = job_platform.hyperthreading
@@ -1125,6 +1128,8 @@ class Job(object):
         parameters['CPUS_PER_TASK'] = self.threads
         parameters['NUMTASK'] = self.tasks
         parameters['TASKS'] = self.tasks
+        parameters['NODES'] = self.nodes
+
         parameters['TASKS_PER_NODE'] = self.tasks
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section

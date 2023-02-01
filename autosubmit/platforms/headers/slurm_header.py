@@ -68,6 +68,18 @@ class SlurmHeader(object):
             return "SBATCH -A {0}".format(job.parameters['CURRENT_PROJ'])
         return ""
 
+    def get_nodes_directive(self, job):
+        """
+        Returns nodes directive for the specified job
+        :param job: job to create nodes directive for
+        :type job: Job
+        :return: nodes directive
+        :rtype: str
+        """
+        # There is no account, so directive is empty
+        if job.parameters.get('NODES',"") != '':
+            return "SBATCH -N {0}".format(job.parameters.get('NODES',""))
+        return ""
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def get_memory_directive(self, job):
         """
@@ -143,9 +155,9 @@ class SlurmHeader(object):
 #%PARTITION_DIRECTIVE%
 #%ACCOUNT_DIRECTIVE%
 #%MEMORY_DIRECTIVE%
-
 #%THREADS_PER_TASK_DIRECTIVE%
 #%TASKS_PER_NODE_DIRECTIVE%
+#%NODES_DIRECTIVE%
 #SBATCH -n %NUMPROC%
 #SBATCH -t %WALLCLOCK%:00
 #SBATCH -J %JOBNAME%
@@ -168,6 +180,7 @@ class SlurmHeader(object):
 #%MEMORY_DIRECTIVE%
 #%MEMORY_PER_TASK_DIRECTIVE%
 #%THREADS_PER_TASK_DIRECTIVE%
+#%NODES_DIRECTIVE%
 #SBATCH -n %NUMPROC%
 #%TASKS_PER_NODE_DIRECTIVE%
 #SBATCH -t %WALLCLOCK%:00
