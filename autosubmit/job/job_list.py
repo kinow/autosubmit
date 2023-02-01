@@ -2205,7 +2205,7 @@ class JobList(object):
         for job_section in job_sections:
             Log.debug(
                 "Reading rerun dependencies for {0} jobs".format(job_section))
-            if len(as_conf.jobs_data[job_section].get('DEPENDENCIES',{})) > 0:
+            if as_conf.jobs_data[job_section].get('DEPENDENCIES')) is not None:
                 dependencies_keys = as_conf.jobs_data[job_section].get('DEPENDENCIES',{})
                 if type(dependencies_keys) is str:
                     dependencies_keys = dependencies_keys.upper().split()
