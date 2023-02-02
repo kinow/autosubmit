@@ -1169,7 +1169,7 @@ class Autosubmit:
                                         content = ["NOTIFICATIONS = False\n" if line.startswith(
                                             ("NOTIFICATIONS =", "notifications =")) else line for line in content]
                                     elif filename.startswith("autosubmit") and filename.endswith("yml"):
-                                        content = ["NOTIFICATIONS: False\n" if "NOTIFICATIONS" in line else line for
+                                        content = ["  NOTIFICATIONS: False\n" if "NOTIFICATIONS" in line else line for
                                                    line in content]
                                     # Putting content together before writing
                                     sep = ""
