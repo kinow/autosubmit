@@ -2219,7 +2219,7 @@ class Autosubmit:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message, 7000)
         except AutosubmitCritical as e:
-            raise AutosubmitCritical(e.message, e.code, e.trace)
+            raise
         except BaseException as e:
             raise AutosubmitCritical("This seems like a bug in the code, please contact AS developers", 7070, str(e))
 
@@ -2272,14 +2272,17 @@ class Autosubmit:
 
                 Log.printlog("[{1}] Connection successful to host {0}".format(platform.host, platform.name), Log.RESULT)
             else:
-                platform.connected = False
-                Log.printlog("[{1}] Connection failed to host {0}".format(platform.host, platform.name), Log.WARNING)
+                if platform.connected:
+                    platform.connected = False
+                    Log.printlog("[{1}] Connection sucessful to host {0}, however there are issues with %HPCROOT%".format(platform.host, platform.name),
+                                 Log.WARNING)
+                else:
+                    Log.printlog("[{1}] Connection failed to host {0}".format(platform.host, platform.name), Log.WARNING)
         if issues != "":
             if ssh_config_issues.find(private_key_error[:-2]) != -1:
                 raise AutosubmitCritical("Private key is encrypted, Autosubmit does not run in interative mode.\nPlease, add the key to the ssh agent(ssh-add <path_to_key>).\nIt will remain open as long as session is active, for force clean you can prompt ssh-add -D",7073, issues + "\n" + ssh_config_issues)
             else:
-                raise AutosubmitCritical(
-                    "Issues while checking the connectivity of platforms.", 7010, issues + "\n" + ssh_config_issues)
+                raise AutosubmitCritical("Issues while checking the connectivity of platforms.", 7010, issues + "\n" + ssh_config_issues)
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,
@@ -4510,7 +4513,7 @@ class Autosubmit:
                                       jobs_data=as_conf.experiment_data, as_conf=as_conf)
 
                     if str(rerun).lower() == "true":
-                        job_list.rerun(as_conf.get_rerun_jobs())
+                        job_list.rerun(as_conf.get_rerun_jobs(),as_conf)
                     else:
                         job_list.remove_rerun_only_jobs(notransitive)
                     Log.info("\nSaving the jobs list...")
@@ -5778,7 +5781,7 @@ class Autosubmit:
                           jobs_data=as_conf.experiment_data, as_conf=as_conf)
         if str(rerun).lower() == "true":
             rerun_jobs = as_conf.get_rerun_jobs()
-            job_list.rerun(rerun_jobs, monitor=monitor)
+            job_list.rerun(rerun_jobs,as_conf, monitor=monitor)
         else:
             job_list.remove_rerun_only_jobs(notransitive)
 

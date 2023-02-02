@@ -110,6 +110,9 @@ To do this use:
 
 * TASKS:  tasks number to be submitted to the HPC. If not specified, defaults to 1.
 
+* NODES:  nodes number to be submitted to the HPC. If not specified, the directive is not added.
+
+
 * HYPERTHREADING: Enables Hyper-threading, this will double the max amount of threads. defaults to false. ( Not available on slurm platforms )
 * QUEUE: queue to add the job to. If not specified, uses PLATFORM default.
 

@@ -402,7 +402,9 @@ class DicJobs:
         job.tasks = str(parameters[section].get( "TASKS", ""))
         job.memory = str(parameters[section].get("MEMORY", ""))
         job.memory_per_task = str(parameters[section].get("MEMORY_PER_TASK", ""))
-        job.wallclock = parameters[section].get("WALLCLOCK", None)
+        remote_max_wallclock = self.experiment_data["PLATFORMS"].get(job.platform_name,{})
+        remote_max_wallclock = remote_max_wallclock.get("MAX_WALLCLOCK",None)
+        job.wallclock = parameters[section].get("WALLCLOCK", remote_max_wallclock)
         job.retrials = int(parameters[section].get( 'RETRIALS', 0))
         job.delay_retrials = int(parameters[section].get( 'DELAY_RETRY_TIME', "-1"))
         if job.wallclock is None and job.platform_name.upper() != "LOCAL":

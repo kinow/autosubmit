@@ -2165,13 +2165,16 @@ class JobList(object):
 
         self._job_list.remove(job)
 
-    def rerun(self, job_list_unparsed, monitor=False):
+    def rerun(self, job_list_unparsed,as_conf, monitor=False):
         """
         Updates job list to rerun the jobs specified by a job list
         :param job_list_unparsed: list of jobs to rerun
         :type job_list_unparsed: str
+        :param as_conf: experiment configuration
+        :type as_conf: AutosubmitConfig
         :param monitor: if True, the job list will be monitored
         :type monitor: bool
+
         """
         self.parse_jobs_by_filter(job_list_unparsed,two_step_start=False)
         member_list = set()
@@ -2196,15 +2199,18 @@ class JobList(object):
         self._member_list = list(member_list)
         self._chunk_list = list(chunk_list)
         self._date_list = list(date_list)
-        jobs_parser = self._get_jobs_parser()
         Log.info("Adding dependencies...")
         dependencies = dict()
 
         for job_section in job_sections:
             Log.debug(
                 "Reading rerun dependencies for {0} jobs".format(job_section))
-            if jobs_parser.has_option(job_section, 'DEPENDENCIES'):
-                dependencies_keys = jobs_parser.get(job_section, "DEPENDENCIES").upper().split()
+            if as_conf.jobs_data[job_section].get('DEPENDENCIES',None) is not None:
+                dependencies_keys = as_conf.jobs_data[job_section].get('DEPENDENCIES',{})
+                if type(dependencies_keys) is str:
+                    dependencies_keys = dependencies_keys.upper().split()
+                if dependencies_keys is None:
+                    dependencies_keys = []
                 dependencies = JobList._manage_dependencies(dependencies_keys, self._dic_jobs, job_section)
                 for job in self.get_jobs_by_section(job_section):
                     for key in dependencies_keys:
