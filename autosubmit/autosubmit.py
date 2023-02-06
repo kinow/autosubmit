@@ -831,9 +831,8 @@ class Autosubmit:
                             raise AutosubmitCritical(
                                 "Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
                                 "Or with the -v parameter: autosubmit {3} {2} -v ".format(as_conf.get_version(),
-                                                                                          Autosubmit.autosubmit_version,
-                                                                                          expid, args.command),
-                                7067)
+                                                                                          Autosubmit.autosubmit_version, expid,args.command),
+                                7014)
         else:
             if expid == 'None':
                 exp_id = ""
@@ -1863,7 +1862,8 @@ class Autosubmit:
                             "Only jobs with member value in {0} or no member will be allowed in this run. Also, those jobs already SUBMITTED, QUEUING, or RUNNING will be allowed to complete and will be tracked.".format(
                                 str(allowed_members)))
                 except AutosubmitCritical as e:
-                    raise AutosubmitCritical(e.message, 7067, e.trace)
+                    e.message += " HINT: check the CUSTOM_DIRECTIVE syntax in your jobs configuration files."
+                    raise AutosubmitCritical(e.message, 7014, e.trace)
                 except Exception as e:
                     raise AutosubmitCritical(
                         "Error in run initialization", 7014, str(e))  # Changing default to 7014
