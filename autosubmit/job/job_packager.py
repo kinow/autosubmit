@@ -196,6 +196,7 @@ class JobPackager(object):
             return packages_to_submit
         if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
             # If there is no more space in platform, result is tuple of empty
+            Log.debug("No more space in platform {0} for jobs {1}".format(self._platform.name, [job.name for job in jobs_ready]))
             return packages_to_submit
 
         # Sort by 6 first digits of date
