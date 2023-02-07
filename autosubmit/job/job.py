@@ -766,7 +766,7 @@ class Job(object):
                                     platform.get_logs_files(self.expid, l_log)
                                     try:
                                         for local_log in l_log:
-                                            platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                                            platform.write_jobid(job_id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
                                     except BaseException as e:
                                         pass
                                     max_logs = max_logs - 1
