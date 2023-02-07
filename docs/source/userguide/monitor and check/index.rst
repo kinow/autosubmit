@@ -450,8 +450,10 @@ Options:
       expid                 experiment identifier
       -h, --help            show this help message and exit
 
-Example:
+Examples:
 ::
+
+.. code-block:: bash
 
     autosubmit describe cxxx
 
