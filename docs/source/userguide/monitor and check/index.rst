@@ -45,6 +45,8 @@ There are two parameters related to check:
     CHECK: TRUE or FALSE or ON_SUBMISSION # Default is TRUE
     SHOW_CHECK_WARNINGS: TRUE or FALSE # Default is FALSE
 
+
+
 ::
 
     CHECK: TRUE # Static templates (existing on `autosubmit create`). Used to substitute empty variables
@@ -52,6 +54,8 @@ There are two parameters related to check:
     CHECK: ON_SUBMISSION # Dynamic templates (generated on running time). Used to substitute empty variables.
 
     CHECK: FALSE # Used to disable this substitution.
+
+::
 
     SHOW_CHECK_WARNINGS: TRUE # Shows a LOT of information. Disabled by default.
 
@@ -79,7 +83,6 @@ For example:
 
 How to generate cmd files
 -------------------------
-
 
 To generate  the cmd files of the current non-active jobs experiment, it is possible to use the command:
 ::
@@ -238,17 +241,10 @@ Examples:
 
 Consider the following workflow:
 
-.. figure:: ./fig/pre_grouping_workflow.png
+.. figure:: fig/pre_grouping_workflow.png
    :name: pre_grouping_workflow
    :align: center
    :alt: simple workflow
-
-.. figure:: /home/dbeltran/PycharmProjects/autosubmit_2022a/docs/source/userguide/monitor and check/fig/pre_grouping_workflow.png
-   :name: pre_grouping_workflow
-   :align: center
-   :alt: pre_grouping_workflow
-
-
 
 **Group by date**
 
@@ -440,37 +436,24 @@ How to get details about the experiment
 To get details about the experiment, use the command:
 ::
 
-    autosubmit describe EXPID -u USERNAME
+    autosubmit describe EXPID
 
-*EXPID* is the experiment identifier, can be a list of experiment identifiers separated by space or comma.
-*USERNAME* is the username of the user who submitted the experiment.
+*EXPID* is the experiment identifier.
 
 It displays information about the experiment. Currently it describes owner,description_date,model,branch and hpc
 
 Options:
 ::
 
-    usage: autosubmit describe [-h ] {expid} {-u USERNAME}
+    usage: autosubmit describe [-h ] expid
 
-      expid                 *EXPID* is the experiment identifier, can be a list of experiment identifiers separated by space or comma.
-      -u USERNAME, --user USERNAME
-                                *USERNAME* is the username of the user who submitted the experiment.
+      expid                 experiment identifier
       -h, --help            show this help message and exit
 
-Examples:
+Example:
 ::
 
-.. code-block:: bash
-
     autosubmit describe cxxx
-    autosubmit describe cxxx -u username
-    autosubmit describe cxxx cyyy
-    autosubmit describe cxxx,cyyy
-    autosubmit describe -u username
-    autosubmit describe * -u username
-
-
-
 
 How to monitor job statistics
 -----------------------------

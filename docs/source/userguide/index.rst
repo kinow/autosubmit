@@ -7,8 +7,8 @@ Usage
    /userguide/configure/index
    /userguide/run/index
    /userguide/manage/index
-   /userguide/monitor_and_check/index
-   /userguide/set_and_share_the_configuration/index
+   /userguide/monitor and check/index
+   /userguide/set and share the configuration/index
 
 Command list
 ============

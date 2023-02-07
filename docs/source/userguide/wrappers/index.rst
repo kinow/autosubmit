@@ -47,7 +47,7 @@ When using multiple wrappers or 2-dim wrappers is essential to define the `JOBS_
         TYPE: "horizontal-vertical"
         JOBS_IN_WRAPPER: "SIM5 SIM6"
 
-.. figure:: docs/source/userguide/wrappers/fig/wrapper_all.png
+.. figure:: fig/wrapper_all.png
    :name: wrapper all
    :align: center
    :alt: wrapper all
@@ -261,7 +261,7 @@ Autosubmit supports wrapping together vertically jobs of different types.
       TYPE: "vertical"
       JOBS_IN_WRAPPER: "SIM"
 
-.. figure:: docs/source/userguide/wrappers/fig/wrapper_v.png
+.. figure:: fig/wrapper_v.png
    :name: wrapper vertical
    :align: center
    :alt: wrapper vertical
@@ -281,7 +281,7 @@ Horizontal wrappers are suited for jobs that must run parallel (e.x. members of 
       JOBS_IN_WRAPPER: "SIM"
 
 
-.. figure:: docs/source/userguide/wrappers/fig/wrapper_h.png
+.. figure:: fig/wrapper_h.png
    :name: wrapper horizontal
    :align: center
    :alt: wrapper horizontal
@@ -294,7 +294,7 @@ Vertical-horizontal wrapper
 
 The vertical-horizontal wrapper allows bundling together a vertical sequence of tasks independent of the horizontal ones. Therefore, all horizontal tasks do not need to finish to progress to the next horizontal level.
 
-.. figure:: docs/source/userguide/wrappers/fig/wrapper_vh.png
+.. figure:: fig/wrapper_vh.png
    :name: wrapper vertical-horizontal
    :align: center
    :alt: wrapper vertical-horizontal
@@ -308,7 +308,7 @@ Horizontal-vertical wrapper
 The horizontal-vertical wrapper allows bundling together tasks that could run simultaneously but need to communicate before progressing to the next horizontal level.
 
 
-.. figure:: docs/source/userguide/wrappers/fig/wrapper_hv.png
+.. figure:: fig/wrapper_hv.png
    :name: wrapper horizontal-vertical
    :align: center
    :alt: wrapper horizontal-vertical
@@ -409,7 +409,7 @@ Considering the following configuration:
         TYPE: "horizontal-vertical"
         JOBS_IN_WRAPPER: "SIM DA"
 
-.. figure:: docs/source/userguide/wrappers/fig/monarch-da.png
+.. figure:: fig/monarch-da.png
    :name: crossdate-example
    :align: center
    :alt: crossdate-example
