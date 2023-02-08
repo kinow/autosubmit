@@ -9,7 +9,7 @@ Hello @dbeltran and @bdepaula,
 
 ### Expid affected(If applicable)
 
-(Which expid is affected? and where is the log path? ex: expid: a000, log path: /esarchive/autosubmit/a000/tmp/logs/12345678/12345678.log)
+(Which expid is affected? )
 
 ### Which task has issues, where is the log(If applicable)
 
