@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import os
 import sys
-from mock import Mock
+from mock import MagicMock
 from mock import patch
 from autosubmit.database.db_manager import DbManager
 
@@ -50,11 +50,13 @@ class TestDbManager(TestCase):
         self.assertEqual(expected_command, command)
 
     def test_when_database_already_exists_then_is_not_initialized_again(self):
-        sys.modules['os'].path.exists = Mock(return_value=True)
-        connection_mock = Mock()
-        cursor_mock = Mock()
-        cursor_mock.side_effect = Exception('This method shoudn\'t be called')
-        connection_mock.cursor = Mock(return_value=cursor_mock)
-        sys.modules['sqlite3'].connect = Mock(return_value=connection_mock)
+        sys.modules['os'].path.exists = MagicMock(return_value=True)
+        connection_mock = MagicMock()
+        cursor_mock = MagicMock()
+        cursor_mock.side_effect = Exception('This method should not be called')
+        connection_mock.cursor = MagicMock(return_value=cursor_mock)
+        original_connect = sys.modules['sqlite3'].connect
+        sys.modules['sqlite3'].connect = MagicMock(return_value=connection_mock)
         DbManager('dummy-path', 'dummy-name', 999)
         connection_mock.cursor.assert_not_called()
+        sys.modules['sqlite3'].connect = original_connect

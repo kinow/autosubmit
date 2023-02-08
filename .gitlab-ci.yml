@@ -25,15 +25,16 @@ test_python3:
     - git submodule update --init --recursive
     - conda env update -f environment.yml -n autosubmit3 python=3.7.3
     - source activate autosubmit3
-    - python3 -m 'nose' --exclude=regression  --verbosity=3 test/unit
-
-#--with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml
-# report_codacy:
-#   stage: report
-#   script:
-#     - source activate autosubmit2
-#     - pip install codacy-coverage --upgrade
-#     - python-codacy-coverage -r test/coverage.xml
+    - python3 -m 'nose' --exclude=regression  --verbosity=3 test/unit --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  # These artifacts are saved with every build in GitLab and can be reviewed later. If
+  # we have a folder with HTML files, as in this example, users can navigate with their
+  # browser.
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: test/coverage.xml
 
 clean:
   stage: clean
