@@ -436,9 +436,12 @@ How to get details about the experiment
 To get details about the experiment, use the command:
 ::
 
-    autosubmit describe EXPID
+    autosubmit describe {EXPID} {-u USERNAME}
 
-*EXPID* is the experiment identifier.
+
+
+*EXPID* is the experiment identifier, can be a list of expid separated by comma or spaces
+*-u USERNAME* is the username of the user who submitted the experiment.
 
 It displays information about the experiment. Currently it describes owner,description_date,model,branch and hpc
 
@@ -448,6 +451,7 @@ Options:
     usage: autosubmit describe [-h ] expid
 
       expid                 experiment identifier
+      -u USERNAME, --user USERNAME username of the user who submitted the experiment
       -h, --help            show this help message and exit
 
 Examples:
@@ -456,6 +460,9 @@ Examples:
 .. code-block:: bash
 
     autosubmit describe cxxx
+    autosubmit describe "cxxx cyyy"
+    autosubmit describe cxxx,cyyy
+    autosubmit describe -u dbeltran
 
 How to monitor job statistics
 -----------------------------

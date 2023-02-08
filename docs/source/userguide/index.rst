@@ -16,7 +16,7 @@ Command list
 -expid  Create a new experiment
 -create  Create specified experiment workflow
 -check  Check configuration for specified experiment
--describe  Show details for specified experiment
+-describe  Show details for specified experiments
 -run  Run specified experiment
 -inspect  Generate cmd files
 -test  Test experiment
