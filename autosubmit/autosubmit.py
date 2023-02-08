@@ -3437,6 +3437,9 @@ class Autosubmit:
 
         :param experiments_id: experiments identifier:
         :type experiments_id: str
+        :param get_from_user: user to get the experiments from
+        :type get_from_user: str
+        :return: str,str,str,str
         """
         experiments_ids = input_experiment_list
         not_described_experiments = []
@@ -3505,6 +3508,7 @@ class Autosubmit:
         if len(not_described_experiments) > 0:
             Log.printlog("Could not describe the following experiments:\n{0}".format(not_described_experiments),Log.WARNING)
         if len(experiments_ids) == 1:
+            # for backward compatibility or GUI
             return user, created, model, branch, hpc
         elif len(experiments_ids) == 0:
             Log.result("No experiments found for expid={0} and user {1}".format(input_experiment_list,get_from_user))
