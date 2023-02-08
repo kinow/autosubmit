@@ -9,7 +9,7 @@ Hello @dbeltran and @bdepaula,
 
 ### Expid affected(If applicable)
 
-(Which expid is affected? )
+(Which expid is affected?)
 
 ### Which task has issues? Where is the log(If applicable)
 
@@ -40,7 +40,13 @@ it's very hard to read otherwise.)
 
 ### Any other relevant information(if applicable)
 
+/assign @dbeltran @bdepaula
+
+/label ~bug discussion
+
 ()
+
+
 
 Thanks for your help!
 
