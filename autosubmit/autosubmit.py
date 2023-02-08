@@ -530,7 +530,7 @@ class Autosubmit:
 
             # Database Fix
             subparser = subparsers.add_parser(
-                'dbfix', description='historical database functions')
+                'dbfix', description='tries to fix a corrupted jobs database')
             subparser.add_argument('expid', help='experiment identifier')
 
             # Pkl Fix
