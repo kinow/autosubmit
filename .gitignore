@@ -11,3 +11,4 @@ autosubmit/simple_test.py
 .pytest_cache/
 .idea/
 autosubmit.egg-info/
+docs/build/
