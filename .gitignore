@@ -3,8 +3,6 @@
 .*.sw*
 .*.pyc*
 .*.log*
-/cover/
-/.coverage
 autosubmit/miniTest.py
 autosubmit/simple_test.py
 .vscode/
@@ -15,3 +13,9 @@ docs/build/
 dist/
 build/
 .cache
+
+# Coverage files
+coverage/
+/.coverage
+test/coverage.xml
+
