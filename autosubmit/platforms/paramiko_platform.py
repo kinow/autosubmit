@@ -654,6 +654,12 @@ class ParamikoPlatform(Platform):
                             try:
                                 job.platform.get_completed_files(job.name)
                                 job_status = job.check_completion(over_wallclock=True)
+                                if job_status is Status.FAILED:
+                                    try:
+                                        job.platform.send_command(
+                                            self.platform.cancel_cmd + " " + str(job.id))
+                                    except:
+                                        pass
                             except:
                                 job_status = Status.FAILED
                 if job_status in self.job_status['COMPLETED']:
