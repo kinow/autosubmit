@@ -7,8 +7,8 @@ Usage
    /userguide/configure/index
    /userguide/run/index
    /userguide/manage/index
-   /userguide/monitor and check/index
-   /userguide/set and share the configuration/index
+   /userguide/monitor_and_check/index
+   /userguide/set_and_share_the_configuration/index
 
 Command list
 ============
@@ -16,7 +16,7 @@ Command list
 -expid  Create a new experiment
 -create  Create specified experiment workflow
 -check  Check configuration for specified experiment
--describe  Show details for specified experiment
+-describe  Show details for specified experiments
 -run  Run specified experiment
 -inspect  Generate cmd files
 -test  Test experiment

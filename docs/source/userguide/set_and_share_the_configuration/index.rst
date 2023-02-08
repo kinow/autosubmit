@@ -245,7 +245,7 @@ Model configuration is distributed at `git. <https://earth.bsc.es/gitlab/ces/aut
 
 The following figure shows the flow of the execution.
 
-.. figure:: ../fig/advanced_conf_v2.jpg
+.. figure:: fig/advanced_conf.jpg
    :width: 100%
    :align: center
    :alt: Advanced configuration example

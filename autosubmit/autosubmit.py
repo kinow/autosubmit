@@ -389,7 +389,8 @@ class Autosubmit:
             # Describe
             subparser = subparsers.add_parser(
                 'describe', description="Show details for specified experiment")
-            subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier, can be a list of expid separated by comma or spaces', default="*", nargs="?")
+            subparser.add_argument('-u','--user', help='username, default is current user or listed expid', default=""),
             subparser.add_argument('-v', '--update_version', action='store_true',
                                    default=False, help='Update experiment version')
 
@@ -656,7 +657,7 @@ class Autosubmit:
             return Autosubmit.report(args.expid, args.template, args.show_all_parameters, args.folder_path,
                                      args.placeholders)
         elif args.command == 'describe':
-            return Autosubmit.describe(args.expid)
+            return Autosubmit.describe(args.expid,args.user)
         elif args.command == 'migrate':
             return Autosubmit.migrate(args.expid, args.offer, args.pickup, args.onlyremote)
         elif args.command == 'create':
@@ -731,7 +732,7 @@ class Autosubmit:
 
 
 
-        expid_less = ["expid", "testcase", "install", "-v",
+        expid_less = ["expid", "describe", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]
         global_log_command = ["delete", "archive", "upgrade"]
         if "offer" in args:
@@ -3430,61 +3431,88 @@ class Autosubmit:
                                      7040, str(e))
 
     @staticmethod
-    def describe(experiment_id):
+    def describe(input_experiment_list="*",get_from_user=""):
         """
         Show details for specified experiment
 
-        :param experiment_id: experiment identifier:
-        :type experiment_id: str
+        :param experiments_id: experiments identifier:
+        :type experiments_id: str
+        :param get_from_user: user to get the experiments from
+        :type get_from_user: str
+        :return: str,str,str,str
         """
-        try:
-            Log.info("Describing {0}", experiment_id)
-            exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
-
-            as_conf = AutosubmitConfig(
-                experiment_id, BasicConfig, YAMLParserFactory())
-            as_conf.check_conf_files(False)
-
-            user = os.stat(as_conf.experiment_file).st_uid
+        experiments_ids = input_experiment_list
+        not_described_experiments = []
+        if get_from_user == "*" or get_from_user == "":
+            get_from_user = pwd.getpwuid(os.getuid())[0]
+        user =""
+        created=""
+        model=""
+        branch=""
+        hpc=""
+        if ',' in experiments_ids:
+            experiments_ids = experiments_ids.split(',')
+        elif '*' in experiments_ids:
+            experiments_ids = []
+            basic_conf = BasicConfig()
+            for f in Path(basic_conf.LOCAL_ROOT_DIR).glob("????"):
+                if f.is_dir() and f.owner() == get_from_user:
+                    experiments_ids.append(f.name)
+        else:
+            experiments_ids = experiments_ids.split(' ')
+        for experiment_id in experiments_ids:
             try:
-                user = pwd.getpwuid(user).pw_name
-            except Exception as e:
-                Log.warning(
-                    "The user does not exist anymore in the system, using id instead")
+                experiment_id = experiment_id.strip(" ")
+                exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
-            created = datetime.datetime.fromtimestamp(
-                os.path.getmtime(as_conf.experiment_file))
+                as_conf = AutosubmitConfig(
+                    experiment_id, BasicConfig, YAMLParserFactory())
+                as_conf.check_conf_files(False,no_log=True)
+                user = os.stat(as_conf.experiment_file).st_uid
+                try:
+                    user = pwd.getpwuid(user).pw_name
+                except Exception as e:
+                    Log.warning(
+                        "The user does not exist anymore in the system, using id instead")
 
-            project_type = as_conf.get_project_type()
-            if as_conf.get_svn_project_url():
-                model = as_conf.get_svn_project_url()
-                branch = as_conf.get_svn_project_url()
-            else:
-                model = as_conf.get_git_project_origin()
-                branch = as_conf.get_git_project_branch()
-            if model == "":
-                model = "Not Found"
-            if branch == "":
-                branch = "Not Found"
+                created = datetime.datetime.fromtimestamp(
+                    os.path.getmtime(as_conf.experiment_file))
 
-            submitter = Autosubmit._get_submitter(as_conf)
-            submitter.load_platforms(as_conf)
-            if len(submitter.platforms) == 0:
-                return False
-            hpc = as_conf.get_platform()
-            description = get_experiment_descrip(experiment_id)
+                project_type = as_conf.get_project_type()
+                if as_conf.get_svn_project_url():
+                    model = as_conf.get_svn_project_url()
+                    branch = as_conf.get_svn_project_url()
+                else:
+                    model = as_conf.get_git_project_origin()
+                    branch = as_conf.get_git_project_branch()
+                if model == "":
+                    model = "Not Found"
+                if branch == "":
+                    branch = "Not Found"
 
-            Log.result("Owner: {0}", user)
-            Log.result("Created: {0}", created)
-            Log.result("Model: {0}", model)
-            Log.result("Branch: {0}", branch)
-            Log.result("HPC: {0}", hpc)
-            Log.result("Description: {0}", description[0][0])
-        except BaseException as e:
-            raise AutosubmitCritical(
-                "Couldn't get the details of this experiment. Contact with Autosubmit Developers through GitHub", 7001,
-                str(e))
-        return user, created, model, branch, hpc
+                submitter = Autosubmit._get_submitter(as_conf)
+                submitter.load_platforms(as_conf)
+                if len(submitter.platforms) == 0:
+                    return False
+                hpc = as_conf.get_platform()
+                description = get_experiment_descrip(experiment_id)
+                Log.info("Describing {0}", experiment_id)
+
+                Log.result("Owner: {0}", user)
+                Log.result("Created: {0}", created)
+                Log.result("Model: {0}", model)
+                Log.result("Branch: {0}", branch)
+                Log.result("HPC: {0}", hpc)
+                Log.result("Description: {0}", description[0][0])
+            except BaseException as e:
+                not_described_experiments.append(experiment_id)
+        if len(not_described_experiments) > 0:
+            Log.printlog("Could not describe the following experiments:\n{0}".format(not_described_experiments),Log.WARNING)
+        if len(experiments_ids) == 1:
+            # for backward compatibility or GUI
+            return user, created, model, branch, hpc
+        elif len(experiments_ids) == 0:
+            Log.result("No experiments found for expid={0} and user {1}".format(input_experiment_list,get_from_user))
 
     @staticmethod
     def configure(advanced, database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,

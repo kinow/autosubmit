@@ -1,3 +1,6 @@
+autosubmitconfigparser==0.0.77
+paramiko>=2.9.2
+PyNaCl>=1.5.0
 configobj>=5.0.6
 argparse>=1.4.0
 python-dateutil>=2.8.2
@@ -5,7 +8,6 @@ matplotlib==3.4.3
 numpy<1.22
 py3dotplus>=1.1.0
 pyparsing>=3.0.7
-paramiko>=2.9.2
 mock>=4.0.3
 six>=1.10
 portalocker>=2.3.2
@@ -21,11 +23,9 @@ pythondialog
 pytest
 nose
 coverage
-PyNaCl==1.4.0
 six>=1.10.0
 requests
 xlib
 Pygments
 packaging==19
 typing>=3.7
-autosubmitconfigparser==0.0.75
