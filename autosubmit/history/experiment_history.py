@@ -191,16 +191,24 @@ class ExperimentHistory:
   def process_status_changes(self, job_list=None, chunk_unit="NA", chunk_size=0, current_config="",create=False):
     """ Detect status differences between job_list and current job_data rows, and update. Creates a new run if necessary. """
     try:
-      current_experiment_run_dc = self.manager.get_experiment_run_dc_with_max_id()      
-      update_these_changes = self._get_built_list_of_changes(job_list)
-      should_create_new_run = self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc, chunk_unit, chunk_size,create)
-      if len(update_these_changes) > 0 and should_create_new_run is False:
-        self.manager.update_many_job_data_change_status(update_these_changes)
-      if should_create_new_run:
-        return self.create_new_experiment_run(chunk_unit, chunk_size, current_config, job_list)
-      return self.update_counts_on_experiment_run_dc(current_experiment_run_dc, job_list)
+        try:
+            current_experiment_run_dc = self.manager.get_experiment_run_dc_with_max_id()
+        except:
+            current_experiment_run_dc = 0
+        try:
+            update_these_changes = self._get_built_list_of_changes(job_list)
+        except:
+            # May be a new experiment run, so we don't have any changes to update ( could happen due job_data issues from 3.14.0)
+            update_these_changes = []
+            #("no runs")
+        should_create_new_run = self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc, chunk_unit, chunk_size,create)
+        if len(update_these_changes) > 0 and should_create_new_run == False:
+            self.manager.update_many_job_data_change_status(update_these_changes)
+        if should_create_new_run:
+            return self.create_new_experiment_run(chunk_unit, chunk_size, current_config, job_list)
+        return self.update_counts_on_experiment_run_dc(current_experiment_run_dc, job_list)
     except Exception as exp:
-      self._log.log(str(exp), traceback.format_exc())
+        self._log.log(str(exp), traceback.format_exc())
   
   def _get_built_list_of_changes(self, job_list):
     """ Return: List of (current timestamp, current datetime str, status, rowstatus, id in job_data). One tuple per change. """
