@@ -3444,7 +3444,7 @@ class Autosubmit:
         experiments_ids = input_experiment_list
         not_described_experiments = []
         if get_from_user == "*" or get_from_user == "":
-            get_from_user = os.getlogin()
+            get_from_user = pwd.getpwuid(os.getuid())[0]
         user =""
         created=""
         model=""
