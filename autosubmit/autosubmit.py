@@ -389,8 +389,8 @@ class Autosubmit:
             # Describe
             subparser = subparsers.add_parser(
                 'describe', description="Show details for specified experiment")
-            subparser.add_argument('expid', help='experiment identifier', default="*", nargs="?")
-            subparser.add_argument('-u','--user', help='experiment identifier', default=""),
+            subparser.add_argument('expid', help='experiment identifier, can be a list of expid separated by comma or spaces', default="*", nargs="?")
+            subparser.add_argument('-u','--user', help='username, default is current user or listed expid', default=""),
             subparser.add_argument('-v', '--update_version', action='store_true',
                                    default=False, help='Update experiment version')
 
