@@ -193,9 +193,12 @@ class ExperimentHistory:
     try:
         try:
             current_experiment_run_dc = self.manager.get_experiment_run_dc_with_max_id()
-            update_these_changes = self._get_built_list_of_changes(job_list)
         except:
             current_experiment_run_dc = 0
+        try:
+            update_these_changes = self._get_built_list_of_changes(job_list)
+        except:
+            # May be a new experiment run, so we don't have any changes to update ( could happen due job_data issues from 3.14.0)
             update_these_changes = []
             #("no runs")
         should_create_new_run = self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc, chunk_unit, chunk_size,create)
