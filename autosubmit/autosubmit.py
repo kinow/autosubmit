@@ -3462,6 +3462,7 @@ class Autosubmit:
             experiments_ids = experiments_ids.split(' ')
         for experiment_id in experiments_ids:
             try:
+                experiment_id = experiment_id.strip(" ")
                 exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
                 as_conf = AutosubmitConfig(
