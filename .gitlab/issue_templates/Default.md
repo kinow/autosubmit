@@ -42,7 +42,7 @@ it's very hard to read otherwise.)
 
 /assign @dbeltran @bdepaula
 
-/label ~bug discussion
+/label ~bug ~discussion
 
 ()
 
