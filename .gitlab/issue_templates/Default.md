@@ -40,14 +40,6 @@ it's very hard to read otherwise.)
 
 ### Any other relevant information(if applicable)
 
-/assign @dbeltran @bdepaula
-
 /label ~bug ~discussion
 
 ()
-
-
-
-Thanks for your help!
-
-    

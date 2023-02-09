@@ -9,9 +9,9 @@ Hello @dbeltran and @bdepaula,
 
 ### Expid affected(If applicable)
 
-(Which expid is affected? )
+(Which expid is affected?)
 
-### Which task has issues, where is the log(If applicable)
+### Which task has issues? Where is the log(If applicable)
 
 * **Full_name**: expid_taskname (ex: a000_19600101_fc0099_2_SIM)
 
@@ -40,8 +40,6 @@ it's very hard to read otherwise.)
 
 ### Any other relevant information(if applicable)
 
+/label ~bug ~discussion
+
 ()
-
-Thanks for your help!
-
-    
