@@ -1,0 +1,5 @@
+[submodule "autosubmit4-config-parser"]
+  path = autosubmit4-config-parser
+  url =  ../../../../../ces/autosubmit4-config-parser
+
+ 
