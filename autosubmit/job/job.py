@@ -1198,10 +1198,10 @@ class Job(object):
     def update_content_extra(self,as_conf,files):
         additional_templates = []
         for file in files:
-            if as_conf.get_project_type().lower() != "none":
+            if as_conf.get_project_type().lower() == "none":
                 template = "%DEFAULT.EXPID%"
             else:
-                template = open(os.path.join(as_conf.get_project_dir(), file), 'r')
+                template = open(os.path.join(as_conf.get_project_dir(), file), 'r').read()
             additional_templates += [template]
         return additional_templates
     def update_content(self, as_conf):
@@ -1336,8 +1336,12 @@ class Job(object):
                 additional_template_content = re.sub('%(?<!%%)' + variable + '%(?!%%)', '', additional_template_content,flags=re.I)
 
             additional_template_content = additional_template_content.replace("%%", "%")
+            #Write to file
             try:
-                open(os.path.join(self._tmp_path, os.path.splitext(self.additional_files[file_n])[0]), 'wb').write(additional_template_content.encode(lang))
+
+                filename = os.path.basename(os.path.splitext(self.additional_files[file_n])[0])
+                full_path = os.path.join(self._tmp_path,filename ) + "_" + self.name[5:]
+                open(full_path, 'wb').write(additional_template_content.encode(lang))
             except:
                 pass
         for key, value in parameters.items():
