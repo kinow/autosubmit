@@ -344,7 +344,7 @@ In the file:
 
         ## Job name
         # JOBNAME:
-        ## Script to execute. If not specified, job will be omitted from workflow.
+        ## Script to execute. If not specified, job will be omitted from workflow. You can also specify additional files separated by a ",".
         ## Path relative to the project directory
         # FILE :
         ## Platform to execute the job. If not specified, defaults to HPCARCH in expedf file.
