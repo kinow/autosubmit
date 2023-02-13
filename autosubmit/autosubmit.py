@@ -199,8 +199,9 @@ class Autosubmit:
                                    help='Sets the starting time for this experiment')
             subparser.add_argument('-sa', '--start_after', required=False,
                                    help='Sets a experiment expid which completion will trigger the start of this experiment.')
-            subparser.add_argument('-rm', '--run_members', required=False,
+            subparser.add_argument('-rom', '--run_only_members', required=False,
                                    help='Sets members allowed on this run.')
+
 
             # Expid
             subparser = subparsers.add_parser(
