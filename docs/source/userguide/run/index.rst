@@ -28,7 +28,7 @@ Options:
                                 Sets the starting time for the experiment. Accepted format: 'yyyy-mm-dd HH:MM:SS' or 'HH:MM:SS' (defaults to current day).
       -sa                   --start_after 
                                 Sets a experiment expid that will be tracked for completion. When this experiment is completed, the current instance of Autosubmit run will start.
-      -rm                   --run_members
+      -rom,--run_only_members  --run_members
                                 Sets a list of members allowed to run. The list must have the format '### ###' where '###' represents the name of the member as set in the conf files.
       -h, --help  show this help message and exit
 
@@ -120,7 +120,7 @@ To run only a subset of selected members you can execute the command:
 
         # Add your key to ssh agent ( if encrypted )
         ssh-add ~/.ssh/id_rsa
-        autosubmit run EXPID -rm MEMBERS
+        autosubmit run EXPID -rom MEMBERS
 
 *EXPID* is the experiment identifier, the experiment you want to run.
 
@@ -128,17 +128,17 @@ To run only a subset of selected members you can execute the command:
 
 Then, your experiment will start running jobs belonging to those members only. If the experiment was previously running and autosubmit was stopped when some jobs belonging to other members (not the ones from your input) where running, those jobs will be tracked and finished in the new exclusive run.
 
-Furthermore, if you wish to run a sequence of only members execution; then, instead of running `autosubmit run -rm "member_1"` ... `autosubmit run -rm "member_n"`, you can make a bash file with that sequence and run the bash file. Example:
+Furthermore, if you wish to run a sequence of only members execution; then, instead of running `autosubmit run -rom "member_1"` ... `autosubmit run -rom "member_n"`, you can make a bash file with that sequence and run the bash file. Example:
 
 .. code-block:: bash
 
     # Add your key to ssh agent ( if encrypted )
     ssh-add ~/.ssh/id_rsa
-    autosubmit run EXPID -rm MEMBER_1
-    autosubmit run EXPID -rm MEMBER_2
-    autosubmit run EXPID -rm MEMBER_3
+    autosubmit run EXPID -rom MEMBER_1
+    autosubmit run EXPID -rom MEMBER_2
+    autosubmit run EXPID -rom MEMBER_3
     ...
-    autosubmit run EXPID -rm MEMBER_N
+    autosubmit run EXPID -rom MEMBER_N
 
 How to start an experiment at a given time
 ------------------------------------------
