@@ -15,7 +15,7 @@ To create a new experiment, just run the command:
 Options:
 ::
 
-    usage: autosubmit expid [-h] [-y COPY | -dm] [-p PATH] -H HPC -d DESCRIPTION
+    usage: autosubmit expid [-h] [-y COPY | -dm | -min [-repo GIT_PATH ] ] [-p PATH] -H HPC -d DESCRIPTION
 
         -h, --help            show this help message and exit
         -y COPY, --copy COPY  makes a copy of the specified experiment
@@ -23,13 +23,14 @@ Options:
         -H HPC, --HPC HPC     specifies the HPC to use for the experiment
         -d DESCRIPTION, --description DESCRIPTION
             sets a description for the experiment to store in the database.
-        -c PATH, --config PATH
-            if specified, copies config files from a folder
+        -min,--minimal_configuration creates a minimal configuration file
+        -repo GIT_PATH, --git_repo GIT_PATH sets the git_repository
 
 Example:
 ::
 
     autosubmit expid --HPC ithaca --description "experiment is about..."
+    autosubmit expid --minimal_config -repo <git> --description "experiment is about..."
 
 If there is an autosubmitrc or .autosubmitrc file in your home directory (cd ~), you can setup a default file from where the contents of platforms_expid.yml should be copied.
 

@@ -29,14 +29,14 @@ def new_experiment(description, version, test=False, operational=False):
     """
     Stores a new experiment on the database and generates its identifier
 
-    :param version: autosubmit version associated to the experiment
-    :type version: str
-    :param test: flag for test experiments
-    :type test: bool
-    :param operational: flag for operational experiments
-    :type operational: bool
-    :param description: experiment's description
+    :param description: description of the experiment
     :type description: str
+    :param version: version of the experiment
+    :type version: str
+    :param test: if True, the experiment is a test experiment
+    :type test: bool
+    :param operational: if True, the experiment is an operational experiment
+    :type operational: bool
     :return: experiment id for the new experiment
     :rtype: str
     """
