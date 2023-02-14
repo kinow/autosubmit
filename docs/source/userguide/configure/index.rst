@@ -347,7 +347,7 @@ In the file:
         ## Script to execute. If not specified, job will be omitted from workflow.
         ## Path relative to the project directory
         # FILE :
-        ## Platform to execute the job. If not specified, defaults to HPCARCH in expedf file.
+        ## Platform to execute the job. If not specified, defaults to HPCARCH in expdef file.
         ## LOCAL is always defined and refers to current machine
         # PLATFORM :
         ## Queue to add the job to. If not specified, uses PLATFORM default.

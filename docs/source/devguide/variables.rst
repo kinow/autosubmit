@@ -5,7 +5,7 @@ Variables reference
 Autosubmit uses a variable substitution system to facilitate the development of the templates. This variables can be
 used on the template in the form %VARIABLE_NAME%.
 
-All configuration variables non related to current_job or platform are accesible by calling first to their parents. ex: %PROJECT.PROJECT_TYPE% or %DEFAULT.EXPID%
+All configuration variables non related to current_job or platform are accessible by calling first to their parents. ex: %PROJECT.PROJECT_TYPE% or %DEFAULT.EXPID%
 
 You can review all variables at any given time by using the command :ref:`report`:
 
@@ -31,7 +31,7 @@ This variables are relatives to the current job.
 - **Chunk_START_YEAR**: chunk's start year
 - **Chunk_START_MONTH**: chunk's start month
 - **Chunk_START_DAY**: chunk's start day
-- **Chunk_START_HOUR**: chunk's start hout
+- **Chunk_START_HOUR**: chunk's start hour
 - **Chunk_END_DATE**: chunk's end date
 - **Chunk_END_YEAR**: chunk's end year
 - **Chunk_END_MONTH**: chunk's end month

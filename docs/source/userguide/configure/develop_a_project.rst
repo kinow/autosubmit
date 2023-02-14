@@ -302,7 +302,7 @@ Platform configuration
 Proj configuration
 ==================
 
-After filling the experiment configuration and promt ``autosubmit create cxxx -np`` create, user can go into ``proj`` which has a copy of the model.
+After filling the experiment configuration and prompt ``autosubmit create cxxx -np`` create, user can go into ``proj`` which has a copy of the model.
 
 The experiment project contains the scripts specified in ``jobs_cxxx.yml`` and a copy of model source code and data specified in ``expdef_xxxx.yml``.
 
@@ -431,7 +431,7 @@ Example:
         # Atmospheric nudging towards re-interpolated ERA-Interim data. BOOLEAN: TRUE, FALSE
         ATM_NUDGING: FALSE
         # Atmospheric nudging reference data experiment name. [T255L91: b0ir]
-        ATM_refnud:
+        ATM_refund:
         # Nudge vorticity. BOOLEAN: TRUE, FALSE
         NUD_VO:
         # Nudge divergence. BOOLEAN: TRUE, FALSE
@@ -530,7 +530,7 @@ Configuration of proj.yml
 
 .. code-block:: yaml
 
-    PROJECT_ROOT: /gpfs/scratch/bsc32/bsc32070/a000/automatic_perfomance_profile
+    PROJECT_ROOT: /gpfs/scratch/bsc32/bsc32070/a000/automatic_performance_profile
     REFRESH_GIT_REPO: false
 
 Write your original script in the user project directory:
@@ -711,7 +711,7 @@ The custom directives can be used for multiple parameters at the same time using
             # test [40] / small [40] // large [40]
             PROCESSORS_PER_NODE: 40
 
-Controling the number of active concurrent tasks in an experiment
+Controlling the number of active concurrent tasks in an experiment
 ----------------------------------------------------------------------
 
 In some cases, you may want to control the number of concurrent tasks/jobs that can be active in an experiment.
