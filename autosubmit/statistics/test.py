@@ -60,7 +60,7 @@ class TestStatistics(unittest.TestCase):
       print(exp_stats.get_summary_as_list())
       failed_jobs_dict = exp_stats.build_failed_jobs_only_list() 
     else:
-        raise Exception("Autosubmit API couldn't find jobs that match your search critearia (Section: {0}) in the period from {1} to {2}.".format(
+        raise Exception("Autosubmit API couldn't find jobs that match your search criteria (Section: {0}) in the period from {1} to {2}.".format(
             ft, period_ini, period_fi))
     return results
 

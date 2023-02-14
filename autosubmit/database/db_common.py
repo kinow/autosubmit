@@ -104,7 +104,7 @@ def open_conn(check_version=True):
         if version < CURRENT_DATABASE_VERSION:
             if not _update_database(version, cursor):
                 raise AutosubmitCritical(
-                    'Database version doesn''t match', 7001)
+                    'Database version does not match', 7001)
 
         # ... or ask for autosubmit upgrade
         elif version > CURRENT_DATABASE_VERSION:
@@ -209,7 +209,7 @@ def update_experiment_descrip_version(name, description=None, version=None):
 
 def get_autosubmit_version(expid):
     """
-    Get the minimun autosubmit version needed for the experiment. Anti-lock version.  
+    Get the minimum autosubmit version needed for the experiment. Anti-lock version.
 
     :param expid: Experiment name
     :type expid: str
@@ -259,7 +259,7 @@ def delete_experiment(experiment_id):
 
     :param experiment_id: experiment identifier
     :type experiment_id: str
-    :return: True if delete is succesful
+    :return: True if delete is successful
     :rtype: bool
     """
     queue = multiprocessing.Queue(1)
@@ -300,7 +300,7 @@ def _save_experiment(name, description, version):
     except sqlite3.IntegrityError as e:
         close_conn(conn, cursor)
         raise AutosubmitCritical(
-            'Couldn''t register experiment', 7005, str(e))
+            'Could not register experiment', 7005, str(e))
 
     conn.commit()
     close_conn(conn, cursor)
@@ -413,7 +413,7 @@ def _update_experiment_descrip_version(name, description=None, version=None):
 
 def _get_autosubmit_version(expid):
     """
-    Get the minimun autosubmit version needed for the experiment
+    Get the minimum autosubmit version needed for the experiment
 
     :param expid: Experiment name
     :type expid: str
@@ -509,7 +509,7 @@ def _delete_experiment(experiment_id):
 
     :param experiment_id: experiment identifier
     :type experiment_id: str
-    :return: True if delete is succesful
+    :return: True if delete is successful
     :rtype: bool
     """
     if not check_db():

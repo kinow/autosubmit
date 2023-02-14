@@ -53,7 +53,7 @@ class Monitor:
                    (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.DELAYED,'lightcyan') ,(Status.SUSPENDED, 'orange'), (Status.SKIPPED, 'lightyellow')])
 
     def __init__(self):
-        self.nodes_ploted = None
+        self.nodes_plotted = None
 
     @staticmethod
     def color_status(status):
@@ -145,7 +145,7 @@ class Monitor:
         graph.add_subgraph(legend)
 
         exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
-        self.nodes_ploted = set()
+        self.nodes_plotted = set()
         Log.debug('Creating job graph...')
 
         jobs_packages_dict = dict()
@@ -234,9 +234,9 @@ class Monitor:
         return graph
 
     def _add_children(self, job, exp, node_job, groups, hide_groups):
-        if job in self.nodes_ploted:
+        if job in self.nodes_plotted:
             return
-        self.nodes_ploted.add(job)
+        self.nodes_plotted.add(job)
         if job.has_children() != 0:
             for child in sorted(job.children, key=lambda k: k.name):
                 node_child, skip = self._check_node_exists(
@@ -522,7 +522,7 @@ class Monitor:
         filelist = [f for f in files if f not in remain]
         for f in filelist:
             remove(f)
-        Log.result("Plots cleaned!\nLast two plots remanining there.\n")
+        Log.result("Plots cleaned!\nLast two plots remaining there.\n")
 
     @staticmethod
     def clean_stats(expid):
@@ -542,7 +542,7 @@ class Monitor:
         filelist = [f for f in files if f not in remain]
         for f in filelist:
             remove(f)
-        Log.result("Stats cleaned!\nLast stats' plot remanining there.\n")
+        Log.result("Stats cleaned!\nLast stats' plot remaining there.\n")
 
     @staticmethod
     def get_general_stats(expid):

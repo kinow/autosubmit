@@ -1111,7 +1111,7 @@ class ParamikoPlatform(Platform):
         """
         Gets command to check if a job is running given process identifier
 
-        :param job_id: process indentifier
+        :param job_id: process identifier
         :type job_id: int
         :return: command to check job status script
         :rtype: str

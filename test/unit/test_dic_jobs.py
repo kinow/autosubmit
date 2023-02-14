@@ -338,7 +338,7 @@ class TestDicJobs(TestCase):
             'FREQUENCY': 123,
             'DELAY': -1,
             'PLATFORM': 'FAKE-PLATFORM',
-            'FILE': 'fake-fike',
+            'FILE': 'fake-file',
             'QUEUE': 'fake-queue',
             'PROCESSORS': '111',
             'THREADS': '222',

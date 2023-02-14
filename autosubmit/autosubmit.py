@@ -406,7 +406,7 @@ class Autosubmit:
                 '-fp', '--folder_path', type=str, help='Allows to select a non-default folder.')
             subparser.add_argument(
                 '-p', '--placeholders', default=False, action='store_true',
-                help='disables the sustitution of placeholders by -')
+                help='disables the substitution of placeholders by -')
             subparser.add_argument('-v', '--update_version', action='store_true',
                                    default=False, help='Update experiment version')
             # Create
@@ -452,7 +452,7 @@ class Autosubmit:
             subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.yml file to use by '
                                                                                'default. Optional')
             subparser.add_argument(
-                '-sm', '--smtphostname', default=None, help='STMP server hostname. Optional')
+                '-sm', '--smtphostname', default=None, help='SMTP server hostname. Optional')
             subparser.add_argument(
                 '-mf', '--mailfrom', default=None, help='Notifications sender address. Optional')
             group = subparser.add_mutually_exclusive_group()
@@ -613,7 +613,7 @@ class Autosubmit:
 
         except Exception as e:
             if type(e) is SystemExit:  # todo check
-                # Version keyword force an exception in parse arg due and os_exit(0) but the program is succesfully finished
+                # Version keyword force an exception in parse arg due and os_exit(0) but the program is successfully finished
                 if "0" in str(e):
                     print(Autosubmit.autosubmit_version)
                     return 0
@@ -929,7 +929,7 @@ class Autosubmit:
         :param expid_delete: identifier of the experiment to delete
         :type force: boolean
         :param force: True if the force flag has been sent
-        :return: True if succesfully deleted, False otherwise
+        :return: True if successfully deleted, False otherwise
         :rtype: boolean
         """
         message = "The {0} experiment was removed from the local disk and from the database.".format(expid_delete)
@@ -1293,7 +1293,7 @@ class Autosubmit:
         :param expid: identifier of the experiment to delete
         :param force: if True, does not ask for confirmation
 
-        :returns: True if succesful, False if not
+        :returns: True if successful, False if not
         :rtype: bool
         """
 
@@ -1339,7 +1339,7 @@ class Autosubmit:
         else:
             platform = platforms[as_conf.get_platform()]
             platform.add_parameters(parameters, True)
-        # Attach paramenters to JobList
+        # Attach parameters to JobList
         parameters['STARTDATES'] = []
         for date in job_list._date_list:
             parameters['STARTDATES'].append(date2str(date, job_list.get_date_format()))
@@ -1410,7 +1410,7 @@ class Autosubmit:
                     jobs_cw = job_list.get_completed()
                 else:
                     if (force and not locked) or (force and locked):
-                        Log.info("Overwritting all cmd scripts")
+                        Log.info("Overwriting all cmd scripts")
                         jobs = job_list.get_job_list()
                     elif locked:
                         Log.warning(
@@ -1527,7 +1527,7 @@ class Autosubmit:
         :return: Nothing\n
         :rtype: \n
         """
-        Log.warning("Generating the auxiliar job_list used for the -CW flag.")
+        Log.warning("Generating the auxiliary job_list used for the -CW flag.")
         job_list._job_list = jobs_filtered
         job_list._persistence_file = job_list._persistence_file + "_cw_flag"
         parameters = as_conf.load_parameters()
@@ -1897,7 +1897,7 @@ class Autosubmit:
                             Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                             # Log.info("FD 2: {0}".format(log.fd_show.fd_table_status_str()))
                         except BaseException as e:
-                            raise AutosubmitError("Config files seems to not be accesible", 6040, str(e))
+                            raise AutosubmitError("Config files seems to not be accessible", 6040, str(e))
                         total_jobs = len(job_list.get_job_list())
                         Log.info("\n\n{0} of {1} jobs remaining ({2})".format(
                             total_jobs - len(job_list.get_completed()), total_jobs, time.strftime("%H:%M")))
@@ -1958,7 +1958,7 @@ class Autosubmit:
                         for platform in platforms_to_test:
                             platform_jobs = jobs_to_check.get(platform.name, [])
 
-                            # not all platforms are doing this check simultaneosly
+                            # not all platforms are doing this check simultaneously
                             if len(platform_jobs) == 0:
                                 continue
                             platform.check_Alljobs(platform_jobs, as_conf)
@@ -2230,7 +2230,7 @@ class Autosubmit:
         issues = ""
         platform_issues = ""
         ssh_config_issues = ""
-        private_key_error = "Please, add your private key to the ssh-agent ( ssh-add <path_to_key> ) or use a non-encrypted key\nIf ssh agent is not inicializated, prompt first eval `ssh-agent -s`"
+        private_key_error = "Please, add your private key to the ssh-agent ( ssh-add <path_to_key> ) or use a non-encrypted key\nIf ssh agent is not initialized, prompt first eval `ssh-agent -s`"
         for platform in platform_to_test:
             platform_issues = ""
             try:
@@ -2275,13 +2275,13 @@ class Autosubmit:
             else:
                 if platform.connected:
                     platform.connected = False
-                    Log.printlog("[{1}] Connection sucessful to host {0}, however there are issues with %HPCROOT%".format(platform.host, platform.name),
+                    Log.printlog("[{1}] Connection successful to host {0}, however there are issues with %HPCROOT%".format(platform.host, platform.name),
                                  Log.WARNING)
                 else:
                     Log.printlog("[{1}] Connection failed to host {0}".format(platform.host, platform.name), Log.WARNING)
         if issues != "":
             if ssh_config_issues.find(private_key_error[:-2]) != -1:
-                raise AutosubmitCritical("Private key is encrypted, Autosubmit does not run in interative mode.\nPlease, add the key to the ssh agent(ssh-add <path_to_key>).\nIt will remain open as long as session is active, for force clean you can prompt ssh-add -D",7073, issues + "\n" + ssh_config_issues)
+                raise AutosubmitCritical("Private key is encrypted, Autosubmit does not run in interactive mode.\nPlease, add the key to the ssh agent(ssh-add <path_to_key>).\nIt will remain open as long as session is active, for force clean you can prompt ssh-add -D",7073, issues + "\n" + ssh_config_issues)
             else:
                 raise AutosubmitCritical("Issues while checking the connectivity of platforms.", 7010, issues + "\n" + ssh_config_issues)
 
@@ -2322,7 +2322,7 @@ class Autosubmit:
                                                                                                               inspect=inspect,
                                                                                                               only_wrappers=only_wrappers,
                                                                                                               hold=hold)
-                # Jobs that are being retrieved in batch. Right now, only avaliable for slurm platforms.
+                # Jobs that are being retrieved in batch. Right now, only available for slurm platforms.
                 if not inspect and len(valid_packages_to_submit) > 0:
                     job_list.save()
                 save_2 = False
@@ -2490,7 +2490,7 @@ class Autosubmit:
                 # Class constructor creates table if it does not exist
                 packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                              "job_packages_" + expid)
-                # Permissons
+                # Permissions
                 os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0o644)
                 # Database modification
                 packages_persistence.reset_table(True)
@@ -2521,7 +2521,7 @@ class Autosubmit:
                 packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                  "job_packages_" + expid).load()
         except BaseException as e:
-            raise AutosubmitCritical("Issues during the wrapper loading, may be related to IOissues", 7040, str(e))
+            raise AutosubmitCritical("Issues during the wrapper loading, may be related to IO issues", 7040, str(e))
         groups_dict = dict()
         try:
             if group_by:
@@ -2681,7 +2681,7 @@ class Autosubmit:
                 monitor_autosubmit = Monitor()
                 monitor_autosubmit.clean_stats(expid)
         except BaseException as e:
-            raise AutosubmitCritical("Couldn't clean this experiment, check if you have the correct permisions", 7012,
+            raise AutosubmitCritical("Couldn't clean this experiment, check if you have the correct permissions", 7012,
                                      str(e))
         return True
 
@@ -3154,7 +3154,7 @@ class Autosubmit:
                                 finished = False
                                 pipeline_broke = False
                                 Log.info(
-                                    "Rsync launched {0} times. Can take up to 150 retrials or until all data is transfered".format(
+                                    "Rsync launched {0} times. Can take up to 150 retrials or until all data is transferred".format(
                                         rsync_retries + 1))
                                 try:
                                     p.send_command(
@@ -3313,7 +3313,7 @@ class Autosubmit:
             except Exception as e:
                 raise AutosubmitCritical(
                     "Unable to gather the parameters from config files, check permissions.", 7012)
-            # Performace Metrics call
+            # Performance Metrics call
             try:
                 BasicConfig.read()
                 request = requests.get(
@@ -3826,7 +3826,7 @@ class Autosubmit:
         while True:
             try:
                 (code, tag) = d.form(text="",
-                                     elements=[("STMP server hostname", 1, 1, smtp_hostname, 1, 40, 20, 20),
+                                     elements=[("SMTP server hostname", 1, 1, smtp_hostname, 1, 40, 20, 20),
                                                ("Notifications sender address", 2, 1, mail_from, 2, 40, 40, 200)],
                                      height=20,
                                      width=80,
@@ -3975,7 +3975,7 @@ class Autosubmit:
     def update_old_script(root_dir, template_path, as_conf):
         # Do a backup and tries to update
         warn = ""
-        sustituted = ""
+        substituted = ""
         Log.info("Checking {0}".format(template_path))
         if template_path.exists():
             backup_path = root_dir / Path(template_path.name + "_AS_v3_backup_placeholders")
@@ -4005,7 +4005,7 @@ class Autosubmit:
                             key, new_key)
                 else:
                     new_key = new_key.pop().upper()
-                    sustituted += "{0} translated to {1}\n".format(key.upper(), new_key)
+                    substituted += "{0} translated to {1}\n".format(key.upper(), new_key)
                     template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', new_key, template_content, flags=re.I)
             # write_it
             # Deletes unused keys from confs
@@ -4014,12 +4014,12 @@ class Autosubmit:
             # Write final result
             open(template_path, "w").write(template_content)
 
-        if warn == "" and sustituted == "":
+        if warn == "" and substituted == "":
             Log.result("Completed check for {0}.\nNo %_% variables found.".format(template_path))
         else:
             Log.result("Completed check for {0}".format(template_path))
 
-        return warn, sustituted
+        return warn, substituted
 
     @staticmethod
     def upgrade_scripts(expid,files=""):
@@ -4075,7 +4075,7 @@ class Autosubmit:
         # Update configuration files
         template_path = Path()
         warn = ""
-        sustituted = ""
+        substituted = ""
         root_dir = Path(as_conf.basic_config.LOCAL_ROOT_DIR) / expid / "conf"
         Log.info("Looking for %_% variables inside conf files")
         for f in get_files(root_dir, ('*.yml', '*.yaml', '*.conf')):
@@ -4085,19 +4085,19 @@ class Autosubmit:
                 if w != "":
                     warn += "Warnings for: {0}\n{1}\n".format(template_path.name, w)
                 if s != "":
-                    sustituted += "Variables changed for: {0}\n{1}\n".format(template_path.name, s)
+                    substituted += "Variables changed for: {0}\n{1}\n".format(template_path.name, s)
             except BaseException as e:
                 Log.printlog("Couldn't read {0} template.\ntrace:{1}".format(template_path, str(e)))
-        if sustituted == "" and warn == "":
+        if substituted == "" and warn == "":
             pass
         else:
-            Log.result(sustituted)
+            Log.result(substituted)
             Log.result(warn)
         # Update templates
         root_dir = Path(as_conf.get_project_dir())
         template_path = Path()
         warn = ""
-        sustituted = ""
+        substituted = ""
         Log.info("Looking for %_% variables inside templates")
         for section, value in as_conf.jobs_data.items():
             try:
@@ -4106,11 +4106,11 @@ class Autosubmit:
                 if w != "":
                     warn += "Warnings for: {0}\n{1}\n".format(template_path.name, w)
                 if s != "":
-                    sustituted += "Variables changed for: {0}\n{1}\n".format(template_path.name, s)
+                    substituted += "Variables changed for: {0}\n{1}\n".format(template_path.name, s)
             except BaseException as e:
                 Log.printlog("Couldn't read {0} template.\ntrace:{1}".format(template_path, str(e)))
-        if sustituted != "":
-            Log.printlog(sustituted, Log.RESULT)
+        if substituted != "":
+            Log.printlog(substituted, Log.RESULT)
         if warn != "":
             Log.printlog(warn, Log.ERROR)
         Log.info("Changing {0} experiment version from {1} to {2}",
@@ -4671,7 +4671,7 @@ class Autosubmit:
         :param project_type: project type (git, svn, local)
         :type project_type: str
         :param force: if True, overwrites current data
-        :return: True if succesful, False if not
+        :return: True if successful, False if not
         :rtype: bool
         """
 
@@ -5399,7 +5399,7 @@ class Autosubmit:
                                                    expand_list=expand,
                                                    expanded_status=status)
                         groups_dict = job_grouping.group_jobs()
-                    Log.info("\nPloting joblist...")
+                    Log.info("\nPlotting joblist...")
                     monitor_exp = Monitor()
                     monitor_exp.generate_output(expid,
                                                 job_list.get_job_list(),
@@ -5575,7 +5575,7 @@ class Autosubmit:
         if communications_library == 'paramiko':
             return ParamikoSubmitter()
         else:
-            # only paramiko is avaliable right now.
+            # only paramiko is available right now.
             return ParamikoSubmitter()
 
     @staticmethod
@@ -5708,7 +5708,7 @@ class Autosubmit:
         :type hpc: str
         :param branch: branch or revision to be used by the test. If None, it uses configured branch.
         :type branch: str
-        :return: True if test was succesful, False otherwise
+        :return: True if test was successful, False otherwise
         :rtype: bool
         """
         testid = Autosubmit.expid(

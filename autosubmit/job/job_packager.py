@@ -429,17 +429,17 @@ class JobPackager(object):
                                             if error:
                                                 if len(active_jobs) > 0:
                                                     Log.printlog(
-                                                        "Wrapper policy is set to MIXED and there are not enough jobs to form a wrapper.[wrappeable:{4} <= defined_min:{5}] [wrappeable_h:{0} <= defined_min_h:{1}]|[wrappeable_v:{2} <= defined_min_v:{3}] waiting until the wrapper can be formed.\nIf all values are <=, some innerjob has failed under strict policy".format(
+                                                        "Wrapper policy is set to MIXED and there are not enough jobs to form a wrapper.[wrappable:{4} <= defined_min:{5}] [wrappeable_h:{0} <= defined_min_h:{1}]|[wrappeable_v:{2} <= defined_min_v:{3}] waiting until the wrapper can be formed.\nIf all values are <=, some innerjob has failed under strict policy".format(
                                                             min_h, wrapper_limits["min_h"], min_v,
                                                             wrapper_limits["min_v"], wrapper_limits["min"], len(active_jobs)),
                                                         6013)
                                                 else:
-                                                    message = "Wrapper couldn't be formed under {0} POLICY due minimum limit not being reached: [wrappeable:{4} < defined_min:{5}] [wrappeable_h:{1} < defined_min_h:{2}]|[wrappeable_v:{3} < defined_min_v:{4}] ".format(
+                                                    message = "Wrapper couldn't be formed under {0} POLICY due minimum limit not being reached: [wrappable:{4} < defined_min:{5}] [wrappable_h:{1} < defined_min_h:{2}]|[wrappeable_v:{3} < defined_min_v:{4}] ".format(
                                                         self.wrapper_policy[self.current_wrapper_section], min_h,
                                                         wrapper_limits["min_h"], min_v, wrapper_limits["min_v"],
                                                         wrapper_limits["min"], len(active_jobs))
                                                     if hard_deadlock:
-                                                        message += "\nCheck your configuration: The next wrappeable job can't be wrapped until some of inner jobs of current packages finishes which is imposible"
+                                                        message += "\nCheck your configuration: The next wrappable job can't be wrapped until some of inner jobs of current packages finishes which is imposible"
                                                     if min_v > 1:
                                                         message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.conf.".format(wallclock_sum)
                                                     else:
@@ -478,15 +478,15 @@ class JobPackager(object):
                                                 if len(active_jobs) > 0:
                                                     if show_log:
                                                         Log.printlog(
-                                                            "Wrapper policy is set to MIXED and there are not enough jobs to form a wrapper.[wrappeable:{4} < defined_min:{5}] [wrappeable_h:{0} < defined_min_h:{1}]|[wrappeable_v:{2} < defined_min_v:{3}] waiting until the wrapper can be formed.".format(
+                                                            "Wrapper policy is set to MIXED and there are not enough jobs to form a wrapper.[wrappable:{4} < defined_min:{5}] [wrappable_h:{0} < defined_min_h:{1}]|[wrappeable_v:{2} < defined_min_v:{3}] waiting until the wrapper can be formed.".format(
                                                                 min_h, wrapper_limits["min_h"], min_v,
                                                                 wrapper_limits["min_v"],wrapper_limits["min"],len(active_jobs)), 6013)
                                                 else:
-                                                    message = "Wrapper couldn't be formed under {0} POLICY due minimum limit not being reached: [wrappeable:{4} < defined_min:{5}] [wrappeable_h:{1} < defined_min_h:{2}]|[wrappeable_v:{3} < defined_min_v:{4}] ".format(
+                                                    message = "Wrapper couldn't be formed under {0} POLICY due minimum limit not being reached: [wrappable:{4} < defined_min:{5}] [wrappable_h:{1} < defined_min_h:{2}]|[wrappeable_v:{3} < defined_min_v:{4}] ".format(
                                                             self.wrapper_policy[self.current_wrapper_section], min_h,
                                                             wrapper_limits["min_h"], min_v, wrapper_limits["min_v"],wrapper_limits["min"],len(active_jobs))
                                                     if hard_deadlock:
-                                                        message += "\nCheck your configuration: The next wrappeable job can't be wrapped until some of inner jobs of current packages finishes which is imposible"
+                                                        message += "\nCheck your configuration: The next wrappable job can't be wrapped until some of inner jobs of current packages finishes which is impossible"
                                                     if min_v > 1:
                                                         message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.conf.".format(
                                                             wallclock_sum)
@@ -507,7 +507,7 @@ class JobPackager(object):
                                                     else:
                                                         package = JobPackageSimple([job])
                                                     packages_to_submit.append(package)
-                                            Log.info("Wrapper policy is set to flexible and there is a deadlock, As will submit the jobs sequentally")
+                                            Log.info("Wrapper policy is set to flexible and there is a deadlock, As will submit the jobs sequentially")
                     else:
                         for job in jobs:
                             job.packed = False
@@ -680,7 +680,7 @@ class JobPackager(object):
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
                                             jobs_resources=jobs_resources, method=self.wrapper_method[self.current_wrapper_section], configuration=self._as_config, wrapper_section=self.current_wrapper_section )
 
-#TODO rename and unite JobPackerVerticalMixed to JobPackerVertical since the distinguisment between the two is not needed anymore
+#TODO rename and unite JobPackerVerticalMixed to JobPackerVertical since the difference between the two is not needed anymore
 class JobPackagerVertical(object):
     """
     Vertical Packager Parent Class

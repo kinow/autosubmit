@@ -5,7 +5,7 @@ from autosubmit.job.job_common import Status
 
 class TestJobCommon(TestCase):
     """
-        This test is intended to prevent wrong changes on the Status classs definition
+        This test is intended to prevent wrong changes on the Status class definition
     """
 
     def test_value_to_key_has_the_same_values_as_status_constants(self):
