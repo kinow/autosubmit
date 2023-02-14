@@ -19,18 +19,26 @@ Options:
 
         -h, --help            show this help message and exit
         -y COPY, --copy COPY  makes a copy of the specified experiment
+        -op, -operational     creates a new experiment, starting with "o"
         -dm, --dummy          creates a new experiment with default values, usually for testing
+        -min, --minimal_config
+            creates a new experiment with minimal configuration files, usually for using a custom configuration
+        -repo GIT_PATH, --git_repo GIT_PATH
+            sets the git_repository
+        -b BRANCH, --git_branch BRANCH
+            sets the branch to use for the git repository
+        -config, --git_as_conf
+            sets the configuration folder to use for the experiment
         -H HPC, --HPC HPC     specifies the HPC to use for the experiment
         -d DESCRIPTION, --description DESCRIPTION
             sets a description for the experiment to store in the database.
-        -min,--minimal_configuration creates a minimal configuration file
         -repo GIT_PATH, --git_repo GIT_PATH sets the git_repository
 
 Example:
 ::
 
     autosubmit expid --HPC ithaca --description "experiment is about..."
-    autosubmit expid --minimal_config -repo <git> --description "experiment is about..."
+    autosubmit expid -min -repo https://earth.bsc.es/gitlab/ces/auto-advanced_config_example -b main -conf as_conf -d "minimal config example"
 
 If there is an autosubmitrc or .autosubmitrc file in your home directory (cd ~), you can setup a default file from where the contents of platforms_expid.yml should be copied.
 
