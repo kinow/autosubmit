@@ -213,15 +213,15 @@ class Autosubmit:
                                help='creates a new experiment with default values, usually for testing')
             group.add_argument('-min', '--minimal_configuration', action='store_true',
                                help='creates a new experiment with minimal configuration, usually combined with -repo')
-            subparser.add_argument('-repo', '--git_repo', type=str, required=False,
+            subparser.add_argument('-repo', '--git_repo', type=str, default="", required=False,
                                    help='sets a git repository for the experiment')
-            subparser.add_argument('-b', '--git_branch', type=str, required=False,
+            subparser.add_argument('-b', '--git_branch', type=str, default="", required=False,
                                    help='sets a git branch for the experiment')
-            subparser.add_argument('-conf', '--git_as_conf', type=str, required=False,help='sets the git path to as_conf')
+            subparser.add_argument('-conf', '--git_as_conf', type=str, default="", required=False,help='sets the git path to as_conf')
 
             group.add_argument('-op', '--operational', action='store_true',
                                help='creates a new experiment with operational experiment id')
-            subparser.add_argument('-H', '--HPC', required=True,
+            subparser.add_argument('-H', '--HPC', required=False, default="local",
                                    help='specifies the HPC to use for the experiment')
             subparser.add_argument('-d', '--description', type=str, required=True,
                                    help='sets a description for the experiment to store in the database.')
@@ -1036,13 +1036,13 @@ class Autosubmit:
         for as_conf_file in files:
             if dummy:
                 if as_conf_file.endswith("dummy.yml"):
-                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files',as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file))
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file.split("-")[0]+".yml"))
             elif minimal_configuration:
                 if as_conf_file.endswith("minimal.yml"):
-                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files',as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file))
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file.split("-")[0]+".yml"))
             else:
                 if not as_conf_file.endswith("dummy.yml") and not as_conf_file.endswith("minimal.yml"):
-                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files',as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file))
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file))
     @staticmethod
     def as_conf_default_values(exp_id,hpc="local",minimal_configuration=False,git_repo="",git_branch="main",git_as_conf=""):
         """
@@ -1115,7 +1115,7 @@ class Autosubmit:
         # Register the experiment in the database
         try:
             # Copy another experiment from the database
-            if copy_id != '':
+            if copy_id != '' and copy_id is not None:
                 copy_id_folder = os.path.join(root_folder, copy_id)
                 if not os.path.exists(copy_id_folder):
                     raise AutosubmitCritical(
@@ -1123,7 +1123,7 @@ class Autosubmit:
                 exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, False, operational)
             else:
                 # Create a new experiment from scratch
-                exp_id = new_experiment(description, Autosubmit.autosubmit_version, False, operational, minimal_configuration)
+                exp_id = new_experiment(description, Autosubmit.autosubmit_version, False, operational)
 
             if exp_id == '':
                 raise AutosubmitCritical("No expid", 7011)
@@ -1164,7 +1164,7 @@ class Autosubmit:
         # Create the experiment configuration
         Log.info("Generating config files...")
         try:
-            if copy_id != '':
+            if copy_id != '' and copy_id is not None:
                 # Copy the configuration from selected experiment
                 Autosubmit.copy_as_config(exp_id, copy_id)
             else:
