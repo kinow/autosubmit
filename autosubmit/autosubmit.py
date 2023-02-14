@@ -638,7 +638,7 @@ class Autosubmit:
             return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time,
                                              args.start_after, args.run_only_members)
         elif args.command == 'expid':
-            return Autosubmit.expid(args.description,args.HPC,args.copy, args.dummy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.test,args.operational) != ''
+            return Autosubmit.expid(args.description,args.HPC,args.copy, args.dummy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.operational) != ''
         elif args.command == 'delete':
             return Autosubmit.delete(args.expid, args.force)
         elif args.command == 'monitor':
@@ -1016,8 +1016,7 @@ class Autosubmit:
 
     @staticmethod
     def copy_as_config(exp_id,copy_id):
-        as_conf_files = os.listdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id))
-        for conf_file in as_conf_files:
+        for conf_file in os.listdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id,"conf")):
             # Copy only relevant files
             if conf_file.endswith(".conf") or conf_file.endswith(".yml") or conf_file.endswith(".yaml"):
                 shutil.copy(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id, "conf", conf_file),
@@ -1062,22 +1061,37 @@ class Autosubmit:
                 with open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf", as_conf_file), 'r') as f:
                     # Copied files could not have default names.
                     content = f.read()
-                    content = content.replace(re.search('AUTOSUBMIT_VERSION: .*', content, re.MULTILINE).group(0), "AUTOSUBMIT_VERSION: \""+Autosubmit.autosubmit_version+"\"")
-                    content = content.replace(re.search('NOTIFICATIONS: .*', content, re.MULTILINE).group(0),
-                                              "NOTIFICATIONS: False")
-                    content = content.replace(re.search('TO: .*', content, re.MULTILINE).group(0), "TO: \"\"")
-                    content = content.replace(re.search('EXPID: .*', content, re.MULTILINE).group(0),"EXPID: \""+exp_id+"\"")
-                    content = content.replace(re.search('HPCARCH: .*', content, re.MULTILINE).group(0),"HPCARCH: \""+hpc+"\"")
+                    search = re.search('AUTOSUBMIT_VERSION: .*', content, re.MULTILINE)
+                    if search is not None:
+                        content = content.replace(search.group(0), "AUTOSUBMIT_VERSION: \""+Autosubmit.autosubmit_version+"\"")
+                    search = re.search('NOTIFICATIONS: .*', content, re.MULTILINE)
+                    if search is not None:
+                        content = content.replace(search.group(0),"NOTIFICATIONS: False")
+                    search = re.search('TO: .*', content, re.MULTILINE)
+                    if search is not None:
+                        content = content.replace(search.group(0), "TO: \"\"")
+                    search = re.search('EXPID: .*', content, re.MULTILINE)
+                    if search is not None:
+                        content = content.replace(search.group(0),"EXPID: \""+exp_id+"\"")
+                    search = re.search('HPCARCH: .*', content, re.MULTILINE)
+                    if search is not None:
+                        content = content.replace(search.group(0),"HPCARCH: \""+hpc+"\"")
                     if minimal_configuration:
-                        content = content.replace(re.search('CUSTOM_CONFIG: .*', content, re.MULTILINE).group(0), "CUSTOM_CONFIG: \"%ROOTDIR%/proj/git_project/"+git_as_conf+"\"")
-                        content = content.replace(re.search('PROJECT_ORIGIN: .*', content, re.MULTILINE).group(0), "PROJECT_ORIGIN: \""+git_repo+"\"")
-                        content = content.replace(re.search('PROJECT_BRANCH: .*', content, re.MULTILINE).group(0), "PROJECT_BRANCH: \""+git_branch+"\"")
+                        search = re.search('CUSTOM_CONFIG: .*', content, re.MULTILINE)
+                        if search is not None:
+                            content = content.replace(search.group(0), "CUSTOM_CONFIG: \"%ROOTDIR%/proj/git_project/"+git_as_conf+"\"")
+                        search = re.search('PROJECT_ORIGIN: .*', content, re.MULTILINE)
+                        if search is not None:
+                            content = content.replace(search.group(0), "PROJECT_ORIGIN: \""+git_repo+"\"")
+                        search = re.search('PROJECT_BRANCH: .*', content, re.MULTILINE)
+                        if search is not None:
+                            content = content.replace(search.group(0), "PROJECT_BRANCH: \""+git_branch+"\"")
 
                 with open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf", as_conf_file), 'w') as f:
                     f.write(content)
 
     @staticmethod
-    def expid(description,hpc="", copy_id='', dummy=False,minimal_configuration=False,git_repo="",git_branch="",git_as_conf="",test=False, operational=False):
+    def expid(description,hpc="", copy_id='', dummy=False,minimal_configuration=False,git_repo="",git_branch="",git_as_conf="",operational=False):
         """
         Creates a new experiment for given HPC
         description: description of the experiment
@@ -1106,12 +1120,11 @@ class Autosubmit:
                 if not os.path.exists(copy_id_folder):
                     raise AutosubmitCritical(
                         "Experiment {0} doesn't exists".format(copy_id), 7011)
-                exp_id = copy_experiment(copy_id, description, hpc, test, operational, copy_id_folder)
+                exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, False, operational)
             else:
                 # Create a new experiment from scratch
-                exp_id = new_experiment(description, Autosubmit.autosubmit_version, test, operational, minimal_configuration)
+                exp_id = new_experiment(description, Autosubmit.autosubmit_version, False, operational, minimal_configuration)
 
-            Autosubmit.as_conf_default_values(exp_id,hpc)
             if exp_id == '':
                 raise AutosubmitCritical("No expid", 7011)
         except Exception as e:
