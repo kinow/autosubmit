@@ -87,7 +87,7 @@ import signal
 import datetime
 
 import portalocker
-from pkg_resources import require, resource_listdir, resource_exists, resource_string
+from pkg_resources import require, resource_listdir, resource_exists, resource_string, resource_filename
 from collections import defaultdict
 from pyparsing import nestedExpr
 from .history.experiment_status import ExperimentStatus
@@ -211,14 +211,21 @@ class Autosubmit:
                 '-y', '--copy', help='makes a copy of the specified experiment')
             group.add_argument('-dm', '--dummy', action='store_true',
                                help='creates a new experiment with default values, usually for testing')
+            group.add_argument('-min', '--minimal_configuration', action='store_true',
+                               help='creates a new experiment with minimal configuration, usually combined with -repo')
+            subparser.add_argument('-repo', '--git_repo', type=str, required=False,
+                                   help='sets a git repository for the experiment')
+            subparser.add_argument('-b', '--git_branch', type=str, required=False,
+                                   help='sets a git branch for the experiment')
+            subparser.add_argument('-conf', '--git_as_conf', type=str, required=False,help='sets the git path to as_conf')
+
             group.add_argument('-op', '--operational', action='store_true',
                                help='creates a new experiment with operational experiment id')
             subparser.add_argument('-H', '--HPC', required=True,
                                    help='specifies the HPC to use for the experiment')
             subparser.add_argument('-d', '--description', type=str, required=True,
                                    help='sets a description for the experiment to store in the database.')
-            subparser.add_argument('-c', '--config', type=str, required=False,
-                                   help='defines where are located the configuration files.')
+
             # Delete
             subparser = subparsers.add_parser(
                 'delete', description="delete specified experiment")
@@ -629,10 +636,9 @@ class Autosubmit:
 
         if args.command == 'run':
             return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time,
-                                             args.start_after, args.run_members)
+                                             args.start_after, args.run_only_members)
         elif args.command == 'expid':
-            return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
-                                    args.operational, args.config) != ''
+            return Autosubmit.expid(args.description,args.HPC,args.copy, args.dummy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.test,args.operational) != ''
         elif args.command == 'delete':
             return Autosubmit.delete(args.expid, args.force)
         elif args.command == 'monitor':
@@ -1009,280 +1015,166 @@ class Autosubmit:
                     error_message, 6004)
 
     @staticmethod
-    def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
+    def copy_as_config(exp_id,copy_id):
+        as_conf_files = os.listdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id))
+        for conf_file in as_conf_files:
+            # Copy only relevant files
+            if conf_file.endswith(".conf") or conf_file.endswith(".yml") or conf_file.endswith(".yaml"):
+                shutil.copy(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id, "conf", conf_file),
+                            os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf", conf_file))
+            # if ends with .conf convert it to AS4 yaml file
+            if conf_file.endswith(".conf"):
+                try:
+                    AutosubmitConfig.ini_to_yaml(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf"),
+                                                 os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf",conf_file))
+                except Exception as e:
+                    Log.warning("Error converting {0} to yml: {1}".format(conf_file,str(e)))
+    @staticmethod
+    def generate_as_config(exp_id,dummy=False,minimal_configuration=False):
+        # obtain from autosubmitconfigparser package
+        # get all as_conf_files from autosubmitconfigparser package
+        files = resource_listdir('autosubmitconfigparser.config', 'files')
+        for as_conf_file in files:
+            if dummy:
+                if as_conf_file.endswith("dummy.yml"):
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files',as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file))
+            elif minimal_configuration:
+                if as_conf_file.endswith("minimal.yml"):
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files',as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file))
+            else:
+                if not as_conf_file.endswith("dummy.yml") and not as_conf_file.endswith("minimal.yml"):
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files',as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file))
+    @staticmethod
+    def as_conf_default_values(exp_id,hpc="local",minimal_configuration=False,git_repo="",git_branch="main",git_as_conf=""):
+        """
+        Replace default values in as_conf files
+        :param exp_id: experiment id
+        :param hpc: platform
+        :param minimal_configuration: minimal configuration
+        :param git_repo: path to project git repository
+        :param branch: main branch
+        :param config_path: path to config file
+        :return:
+        """
+        # open and replace values
+        for as_conf_file in os.listdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf")):
+            if as_conf_file.endswith(".yml") or as_conf_file.endswith(".yaml"):
+                with open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf", as_conf_file), 'r') as f:
+                    # Copied files could not have default names.
+                    content = f.read()
+                    content = content.replace(re.search('AUTOSUBMIT_VERSION: .*', content, re.MULTILINE).group(0), "AUTOSUBMIT_VERSION: \""+Autosubmit.autosubmit_version+"\"")
+                    content = content.replace(re.search('NOTIFICATIONS: .*', content, re.MULTILINE).group(0),
+                                              "NOTIFICATIONS: False")
+                    content = content.replace(re.search('TO: .*', content, re.MULTILINE).group(0), "TO: \"\"")
+                    content = content.replace(re.search('EXPID: .*', content, re.MULTILINE).group(0),"EXPID: \""+exp_id+"\"")
+                    content = content.replace(re.search('HPCARCH: .*', content, re.MULTILINE).group(0),"HPCARCH: \""+hpc+"\"")
+                    if minimal_configuration:
+                        content = content.replace(re.search('CUSTOM_CONFIG: .*', content, re.MULTILINE).group(0), "CUSTOM_CONFIG: \"%ROOTDIR%/proj/git_project/"+git_as_conf+"\"")
+                        content = content.replace(re.search('PROJECT_ORIGIN: .*', content, re.MULTILINE).group(0), "PROJECT_ORIGIN: \""+git_repo+"\"")
+                        content = content.replace(re.search('PROJECT_BRANCH: .*', content, re.MULTILINE).group(0), "PROJECT_BRANCH: \""+git_branch+"\"")
+
+                with open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf", as_conf_file), 'w') as f:
+                    f.write(content)
+
+    @staticmethod
+    def expid(description,hpc="", copy_id='', dummy=False,minimal_configuration=False,git_repo="",git_branch="",git_as_conf="",test=False, operational=False):
         """
         Creates a new experiment for given HPC
+        description: description of the experiment
+        hpc: HPC where the experiment will be executed
+        copy_id: if specified, experiment id to copy
+        dummy: if true, creates a dummy experiment
+        minimal_configuration: if true, creates a minimal configuration
+        git_repo: git repository to clone
+        test: if true, creates a test experiment
+        operational: if true, creates an operational experiment
 
-        :param operational: if true, creates an operational experiment
-        :type operational: bool
-        :type hpc: str
-        :type description: str
-        :type copy_id: str
-        :type dummy: bool
-        :type test: bool
-        :type root_folder: str
-        :param hpc: name of the main HPC for the experiment
-        :param description: short experiment's description.
-        :param copy_id: experiment identifier of experiment to copy
-        :param dummy: if true, writes a default dummy configuration for testing
-        :param test: if true, creates an experiment for testing
-
-        :return: experiment identifier. If method fails, returns ''.
-        :rtype: str
         """
+        exp_id = None
+        root_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR)
+        if description is None:
+            raise AutosubmitCritical(
+                "Check that the parameters are defined (-d) ", 7011)
+        if hpc is None and not minimal_configuration:
+            raise AutosubmitCritical(
+                "Check that the parameters are defined (-H) ", 7011)
+        # Register the experiment in the database
         try:
-            exp_id = None
-            if description is None or hpc is None:
-                raise AutosubmitCritical(
-                    "Check that the parameters are defined (-d and -H) ", 7011)
-            if not copy_id:
-                exp_id = new_experiment(
-                    description, Autosubmit.autosubmit_version, test, operational)
-                if exp_id == '':
-                    try:
-                        Autosubmit._delete_expid(exp_id)
-                    except Exception as e:
-                        pass
+            # Copy another experiment from the database
+            if copy_id != '':
+                copy_id_folder = os.path.join(root_folder, copy_id)
+                if not os.path.exists(copy_id_folder):
                     raise AutosubmitCritical(
-                        "Couldn't create a new experiment", 7011)
-                try:
-                    os.mkdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id))
-                    os.mkdir(os.path.join(
-                        BasicConfig.LOCAL_ROOT_DIR, exp_id, 'conf'))
-                    Log.info("Copying config files...")
-
-                    # autosubmit config and experiment copied from AS.
-                    files = resource_listdir('autosubmitconfigparser.config', 'files')
-                    for filename in files:
-                        if resource_exists('autosubmitconfigparser.config', 'files/' + filename):
-                            index = filename.index('.')
-                            new_filename = filename[:index] + "_" + exp_id + filename[index:]
-
-                            if filename == 'platforms.yml' and BasicConfig.DEFAULT_PLATFORMS_CONF != '':
-                                content = open(os.path.join(
-                                    BasicConfig.DEFAULT_PLATFORMS_CONF, filename), 'rb').read()
-                            elif filename == 'jobs.yml' and BasicConfig.DEFAULT_JOBS_CONF != '':
-                                content = open(os.path.join(
-                                    BasicConfig.DEFAULT_JOBS_CONF, filename), 'rb').read()
-                            else:
-                                content = resource_string(
-                                    'autosubmitconfigparser.config', 'files/' + filename)
-
-                            # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
-                            if filename.startswith("platforms") and os.path.isfile(BasicConfig.CUSTOM_PLATFORMS_PATH):
-                                content = open(
-                                    BasicConfig.CUSTOM_PLATFORMS_PATH, 'rb').read()
-
-                            conf_new_filename = os.path.join(
-                                BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf", new_filename)
-                            Log.debug(conf_new_filename)
-                            open(conf_new_filename, 'wb').write(content)
-                    Autosubmit._prepare_conf_files(
-                        exp_id, hpc, Autosubmit.autosubmit_version, dummy, copy_id)
-                except (OSError, IOError) as e:
-                    try:
-                        Autosubmit._delete_expid(exp_id)
-                    except Exception as e:
-                        pass
-                    raise AutosubmitCritical(
-                        "Couldn't create a new experiment, permissions?", 7012)
-
-                except AutosubmitCritical as e:
-                    try:
-                        Autosubmit._delete_expid(exp_id)
-                    except Exception as e:
-                        pass
-                    raise
-                except BaseException as e:
-                    err=str(e)
-                    try:
-                        Autosubmit._delete_expid(exp_id)
-                    except Exception as e:
-                        pass
-                    raise AutosubmitCritical("Couldn't create a new experiment", 7012, err)
+                        "Experiment {0} doesn't exists".format(copy_id), 7011)
+                exp_id = copy_experiment(copy_id, description, hpc, test, operational, copy_id_folder)
             else:
-                try:
-                    if root_folder == '' or root_folder is None:
-                        root_folder = os.path.join(
-                            BasicConfig.LOCAL_ROOT_DIR, copy_id)
-                    if os.path.exists(root_folder):
-                        # List of allowed files from conf
-                        conf_copy_filter_folder = []
-                        conf_copy_filter_old_format_folder = []
-                        conf_copy_filter = ["autosubmit_" + str(copy_id) + ".yml",
-                                            "expdef_" + str(copy_id) + ".yml",
-                                            "jobs_" + str(copy_id) + ".yml",
-                                            "platforms_" + str(copy_id) + ".yml",
-                                            "proj_" + str(copy_id) + ".yml",
-                                            "autosubmit_" + str(copy_id) + ".conf",
-                                            "expdef_" + str(copy_id) + ".conf",
-                                            "jobs_" + str(copy_id) + ".conf",
-                                            "platforms_" + str(copy_id) + ".conf",
-                                            "proj_" + str(copy_id) + ".conf"]
-                        if root_folder != os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id):
-                            conf_copy_filter_folder = ["autosubmit.yml",
-                                                       "expdef.yml",
-                                                       "jobs.yml",
-                                                       "platforms.yml",
-                                                       "proj.yml"]
+                # Create a new experiment from scratch
+                exp_id = new_experiment(description, Autosubmit.autosubmit_version, test, operational, minimal_configuration)
 
-                            exp_id = new_experiment(
-                                description, Autosubmit.autosubmit_version, test, operational)
-                        else:
-                            exp_id = copy_experiment(
-                                copy_id, description, Autosubmit.autosubmit_version, test, operational)
-
-                        if exp_id == '':
-                            return ''
-                        dir_exp_id = os.path.join(
-                            BasicConfig.LOCAL_ROOT_DIR, exp_id)
-                        os.mkdir(dir_exp_id)
-                        os.mkdir(dir_exp_id + '/conf')
-                        if root_folder == os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id):
-                            Log.info(
-                                "Copying previous experiment config directories")
-                            conf_copy_id = os.path.join(
-                                BasicConfig.LOCAL_ROOT_DIR, copy_id, "conf")
-                        else:
-                            Log.info("Copying from folder: {0}", root_folder)
-                            conf_copy_id = root_folder
-                        files = os.listdir(conf_copy_id)
-                        for filename in files:
-                            # Allow only those files in the list
-                            Log.info("Copying filename: {0}", filename)
-                            if filename in conf_copy_filter:
-                                if os.path.isfile(os.path.join(conf_copy_id, filename)):
-                                    new_filename = filename.replace(
-                                        copy_id, exp_id)
-                                    if new_filename[-4:] == "conf":
-                                        new_filename = new_filename[:-4] + "yml"
-                                    # Using readlines for replacement handling
-                                    content = open(os.path.join(
-                                        conf_copy_id, filename), 'r').readlines()
-
-                                    # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
-                                    if filename.startswith("platforms") and os.path.isfile(
-                                            BasicConfig.CUSTOM_PLATFORMS_PATH):
-                                        content = open(
-                                            BasicConfig.CUSTOM_PLATFORMS_PATH, 'rb').readlines()
-                                    # Setting email notifications to false
-                                    if filename.startswith("autosubmit") and filename.endswith("conf"):
-                                        content = ["NOTIFICATIONS = False\n" if line.startswith(
-                                            ("NOTIFICATIONS =", "notifications =")) else line for line in content]
-                                    elif filename.startswith("autosubmit") and filename.endswith("yml"):
-                                        content = ["  NOTIFICATIONS: False\n" if "NOTIFICATIONS" in line else line for
-                                                   line in content]
-                                    # Putting content together before writing
-                                    sep = ""
-                                    open(os.path.join(dir_exp_id, "conf",
-                                                      new_filename), 'w').write(sep.join(content))
-                                    if filename.endswith("conf"):
-                                        try:
-                                            AutosubmitConfig.ini_to_yaml(os.path.join(dir_exp_id, "conf"),
-                                                                         os.path.join(os.path.join(dir_exp_id, "conf"),
-                                                                                      new_filename))
-                                        except BaseException as e:
-                                            Log.warning("Couldn't convert conf file to yml: {0}", new_filename)
-                            if filename in conf_copy_filter_folder:
-                                if os.path.isfile(os.path.join(conf_copy_id, filename)):
-                                    new_filename = filename.split(
-                                        ".")[0] + "_" + exp_id + ".yml"
-                                    content = open(os.path.join(
-                                        conf_copy_id, filename), 'rb').read()
-                                    # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
-                                    if filename.startswith("platforms") and os.path.isfile(
-                                            BasicConfig.CUSTOM_PLATFORMS_PATH):
-                                        content = open(
-                                            BasicConfig.CUSTOM_PLATFORMS_PATH, 'rb').read()
-
-                                    open(os.path.join(dir_exp_id, "conf",
-                                                      new_filename), 'wb').write(content)
-
-                        Autosubmit._prepare_conf_files(
-                            exp_id, hpc, Autosubmit.autosubmit_version, dummy, copy_id)
-                        #####
-                        autosubmit_config = AutosubmitConfig(
-                            exp_id, BasicConfig, YAMLParserFactory())
-                        try:
-                            autosubmit_config.check_conf_files(False)
-                            project_type = autosubmit_config.get_project_type()
-                            if project_type == "git":
-                                autosubmit_git = AutosubmitGit(copy_id[0])
-                                Log.info("checking model version...")
-                                if not autosubmit_git.check_commit(autosubmit_config):
-                                    raise AutosubmitCritical(
-                                        "Uncommitted changes", 7013)
-                        except Exception as error:
-                            Log.warning(
-                                "Trace: {0}\nCouldn't load experiment configuration, check the experiments files before perform a create".format(
-                                    str(error)))
-                    else:
-                        raise AutosubmitCritical(
-                            "The experiment directory doesn't exist", 7012)
-                except (OSError, IOError) as e:
-                    try:
-                        Autosubmit._delete_expid(exp_id, True)
-                    except Exception as e:
-                        pass
-                    raise AutosubmitCritical(
-                        "Can not create experiment", 7012)
-                except BaseException as e:
-                    try:
-                        Autosubmit._delete_expid(exp_id, True)
-                    except Exception as e:
-                        pass
-                    raise AutosubmitCritical(
-                        "Can not create experiment", 7012)
-
-            Log.debug("Creating temporal directory...")
-            exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
-            tmp_path = os.path.join(exp_id_path, "tmp")
-            os.mkdir(tmp_path)
-            os.chmod(tmp_path, 0o775)
-            os.mkdir(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR))
-            os.chmod(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR), 0o775)
-            Log.debug("Creating temporal remote directory...")
-            remote_tmp_path = os.path.join(tmp_path, "LOG_" + exp_id)
-            os.mkdir(remote_tmp_path)
-            os.chmod(remote_tmp_path, 0o755)
-
-            Log.debug("Creating pkl directory...")
-            os.mkdir(os.path.join(exp_id_path, "pkl"))
-
-            Log.debug("Creating plot directory...")
-            os.mkdir(os.path.join(exp_id_path, "plot"))
-            os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
-            Log.result("Experiment registered successfully")
-            Log.warning("Remember to MODIFY the config files!")
-            try:
-                Log.debug("Setting the right permissions...")
-                os.chmod(os.path.join(exp_id_path, "conf"), 0o755)
-                os.chmod(os.path.join(exp_id_path, "pkl"), 0o755)
-                os.chmod(os.path.join(exp_id_path, "tmp"), 0o775)
-                os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
-                os.chmod(os.path.join(exp_id_path, "conf/autosubmit_" +
-                                      str(exp_id) + ".yml"), 0o755)
-                os.chmod(os.path.join(exp_id_path, "conf/expdef_" +
-                                      str(exp_id) + ".yml"), 0o755)
-                os.chmod(os.path.join(exp_id_path, "conf/jobs_" +
-                                      str(exp_id) + ".yml"), 0o755)
-                os.chmod(os.path.join(exp_id_path, "conf/platforms_" +
-                                      str(exp_id) + ".yml"), 0o755)
-                try:
-                    os.chmod(os.path.join(exp_id_path, "tmp/ASLOGS"), 0o755)
-                except Exception as e:
-                    pass
-                os.chmod(os.path.join(exp_id_path, "conf/proj_" +
-                                      str(exp_id) + ".yml"), 0o755)
-            except Exception as e:
-                pass  # some folder may no exists, like proj
-            Log.debug("Finished")
-
-            return exp_id
-        except AutosubmitCritical:
-            raise
+            Autosubmit.as_conf_default_values(exp_id,hpc)
+            if exp_id == '':
+                raise AutosubmitCritical("No expid", 7011)
         except Exception as e:
-            raise AutosubmitCritical("Couldn't create a new experiment", 7012, str(e))
+            raise AutosubmitCritical("Error while generating a new experiment in the db: {0}".format(str(e)), 7011)
+
+        # Create the experiment structure
+        Log.info("Generating folder structure...")
+
+        exp_folder = os.path.join(root_folder, exp_id)
+        try:
+            os.mkdir(exp_folder)
+            os.mkdir(os.path.join(exp_folder, "conf"))
+            os.mkdir(os.path.join(exp_folder, "pkl"))
+            os.mkdir(os.path.join(exp_folder, "tmp"))
+            os.mkdir(os.path.join(exp_folder, "tmp", "ASLOGS"))
+            os.mkdir(os.path.join(exp_folder, "tmp", "LOG_"+exp_id))
+            os.mkdir(os.path.join(exp_folder, "plot"))
+            os.mkdir(os.path.join(exp_folder, "status"))
+            os.mkdir(os.path.join(exp_folder, "proj"))
+            # Setting permissions
+            os.chmod(exp_folder, 0o755)
+            os.chmod(os.path.join(exp_folder, "conf"), 0o755)
+            os.chmod(os.path.join(exp_folder, "pkl"), 0o755)
+            os.chmod(os.path.join(exp_folder, "tmp"), 0o755)
+            os.chmod(os.path.join(exp_folder, "tmp", "ASLOGS"), 0o755)
+            os.chmod(os.path.join(exp_folder, "tmp", "LOG_"+exp_id), 0o755)
+            os.chmod(os.path.join(exp_folder, "plot"), 0o755)
+            os.chmod(os.path.join(exp_folder, "status"), 0o755)
+            os.chmod(os.path.join(exp_folder, "proj"), 0o755)
+        except OSError as e:
+            try:
+                Autosubmit._delete_expid(exp_id, True)
+            except:
+                pass
+            raise AutosubmitCritical("Error while creating the experiment structure: {0}".format(str(e)), 7011)
+
+        # Create the experiment configuration
+        Log.info("Generating config files...")
+        try:
+            if copy_id != '':
+                # Copy the configuration from selected experiment
+                Autosubmit.copy_as_config(exp_id, copy_id)
+            else:
+                # Create a new configuration
+                Autosubmit.generate_as_config(exp_id,dummy, minimal_configuration)
+        except Exception as e:
+            try:
+                Autosubmit._delete_expid(exp_id, True)
+            except:
+                pass
+            raise AutosubmitCritical("Error while creating the experiment configuration: {0}".format(str(e)), 7011)
+        # Change template values by default values specified from the commandline
+        try:
+            Autosubmit.as_conf_default_values(exp_id,hpc,minimal_configuration,git_repo,git_branch,git_as_conf)
+        except Exception as e:
+            try:
+                Autosubmit._delete_expid(exp_id, True)
+            except:
+                pass
+            raise AutosubmitCritical("Error while setting the default values: {0}".format(str(e)), 7011)
+
+        Log.result("Experiment {0} created".format(exp_id))
+        return exp_id
 
     @staticmethod
     def delete(expid, force):
@@ -1651,11 +1543,11 @@ class Autosubmit:
 
     @staticmethod
     def run_experiment(expid, notransitive=False, update_version=False, start_time=None, start_after=None,
-                       run_members=None):
+                       run_only_members=None):
         """
         Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).
 
-        :param run_members:
+        :param run_only_ºmembers:
         :param start_after:
         :param start_time:
         :param update_version:
@@ -1682,8 +1574,8 @@ class Autosubmit:
             # Start after completion trigger block
             AutosubmitHelper.handle_start_after(start_after, expid, BasicConfig())
 
-            # Handling run_members
-            allowed_members = AutosubmitHelper.get_allowed_members(run_members, as_conf)
+            # Handling run_only_members
+            allowed_members = AutosubmitHelper.get_allowed_members(run_only_members, as_conf)
         except AutosubmitCritical as e:
             raise
         except BaseException as e:
@@ -5448,43 +5340,6 @@ class Autosubmit:
                 raise AutosubmitCritical("No input detected, the experiment won't be erased.", 7011, str(e))
             except ValueError:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
-
-    @staticmethod
-    def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy, copy_id):
-        """
-        Changes default configuration files to match new experiment values
-
-        :param exp_id: experiment identifier
-        :type exp_id: str
-        :param hpc: hpc to use
-        :type hpc: str
-        :param autosubmit_version: current autosubmit's version
-        :type autosubmit_version: str
-        :param dummy: if True, creates a dummy experiment adding some default values
-        :type dummy: bool
-        """
-        as_conf = AutosubmitConfig(exp_id, BasicConfig, YAMLParserFactory())
-        as_conf.set_version(autosubmit_version)
-        update_experiment_descrip_version(exp_id, version=Autosubmit.autosubmit_version)
-        as_conf.set_expid(exp_id)
-        as_conf.set_platform(hpc)
-
-        if dummy:
-            content = open(as_conf.experiment_file).read()
-
-            # Experiment
-            content = content.replace(re.search('DATELIST: .*', content, re.MULTILINE).group(0),
-                                      "DATELIST: 20000101")
-            content = content.replace(re.search('MEMBERS: .*', content, re.MULTILINE).group(0),
-                                      "MEMBERS: fc0")
-            content = content.replace(re.search('CHUNKSIZE: .*', content, re.MULTILINE).group(0),
-                                      "CHUNKSIZE: 4")
-            content = content.replace(re.search('NUMCHUNKS: .*', content, re.MULTILINE).group(0),
-                                      "NUMCHUNKS: 2")
-            content = content.replace(re.search('PROJECT_TYPE: .*', content, re.MULTILINE).group(0),
-                                      "PROJECT_TYPE: 'none'")
-
-            open(as_conf.experiment_file, 'w').write(content)
 
     @staticmethod
     def _get_status(s):
