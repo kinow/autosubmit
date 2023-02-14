@@ -1020,14 +1020,14 @@ class Autosubmit:
             # Copy only relevant files
             if conf_file.endswith(".conf") or conf_file.endswith(".yml") or conf_file.endswith(".yaml"):
                 shutil.copy(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id, "conf", conf_file),
-                            os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf", conf_file))
+                            os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf", conf_file.replace(copy_id,exp_id)))
             # if ends with .conf convert it to AS4 yaml file
             if conf_file.endswith(".conf"):
                 try:
                     AutosubmitConfig.ini_to_yaml(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf"),
-                                                 os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf",conf_file))
+                                                 os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf",conf_file.replace(copy_id,exp_id)))
                 except Exception as e:
-                    Log.warning("Error converting {0} to yml: {1}".format(conf_file,str(e)))
+                    Log.warning("Error converting {0} to yml: {1}".format(conf_file.replace(copy_id,exp_id),str(e)))
     @staticmethod
     def generate_as_config(exp_id,dummy=False,minimal_configuration=False):
         # obtain from autosubmitconfigparser package
@@ -1036,13 +1036,13 @@ class Autosubmit:
         for as_conf_file in files:
             if dummy:
                 if as_conf_file.endswith("dummy.yml"):
-                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file.split("-")[0]+".yml"))
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file.split("-")[0]+"_"+exp_id+".yml"))
             elif minimal_configuration:
                 if as_conf_file.endswith("minimal.yml"):
-                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file.split("-")[0]+".yml"))
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file.split("-")[0]+"_"+exp_id+".yml"))
             else:
                 if not as_conf_file.endswith("dummy.yml") and not as_conf_file.endswith("minimal.yml"):
-                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file))
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file[:-4]+"_"+exp_id+".yml"))
     @staticmethod
     def as_conf_default_values(exp_id,hpc="local",minimal_configuration=False,git_repo="",git_branch="main",git_as_conf=""):
         """
@@ -1140,20 +1140,18 @@ class Autosubmit:
             os.mkdir(os.path.join(exp_folder, "pkl"))
             os.mkdir(os.path.join(exp_folder, "tmp"))
             os.mkdir(os.path.join(exp_folder, "tmp", "ASLOGS"))
-            os.mkdir(os.path.join(exp_folder, "tmp", "LOG_"+exp_id))
+            os.mkdir(os.path.join(exp_folder, "tmp", "LOG_"+exp_id.upper()))
             os.mkdir(os.path.join(exp_folder, "plot"))
             os.mkdir(os.path.join(exp_folder, "status"))
-            os.mkdir(os.path.join(exp_folder, "proj"))
             # Setting permissions
             os.chmod(exp_folder, 0o755)
             os.chmod(os.path.join(exp_folder, "conf"), 0o755)
             os.chmod(os.path.join(exp_folder, "pkl"), 0o755)
             os.chmod(os.path.join(exp_folder, "tmp"), 0o755)
             os.chmod(os.path.join(exp_folder, "tmp", "ASLOGS"), 0o755)
-            os.chmod(os.path.join(exp_folder, "tmp", "LOG_"+exp_id), 0o755)
+            os.chmod(os.path.join(exp_folder, "tmp", "LOG_"+exp_id.upper()), 0o755)
             os.chmod(os.path.join(exp_folder, "plot"), 0o755)
             os.chmod(os.path.join(exp_folder, "status"), 0o755)
-            os.chmod(os.path.join(exp_folder, "proj"), 0o755)
         except OSError as e:
             try:
                 Autosubmit._delete_expid(exp_id, True)
