@@ -593,6 +593,7 @@ Or combined as follows:
 
 Options:
 ::
+
     usage: autosubmit report [-all] [-t] [-fp] [-p] expid
 
         expid                                Experiment identifier
