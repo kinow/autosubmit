@@ -193,8 +193,8 @@ class JobList(object):
         :type default_retrials: int
         :param new: is it a new generation?
         :type new: bool \n
-        :param wrapper_type: Type of wrapper defined by the user in autosubmit_.yml [wrapper] section. \n
-        :param wrapper_jobs: Job types defined in autosubmit_.yml [wrapper sections] to be wrapped. \n
+        :param wrapper_type: Type of wrapper defined by the user in ``autosubmit_.yml`` [wrapper] section. \n
+        :param wrapper_jobs: Job types defined in ``autosubmit_.yml`` [wrapper sections] to be wrapped. \n
         :type wrapper_jobs: String \n
         """
         self._parameters = parameters

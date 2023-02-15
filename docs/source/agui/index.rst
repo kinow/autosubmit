@@ -1,8 +1,11 @@
+:orphan:
+
 Autosubmit GUI
 ##############
 
 .. toctree::
-    :hidden:
+   :hidden:
+
    experiment/index
    tree/index
    graph/index

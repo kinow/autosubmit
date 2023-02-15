@@ -4260,11 +4260,15 @@ class Autosubmit:
         Archives an experiment: call clean (if experiment is of version 3 or later), compress folder
         to tar.gz and moves to year's folder
 
-        :param uncompress:
-        :param noclean:
-        :return:
         :param expid: experiment identifier
         :type expid: str
+        :param noclean: flag telling it whether to clean the experiment or not.
+        :type noclean: bool
+        :param uncompress: flag telling it whether to decompress or not.
+        :type uncompress: bool
+        :return: ``True`` if the experiment has been successfully archived. ``False`` otherwise.
+        :rtype: bool
+
         """
 
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)

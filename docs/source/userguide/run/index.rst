@@ -108,7 +108,7 @@ Once you've already loaded / installed the Autosubmit version do you want:
 
 *EXPID* is the experiment identifier.
 The most common problem when you upgrade an experiment with INI configuration to YAML is that some variables may be not automatically translated.
-Ensure that all your $EXPID/conf/*.yml files are correct and also revise the templates in $EXPID/proj/$proj_name.
+Ensure that all your $EXPID/conf/\*.yml files are correct and also revise the templates in $EXPID/proj/$proj_name.
 
 
 How to run only selected members
@@ -187,6 +187,8 @@ This functionality can be used together with other options supplied by the `run`
 
 The `-sa` command has a long version `--start_after`.
 
+.. _run_modes:
+
 How to prepare an experiment to run in two independent job_list. (Priority jobs, Two-step-run) (OLD METHOD)
 -----------------------------------------------------------------------------------------------------------
 
@@ -247,7 +249,7 @@ The priority jobs will be ( check TWO_STEP_START from expdef conf):
 ['a02n_20120101_000_1_SIM', 'a02n_20120101_001_1_SIM', 'a02n_COMPILE_DA', 'a02n_20120101_000_1_REDUCE']
 
 How to prepare an experiment to run in two independent job_list. (New method)
----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 
 From AS4, TWO_STEP_START is not longer needed since the users can now specify exactly which tasks of a job are needed to run the current task in the DEPENDENCIES parameter.
 
@@ -410,4 +412,4 @@ To stop immediately experiment cxxx:
     kill -9 22835
 
 .. important:: In case you want to restart the experiment, you must follow the
-    :ref:`restart` procedure, explained below, in order to properly resynchronize all completed jobs.
+    :ref:`workflow_recovery` procedure, explained below, in order to properly resynchronize all completed jobs.

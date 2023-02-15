@@ -369,7 +369,7 @@ class Job(object):
         Add parents for the job. It also adds current job as a child for all the new parents
 
         :param parents: job's parents to add
-        :type parents: *Job
+        :type parents: Job
         """
         for parent in parents:
             num_parents = 1

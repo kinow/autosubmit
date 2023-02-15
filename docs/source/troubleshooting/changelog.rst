@@ -8,11 +8,13 @@ Mayor mentions:
 
 - Python version has changed to 3.7.3 instead of 2.7.
 - Configuration language has changed to YAML.
+
  - All parameters are now unified into a single dictionary.
  - All sections are now uppercase.
  - All parameters, except for job related ones, have now an hierarchy.
  - An special key, FOR:, has been added. This key allows to create multiple jobs with almost the same configuration.
  - The configuration of autosubmit is now more flexible.
+
 - New command added, upgrade. This command will update all the scripts and autosubmit configuration.
 - Wrapper definition has changed.
 - Tasks dependencies system has changed.
@@ -86,7 +88,7 @@ Configuration
         DEFAULT:
           EXPID: a02u
           HPCARCH: local
-          CUSTOM_CONFIG: %ROOTDIR%/conf/custom_conf
+          CUSTOM_CONFIG: "%ROOTDIR%/conf/custom_conf"
         experiment:
           DATELIST: '20210811'
           MEMBERS: CompilationEfficiency HardwareBenchmarks WeakScaling StrongScaling
@@ -342,18 +344,25 @@ The DEPENDENCIES key is used to define the dependencies of a job. It can be used
 
 - Basic: The dependencies are a list of jobs, separated by " ", that runs before the current task is submitted.
 - New: The dependencies is a list of YAML sections, separated by "\n", that runs before the current job is submitted.
+
     - For each dependency section, you can designate the following keywords to control the current job-affected tasks:
+
         - DATES_FROM: Selects the job dates that you want to alter.
         - MEMBERS_FROM: Selects the job members that you want to alter.
         - CHUNKS_FROM: Selects the job chunks that you want to alter.
-    - For each dependency section and *_FROM keyword, you can designate the following keywords to control the destination of the dependency:
+
+    - For each dependency section and \*_FROM keyword, you can designate the following keywords to control the destination of the dependency:
+
         - DATES_TO: Links current selected tasks to the dependency tasks of the dates specified.
         - MEMBERS_TO: Links current selected tasks to the dependency tasks of the members specified.
         - CHUNKS_TO: Links current selected tasks to the dependency tasks of the chunks specified.
+
     - Important keywords for [DATES|MEMBERS|CHUNKS]_TO:
+
         - "natural": Will keep the default linkage. Will link if it would be normally. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1.
         - "all": Will link all selected tasks of the dependency with current selected tasks. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1, DA_FC00_CHUNK_2, DA_FC00_CHUNK_3...
         - "none": Will unlink selected tasks of the dependency with current selected tasks.
+
 For the new format, consider that the priority is hierarchy and goes like this DATES_FROM -(includes)-> MEMBERS_FROM -(includes)-> CHUNKS_FROM.
 
 - You can define a DATES_FROM inside the DEPENDENCY.
@@ -368,6 +377,7 @@ For the examples, we will consider that our experiment has the following configu
         DATELIST: 20220101
         MEMBERS: FC1 FC2
         NUMCHUNKS: 4
+
 Basic
 =====
 
@@ -453,7 +463,7 @@ New format
         RUNNING: chunk
 
 .. figure:: fig/new_dependencies_0.png
-   :name: new_dependencies
+   :name: new_dependencies_0
    :align: center
    :alt: new_dependencies
 
@@ -508,7 +518,7 @@ In the following example, we want to launch the next member SIM after the last S
             RUNNING: once
 
 .. figure:: fig/new_dependencies_1.png
-   :name: new_dependencies
+   :name: new_dependencies_1
    :align: center
    :alt: new_dependencies
 

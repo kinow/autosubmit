@@ -19,7 +19,6 @@ Welcome to autosubmit's documentation!
    :hidden:
 
    /qstartguide/index
-   /devguide/index
 
 .. toctree::
    :caption: Installation
@@ -33,15 +32,17 @@ Welcome to autosubmit's documentation!
    :maxdepth: 2
    :hidden:
 
+   /userguide/index
    /userguide/create/index
    /userguide/configure/index
    /userguide/defining_workflows/index
    /userguide/wrappers/index
    /userguide/run/index
-   /userguide/modifying_workflows/index
+   /userguide/modifying_workflow/index
    /userguide/manage/index
    /userguide/monitor_and_check/index
    /userguide/set_and_share_the_configuration/index
+   /userguide/variables
 
 .. toctree::
    :caption: Database Documentation

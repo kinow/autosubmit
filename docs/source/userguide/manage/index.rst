@@ -46,6 +46,8 @@ A bare copy (which occupies less space on disk) will be automatically made.
 .. note:: In addition, every time you run this command with -pr option, it will check the commit unique identifier for local working tree existing on the ``proj`` directory.
     In case that commit identifier exists, clean will register it to the ``expdef_cxxx.yml`` file.
 
+.. _archive:
+
 How to archive an experiment
 ----------------------------
 
@@ -220,6 +222,8 @@ Example:
 
     autosubmit refresh cxxx
 
+.. _updateDescrip:
+
 How to update the description of your experiment
 ------------------------------------------------
 
@@ -260,6 +264,7 @@ You must execute:
 
 Options:
 ::
+
     usage: autosubmit setstatus [-h] [-np] [-s] [-t] [-o {pdf,png,ps,svg}] [-fl] [-fc] [-fs] [-ft] [-group_by {date,member,chunk,split} -expand -expand_status] [-cw] expid
 
         expid                 experiment identifier
@@ -325,6 +330,7 @@ Date (day) range example:
 
 Result:
 ::
+
     cxxx_19601101_fc1_1_SIM
     cxxx_19601102_fc1_1_SIM
     cxxx_19601103_fc1_1_SIM

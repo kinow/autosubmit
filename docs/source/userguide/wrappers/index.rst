@@ -170,7 +170,7 @@ The queue parameter allows the users to define a path to a script that will load
     WRAPPER_0:
       TYPE: "horizontal"
       JOBS_IN_WRAPPER: "SIM"
-      EXPORT: %CURRENT_ROOTDIR%/envmodules.sh
+      EXPORT: "%CURRENT_ROOTDIR%/envmodules.sh"
 
 
 
