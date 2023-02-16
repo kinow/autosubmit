@@ -1329,7 +1329,6 @@ class Job(object):
 
         #todo revise pipeline that check this, additional templates value is not Mocked well
         for additional_file, additional_template_content in zip(self.additional_files, additional_templates):
-            template_content += additional_template_content
             for key, value in parameters.items():
                 additional_template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), additional_template_content,flags=re.I)
             for variable in self.undefined_variables:
