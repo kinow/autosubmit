@@ -220,8 +220,10 @@ class JobPackageSimple(JobPackageBase):
     def _send_files(self):
         for job in self.jobs:
             self.platform.send_file(self._job_scripts[job.name])
-            for file in job.additional_files:
-                self.platform.send_file(file)
+            for file_n in range(len(job.additional_files)):
+                filename = os.path.basename(os.path.splitext(job.additional_files[file_n])[0])
+                full_path = os.path.join(self._tmp_path,filename ) + "_" + job.name[5:]
+                self.platform.send_file(os.path.join(self._tmp_path, full_path))
 
     def _do_submission(self, job_scripts="", hold=False):
         if len(job_scripts) == 0:
