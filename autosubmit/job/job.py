@@ -1328,7 +1328,7 @@ class Job(object):
         #enumerate and get value
 
         #todo revise pipeline that check this, additional templates value is not Mocked well
-        for file_n,additional_template_content in enumerate(additional_templates):
+        for additional_file, additional_template_content in zip(self.additional_files, additional_templates):
             template_content += additional_template_content
             for key, value in parameters.items():
                 additional_template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), additional_template_content,flags=re.I)
@@ -1339,7 +1339,7 @@ class Job(object):
             #Write to file
             try:
 
-                filename = os.path.basename(os.path.splitext(self.additional_files[file_n])[0])
+                filename = os.path.basename(os.path.splitext(additional_file)[0])
                 full_path = os.path.join(self._tmp_path,filename ) + "_" + self.name[5:]
                 open(full_path, 'wb').write(additional_template_content.encode(lang))
             except:
