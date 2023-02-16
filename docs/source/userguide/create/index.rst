@@ -28,8 +28,8 @@ Options:
         -b BRANCH, --git_branch BRANCH
             sets the branch to use for the git repository
         -config, --git_as_conf
-            sets the configuration folder to use for the experiment
-        -H HPC, --HPC HPC     specifies the HPC to use for the experiment
+            sets the configuration folder to use for the experiment, relative to repo root
+        -H HPC, --HPC HPC     specifies the HPC to use for the experiment, default is localhost
         -d DESCRIPTION, --description DESCRIPTION
             sets a description for the experiment to store in the database.
         -repo GIT_PATH, --git_repo GIT_PATH sets the git_repository
@@ -37,8 +37,10 @@ Options:
 Example:
 ::
 
-    autosubmit expid --HPC ithaca --description "experiment is about..."
+    autosubmit expid --HPC marenostrum4 --description "experiment is about..."
     autosubmit expid -min -repo https://earth.bsc.es/gitlab/ces/auto-advanced_config_example -b main -conf as_conf -d "minimal config example"
+    autosubmit expid -dm -d "dummy test"
+
 
 If there is an autosubmitrc or .autosubmitrc file in your home directory (cd ~), you can setup a default file from where the contents of platforms_expid.yml should be copied.
 
