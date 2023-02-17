@@ -184,8 +184,10 @@ class TestJob(TestCase):
             self.job.create_script(config)
         # assert
         update_content_mock.assert_called_with(config)
+        # TODO add assert for additional files
         open_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 'wb')
-        write_mock.write.assert_called_with(b'some-content: 999, 777, 666 % %some-content: 999, 777, 666 % %')
+        # Expected values: %% -> %, %KEY% -> KEY.VALUE without %
+        write_mock.write.assert_called_with(b'some-content: 999, 777, 666 % %')
         chmod_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 0o755)
 
     def test_that_check_script_returns_false_when_there_is_an_unbound_template_variable(self):
