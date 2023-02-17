@@ -4445,7 +4445,7 @@ class Autosubmit:
         :param expid: experiment identifier
         :type expid: str
         :param noplot: if True, method omits final plotting of the jobs list. Only needed on large experiments when
-        plotting time can be much larger than creation time.
+            plotting time can be much larger than creation time.
         :type noplot: bool
         :return: True if successful, False if not
         :rtype: bool
