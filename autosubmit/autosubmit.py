@@ -614,6 +614,16 @@ class Autosubmit:
 
             # Changelog
             subparsers.add_parser('changelog', description='show changelog')
+
+            # Cat-log
+            subparser = subparsers.add_parser(
+                'cat-log', description='View workflow and job logs.')
+            subparser.add_argument('-f', '--file', default=None, action='store', metavar='LOG',
+                                   help='Workflow or Job log. Options are o(output), j(job), e(error), s(status). Default o(output).')
+            subparser.add_argument('-m', '--mode', default=None, action='store', metavar='MODE',
+                                   help='Mode. Options are c(cat), t(tail). Default is c(cat).')
+            subparser.add_argument('expid', metavar='ID', help='A Workflow (eg a000) or Job ID (eg a000_20220401_fc0_1_1_APPLICATION)')
+
             args = parser.parse_args()
 
             if args.command is None:
@@ -719,6 +729,8 @@ class Autosubmit:
             return Autosubmit.pkl_fix(args.expid)
         elif args.command == 'updatedescrip':
             return Autosubmit.update_description(args.expid, args.description)
+        elif args.command == 'cat-log':
+            return Autosubmit.cat_log(args.expid, args.file, args.mode)
 
     @staticmethod
     def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
@@ -5760,3 +5772,73 @@ class Autosubmit:
 
             job.platform.get_logs_files(expid, job.remote_logs)
         return job_list
+
+    @staticmethod
+    def cat_log(expid, file, mode):
+        from subprocess import Popen, DEVNULL
+        from contextlib import suppress
+
+        def view_file(log_file, mode):
+            if mode == 'c':
+                cmd = ['cat', str(log_file)]
+                Popen(
+                    cmd,
+                    stdin=DEVNULL,
+                    stdout=None
+                )
+                return 0
+            elif mode == 't':
+                cmd = [
+                    'tail',
+                    '--lines=+1',
+                    '--retry',
+                    '--follow=name',
+                    workflow_log_file
+                ]
+                proc = Popen(cmd, stdin=DEVNULL)
+                with suppress(KeyboardInterrupt):
+                    return proc.wait() == 0
+
+        MODES = {
+            'c': 'cat',
+            't': 'tail'
+        }
+        FILES = {
+            'o': 'output',
+            'j': 'job',
+            'e': 'error',
+            's': 'status'
+        }
+        if file is None:
+            file = 'o'
+        if file not in FILES.keys():
+            raise AutosubmitCritical(f'Invalid cat-log file {file}. Expected one of {[f for f in FILES.keys()]}', 7011)
+        if mode is None:
+            mode = 'c'
+        if mode not in MODES.keys():
+            raise AutosubmitCritical(f'Invalid cat-log mode {mode}. Expected one of {[m for m in MODES.keys()]}', 7011)
+
+        exp_path = Path(BasicConfig.LOCAL_ROOT_DIR, expid)
+        tmp_path = exp_path / BasicConfig.LOCAL_TMP_DIR
+        aslogs_path = tmp_path / BasicConfig.LOCAL_ASLOG_DIR
+
+        is_workflow = '_' not in expid
+
+        if is_workflow:
+            if file not in ['o', 'e']:
+                raise AutosubmitCritical(f'Invalid arguments for cat-log: workflow logs only support o(output) and '
+                                         f'e(error). Requested: {mode}', 7011)
+
+            search_pattern = '*_run_err.log' if file == 'e' else '*_run.log'
+            workflow_log_files = sorted(aslogs_path.glob(search_pattern))
+            if not workflow_log_files:
+                Log.info('No logs found.')
+                return True
+
+            workflow_log_file = workflow_log_files[-1]
+            if not workflow_log_file.is_file():
+                raise AutosubmitCritical(f'The workflow log file found is not a file: {workflow_log_file}', 7011)
+
+            return view_file(workflow_log_file, mode) == 0
+
+        return False
