@@ -655,7 +655,7 @@ class Job(object):
         while (count < retries) or not success:
             try:
                 as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-                as_conf.reload(first_load=True)
+                as_conf.reload(force_load=True)
                 max_retrials = as_conf.get_retrials()
                 max_logs = int(as_conf.get_retrials()) - fail_count
                 last_log = int(as_conf.get_retrials()) - fail_count

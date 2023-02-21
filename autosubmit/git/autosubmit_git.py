@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import locale
 from os import path
 import os
 from shutil import rmtree
@@ -205,7 +205,7 @@ class AutosubmitGit:
             Log.debug('Clone command: {0}', command_0)
             try:
                 git_version = subprocess.check_output("git --version",shell=True)
-                git_version = git_version.split(" ")[2].strip("\n")
+                git_version = git_version.split(" ")[2].decode(locale.getlocale()[1]).strip("\n")
                 version_int = ""
                 for number in git_version.split("."):
                     version_int += number
