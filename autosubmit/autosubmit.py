@@ -773,7 +773,7 @@ class Autosubmit:
                 raise AutosubmitCritical(message, 7071)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            as_conf.reload(first_load=True)
+            as_conf.reload(force_load=True)
             if len(as_conf.experiment_data) == 0:
                 if args.command not in ["expid", "upgrade"]:
                     raise AutosubmitCritical(
@@ -1941,7 +1941,7 @@ class Autosubmit:
                             consecutive_retrials = consecutive_retrials + 1
                             Log.info("Waiting {0} seconds before continue".format(delay))
                             try:
-                                as_conf.reload(first_load=True)
+                                as_conf.reload(force_load=True)
                                 Log.info("Recovering job_list...")
                                 job_list = Autosubmit.load_job_list(
                                     expid, as_conf, notransitive=notransitive)
@@ -3819,7 +3819,7 @@ class Autosubmit:
         try:
             Autosubmit._check_ownership(expid, raise_error=True)
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            # as_conf.reload(first_load=True)
+            # as_conf.reload(force_load=True)
             as_conf.check_conf_files(refresh=True)
         except (AutosubmitError, AutosubmitCritical):
             raise
@@ -3849,7 +3849,7 @@ class Autosubmit:
         Autosubmit._check_ownership(expid, raise_error=True)
 
         as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-        as_conf.reload(first_load=True)
+        as_conf.reload(force_load=True)
         as_conf.check_expdef_conf()
 
         Log.info("Changing {0} experiment version from {1} to  {2}",
@@ -3968,7 +3968,7 @@ class Autosubmit:
                     except Exception as e:
                         Log.warning("Couldn't convert conf file to yml: {0}", Path(f).parent)
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            as_conf.reload(first_load=True)
+            as_conf.reload(force_load=True)
             # Load current variables
             as_conf.check_conf_files()
             # Load current parameters ( this doesn't read job parameters)
@@ -4302,8 +4302,8 @@ class Autosubmit:
 
     @staticmethod
     def _create_project_associated_conf(as_conf, force_model_conf, force_jobs_conf):
-        project_destiny = as_conf.project_file
-        jobs_destiny = as_conf.jobs_file
+        project_destiny = as_conf.get_file_project_conf()
+        jobs_destiny = as_conf.get_file_jobs_conf()
 
         if as_conf.get_project_type() != 'none':
             if as_conf.get_file_project_conf():
@@ -4374,9 +4374,11 @@ class Autosubmit:
                     project_type = as_conf.get_project_type()
                     # Getting output type provided by the user in config, 'pdf' as default
                     output_type = as_conf.get_output_type()
-
-                    if not Autosubmit._copy_code(as_conf, expid, project_type, False):
-                        return False
+                    try:
+                        if not Autosubmit._copy_code(as_conf, expid, project_type, False):
+                            return False
+                    except:
+                        raise AutosubmitCritical("Error obtaining the project data, check the parameters related to PROJECT and GIT/SVN or LOCAL sections", code=7014)
                     # Update configuration with the new config in the dist ( if any )
                     as_conf.check_conf_files(False)
 
