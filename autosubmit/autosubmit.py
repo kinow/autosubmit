@@ -1039,7 +1039,7 @@ class Autosubmit:
                     shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file.split("-")[0]+"_"+exp_id+".yml"))
             elif minimal_configuration:
                 if as_conf_file.endswith("minimal.yml"):
-                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file.split("-")[0]+"_"+exp_id+".yml"))
+                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf","minimal.yml"))
             else:
                 if not as_conf_file.endswith("dummy.yml") and not as_conf_file.endswith("minimal.yml"):
                     shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file[:-4]+"_"+exp_id+".yml"))
@@ -1577,7 +1577,7 @@ class Autosubmit:
             raise AutosubmitCritical("Failure during the loading of the experiment configuration, check file paths",
                                      7014, str(e))
         as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-        as_conf.check_conf_files(True, True)
+        as_conf.check_conf_files(running_time=True, force_load=True)
         try:
             # Handling starting time
             AutosubmitHelper.handle_start_time(start_time)
