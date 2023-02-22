@@ -285,9 +285,15 @@ class JobList(object):
 
             dependencies_keys = jobs_data[job_section].get(option,{})
             if type(dependencies_keys) is str:
-                dependencies_keys = dependencies_keys.split()
+                if "," in dependencies_keys:
+                    dependencies_list = dependencies_keys.split(",")
+                else:
+                    dependencies_list = dependencies_keys.split(" ")
+                dependencies_keys = {}
+                for dependency in dependencies_list:
+                    dependencies_keys[dependency] = {}
             if dependencies_keys is None:
-                dependencies_keys = []
+                dependencies_keys = {}
             dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs, job_section)
 
             for job in dic_jobs.get_jobs(job_section):
