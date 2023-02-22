@@ -97,6 +97,8 @@ import autosubmit.history.utils as HUtils
 import autosubmit.helpers.autosubmit_helper as AutosubmitHelper
 import autosubmit.statistics.utils as StatisticsUtils
 
+from contextlib import suppress
+
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
@@ -622,7 +624,7 @@ class Autosubmit:
                                    help='Workflow or Job log. Options are o(output), j(job), e(error), s(status). Default o(output).')
             subparser.add_argument('-m', '--mode', default=None, action='store', metavar='MODE',
                                    help='Mode. Options are c(cat), t(tail). Default is c(cat).')
-            subparser.add_argument('expid', metavar='ID', help='A Workflow (eg a000) or Job ID (eg a000_20220401_fc0_1_1_APPLICATION)')
+            subparser.add_argument('ID', metavar='ID', help='An ID of a Workflow (eg a000) or a Job (eg a000_20220401_fc0_1_1_APPLICATION)')
 
             args = parser.parse_args()
 
@@ -730,7 +732,7 @@ class Autosubmit:
         elif args.command == 'updatedescrip':
             return Autosubmit.update_description(args.expid, args.description)
         elif args.command == 'cat-log':
-            return Autosubmit.cat_log(args.expid, args.file, args.mode)
+            return Autosubmit.cat_log(args.ID, args.file, args.mode)
 
     @staticmethod
     def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
@@ -752,7 +754,8 @@ class Autosubmit:
 
 
         expid_less = ["expid", "describe", "testcase", "install", "-v",
-                      "readme", "changelog", "configure", "unarchive"]
+                      "readme", "changelog", "configure", "unarchive",
+                      "cat-log"]
         global_log_command = ["delete", "archive", "upgrade"]
         if "offer" in args:
             if args.offer:
@@ -5774,16 +5777,29 @@ class Autosubmit:
         return job_list
 
     @staticmethod
-    def cat_log(expid, file, mode):
-        from subprocess import Popen, DEVNULL
-        from contextlib import suppress
+    def cat_log(ID, file, mode):
+        """The cat-log command allows users to view Autosubmit logs using the command-line.
+
+        It is possible to use ``autosubmit cat-log`` for Workflow and for Job logs. It decides
+        whether to show Workflow or Job logs based on the ``ID`` given. Shorter ID's, such as
+        ``a000` are considered Workflow ID's, so it will display logs for that workflow. For
+        longer ID's, such as ``a000_20220401_fc0_1_GSV``, the command will display logs for
+        that specific job.
+
+        Users can choose the log file using the ``FILE`` parameter, to display an error or
+        output log file, for instance.
+
+        Finally, the ``MODE`` parameter allows users to choose whether to display the complete
+        file contents (similar to the ``cat`` command) or to start tailing its output (akin to
+        ``tail -f``).
+        """
 
         def view_file(log_file, mode):
             if mode == 'c':
                 cmd = ['cat', str(log_file)]
-                Popen(
+                subprocess.Popen(
                     cmd,
-                    stdin=DEVNULL,
+                    stdin=subprocess.DEVNULL,
                     stdout=None
                 )
                 return 0
@@ -5795,7 +5811,7 @@ class Autosubmit:
                     '--follow=name',
                     workflow_log_file
                 ]
-                proc = Popen(cmd, stdin=DEVNULL)
+                proc = subprocess.Popen(cmd, stdin=subprocess.DEVNULL)
                 with suppress(KeyboardInterrupt):
                     return proc.wait() == 0
 
@@ -5818,19 +5834,27 @@ class Autosubmit:
         if mode not in MODES.keys():
             raise AutosubmitCritical(f'Invalid cat-log mode {mode}. Expected one of {[m for m in MODES.keys()]}', 7011)
 
+        is_workflow = '_' not in ID
+
+        expid = ID if is_workflow else ID[:4]
+
         exp_path = Path(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = exp_path / BasicConfig.LOCAL_TMP_DIR
         aslogs_path = tmp_path / BasicConfig.LOCAL_ASLOG_DIR
 
-        is_workflow = '_' not in expid
-
         if is_workflow:
-            if file not in ['o', 'e']:
-                raise AutosubmitCritical(f'Invalid arguments for cat-log: workflow logs only support o(output) and '
-                                         f'e(error). Requested: {mode}', 7011)
+            if file not in ['o', 'e', 's']:
+                raise AutosubmitCritical(f'Invalid arguments for cat-log: workflow logs only support o(output), '
+                                         f'e(error), and s(status). Requested: {mode}', 7011)
 
-            search_pattern = '*_run_err.log' if file == 'e' else '*_run.log'
-            workflow_log_files = sorted(aslogs_path.glob(search_pattern))
+            if file in ['e', 'o']:
+                search_pattern = '*_run_err.log' if file == 'e' else '*_run.log'
+                workflow_log_files = sorted(aslogs_path.glob(search_pattern))
+            else:
+                search_pattern = f'{expid}_*.txt'
+                stats_files_path = exp_path / 'status'
+                workflow_log_files = sorted(stats_files_path.glob(search_pattern))
+
             if not workflow_log_files:
                 Log.info('No logs found.')
                 return True
@@ -5838,6 +5862,24 @@ class Autosubmit:
             workflow_log_file = workflow_log_files[-1]
             if not workflow_log_file.is_file():
                 raise AutosubmitCritical(f'The workflow log file found is not a file: {workflow_log_file}', 7011)
+
+            return view_file(workflow_log_file, mode) == 0
+        else:
+            if file == 'j':
+                workflow_log_file = tmp_path / f'{ID}.cmd'
+            elif file == 's':
+                workflow_log_file = tmp_path / f'{ID}_TOTAL_STATS'
+            else:
+                search_pattern = f'{ID}.*.{"err" if file == "e" else "out"}'
+                exp_logs_path = tmp_path / f'LOG_{ID[:4]}'
+                workflow_log_files = sorted(exp_logs_path.glob(search_pattern))
+                if not workflow_log_files:
+                    Log.info('No logs found.')
+                    return True
+                workflow_log_file = workflow_log_files[-1]
+                
+            if not workflow_log_file.is_file():
+                raise AutosubmitCritical(f'The job log file {file} found is not a file: {workflow_log_file}', 7011)
 
             return view_file(workflow_log_file, mode) == 0
 
