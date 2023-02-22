@@ -994,7 +994,7 @@ class Job(object):
         """
         chunk = 1
         as_conf.reload()
-        #parameters = as_conf.sustitute_dynamic_variables(parameters,25)
+        parameters = as_conf.sustitute_dynamic_variables(parameters,25)
 
         parameters = parameters.copy()
         parameters.update(default_parameters)
