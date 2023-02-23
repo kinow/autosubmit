@@ -5,6 +5,7 @@
 SPHINXOPTS    = -W
 SPHINXBUILD   = sphinx-build
 PAPER         =
+SOURCEDIR     = source
 BUILDDIR      = build
 
 # User-friendly check for sphinx-build
@@ -19,11 +20,12 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) sou
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
+.PHONY: help clean watch html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html       to make standalone HTML files"
+	@echo "  watch      to make standalone HTML files and watch for changes"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
 	@echo "  pickle     to make pickle files"
@@ -50,6 +52,19 @@ help:
 
 clean:
 	rm -rf $(BUILDDIR)/*
+
+watch: clean
+	@echo
+	@echo "Building and watching for changes in the documentation."
+	sphinx-autobuild "$(SOURCEDIR)" "$(BUILDDIR)" \
+			-b html \
+			--ignore='**venv' \
+			--ignore='**.gitlab' \
+			--ignore='*.egg-info' \
+			--ignore='bin' \
+			--ignore='**_includes/**/*.txt' \
+			--watch='autosubmit' \
+			$(SPHINXOPTS) $(O)
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
