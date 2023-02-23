@@ -17,4 +17,4 @@ At the top left you see the ``Autosubmit Searcher`` home link that will take you
 
 At the bottom you see some relevant metadata, including the ``branch`` of the ``model`` that was used in the experiment, the ``HPC name`` targeted by the experiment, the owner, the ``version`` that this experiment us running on, the ``DB`` version of Autosubmit, and the number of jobs in the experiment.
 
-On the center you see the :ref:`treeRepresentation`, which is loaded automatically when you open this page.
+On the center you see the :doc:`../tree/index`, which is loaded automatically when you open this page.

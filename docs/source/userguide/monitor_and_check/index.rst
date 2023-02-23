@@ -150,18 +150,6 @@ Without autosubmit.lock, it will generate all unless filtered by -fl,fc,fs or ft
 How to monitor an experiment
 ----------------------------
 
-.. toctree::
-    :hidden:
-    :titlesonly:
-
-    job_stats
-    custom_stats
-    describe
-    generate_cmd_files
-    visualize_groups
-    report
-
-
 To monitor the status of the experiment, use the command:
 ::
 
@@ -338,11 +326,14 @@ Consider the following workflow:
 
     -group_by=chunk
 
-.. figure:: fig/group_chunk.png
-   :name: group_chunk
-   :width: 70%
-   :align: center
-   :alt: group chunk
+TODO: Add ``group_chunk.png`` figure.
+
+..
+  figure:: fig/group_chunk.png
+  :name: group_chunk
+  :width: 70%
+  :align: center
+  :alt: group chunk
 
 Synchronize jobs
 
@@ -464,6 +455,8 @@ Examples:
     autosubmit describe cxxx,cyyy
     autosubmit describe -u dbeltran
 
+.. _autoStatistics:
+
 How to monitor job statistics
 -----------------------------
 
@@ -570,6 +563,8 @@ The location where user can put this stats is in the file:
 
 .. hint:: If it is not yet created, you can manually create the file: ```expid_GENERAL_STATS``` inside the ```tmp``` folder.
 
+.. _report:
+
 How to extract information about the experiment parameters
 ----------------------------------------------------------
 
@@ -593,6 +588,7 @@ Or combined as follows:
 
 Options:
 ::
+
     usage: autosubmit report [-all] [-t] [-fp] [-p] expid
 
         expid                                Experiment identifier
@@ -605,12 +601,10 @@ Options:
 
         -p, --placeholders                   disable the replacement by - if the variable doesn't exist
 
-Template format and example:
-::
-
 Autosubmit parameters are encapsulated by %_%, once you know how the parameter is called you can create a template similar to the one as follows:
 
 .. code-block:: ini
+   :caption: Template format and example.
 
     - **CHUNKS:** %NUMCHUNKS% - %CHUNKSIZE% %CHUNKSIZEUNIT%
     - **VERSION:** %VERSION%
@@ -634,12 +628,8 @@ Although it depends on the experiment.
 
 If the parameter doesn't exists, it will be returned as '-' while if the parameter is declared but empty it will remain empty
 
-List of all parameters example:
-::
-
-On the other hand, if you use the option -l autosubmit will write a file called parameter_list_<todaydate>.txt containing all parameters in the format as follows:
-
 .. code-block:: ini
+   :caption: List of all parameters example.
 
     HPCQUEUE: bsc_es
     HPCARCH: marenostrum4

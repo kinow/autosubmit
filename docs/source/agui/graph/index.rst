@@ -1,5 +1,3 @@
-.. _graphRepresentation:
-
 Graph Representation
 ====================
 

@@ -1,16 +1,15 @@
-.. _errorcodes:
-
 #########################
 Error codes and solutions
 #########################
 
 Experiment Locked - Critical Error 7000
-===================================================
+=======================================
 +------------------------------------------------------------------------------------------------------------------------------------------------+
 | Code | Details                                                           | Solution                                                            |
 +======+===================================================================+=====================================================================+
 | 7000 | Experiment is locked due another instance of Autosubmit using it  | Halt other experiment instances //Delete <expid>/tmp/autosubmit.lock|
 +------+-------------------------------------------------------------------+---------------------------------------------------------------------+
+
 Database Issues  - Critical Error codes [7001-7005]
 ===================================================
 
@@ -27,10 +26,12 @@ Database Issues  - Critical Error codes [7001-7005]
 +------+-----------------------------------------------+-----------------------------------------------------------------+
 | 7005 | AS database is corrupted or locked            | Please, open a new issue ASAP. (If you are on BSC environment)  |
 +------+-----------------------------------------------+-----------------------------------------------------------------+
-| 7006 | Experiment database not found                 | Please, ask your administrator to run `autosubmit install       |
+| 7006 | Experiment database not found                 | Please, ask your administrator to run `autosubmit install`      |
 +------+-----------------------------------------------+-----------------------------------------------------------------+
 | 7007 | Experiment database permissions               | Invalid permissions, ask your administrator to add R/W          |
 +------+-----------------------------------------------+-----------------------------------------------------------------+
+
+.. _default_solution_1:
 
 Default Solution
 ----------------
@@ -55,8 +56,7 @@ Wrong User Input  - Critical Error codes [7010-7030]
 | 7014 | Wrong configuration                                  | Check your experiment/conf files, also take a look to the ASLOG/command.log detailed output    |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 
-Default Solution
-----------------
+**Default Solution**
 
 These issues are usually mistakes from the user input, check the available logs and git resolved issues. Alternative, you can ask for help to Autosubmit team.
 
@@ -81,8 +81,7 @@ Platform issues  - Critical Error codes. Local [7040-7050] and remote [7050-7060
 | 7052 | Scheduler is not installed or correctly configured.             | Check if there is a scheduler installed in the remote machine.                                                                          |
 +------+-----------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
 
-Default Solution
-----------------
+**Default Solution**
 
 Check autosubmit log for detailed information, there will be additional error codes.
 
@@ -125,8 +124,7 @@ Uncatalogued codes  - Critical Error codes [7060+]
 |      |                                               | Alternative: You can use a non-encrypted key, just make sure that nobody except you has access to the file.                                                                      |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-Default Solution
-----------------
+**Default Solution**
 
 Check autosubmit log for detailed information, there will be additional error codes.
 

@@ -1,5 +1,3 @@
-.. _configuration:
-
 Configure Experiments
 =====================
 
@@ -94,8 +92,9 @@ This is the minimum job definition and usually is not enough. You usually will n
 
 * DEPENDENCIES: defines dependencies from job as a list of parents jobs separated by spaces. For example, if
   'new_job' has to wait for "old_job" to finish, you must add the line "DEPENDENCIES: old_job".
+
     * For dependencies to jobs running in previous chunks, members or start-dates, use -(DISTANCE). For example, for a job "SIM" waiting for
-  the previous "SIM" job to finish, you have to add "DEPENDENCIES: SIM-1".
+      the previous "SIM" job to finish, you have to add "DEPENDENCIES: SIM-1".
     * For dependencies that are not mandatory for the normal workflow behaviour, you must add the char '?' at the end of the dependency.
 
 
@@ -118,7 +117,7 @@ To do this use:
 
 * RETRIALS: Number of retrials if job fails
 
-* DELAY_RETRY_TIME: Allows to put a delay between retries. Triggered when a job fails. If not specified, Autosubmit will retry the job as soon as possible. Accepted formats are: plain number (there will be a constant delay between retrials, of as many seconds as specified), plus (+) sign followed by a number (the delay will steadily increase by the addition of these number of seconds), or multiplication (*) sign follows by a number (the delay after n retries will be the number multiplied by 10*n). Having this in mind, the ideal scenario is to use +(number) or plain(number) in case that the HPC has little issues or the experiment will run for a little time. Otherwise, is better to use the *(number) approach.
+* DELAY_RETRY_TIME: Allows to put a delay between retries. Triggered when a job fails. If not specified, Autosubmit will retry the job as soon as possible. Accepted formats are: plain number (there will be a constant delay between retrials, of as many seconds as specified), plus (+) sign followed by a number (the delay will steadily increase by the addition of these number of seconds), or multiplication (*) sign follows by a number (the delay after n retries will be the number multiplied by 10*n). Having this in mind, the ideal scenario is to use +(number) or plain(number) in case that the HPC has little issues or the experiment will run for a little time. Otherwise, is better to use the \*(number) approach.
 
 .. code-block:: ini
 
@@ -427,7 +426,7 @@ Example:
             DEPENDENCIES: SIM
             RUNNING: chunk
             WALLCLOCK: 00:05
-            EXECUTABLE: %PROJDIR%/my_python_env/python3
+            EXECUTABLE: "%PROJDIR%/my_python_env/python3"
 
 The result is a ``shebang`` line ``#!/esarchive/autosubmit/my_python_env/python3``.
 

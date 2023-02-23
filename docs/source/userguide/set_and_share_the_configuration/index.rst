@@ -101,6 +101,8 @@ The expid command can copy another user's existing expid to work correctly.
 
 .. warning:: You must share the same Autosubmit experiment database for this to work.
 
+.. _advanced_features:
+
 Advanced Configuration
 ~~~~~~~~~~~~~~~~~~~~~~
 

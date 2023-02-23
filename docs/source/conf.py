@@ -33,8 +33,11 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.imgmath',
     'sphinx.ext.autosectionlabel',
-    'sphinx_rtd_theme'
+    'sphinx_rtd_theme',
+    'sphinx_reredirects'
 ]
+
+autosectionlabel_prefix_document = True
 
 numfig = True
 numfig_format = {'figure': '%s', 'table': '%s', 'code-block': '%s'}
@@ -73,7 +76,7 @@ release = '4.0.0b'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'en'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -116,6 +119,10 @@ autodoc_mock_imports = ["portalocker", "argparse", "python-dateutil", "py3dotplu
                         'numpy', 'matplotlib', 'matplotlib.pyplot', 'matplotlib.gridspec', 'matplotlib.patches', 'paramiko',
                         'mock', "networkx", 'networkx.algorithms.dag', 'bscearth.utils', 'bscearth.utils.config_parser',
                         'bscearth.utils.date']
+
+redirects = {
+    'devguide/variables' : '../userguide/variables.html'
+}
 
 # -- Options for HTML output ----------------------------------------------
 

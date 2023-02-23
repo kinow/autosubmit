@@ -25,6 +25,7 @@ Options:
             sets a description for the experiment to store in the database.
         -c PATH, --config PATH
             if specified, copies config files from a folder
+
 Example:
 ::
 
@@ -36,6 +37,7 @@ In this autosubmitrc or .autosubmitrc file, include the configuration setting cu
 
 Example:
 ::
+
     conf:
         custom_platforms: /home/Earth/user/custom.yml
 
@@ -55,11 +57,13 @@ It registers a new unique identifier and copies all configuration files in the n
 *COPY* is the experiment identifier to copy from.
 *Description* is a brief experiment description.
 *CONFIG* is a folder that exists.
+
 Example:
 ::
 
     autosubmit expid -y cxxx -H ithaca -d "experiment is about..."
     autosubmit expid -y cxxx -p "/esarchive/autosubmit/genericFiles/conf" -H marenostrum4 -d "experiment is about..."
+
 .. warning:: You can only copy experiments created with Autosubmit 3.11 or above.
 
 If there is an autosubmitrc or .autosubmitrc file in your home directory (cd ~), you can setup a default file from where the contents of platforms_expid.yml should be copied.
@@ -68,6 +72,7 @@ In this autosubmitrc or .autosubmitrc file, include the configuration setting cu
 
 Example:
 ::
+
     conf:
     custom_platforms: /home/Earth/user/custom.yml
 

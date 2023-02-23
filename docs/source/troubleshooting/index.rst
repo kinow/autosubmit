@@ -53,9 +53,9 @@ Other possible errors
 Error codes
 ===========
 
-The latest version of **Autosubmit** implements a code system that guides you through the process of fixing some of the common problems you might find. Check :ref:`errorcodes`, where you will find the list of error codes, their descriptions, and solutions.
+The latest version of **Autosubmit** implements a code system that guides you through the process of fixing some of the common problems you might find. Check :doc:`error-codes`, where you will find the list of error codes, their descriptions, and solutions.
 
 Changelog
 =========
 
-review :ref:`changelog`.
+review :doc:`changelog`.

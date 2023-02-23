@@ -6,7 +6,7 @@ of the workflow the experiment will use. In this section you will learn about th
 be able to exploit autosubmit's full potential
 
 .. warning::
-   This section is NOT intended to show how to define your jobs. Please go to :doc:`tutorial` section for a comprehensive
+   This section is NOT intended to show how to define your jobs. Please go to :doc:`/qstartguide/index` section for a comprehensive
    list of job options.
 
 
@@ -31,7 +31,7 @@ be finished before launching the job that has the DEPENDENCIES attribute.
        DEPENDENCIES: One
 
 
-The resulting workflow can be seen in Figure :numref:`simple`
+The resulting workflow can be seen in Fi165gure :numref:`simple`
 
 .. figure:: fig/simple.png
    :name: simple
@@ -177,25 +177,32 @@ Dependencies rework
 
 The DEPENDENCIES key is used to define the dependencies of a job. It can be used in the following ways:
 
-- Basic: The dependencies are a list of jobs, separated by " ", that runs before the current task is submitted.
-- New: The dependencies is a list of YAML sections, separated by "\n", that runs before the current job is submitted.
-    - For each dependency section, you can designate the following keywords to control the current job-affected tasks:
-        - DATES_FROM: Selects the job dates that you want to alter.
-        - MEMBERS_FROM: Selects the job members that you want to alter.
-        - CHUNKS_FROM: Selects the job chunks that you want to alter.
-    - For each dependency section and *_FROM keyword, you can designate the following keywords to control the destination of the dependency:
-        - DATES_TO: Links current selected tasks to the dependency tasks of the dates specified.
-        - MEMBERS_TO: Links current selected tasks to the dependency tasks of the members specified.
-        - CHUNKS_TO: Links current selected tasks to the dependency tasks of the chunks specified.
-    - Important keywords for [DATES|MEMBERS|CHUNKS]_TO:
-        - "natural": Will keep the default linkage. Will link if it would be normally. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1.
-        - "all": Will link all selected tasks of the dependency with current selected tasks. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1, DA_FC00_CHUNK_2, DA_FC00_CHUNK_3...
-        - "none": Will unlink selected tasks of the dependency with current selected tasks.
+* Basic: The dependencies are a list of jobs, separated by " ", that runs before the current task is submitted.
+* New: The dependencies is a list of YAML sections, separated by "\n", that runs before the current job is submitted.
+
+  * For each dependency section, you can designate the following keywords to control the current job-affected tasks:
+
+    * DATES_FROM: Selects the job dates that you want to alter.
+    * MEMBERS_FROM: Selects the job members that you want to alter.
+    * CHUNKS_FROM: Selects the job chunks that you want to alter.
+
+  * For each dependency section and \*_FROM keyword, you can designate the following keywords to control the destination of the dependency:
+
+    * DATES_TO: Links current selected tasks to the dependency tasks of the dates specified.
+    * MEMBERS_TO: Links current selected tasks to the dependency tasks of the members specified.
+    * CHUNKS_TO: Links current selected tasks to the dependency tasks of the chunks specified.
+
+  * Important keywords for [DATES|MEMBERS|CHUNKS]_TO:
+
+    * "natural": Will keep the default linkage. Will link if it would be normally. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1.
+    * "all": Will link all selected tasks of the dependency with current selected tasks. Example, SIM_FC00_CHUNK_1 -> DA_FC00_CHUNK_1, DA_FC00_CHUNK_2, DA_FC00_CHUNK_3...
+    * "none": Will unlink selected tasks of the dependency with current selected tasks.
+
 For the new format, consider that the priority is hierarchy and goes like this DATES_FROM -(includes)-> MEMBERS_FROM -(includes)-> CHUNKS_FROM.
 
-- You can define a DATES_FROM inside the DEPENDENCY.
-- You can define a MEMBERS_FROM inside the DEPENDENCY and DEPENDENCY.DATES_FROM.
-- You can define a CHUNKS_FROM inside the DEPENDENCY, DEPENDENCY.DATES_FROM, DEPENDENCY.MEMBERS_FROM, DEPENDENCY.DATES_FROM.MEMBERS_FROM
+* You can define a DATES_FROM inside the DEPENDENCY.
+* You can define a MEMBERS_FROM inside the DEPENDENCY and DEPENDENCY.DATES_FROM.
+* You can define a CHUNKS_FROM inside the DEPENDENCY, DEPENDENCY.DATES_FROM, DEPENDENCY.MEMBERS_FROM, DEPENDENCY.DATES_FROM.MEMBERS_FROM
 
 Job frequency
 ~~~~~~~~~~~~~
@@ -420,7 +427,7 @@ Example 1: How to select an specfic chunk
         PROCESSORS: 768
 
 .. figure:: fig/select_chunks.png
-   :name: simple
+   :name: select_chunks
    :width: 100%
    :align: center
    :alt: select_chunks_workflow
@@ -449,7 +456,7 @@ In this workflow you can see an illustrated example of SKIPPABLE parameter used 
             #QUEUE: debug
 
 .. figure:: fig/skip.png
-   :name: simple
+   :name: skip
    :width: 100%
    :align: center
    :alt: skip_workflow
@@ -483,7 +490,7 @@ Weak dependencies, work like this way:
             SYNCHRONIZE: member
 
 .. figure:: fig/dashed.png
-   :name: simple
+   :name: dashed
    :width: 100%
    :align: center
    :alt: dashed_workflow
@@ -541,7 +548,7 @@ Jobs_conf:
             SYNCHRONIZE: member
 
 .. figure:: fig/select_members.png
-   :name: simple
+   :name: select_members
    :width: 100%
    :align: center
    :alt: select_members

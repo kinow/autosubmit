@@ -1,3 +1,5 @@
+.. _workflow_recovery:
+
 How to restart the experiment
 =============================
 
