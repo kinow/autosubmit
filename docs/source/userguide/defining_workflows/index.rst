@@ -405,7 +405,7 @@ Workflow examples:
 ------------------
 
 Example 1: How to select an specific chunk
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. WARNING::
    This example illustrates the old select_chunk.
