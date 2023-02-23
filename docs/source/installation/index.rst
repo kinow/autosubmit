@@ -248,12 +248,12 @@ Mandatory parameters of /etc/autosubmit
 .. code-block:: ini
 
     [database]
-    # Accesible for all users of the filesystem
+    # Accessible for all users of the filesystem
     path = <database_path>
     # Experiment database name can be whatever.
     filename = autosubmit.db
 
-    # Accesible for all users of the filesystem, can be the same as database_path
+    # Accessible for all users of the filesystem, can be the same as database_path
     [local]
     path = <experiment_path>
 

@@ -53,7 +53,7 @@ Description of most used commands
       - Generates Autosubmit scripts and batch scripts for inspection, by processing the tasks’ templates with the experiment parameters.
     * - **refresh <expid>**
       - Updates the project directory.
-    * - **recovey <expid>**
+    * - **recovery <expid>**
       - Recovers the experiment workflow obtaining the last run complete jobs.
     * - **setstatus <expid>**
       - Sets one or multiple jobs status to a given value.
@@ -144,7 +144,7 @@ Configuration summary:
     * - ``autosubmit.yml``
       -
         - This file contains the definitions that impact the workflow behavior.
-        - It changes workflow behavior with parameters such as job limitations, remote_dependendies and retrials.
+        - It changes workflow behavior with parameters such as job limitations, remote_dependencies and retrials.
         - It extends autosubmit functionalities with parameters such as wrappers and mail notification.
     * - ``proj.yml``
       -

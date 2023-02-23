@@ -83,7 +83,7 @@ class ExperimentHistory:
       self._log.log(str(exp), traceback.format_exc())
       return None
   
-  def write_start_time(self, job_name, start=0, status="UNKWOWN", ncpus=0, wallclock="00:00", qos="debug", date="", 
+  def write_start_time(self, job_name, start=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="",
                       member="", section="", chunk=0, platform="NA", job_id=0, wrapper_queue=None, wrapper_code=None, children=""):
     try:
       job_data_dc_last = self.manager.get_job_data_dc_unique_latest_by_job_name(job_name)

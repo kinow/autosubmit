@@ -173,7 +173,7 @@ class JobPackageBase(object):
             raise
         except BaseException as e: #should be IOERROR
             raise AutosubmitCritical(
-                "Error on {1}, template [{0}] still does not exists in running time(check=on_submission actived) ".format(job.file,job.name), 7014)
+                "Error on {1}, template [{0}] still does not exists in running time(check=on_submission activated) ".format(job.file,job.name), 7014)
         Log.debug("Creating Scripts")
         if not exit_:
             if len(self.jobs) < thread_number:

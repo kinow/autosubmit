@@ -404,11 +404,11 @@ The resulting workflow can be seen in Figure :numref:`delay`
 Workflow examples:
 ------------------
 
-Example 1: How to select an specfic chunk
+Example 1: How to select an specific chunk
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. WARNING::
-   This example ilustrates the old select_chunk.
+   This example illustrates the old select_chunk.
 
 .. code-block:: yaml
 

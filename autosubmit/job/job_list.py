@@ -857,7 +857,7 @@ class JobList(object):
 
     def _create_fake_dates_members(self, filtered_jobs_list):
         """
-        Using the list of jobs provided, creates clones of these jobs and modifies names conditionted on job.date, job.member values (testing None).
+        Using the list of jobs provided, creates clones of these jobs and modifies names conditioned on job.date, job.member values (testing None).
         The purpose is that all jobs share the same name structure.
 
         :param filtered_jobs_list: A list of jobs of only those that comply with certain criteria, e.g. those belonging to a user defined job type for wrapping. \n
@@ -896,7 +896,7 @@ class JobList(object):
                     1] + "_" + member + "_" + fake_job.name.split("_", 2)[2]
                 # Filling list of fake jobs, only difference is the name
                 filtered_jobs_fake_date_member.append(fake_job)
-                # Mapping fake jobs to orignal ones
+                # Mapping fake jobs to original ones
                 fake_original_job_map[fake_job] = job
             # There was no result
             if fake_job is None:
@@ -1113,7 +1113,7 @@ class JobList(object):
 
     def get_unsubmitted(self, platform=None, wrapper=False):
         """
-        Returns a list of unsummited jobs
+        Returns a list of unsubmitted jobs
 
         :param wrapper:
         :param platform: job platform
@@ -1951,7 +1951,7 @@ class JobList(object):
                         else:
                             job.hold = True
             jobs_to_skip = self.get_skippable_jobs(
-                as_conf.get_wrapper_jobs())  # Get A Dict with all jobs that are listed as skipabble
+                as_conf.get_wrapper_jobs())  # Get A Dict with all jobs that are listed as skippable
 
             for section in jobs_to_skip:
                 for job in jobs_to_skip[section]:

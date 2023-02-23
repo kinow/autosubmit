@@ -84,7 +84,7 @@ class AutosubmitGit:
     @staticmethod
     def check_commit(as_conf):
         """
-        Function to check uncommited changes
+        Function to check uncommitted changes
 
         :param as_conf: experiment configuration
         :type as_conf: autosubmitconfigparser.config.AutosubmitConfig
@@ -104,7 +104,7 @@ class AutosubmitGit:
 
                 if output:
                     Log.printlog(
-                        "There are local changes not commited to git", 3000)
+                        "There are local changes not committed to git", 3000)
                     return True
                 else:
                     output = subprocess.check_output("cd {0}; git log --branches --not --remotes".format(dirname_path),

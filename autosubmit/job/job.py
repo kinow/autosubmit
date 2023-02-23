@@ -286,7 +286,7 @@ class Job(object):
     @property
     def long_name(self):
         """
-        Job's long name. If not setted, returns name
+        Job's long name. If not set, returns name
 
         :return: long name
         :rtype: str
@@ -994,7 +994,7 @@ class Job(object):
         """
         chunk = 1
         as_conf.reload()
-        #parameters = as_conf.sustitute_dynamic_variables(parameters,25)
+        #parameters = as_conf.substitute_dynamic_variables(parameters,25)
 
         parameters = parameters.copy()
         parameters.update(default_parameters)
@@ -1175,7 +1175,7 @@ class Job(object):
             parameters[wrapper_section+"_EXTENSIBLE"] = int(as_conf.get_extensible_wallclock(as_conf.experiment_data["WRAPPERS"].get(wrapper_section)))
         self.dependencies = parameters['DEPENDENCIES']
 
-        # This shouldn't be necesary anymore as now all sub is done in the as_conf.reload()
+        # This shouldn't be necessary anymore as now all sub is done in the as_conf.reload()
         if len(self.export) > 0:
             variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', self.export)
             if len(variables) > 0:
@@ -1192,7 +1192,7 @@ class Job(object):
 
             parameters['EXPORT'] = self.export
         parameters['PROJECT_TYPE'] = as_conf.get_project_type()
-        # For some reason, there is return but the assigne is also neccesary
+        # For some reason, there is return but the assignee is also necessary
         self.parameters = parameters
         return parameters
     def update_content_extra(self,as_conf,files):
@@ -1468,7 +1468,7 @@ class Job(object):
     def write_start_time(self, enabled = False):
         """
         Writes start date and time to TOTAL_STATS file
-        :return: True if succesful, False otherwise
+        :return: True if successful, False otherwise
         :rtype: bool
         """
         if self.wrapper_type != "vertical" or enabled:
