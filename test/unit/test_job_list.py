@@ -1,16 +1,17 @@
-from random import randrange
 from unittest import TestCase
 
-import os
+import shutil
+import tempfile
 from mock import Mock
+from random import randrange
 
-from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
-from autosubmit.job.job_list import JobList
 from autosubmit.job.job_common import Type
+from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list_persistence import JobListPersistenceDb
-from pathlib import Path
+from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
+
 
 class TestJobList(TestCase):
     def setUp(self):
@@ -20,8 +21,9 @@ class TestJobList(TestCase):
         self.as_conf.experiment_data["JOBS"] = dict()
         self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
         self.as_conf.experiment_data["PLATFORMS"] = dict()
+        self.temp_directory = tempfile.mkdtemp()
         self.job_list = JobList(self.experiment_id, FakeBasicConfig, YAMLParserFactory(),
-                                JobListPersistenceDb('.', '.'),self.as_conf)
+                                JobListPersistenceDb(self.temp_directory, 'db'), self.as_conf)
 
         # creating jobs for self list
         self.completed_job = self._createDummyJobWithStatus(Status.COMPLETED)
@@ -57,6 +59,9 @@ class TestJobList(TestCase):
                                    self.running_job2, self.queuing_job, self.failed_job, self.failed_job2,
                                    self.failed_job3, self.failed_job4, self.ready_job, self.ready_job2,
                                    self.ready_job3, self.waiting_job, self.waiting_job2, self.unknown_job]
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.temp_directory)
 
     def test_get_job_list_returns_the_right_list(self):
         job_list = self.job_list.get_job_list()
@@ -212,7 +217,7 @@ class TestJobList(TestCase):
         factory.create_parser = Mock(return_value=parser_mock)
 
         job_list = JobList(self.experiment_id, FakeBasicConfig,
-                           factory, JobListPersistenceDb('.', '.'),self.as_conf)
+                           factory, JobListPersistenceDb(self.temp_directory, 'db2'), self.as_conf)
         job_list._create_jobs = Mock()
         job_list._add_dependencies = Mock()
         job_list.update_genealogy = Mock()
@@ -251,11 +256,11 @@ class TestJobList(TestCase):
         dic_mock = Mock()
         dic_mock.read_section = Mock()
         dic_mock._jobs_data = dict()
-        dic_mock._jobs_data["JOBS"] = {'fake-section-1':{},'fake-section-2':{}}
-        self.job_list.experiment_data["JOBS"] = {'fake-section-1': {} , 'fake-section-2': {}}
+        dic_mock._jobs_data["JOBS"] = {'fake-section-1': {}, 'fake-section-2': {}}
+        self.job_list.experiment_data["JOBS"] = {'fake-section-1': {}, 'fake-section-2': {}}
 
         # act
-        JobList._create_jobs(dic_mock, 0, Type.BASH,jobs_data=dict())
+        JobList._create_jobs(dic_mock, 0, Type.BASH, jobs_data=dict())
 
         # arrange
         dic_mock.read_section.assert_any_call(
