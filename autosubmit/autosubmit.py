@@ -620,11 +620,11 @@ class Autosubmit:
             # Cat-log
             subparser = subparsers.add_parser(
                 'cat-log', description='View workflow and job logs.')
-            subparser.add_argument('-f', '--file', default=None, action='store', metavar='LOG',
-                                   help='Workflow or Job log. Options are o(output), j(job), e(error), s(status). Default o(output).')
+            subparser.add_argument('-f', '--file', default=None, action='store', metavar='FILE',
+                                   help='Workflow or Job log file. Options are o(output), j(job), e(error), s(status). Default o(output).')
             subparser.add_argument('-m', '--mode', default=None, action='store', metavar='MODE',
                                    help='Mode. Options are c(cat), t(tail). Default is c(cat).')
-            subparser.add_argument('ID', metavar='ID', help='An ID of a Workflow (eg a000) or a Job (eg a000_20220401_fc0_1_1_APPLICATION)')
+            subparser.add_argument('ID', metavar='ID', help='An ID of a Workflow (eg a000) or a Job (eg a000_20220401_fc0_1_1_APPLICATION).')
 
             args = parser.parse_args()
 
@@ -5793,7 +5793,6 @@ class Autosubmit:
         file contents (similar to the ``cat`` command) or to start tailing its output (akin to
         ``tail -f``).
         """
-
         def view_file(log_file, mode):
             if mode == 'c':
                 cmd = ['cat', str(log_file)]
