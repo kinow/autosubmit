@@ -234,6 +234,7 @@ class ParamikoPlatform(Platform):
             max_packet_size = pow(4, 12)
             #self._ftpChannel = self._ssh.open_sftp()
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=window_size,max_packet_size=max_packet_size)
+            self._ftpChannel.get_channel().settimeout(120)
             self.connected = True
         except SSHException as e:
             raise
