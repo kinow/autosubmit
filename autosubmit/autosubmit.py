@@ -1051,9 +1051,9 @@ class Autosubmit:
         :param hpc: platform
         :param minimal_configuration: minimal configuration
         :param git_repo: path to project git repository
-        :param branch: main branch
-        :param config_path: path to config file
-        :return:
+        :param git_branch: main branch
+        :param git_as_conf: path to as_conf file in git repository
+        :return: None
         """
         # open and replace values
         for as_conf_file in os.listdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf")):
@@ -1103,10 +1103,8 @@ class Autosubmit:
         git_branch: git branch to clone
         git_as_conf: path to as_conf file in git repository
         operational: if true, creates an operational experiment
-
-
         """
-        exp_id = None
+        exp_id = ""
         root_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR)
         if description is None:
             raise AutosubmitCritical(
