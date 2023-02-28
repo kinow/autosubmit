@@ -1100,8 +1100,10 @@ class Autosubmit:
         dummy: if true, creates a dummy experiment
         minimal_configuration: if true, creates a minimal configuration
         git_repo: git repository to clone
-        test: if true, creates a test experiment
+        git_branch: git branch to clone
+        git_as_conf: path to as_conf file in git repository
         operational: if true, creates an operational experiment
+
 
         """
         exp_id = None
