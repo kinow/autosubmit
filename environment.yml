@@ -18,7 +18,7 @@ dependencies:
 - networkx
 - sqlite
 - pip:
-  - autosubmitconfigparser==0.0.74
+  - autosubmitconfigparser==1.0.0
   - argparse>=1.4.0
   - python-dateutil>=2.8.2
   - matplotlib>=3.5.1

@@ -1183,9 +1183,9 @@ class Job(object):
         """
         chunk = 1
         as_conf.reload()
-        parameters = as_conf.substitute_dynamic_variables(parameters,25)
         parameters = parameters.copy()
         parameters.update(default_parameters)
+        parameters = as_conf.substitute_dynamic_variables(parameters,25)
         parameters['ROOTDIR'] = os.path.join(
             BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()
