@@ -262,8 +262,9 @@ class TestJob(TestCase):
         # This test (and feature) was implemented in order to avoid
         # false positives on the checking process with auto-ecearth3
         # Arrange
-        section = "random-section"
-        self.job.section = "random-section"
+        section = "RANDOM-SECTION"
+        self.job.section = section
+        self.job.parameters['ROOTDIR'] = "none"
         self.job.parameters['PROJECT_TYPE'] = "none"
         processors = 80
         threads = 1
@@ -278,7 +279,8 @@ class TestJob(TestCase):
             'TASKS': tasks,
             'MEMORY': memory,
             'WALLCLOCK': wallclock,
-            'CUSTOM_DIRECTIVES': custom_directives
+            'CUSTOM_DIRECTIVES': custom_directives,
+            'SCRATCH_FREE_SPACE': 0
         }
         self.as_conf.jobs_data[section] = options
 
@@ -286,12 +288,15 @@ class TestJob(TestCase):
         dummy_serial_platform.name = 'serial'
         dummy_platform = MagicMock()
         dummy_platform.serial_platform = dummy_serial_platform
+        self.as_conf.substitute_dynamic_variables = MagicMock()
+        self.as_conf.substitute_dynamic_variables.return_value = {'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
+                                              'M': '%M%', 'M_': '%M_%', 'm': '%m%', 'm_': '%m_%'}
         dummy_platform.custom_directives = '["whatever"]'
         self.as_conf.dynamic_variables = MagicMock()
         self.job._platform = dummy_platform
-
+        parameters = {}
         # Act
-        parameters = self.job.update_parameters(self.as_conf, dict())
+        parameters = self.job.update_parameters(self.as_conf, parameters)
         # Assert
         self.assertTrue('d' in parameters)
         self.assertTrue('d_' in parameters)
