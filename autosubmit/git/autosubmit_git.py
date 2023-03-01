@@ -169,7 +169,7 @@ class AutosubmitGit:
             #shutil.make_archive(project_backup_path, 'zip', project_path)
             #project_backup_path = project_backup_path + ".zip"
 
-        if os.path.exists(project_path):
+        if os.path.exists(os.path.join(project_path,project_destination)):
             Log.info("Using project folder: {0}", project_path)
             # print("Force {0}".format(force))
             if not force:
@@ -177,8 +177,9 @@ class AutosubmitGit:
                 return True
             else:
                 shutil.rmtree(project_path)
-        os.mkdir(project_path)
-        Log.debug("The project folder {0} has been created.", project_path)
+        if not os.path.exists(project_path):
+            os.mkdir(project_path)
+            Log.debug("The project folder {0} has been created.", project_path)
         command_0 = ""
         command_githook = ""
         command_1 = ""
@@ -205,7 +206,8 @@ class AutosubmitGit:
             Log.debug('Clone command: {0}', command_0)
             try:
                 git_version = subprocess.check_output("git --version",shell=True)
-                git_version = git_version.split(" ")[2].decode(locale.getlocale()[1]).strip("\n")
+                git_version = git_version.decode(locale.getlocale()[1]).split(" ")[-1].strip("\n")
+
                 version_int = ""
                 for number in git_version.split("."):
                     version_int += number

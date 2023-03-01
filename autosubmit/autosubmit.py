@@ -4374,17 +4374,16 @@ class Autosubmit:
 
                     as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
                     # Get original configuration
-                    as_conf.check_conf_files(False)
-                    project_type = as_conf.get_project_type()
+                    as_conf.check_conf_files(False, only_experiment_data=True, no_log=True)
                     # Getting output type provided by the user in config, 'pdf' as default
-                    output_type = as_conf.get_output_type()
                     try:
-                        if not Autosubmit._copy_code(as_conf, expid, project_type, False):
+                        if not Autosubmit._copy_code(as_conf, expid, as_conf.experiment_data.get("PROJECT",{}).get("PROJECT_TYPE","none"), False):
                             return False
                     except:
                         raise AutosubmitCritical("Error obtaining the project data, check the parameters related to PROJECT and GIT/SVN or LOCAL sections", code=7014)
                     # Update configuration with the new config in the dist ( if any )
-                    as_conf.check_conf_files(False)
+                    as_conf.check_conf_files(False,force_load=True, only_experiment_data=False, no_log=False)
+                    output_type = as_conf.get_output_type()
 
                     if not os.path.exists(os.path.join(exp_path, "pkl")):
                         raise AutosubmitCritical(
