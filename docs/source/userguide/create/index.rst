@@ -15,7 +15,7 @@ To create a new experiment, just run the command:
 Options:
 ::
 
-    usage: autosubmit expid [-h] [-y COPY | -dm | -min [-repo GIT_PATH ] ] [-p PATH] -H HPC -d DESCRIPTION
+    usage: autosubmit expid [-h] [-y COPY | -dm | -min [ -repo GIT_PATH -b BRANCH -config AS_CONF ] ] [-p PATH] -H HPC -d DESCRIPTION
 
         -h, --help            show this help message and exit
         -y COPY, --copy COPY  makes a copy of the specified experiment
@@ -32,7 +32,6 @@ Options:
         -H HPC, --HPC HPC     specifies the HPC to use for the experiment, default is localhost
         -d DESCRIPTION, --description DESCRIPTION
             sets a description for the experiment to store in the database.
-        -repo GIT_PATH, --git_repo GIT_PATH sets the git_repository
 
 Example:
 ::

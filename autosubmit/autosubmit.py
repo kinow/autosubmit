@@ -1091,7 +1091,7 @@ class Autosubmit:
                     f.write(content)
 
     @staticmethod
-    def expid(description,hpc="", copy_id='', dummy=False,minimal_configuration=False,git_repo="",git_branch="",git_as_conf="",operational=False):
+    def expid(description,hpc="", copy_id='', dummy=False,minimal_configuration=False, git_repo="",git_branch="",git_as_conf="",operational=False):
         """
         Creates a new experiment for given HPC
         description: description of the experiment
