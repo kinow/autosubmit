@@ -194,7 +194,6 @@ Advanced configuration - Full dummy example (reproducible)
         EXPID: "a04b"
         HPCARCH: "local"
         #ADD, note that %PROJDIR% is an special AS_PLACEHOLDER that points to the expid folder.
-        #Syntax: <model-specific_configuration_folder_path>,<user-file>,<user-file2_path>
         #hint: use %PROJDIR% to point to the project folder (where the project is cloned)
         CUSTOM_CONFIG: "%PROJDIR%/as_conf"
     PROJECT:
@@ -245,7 +244,7 @@ Model configuration is distributed at `git. <https://earth.bsc.es/gitlab/ces/aut
 .. code-block:: yaml
 
    # Create and run the experiment, since it contains all the info!
-   autosubmit create a04b
+   autosubmit create a04b  # if $expid/proj doesn't exists
    autosubmit refresh a04b
    autosubmit run a04b
 
@@ -263,7 +262,7 @@ Sharing an advanced configuration
 
 The expid command can copy another user's existing expid to work correctly.
 
-.. note:: This only copies the $expid/conf/{*.yml,*yaml} experiment configuration files.
+.. note:: This only copies the ``$expid/conf/{*.yml,*yaml}`` experiment configuration files.
 
 .. code-block:: bash
 
