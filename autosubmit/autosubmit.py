@@ -218,6 +218,7 @@ class Autosubmit:
             subparser.add_argument('-b', '--git_branch', type=str, default="", required=False,
                                    help='sets a git branch for the experiment')
             subparser.add_argument('-conf', '--git_as_conf', type=str, default="", required=False,help='sets the git path to as_conf')
+            subparser.add_argument('-local', '--use_local_minimal', required=False, action="store_true", help='uses local minimal file instead of git')
 
             group.add_argument('-op', '--operational', action='store_true',
                                help='creates a new experiment with operational experiment id')
@@ -638,7 +639,7 @@ class Autosubmit:
             return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time,
                                              args.start_after, args.run_only_members)
         elif args.command == 'expid':
-            return Autosubmit.expid(args.description,args.HPC,args.copy, args.dummy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.operational) != ''
+            return Autosubmit.expid(args.description,args.HPC,args.copy, args.dummy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.operational,args.use_local_minimal) != ''
         elif args.command == 'delete':
             return Autosubmit.delete(args.expid, args.force)
         elif args.command == 'monitor':
@@ -1029,7 +1030,7 @@ class Autosubmit:
                 except Exception as e:
                     Log.warning("Error converting {0} to yml: {1}".format(conf_file.replace(copy_id,exp_id),str(e)))
     @staticmethod
-    def generate_as_config(exp_id,dummy=False,minimal_configuration=False):
+    def generate_as_config(exp_id,dummy=False,minimal_configuration=False,local=False):
         # obtain from autosubmitconfigparser package
         # get all as_conf_files from autosubmitconfigparser package
         files = resource_listdir('autosubmitconfigparser.config', 'files')
@@ -1038,8 +1039,12 @@ class Autosubmit:
                 if as_conf_file.endswith("dummy.yml"):
                     shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file.split("-")[0]+"_"+exp_id+".yml"))
             elif minimal_configuration:
-                if as_conf_file.endswith("minimal.yml"):
-                    shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf","minimal.yml"))
+                if not local:
+                    if as_conf_file.endswith("git-minimal.yml"):
+                        shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf","minimal.yml"))
+                else:
+                    if as_conf_file.endswith("local-minimal.yml"):
+                        shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/' + as_conf_file),os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf", "minimal.yml"))
             else:
                 if not as_conf_file.endswith("dummy.yml") and not as_conf_file.endswith("minimal.yml"):
                     shutil.copy(resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file), os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf",as_conf_file[:-4]+"_"+exp_id+".yml"))
@@ -1079,19 +1084,24 @@ class Autosubmit:
                     if minimal_configuration:
                         search = re.search('CUSTOM_CONFIG: .*', content, re.MULTILINE)
                         if search is not None:
-                            content = content.replace(search.group(0), "CUSTOM_CONFIG: \"%ROOTDIR%/proj/git_project/"+git_as_conf+"\"")
+                            content = content.replace(search.group(0), "CUSTOM_CONFIG: \"%PROJDIR%/"+git_as_conf+"\"")
                         search = re.search('PROJECT_ORIGIN: .*', content, re.MULTILINE)
                         if search is not None:
                             content = content.replace(search.group(0), "PROJECT_ORIGIN: \""+git_repo+"\"")
+                        search = re.search('PROJECT_PATH: .*', content, re.MULTILINE)
+                        if search is not None:
+                            content = content.replace(search.group(0), "PROJECT_PATH: \""+git_repo+"\"")
                         search = re.search('PROJECT_BRANCH: .*', content, re.MULTILINE)
                         if search is not None:
                             content = content.replace(search.group(0), "PROJECT_BRANCH: \""+git_branch+"\"")
+
+
 
                 with open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf", as_conf_file), 'w') as f:
                     f.write(content)
 
     @staticmethod
-    def expid(description,hpc="", copy_id='', dummy=False,minimal_configuration=False, git_repo="",git_branch="",git_as_conf="",operational=False):
+    def expid(description,hpc="", copy_id='', dummy=False,minimal_configuration=False, git_repo="",git_branch="",git_as_conf="",operational=False, use_local_minimal=False):
         """
         Creates a new experiment for given HPC
         description: description of the experiment
@@ -1103,7 +1113,13 @@ class Autosubmit:
         git_branch: git branch to clone
         git_as_conf: path to as_conf file in git repository
         operational: if true, creates an operational experiment
+        local: Gets local minimal instead of git minimal
         """
+        if use_local_minimal:
+            if git_repo.lower().find("https") != -1:
+                git_repo = ""
+            git_branch = ""
+
         exp_id = ""
         root_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR)
         if description is None:
@@ -1167,7 +1183,7 @@ class Autosubmit:
                 Autosubmit.copy_as_config(exp_id, copy_id)
             else:
                 # Create a new configuration
-                Autosubmit.generate_as_config(exp_id,dummy, minimal_configuration)
+                Autosubmit.generate_as_config(exp_id,dummy, minimal_configuration,use_local_minimal)
         except Exception as e:
             try:
                 Autosubmit._delete_expid(exp_id, True)
@@ -4382,7 +4398,7 @@ class Autosubmit:
                     except:
                         raise AutosubmitCritical("Error obtaining the project data, check the parameters related to PROJECT and GIT/SVN or LOCAL sections", code=7014)
                     # Update configuration with the new config in the dist ( if any )
-                    as_conf.check_conf_files(False,force_load=True, only_experiment_data=False, no_log=False)
+                    as_conf.check_conf_files(True,force_load=True, only_experiment_data=False, no_log=False)
                     output_type = as_conf.get_output_type()
 
                     if not os.path.exists(os.path.join(exp_path, "pkl")):

@@ -29,6 +29,7 @@ Options:
             sets the branch to use for the git repository
         -config, --git_as_conf
             sets the configuration folder to use for the experiment, relative to repo root
+        -local, --use_local_minimal obtains the minimal configuration for local files
         -H HPC, --HPC HPC     specifies the HPC to use for the experiment, default is localhost
         -d DESCRIPTION, --description DESCRIPTION
             sets a description for the experiment to store in the database.
