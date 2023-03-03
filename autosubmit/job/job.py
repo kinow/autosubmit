@@ -1015,7 +1015,10 @@ class Job(object):
             self.wallclock, self.wchunkinc, chunk)
         self.scratch_free_space = int(as_conf.jobs_data[self.section].get("SCRATCH_FREE_SPACE",as_conf.platforms_data.get(job_platform.name,{}).get("SCRATCH_FREE_SPACE",0)))
         try:
-            self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","").replace("\'", "\"").strip("[]").strip(", ")
+            self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","")
+            if type(self.custom_directives) is list:
+                self.custom_directives = json.dumps(self.custom_directives)
+            self.custom_directives = self.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
             if self.custom_directives == '':
                 if job_platform.custom_directives is None:
                     job_platform.custom_directives = ''
