@@ -1196,6 +1196,7 @@ class Job(object):
         parameters = self.update_platform_parameters(as_conf, parameters, self._platform)
         parameters = self.update_platform_associated_parameters(as_conf, parameters, self._platform, parameters['CHUNK'])
         parameters = self.update_wrapper_parameters(as_conf, parameters)
+        parameters = as_conf.substitute_dynamic_variables(parameters,25)
         # For some reason, there is return but the assignee is also necessary
         self.parameters = parameters
         # This returns is only being used by the mock , to change the mock
