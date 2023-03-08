@@ -18,6 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import locale
 import os
+import re
 from time import sleep
 from time import mktime
 from time import time
@@ -54,18 +55,16 @@ class PJMPlatform(ParamikoPlatform):
         self._checkhost_cmd = None
         self.cancel_cmd = None
         self._header = PJMHeader()
-        self._wrapper = SlurmWrapperFactory(self)
-
+        self._wrapper = PJMWrapperFactory(self)
         #https://software.fujitsu.com/jp/manual/manualfiles/m220008/j2ul2452/02enz007/j2ul-2452-02enz0.pdf pagina 16
         self.job_status = dict()
-        self.job_status['COMPLETED'] = ['COMPLETED']
-        self.job_status['RUNNING'] = ['RUNNING']
-        self.job_status['QUEUING'] = ['PENDING', 'CONFIGURING', 'RESIZING']
-        self.job_status['FAILED'] = ['FAILED', 'CANCELLED', 'CANCELLED+', 'NODE_FAIL',
-                                     'PREEMPTED', 'SUSPENDED', 'TIMEOUT', 'OUT_OF_MEMORY', 'OUT_OF_ME+', 'OUT_OF_ME']
+        self.job_status['COMPLETED'] = ['EXT']
+        self.job_status['RUNNING'] = ['RNO','RNE','RUN']
+        self.job_status['QUEUING'] = ['ACC','QUE', 'RNA', 'RNP','HLD'] # NOT SURE ABOUT HOLD HLD
+        self.job_status['FAILED'] = ['ERR','CCL','RJT']
         self._pathdir = "\$HOME/LOG_" + self.expid
         self._allow_arrays = False
-        self._allow_wrappers = True
+        self._allow_wrappers = True # NOT SURE IF WE NEED WRAPPERS
         self.update_cmds()
         self.config = config
         exp_id_path = os.path.join(config.LOCAL_ROOT_DIR, self.expid)
@@ -73,6 +72,15 @@ class PJMPlatform(ParamikoPlatform):
         self._submit_script_path = os.path.join(
             tmp_path, config.LOCAL_ASLOG_DIR, "submit_" + self.name + ".sh")
         self._submit_script_file = open(self._submit_script_path, 'wb').close()
+
+    def submit_error(self,output):
+        # Returns true if the output of the submit command indicates an error, false otherwise
+        if output.lower().find("pjsub".lower()) != -1 and output.lower().find("[INFO] PJM 0000".lower()) != -1:
+            return False
+        else:
+            return True
+
+
 
     def process_batch_ready_jobs(self,valid_packages_to_submit,failed_packages,error_message="",hold=False):
         """
@@ -99,10 +107,14 @@ class PJMPlatform(ParamikoPlatform):
                     jobs_id = None
                     self.connected = False
                     if e.trace is not None:
-                        has_trace_bad_parameters = str(e.trace).lower().find("bad parameters") != -1
+                        has_trace_bad_parameters = self.submit_error(e.trace)
                     else:
                         has_trace_bad_parameters = False
-                    if has_trace_bad_parameters or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1 or e.message.lower().find("scheduler is not installed") != -1 or e.message.lower().find("failed") != -1 or e.message.lower().find("not available") != -1:
+                    if e.message is not None:
+                        has_message_bad_parameters = self.submit_error(e.message)
+                    else:
+                        has_message_bad_parameters = False
+                    if has_trace_bad_parameters or has_message_bad_parameters or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1 or e.message.lower().find("scheduler is not installed") != -1 or e.message.lower().find("failed") != -1 or e.message.lower().find("not available") != -1:
                         error_msg = ""
                         for package_tmp in valid_packages_to_submit:
                             for job_tmp in package_tmp.jobs:
@@ -143,6 +155,9 @@ class PJMPlatform(ParamikoPlatform):
                                 package.jobs[0].platform.send_command(cmd)
                                 queue_status = package.jobs[0].platform._ssh_output
                                 reason = package.jobs[0].platform.parse_queue_reason(queue_status, jobs_id[i])
+                                # pjstat -H shows only COMPLETED,FAILED
+                                # pjstat shows only  QUEUING,RUNNING
+                                # [bsc32070@armlogin01 ~]$ pjstat -H --filter "jid=167661+167662"
                                 if reason == '(JobHeldAdmin)':
                                     can_continue = False
                                 elif reason == '(JobHeldUser)':
