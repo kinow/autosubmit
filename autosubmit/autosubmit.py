@@ -3216,7 +3216,6 @@ class Autosubmit:
         """
         # todo
         try:
-            exp_parameters = defaultdict()
             performance_metrics = None
             ignore_performance_keys = ["error_message",
                                        "warnings_job_data", "considered"]
@@ -3229,7 +3228,7 @@ class Autosubmit:
             # Gather experiment info
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             try:
-                as_conf.check_conf_files(False)
+                as_conf.reload(True)
             except Exception as e:
                 raise AutosubmitCritical(
                     "Unable to gather the parameters from config files, check permissions.", 7012)
@@ -3270,28 +3269,28 @@ class Autosubmit:
                     job.platform_name = hpcarch.name
                 job.platform = submitter.platforms[job.platform_name]
 
-            try:
-                # Gathering parameters of autosubmit and expdef config files
-                as_conf.reload(True)
-                exp_parameters = as_conf.load_parameters()
-                try:
-                    for job in job_list.get_job_list():
-                        exp_parameters.update(job.update_parameters(as_conf, job_list.parameters))
-                except:
-                    pass
-            except Exception as e:
-                raise AutosubmitCritical(
-                    "Couldn't gather the experiment parameters", 7012, str(e))
 
             if show_all_parameters:
                 Log.info("Gathering all parameters (all keys are on upper_case)")
                 parameter_output = '{0}_parameter_list_{1}.txt'.format(expid,
                                                                        datetime.datetime.today().strftime(
                                                                            '%Y%m%d-%H%M%S'))
-
                 parameter_file = open(os.path.join(
                     tmp_path, parameter_output), 'w')
-                for key, value in exp_parameters.items():
+                # Common parameters
+                jobs_parameters = {}
+                try:
+                    for job in job_list.get_job_list():
+                        job_parameters = job.update_parameters(as_conf, {})
+                        for key, value in job_parameters.items():
+                            jobs_parameters["JOBS"+"."+job.section+"."+key] = value
+                except:
+                    pass
+                if len(jobs_parameters) > 0:
+                    del as_conf.experiment_data["JOBS"]
+                parameters = as_conf.load_parameters()
+                parameters.update(jobs_parameters)
+                for key, value in parameters.items():
                     if value is not None and len(str(value)) > 0:
                         full_value = key + "=" + str(value) + "\n"
                         parameter_file.write(full_value)
