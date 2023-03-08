@@ -182,7 +182,7 @@ class PJMWrapperFactory(WrapperFactory):
     #    return '#PJM --dependency=afterok:{0}'.format(dependency)
 
     def queue_directive(self, queue):
-        return '#PJM --qos={0}'.format(queue)
+        return '#PJM -L rscgrp={0}'.format(queue)
 
     def partition_directive(self, partition):
-        return '#PJM --partition={0}'.format(partition)
+        return '#PJM -g {0}'.format(partition)
