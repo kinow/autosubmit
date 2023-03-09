@@ -566,7 +566,7 @@ class ParamikoPlatform(Platform):
             job.new_status = job_status
 
     def _check_jobid_in_queue(self, ssh_output, job_list_cmd):
-        for job in job_list_cmd[:-1].split(','):
+        for job in job_list_cmd.split('+'):
             if job not in ssh_output:
                 return False
         return True
@@ -593,8 +593,8 @@ class ParamikoPlatform(Platform):
                 job_str = "0"
             else:
                 job_str = str(job.id)
-            job_list_cmd += job_str+","
-        if job_list_cmd[-1] == ",":
+            job_list_cmd += job_str+"+"
+        if job_list_cmd[-1] == "+":
             job_list_cmd=job_list_cmd[:-1]
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
         sleep_time = 5

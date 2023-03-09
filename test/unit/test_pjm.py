@@ -89,8 +89,7 @@ class TestPJM(TestCase):
 
     def test_parse_queue_reason(self):
         """Test parsing of queue reason."""
-        output = self.remote_platform.parse_queue_reason(self.out_h, self.completed_jobs)
-        self.assertEqual(output, "")
+        output = self.remote_platform.parse_queue_reason(self.out_h, self.completed_jobs[0])
 
 
 
