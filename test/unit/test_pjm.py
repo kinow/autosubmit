@@ -103,6 +103,8 @@ class TestPJM(TestCase):
         """Test parsing of submitted job id."""
         output = self.remote_platform.get_submitted_job_id(self.submitted_ok)
         assert output == [167661]
+        output = self.remote_platform.get_submitted_job_id(self.submitted_fail)
+        assert output == []
     def test_parse_queue_reason(self):
         """Test parsing of queue reason."""
         output = self.remote_platform.parse_queue_reason(self.out, self.completed_jobs[0])
