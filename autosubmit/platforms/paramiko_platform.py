@@ -566,11 +566,31 @@ class ParamikoPlatform(Platform):
             job.new_status = job_status
 
     def _check_jobid_in_queue(self, ssh_output, job_list_cmd):
-        for job in job_list_cmd.split('+'):
+        for job in job_list_cmd[:-1].split(','):
             if job not in ssh_output:
                 return False
         return True
+    def parse_joblist(self, job_list):
+        """
+        Convert a list of job_list to job_list_cmd
+        :param job_list: list of jobs
+        :type job_list: list
+        :param ssh_output: ssh output
+        :type ssh_output: str
+        :return: job status
+        :rtype: str
+        """
+        job_list_cmd = ""
+        for job,job_prev_status in job_list:
+            if job.id is None:
+                job_str = "0"
+            else:
+                job_str = str(job.id)
+            job_list_cmd += job_str+","
+        if job_list_cmd[-1] == ",":
+            job_list_cmd=job_list_cmd[:-1]
 
+        return job_list_cmd
     def check_Alljobs(self, job_list, as_conf, retries=5):
         """
         Checks jobs running status
@@ -587,15 +607,7 @@ class ParamikoPlatform(Platform):
         """
         job_status = Status.UNKNOWN
         remote_logs = as_conf.get_copy_remote_logs()
-        job_list_cmd = ""
-        for job,job_prev_status in job_list:
-            if job.id is None:
-                job_str = "0"
-            else:
-                job_str = str(job.id)
-            job_list_cmd += job_str+"+"
-        if job_list_cmd[-1] == "+":
-            job_list_cmd=job_list_cmd[:-1]
+        job_list_cmd = self.parse_joblist(job_list)
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
         sleep_time = 5
         sleep(sleep_time)
@@ -685,37 +697,7 @@ class ParamikoPlatform(Platform):
                     Log.error(
                         'check_job() The job id ({0}) status is {1}.', job.id, job_status)
                 job.new_status = job_status
-            reason = str()
-            if self.type == 'slurm' and len(in_queue_jobs) > 0:
-                cmd = self.get_queue_status_cmd(list_queue_jobid)
-                self.send_command(cmd)
-                queue_status = self._ssh_output
-                for job in in_queue_jobs:
-                    reason = self.parse_queue_reason(queue_status, job.id)
-                    if job.queuing_reason_cancel(reason):
-                        Log.error(
-                            "Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
-                        self.send_command(
-                            self.platform.cancel_cmd + " {0}".format(job.id))
-                        job.new_status = Status.FAILED
-                        job.update_status(as_conf)
-                        return
-                    elif reason == '(JobHeldUser)':
-                        job.new_status = Status.HELD
-                        if not job.hold:
-                            # SHOULD BE MORE CLASS (GET_scontrol release but not sure if this can be implemented on others PLATFORMS
-                            self.send_command("scontrol release {0}".format(job.id))
-                            job.new_status = Status.QUEUING # If it was HELD and was released, it should be QUEUING next.                                                        
-                        else:
-                            pass
-                    # This shouldn't happen anymore TODO delete
-                    elif reason == '(JobHeldAdmin)':
-                        Log.debug(
-                            "Job {0} Failed to be HELD, canceling... ", job.name)
-                        job.new_status = Status.WAITING
-                        job.platform.send_command(
-                            job.platform.cancel_cmd + " {0}".format(job.id))
-
+            self.get_queue_status(in_queue_jobs,list_queue_jobid,as_conf)
         else:
             for job in job_list:
                 job_status = Status.UNKNOWN
@@ -749,12 +731,6 @@ class ParamikoPlatform(Platform):
             #get all ids by job-name
             job_ids = [job_id.split(',')[0] for job_id in job_ids_names]
         return job_ids
-
-
-
-
-
-
 
     def get_checkjob_cmd(self, job_id):
         """

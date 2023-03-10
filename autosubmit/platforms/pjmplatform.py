@@ -33,7 +33,7 @@ from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.pjm_header import PJMHeader
 from autosubmit.platforms.wrappers.wrapper_factory import PJMWrapperFactory
 from log.log import AutosubmitCritical, AutosubmitError, Log
-
+import random
 
 class PJMPlatform(ParamikoPlatform):
     """
@@ -74,7 +74,7 @@ class PJMPlatform(ParamikoPlatform):
         self._submit_script_file = open(self._submit_script_path, 'wb').close()
 
     def submit_error(self,output):
-        # Returns true if the output of the submit command indicates an error, false otherwise
+        #returns false if the job submission message is not found
         if output.lower().find("pjsub".lower()) != -1 and output.lower().find("[INFO] PJM 0000".lower()) != -1:
             return False
         else:
@@ -94,7 +94,6 @@ class PJMPlatform(ParamikoPlatform):
         try:
             valid_packages_to_submit = [ package for package in valid_packages_to_submit if package.x11 != True]
             if len(valid_packages_to_submit) > 0:
-                package = valid_packages_to_submit[0]
                 try:
                     jobs_id = self.submit_Script(hold=hold)
                 except AutosubmitError as e:
@@ -253,19 +252,18 @@ class PJMPlatform(ParamikoPlatform):
         self.root_dir = os.path.join(
             self.scratch, self.project_dir, self.user, self.expid)
         self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
-        self.cancel_cmd = "pjdel"
+        self.cancel_cmd = "pjdel "
         self._checkhost_cmd = "echo 1"
-        self._submit_cmd = 'cd {0} ; pjsub -j '.format(self.remote_log_dir)
+        self._submit_cmd = 'cd {0} ; pjsub  '.format(self.remote_log_dir)
         self._submit_command_name = "pjsub"
-        self._submit_hold_cmd = 'cd {0} ; pjsub -j '.format(self.remote_log_dir)
-        # jobid =$(sbatch WOA_run_mn4.sh 2 > & 1 | grep -o "[0-9]*"); scontrol hold $jobid;
+        self._submit_hold_cmd = 'cd {0} ; pjsub  '.format(self.remote_log_dir)
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
     def hold_job(self, job):
         try:
-            cmd = "scontrol pjhold {0} ; sleep 2 ; pjhold {0} ".format(job.id)
+            cmd = "pjrls {0} ; sleep 2 ; pjhold -R ASHOLD {0}".format(job.id)
             self.send_command(cmd)
             job_status = self.check_job(job, submit_hold_check=True)
             if job_status == Status.RUNNING:
@@ -296,12 +294,40 @@ class PJMPlatform(ParamikoPlatform):
         return self.remote_log_dir
 
     def parse_job_output(self, output):
-        return output.strip().split(' ')[0].strip()
+        return output.strip().split()[0].strip()
 
     def parse_job_finish_data(self, output, packed):
         return 0, 0, 0, 0, 0, 0, dict(), False
 
-
+    def queuing_reason_cancel(self, reason):
+        try:
+            if len(reason.split('(', 1)) > 1:
+                reason = reason.split('(', 1)[1].split(')')[0]
+                if 'Invalid' in reason or reason in ['ANOTHER JOB STARTED','DELAY','DEADLINE SCHEDULE STARTED','ELAPSE LIMIT EXCEEDED','FILE IO ERROR','GATE CHECK','IMPOSSIBLE SCHED','INSUFF CPU','INSUFF MEMORY','INSUFF NODE','INSUFF','INTERNAL ERROR','INVALID HOSTFILE','LIMIT OVER MEMORY','LOST COMM','NO CURRENT DIR','NOT EXIST','RSCGRP NOT EXIST','RSCGRP STOP','RSCUNIT','USER','EXCEED','WAIT SCHED']:
+                    return True
+            return False
+        except Exception as e:
+            return False
+    def get_queue_status(self, in_queue_jobs, list_queue_jobid, as_conf):
+        if len(in_queue_jobs) <= 0:
+            return
+        cmd = self.get_queue_status_cmd(list_queue_jobid)
+        self.send_command(cmd)
+        queue_status = self._ssh_output
+        for job in in_queue_jobs:
+            reason = self.parse_queue_reason(queue_status, job.id)
+            if job.queuing_reason_cancel(reason):
+                Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
+                self.send_command(self.cancel_cmd + " {0}".format(job.id))
+                job.new_status = Status.FAILED
+                job.update_status(as_conf)
+            elif reason.find('ASHOLD') != -1:
+                job.new_status = Status.HELD
+                if not job.hold:
+                    self.send_command("{0} {1}".format(self.cancel_cmd,job.id))
+                    job.new_status = Status.QUEUING  # If it was HELD and was released, it should be QUEUING next.
+                else:
+                    pass
     def parse_Alljobs_output(self, output, job_id):
         status = ""
         try:
@@ -313,12 +339,39 @@ class PJMPlatform(ParamikoPlatform):
             return status
         return status[0]
 
+    def parse_joblist(self, job_list):
+        """
+        Convert a list of job_list to job_list_cmd
+        :param job_list: list of jobs
+        :type job_list: list
+        :param ssh_output: ssh output
+        :type ssh_output: str
+        :return: job status
+        :rtype: str
+        """
+        job_list_cmd = ""
+        for job, job_prev_status in job_list:
+            if job.id is None:
+                job_str = "0"
+            else:
+                job_str = str(job.id)
+            job_list_cmd += job_str + "+"
+        if job_list_cmd[-1] == "+":
+            job_list_cmd = job_list_cmd[:-1]
+
+        return job_list_cmd
+    def _check_jobid_in_queue(self, ssh_output, job_list_cmd):
+        for job in job_list_cmd.split('+'):
+            if job not in ssh_output:
+                return False
+        return True
+
     def get_submitted_job_id(self, outputlines, x11 = False):
         try:
             jobs_id = []
             for output in outputlines.splitlines():
                 if not self.submit_error(output):
-                    jobs_id.append(int(output.split(' ')[5]))
+                    jobs_id.append(int(output.split()[5]))
             if x11 == "true":
                 return jobs_id[0]
             else:
@@ -360,10 +413,10 @@ class PJMPlatform(ParamikoPlatform):
     def get_checkAlljobs_cmd(self, jobs_id):
         # jobs_id = "jobid1+jobid2+jobid3"
         # -H == sacct
-        return "pjstat -H -v --choose jid,st,ermsg --filter \"jid={0}\"".format(jobs_id)
+        return "pjstat -H -v --choose jid,st,ermsg --filter \"jid={0}\" > as_checkalljobs.txt ; pjstat -v --choose jid,st,ermsg --filter \"jid={0}\" >> as_checkalljobs.txt ; cat as_checkalljobs.txt ; rm as_checkalljobs.txt".format(jobs_id)
 
     def get_queue_status_cmd(self, job_id):
-        return 'pjstat -v --choose jid,st,ermsg {0}'.format(job_id)
+        return self.get_checkAlljobs_cmd(job_id)
 
     def get_jobid_by_jobname_cmd(self, job_name):
         return 'pjstat -v --choose jid,st,ermsg --filter \"jnam={0}\"'.format(job_name)
@@ -376,13 +429,15 @@ class PJMPlatform(ParamikoPlatform):
     #    return 'sacct -n --jobs {0} -o JobId%25,State,NCPUS,NNodes,Submit,Start,End,ConsumedEnergy,MaxRSS%25,AveRSS%25'.format(job_id)
 
     def parse_queue_reason(self, output, job_id):
-        reason = [x.split(',')[1] for x in output.splitlines()
-                  if x.split(',')[0] == str(job_id)]
+        # split() is used to remove the trailing whitespace but also \t and multiple spaces
+        # split(" ") is not enough
+        reason = [x.split()[2] for x in output.splitlines()
+                  if x.split()[0] == str(job_id)]
+        # In case of duplicates.. we take the first one
         if len(reason) > 0:
             return reason[0]
         return reason
 
-    # Wrapper todo
     @staticmethod
     def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads, method="asthreads", partition=""):
         if method == 'srun':
@@ -393,15 +448,15 @@ class PJMPlatform(ParamikoPlatform):
 #              {0}
 ###############################################################################
 #
-#SBATCH -J {0}
+#PJM -N {0}
 {1}
 {8}
-#SBATCH -A {2}
-#SBATCH --output={0}.out
-#SBATCH --error={0}.err
-#SBATCH -t {3}:00
-#SBATCH -n {4}
-#SBATCH --cpus-per-task={7}
+#PJM -g {2}
+#PJM -o {0}.out
+#PJM -e {0}.err
+#PJM -elapse {3}:00
+#PJM --mpi "proc=%NUMPROC%"
+#PJM --mpi "max-proc-per-node={7}"
 {5}
 {6}
 
@@ -417,15 +472,15 @@ class PJMPlatform(ParamikoPlatform):
 #              {0}
 ###############################################################################
 #
-#SBATCH -J {0}
+#PJM -N {0}
 {1}
 {8}
-#SBATCH -A {2}
-#SBATCH --output={0}.out
-#SBATCH --error={0}.err
-#SBATCH -t {3}:00
-#SBATCH --cpus-per-task={7}
-#SBATCH -n {4}
+#PJM -g {2}
+#PJM -o {0}.out
+#PJM -e {0}.err
+#PJM -elapse {3}:00
+#PJM --mpi "proc=%NUMPROC%"
+#PJM --mpi "max-proc-per-node={7}"
 {5}
 {6}
 #
