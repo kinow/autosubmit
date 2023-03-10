@@ -4,6 +4,7 @@ from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
 from autosubmit.autosubmit import Autosubmit
 import autosubmit.platforms.pjmplatform
+import pytest
 
 from pathlib import Path
 from autosubmit.platforms.platform import Platform
@@ -57,39 +58,55 @@ class TestPJM(TestCase):
         self.section = 'ARM'
         self.submitted_ok = "[INFO] PJM 0000 pjsub Job 167661 submitted."
         self.submitted_fail = "[ERR.] PJM 0057 pjsub node=32 is greater than the upper limit (24)."
-        self.out= """JOB_ID     JOB_NAME   MD ST  USER     GROUP    START_DATE      ELAPSE_TIM ELAPSE_LIM            NODE_REQUIRE    VNODE  CORE V_MEM        V_POL E_POL RANK      LST EC  PC  SN PRI ACCEPT         RSC_GRP  REASON          
-167687     test       NM ACC bsc32070 bsc32    03/08 11:41:07  0000:00:01 0000:01:00            1               -      -    -            -     -     bychip    ACC 0   0   0  127 03/08 11:41:04 small    -               
-167688     test       NM RUN bsc32070 bsc32    (03/08 11:41)   0000:00:00 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/08 11:41:05 small    -               
-167689     test       NM RNO bsc32070 bsc32    (03/08 11:41)   0000:00:00 0000:01:00            1               -      -    -            -     -     bychip    RNE 0   0   0  127 03/08 11:41:05 small    -               
-167690     test       NM RNA bsc32070 bsc32    (03/08 11:41)   0000:00:00 0000:01:00            1               -      -    -            -     -     bychip    RUN 0   0   0  127 03/08 11:41:06 small    -               
-167691     test       NM RNP bsc32070 bsc32    (03/08 11:41)   0000:00:00 0000:01:00            1               -      -    -            -     -     bychip    RNA 0   0   0  127 03/08 11:41:06 small    -               
-167692     test       NM HLD bsc32070 bsc32    (03/08 11:41)   0000:00:00 0000:01:00            1               -      -    -            -     -     bychip    RNP 0   0   0  127 03/08 11:41:06 small    -              """
-        self.queued_jobs = ["167687","167690","167691","167692"]
-        self.running_jobs = ["167688","167689"]
-        self.out_h="""JOB_ID     JOB_NAME   MD ST  USER     GROUP    START_DATE      ELAPSE_TIM ELAPSE_LIM            NODE_REQUIRE    VNODE  CORE V_MEM        V_POL E_POL RANK      LST EC  PC  SN PRI ACCEPT         RSC_GRP  REASON          
-167648     STDIN      NM EXT bsc32070 bsc32    03/06 12:14:00  0000:00:02 0001:00:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/06 12:13:57 def_grp  -               
-167661     test       NM ERR bsc32070 bsc32    03/06 13:55:02  0000:00:02 0000:01:00            1               -      -    -            -     -     bychip    RNO 127 0   0  127 03/06 13:54:59 small    -               
-167662     test       NM CCL bsc32070 bsc32    03/06 14:25:30  0000:00:02 0000:01:00            1               -      -    -            -     -     bychip    RNO 127 0   0  127 03/06 14:25:27 small    -               
-167663     test       NM RJT bsc32070 bsc32    03/06 14:25:54  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/06 14:25:52 small    -               
-167677     test       NM EXT bsc32070 bsc32    03/07 16:39:54  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/07 16:39:50 small    -               
-167678     test       NM EXT bsc32070 bsc32    03/07 16:39:57  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/07 16:39:53 small    -               
-167683     test       NM EXT bsc32070 bsc32    03/08 11:39:45  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/08 11:39:41 small    -               
-167687     test       NM EXT bsc32070 bsc32    03/08 11:41:07  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/08 11:41:04 small    -               
-167688     test       NM EXT bsc32070 bsc32    03/08 11:41:08  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/08 11:41:05 small    -               
-167689     test       NM EXT bsc32070 bsc32    03/08 11:41:09  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/08 11:41:05 small    -               
-167690     test       NM EXT bsc32070 bsc32    03/08 11:41:10  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/08 11:41:06 small    -               
-167691     test       NM EXT bsc32070 bsc32    03/08 11:41:10  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/08 11:41:06 small    -               
-167692     test       NM EXT bsc32070 bsc32    03/08 11:41:10  0000:00:04 0000:01:00            1               -      -    -            -     -     bychip    RNO 0   0   0  127 03/08 11:41:06 small    -     """
-
-        self.completed_jobs = ["167677", "167678", "167683", "167687", "167688", "167689", "167690", "167691", "167692"]
-        self.failed_jobs = ["167661", "167662", "167663"]
+        self.out= """JOB_ID     ST  REASON                         
+167727     EXT COMPLETED               
+167728     RNO -               
+167729     RNE -               
+167730     RUN -               
+167732     ACC -               
+167733     QUE -               
+167734     RNA -               
+167735     RNP -               
+167736     HLD ASHOLD               
+167737     ERR -               
+167738     CCL -               
+167739     RJT -  
+"""
+        self.completed_jobs = ["167727"]
+        self.running_jobs = ["167728","167729","167730"]
+        self.queued_jobs = ["167732","167733","167734","167735","167736"]
+        self.failed_jobs = ["167737","167738","167739"]
+        self.jobs_that_arent_listed = ["3442432423", "238472364782", "1728362138712"]
+        self.completed_jobs_cmd = "167727"
+        self.running_jobs_cmd = "167728+167729+167730"
+        self.queued_jobs_cmd = "167732+167733+167734+167735+167736"
+        self.failed_jobs_cmd = "167737+167738+167739"
+        self.jobs_that_arent_listed_cmd = "3442432423+238472364782+1728362138712"
         self.submitter = Autosubmit._get_submitter(self.as_conf)
         self.submitter.load_platforms(self.as_conf)
         self.remote_platform = self.submitter.platforms[self.section]
 
+    def test_parse_Alljobs_output(self):
+        """Test parsing of all jobs output."""
+        for job_id in self.completed_jobs:
+            assert self.remote_platform.parse_Alljobs_output(self.out,job_id) in self.remote_platform.job_status["COMPLETED"]
+        for job_id in self.failed_jobs:
+            assert self.remote_platform.parse_Alljobs_output(self.out,job_id) in self.remote_platform.job_status["FAILED"]
+        for job_id in self.queued_jobs:
+            assert self.remote_platform.parse_Alljobs_output(self.out,job_id) in self.remote_platform.job_status["QUEUING"]
+        for job_id in self.running_jobs:
+            assert self.remote_platform.parse_Alljobs_output(self.out,job_id) in self.remote_platform.job_status["RUNNING"]
+        for job_id in self.jobs_that_arent_listed:
+            assert self.remote_platform.parse_Alljobs_output(self.out,job_id) == []
+
+    def test_get_submitted_job_id(self):
+        """Test parsing of submitted job id."""
+        output = self.remote_platform.get_submitted_job_id(self.submitted_ok)
+        assert output == [167661]
     def test_parse_queue_reason(self):
         """Test parsing of queue reason."""
-        output = self.remote_platform.parse_queue_reason(self.out_h, self.completed_jobs[0])
+        output = self.remote_platform.parse_queue_reason(self.out, self.completed_jobs[0])
+        assert output == "COMPLETED"
 
 
 

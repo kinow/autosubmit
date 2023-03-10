@@ -570,6 +570,29 @@ class SlurmPlatform(ParamikoPlatform):
             return reason[0]
         return reason
 
+    def get_queue_status(self, in_queue_jobs, list_queue_jobid, as_conf):
+        if len(in_queue_jobs) <= 0:
+            return
+        cmd = self.get_queue_status_cmd(list_queue_jobid)
+        self.send_command(cmd)
+        queue_status = self._ssh_output
+        for job in in_queue_jobs:
+            reason = self.parse_queue_reason(queue_status, job.id)
+            if job.queuing_reason_cancel(reason): # this should be a platform method to be implemented
+                Log.error(
+                    "Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
+                self.send_command(
+                    self.platform.cancel_cmd + " {0}".format(job.id))
+                job.new_status = Status.FAILED
+                job.update_status(as_conf)
+            elif reason == '(JobHeldUser)':
+                job.new_status = Status.HELD
+                if not job.hold:
+                    # SHOULD BE MORE CLASS (GET_scontrol release but not sure if this can be implemented on others PLATFORMS
+                    self.send_command("scontrol release {0}".format(job.id))
+                    job.new_status = Status.QUEUING  # If it was HELD and was released, it should be QUEUING next.
+                else:
+                    pass
     @staticmethod
     def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads, method="asthreads", partition=""):
         if method == 'srun':
