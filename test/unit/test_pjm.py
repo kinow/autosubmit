@@ -48,7 +48,7 @@ class TestPJM(TestCase):
         yml_file = Path("files/fake-platforms.yml")
         yml_file.exists()
         if not yml_file.exists():
-            yml_file = Path("autosubmit/test/files/platforms.yml")
+            yml_file = Path("autosubmit/test/files/fake-platforms.yml")
         factory = YAMLParserFactory()
         parser = factory.create_parser()
         parser.data = parser.load(yml_file)
