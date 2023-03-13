@@ -60,7 +60,7 @@ from autosubmitconfigparser.config.basicconfig import BasicConfig
 import locale
 from distutils.util import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical
-from typing import Set
+from typing import Set, Union
 from autosubmit.database.db_common import update_experiment_descrip_version
 
 import sqlite3
@@ -5777,7 +5777,7 @@ class Autosubmit:
         return job_list
 
     @staticmethod
-    def cat_log(ID, file, mode):
+    def cat_log(ID: str, file: Union[None, str], mode: Union[None, str]) -> bool:
         """The cat-log command allows users to view Autosubmit logs using the command-line.
 
         It is possible to use ``autosubmit cat-log`` for Workflow and for Job logs. It decides
@@ -5793,7 +5793,7 @@ class Autosubmit:
         file contents (similar to the ``cat`` command) or to start tailing its output (akin to
         ``tail -f``).
         """
-        def view_file(log_file, mode):
+        def view_file(log_file: Path, mode: str):
             if mode == 'c':
                 cmd = ['cat', str(log_file)]
                 subprocess.Popen(
@@ -5851,8 +5851,8 @@ class Autosubmit:
                 workflow_log_files = sorted(aslogs_path.glob(search_pattern))
             else:
                 search_pattern = f'{expid}_*.txt'
-                stats_files_path = exp_path / 'status'
-                workflow_log_files = sorted(stats_files_path.glob(search_pattern))
+                status_files_path = exp_path / 'status'
+                workflow_log_files = sorted(status_files_path.glob(search_pattern))
 
             if not workflow_log_files:
                 Log.info('No logs found.')
@@ -5876,10 +5876,12 @@ class Autosubmit:
                     Log.info('No logs found.')
                     return True
                 workflow_log_file = workflow_log_files[-1]
-                
+
+            if not workflow_log_file.exists():
+                Log.info('No logs found.')
+                return True
+
             if not workflow_log_file.is_file():
                 raise AutosubmitCritical(f'The job log file {file} found is not a file: {workflow_log_file}', 7011)
 
             return view_file(workflow_log_file, mode) == 0
-
-        return False
