@@ -39,7 +39,7 @@ class TestPJM(TestCase):
 
         yml_file = Path("files/fake-jobs.yml")
         if not yml_file.exists():
-            yml_file = Path("/home/gitlab-runner/builds/o7zBmX1g/0/gitlab/es/autosubmit/test/files/fake-jobs.yml")
+            yml_file = Path("/home/gitlab-runner/builds/o7zBmX1g/0/gitlab/es/autosubmit/test/unit/files/fake-jobs.yml")
 
         factory = YAMLParserFactory()
         parser = factory.create_parser()
@@ -48,7 +48,7 @@ class TestPJM(TestCase):
         yml_file = Path("files/fake-platforms.yml")
         yml_file.exists()
         if not yml_file.exists():
-            yml_file = Path("/home/gitlab-runner/builds/o7zBmX1g/0/gitlab/es/autosubmit/test/files/fake-platforms.yml")
+            yml_file = Path("/home/gitlab-runner/builds/o7zBmX1g/0/gitlab/es/autosubmit/test/unit/files/fake-platforms.yml")
         factory = YAMLParserFactory()
         parser = factory.create_parser()
         parser.data = parser.load(yml_file)

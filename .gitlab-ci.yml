@@ -12,13 +12,14 @@ stages:
 cache:
   paths:
     - test/coverage.xml
-    - test/files
+    - test/unit/files
 
 prepare:
   stage: prepare
   script:
     - git submodule sync --recursive
     - git submodule update --init --recursive
+    - conda update -n base -c defaults conda
     - conda update conda
     - conda install -n autosubmit3 coverage=6
     - conda env update -f environment.yml -n autosubmit3 python=3.7.3
