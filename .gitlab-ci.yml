@@ -12,30 +12,21 @@ stages:
 cache:
   paths:
     - test/coverage.xml
+    - test/files
 
 prepare:
   stage: prepare
   script:
+    - git submodule sync --recursive
+    - git submodule update --init --recursive
     - conda update conda
     - conda install -n autosubmit3 coverage=6
-
-docs:
-  stage: docs
-  script:
     - conda env update -f environment.yml -n autosubmit3 python=3.7.3
-    - source activate autosubmit3
-    - pip install -e .
-    - cd docs
-    - pip install -r requirements.txt
-    - make html
 
 test_python3:
   stage: test
   script:
-    - git submodule sync --recursive
-    - git submodule update --init --recursive
-    - conda env update -f environment.yml -n autosubmit3 python=3.7.3
-    - source activate autosubmit3
+    - conda activate autosubmit3
     - python3 -m 'nose' --exclude=regression  --verbosity=3 test/unit --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   # These artifacts are saved with every build in GitLab and can be reviewed later. If
@@ -46,6 +37,16 @@ test_python3:
       coverage_report:
         coverage_format: cobertura
         path: test/coverage.xml
+
+docs:
+  stage: docs
+  script:
+    - conda activate autosubmit3
+    - pip install -e .
+    - cd docs
+    - pip install -r requirements.txt
+    - make html
+
 
 clean:
   stage: clean
