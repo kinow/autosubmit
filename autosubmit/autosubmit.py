@@ -3100,7 +3100,7 @@ class Autosubmit:
                                         "warning: rsync") != -1 or p.get_ssh_output_err().lower().find(
                                         "closed") != -1 or p.get_ssh_output_err().lower().find(
                                         "broken pipe") != -1 or p.get_ssh_output_err().lower().find(
-                                        "directory has vanished") != -1:
+                                        "directory has vanished") != -1 or p.get_ssh_output_err().lower().find("rsync error") != -1 or p.get_ssh_output_err().lower().find("socket") != -1 or p.get_ssh_output_err().lower().find("(code") != -1:
                                         rsync_retries += 1
                                         finished = False
                                     elif p.get_ssh_output_err() == "":
