@@ -1877,7 +1877,7 @@ class Autosubmit:
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop
-                max_recovery_retrials = as_conf.experiment_data.get("AUTOSUBMIT",{}).get("RECOVERY_RETRIALS",3650)  # Hard limit of tries 3650 tries at 15-120seconds sleep each try
+                max_recovery_retrials = as_conf.experiment_data.get("CONFIG",{}).get("RECOVERY_RETRIALS",3650)  # Hard limit of tries 3650 tries at 15-120seconds sleep each try
                 recovery_retrials = 0
                 while job_list.get_active():
                     # Log.info("FD: {0}".format(log.fd_show.fd_table_status_str()))
