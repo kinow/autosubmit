@@ -1819,7 +1819,7 @@ class Autosubmit:
             if unparsed_two_step_start != "":
                 job_list.parse_jobs_by_filter(unparsed_two_step_start)
             Log.debug("Running job data structure")
-            exp_history = Autosubmit.get_historical_database(expid, as_conf,job_list)
+            exp_history = Autosubmit.get_historical_database(expid, job_list,as_conf)
             # establish the connection to all platforms
             Autosubmit.restore_platforms(platforms_to_test)
 
@@ -1877,7 +1877,8 @@ class Autosubmit:
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop
-                max_recovery_retrials = as_conf.experiment_data.get("CONFIG",{}).get("RECOVERY_RETRIALS",3650)  # Hard limit of tries 3650 tries at 15-120seconds sleep each try
+                # Recovery retrials, when platforms have issues. Hard limit is set just in case is an Autosubmit bug or bad config and the minium duration is the weekend (72 h).
+                max_recovery_retrials = as_conf.experiment_data.get("CONFIG",{}).get("RECOVERY_RETRIALS",3650)  # (72h - 122h )
                 recovery_retrials = 0
                 while job_list.get_active():
                     # Log.info("FD: {0}".format(log.fd_show.fd_table_status_str()))
@@ -1895,8 +1896,6 @@ class Autosubmit:
                         total_jobs, safetysleeptime, default_retrials, check_wrapper_jobs_sleeptime = Autosubmit.get_iteration_info(as_conf,job_list)
 
                         save = False
-                        slurm = []
-                        job_changes_tracker = {}  # to easily keep track of changes per iteration
                         # End Check Current jobs
                         # jobs_to_check are no wrapped jobs.
                         jobs_to_check = dict()
@@ -1906,12 +1905,13 @@ class Autosubmit:
                         jobs_to_check,job_changes_tracker = Autosubmit.check_wrappers(as_conf, job_list, platforms_to_test, expid)
                         # Jobs to check are grouped by platform.
                         for platform in platforms_to_test:
-                            Log.info("Obtaining the list of jobs to check for platform {0}".format(platform.name))
                             platform_jobs = jobs_to_check.get(platform.name, [])
                             if len(platform_jobs) == 0:
+                                Log.info("No jobs to check for platform {0}".format(platform.name))
                                 continue
-                            # Check all running/queuing jobs of current platform
+
                             Log.info("Checking {0} jobs for platform {1}".format(len(platform_jobs), platform.name))
+                            # Check all running/queuing jobs of current platform
                             platform.check_Alljobs(platform_jobs, as_conf)
                             # mail notification ( in case of changes)
                             for job, job_prev_status in jobs_to_check[platform.name]:
@@ -4057,16 +4057,14 @@ class Autosubmit:
     @staticmethod
     def database_backup(expid):
         try:
-            database_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
+            database_path= os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
             backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}.sql".format(expid))
-            tmp_backup_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}_tmp.sql".format(expid))
-            command = "sqlite3 {0} .dump > {1} ".format(database_path, tmp_backup_path)
+            command = "sqlite3 {0} .dump > {1} ".format(database_path, backup_path)
             Log.debug("Backing up jobs_data...")
             out = subprocess.call(command, shell=True)
             Log.debug("Jobs_data database backup completed.")
         except BaseException as e:
             Log.debug("Jobs_data database backup failed.")
-
     @staticmethod
     def database_fix(expid):
         """
@@ -4077,7 +4075,7 @@ class Autosubmit:
         :return:
         :rtype:        
         """
-        os.umask(0)  # Overrides user permissions
+        os.umask(0) # Overrides user permissions
         current_time = int(time.time())
         corrupted_db_path = os.path.join(BasicConfig.JOBDATA_DIR, "job_data_{0}_corrupted.db".format(expid))
 
@@ -4087,15 +4085,15 @@ class Autosubmit:
         dump_file_path = os.path.join(BasicConfig.JOBDATA_DIR, dump_file_name)
         bash_command = 'cat {1} | sqlite3 {0}'.format(database_path, dump_file_path)
         try:
-            if os.path.exists(database_path):
-                result = os.popen("mv {0} {1}".format(database_path, corrupted_db_path)).read()
+            if  os.path.exists(database_path):
+                os.popen("mv {0} {1}".format(database_path, corrupted_db_path)).read()
                 time.sleep(1)
                 Log.info("Original database moved.")
             try:
                 exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
                                                 historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                 Log.info("Restoring from sql")
-                result = os.popen(bash_command).read()
+                os.popen(bash_command).read()
                 exp_history.initialize_database()
 
             except:
@@ -4106,7 +4104,7 @@ class Autosubmit:
                                                 historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                 exp_history.initialize_database()
         except Exception as exp:
-            Log.warning(str(exp))
+            Log.critical(str(exp))
 
     @staticmethod
     def archive(expid, noclean=True, uncompress=True):
