@@ -1914,7 +1914,8 @@ class Autosubmit:
                             platform.check_Alljobs(platform_jobs, as_conf)
                             # mail notification ( in case of changes)
                             for job, job_prev_status in jobs_to_check[platform.name]:
-                                Autosubmit.job_notify(as_conf,expid,job,job_prev_status,job_changes_tracker)
+                                if job_prev_status != job.update_status(as_conf):
+                                    Autosubmit.job_notify(as_conf,expid,job,job_prev_status,job_changes_tracker)
                         job_list.update_list(as_conf, submitter=submitter)
                         job_list.save()
                         if len(job_list.get_ready()) > 0:
