@@ -1877,7 +1877,8 @@ class Autosubmit:
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop
-                main_loop_retrials = 3650  # Hard limit of tries 3650 tries at 15-120seconds sleep each try
+                max_recovery_retrials = as_conf.experiment_data.get("AUTOSUBMIT",{}).get("RECOVERY_RETRIALS",3650)  # Hard limit of tries 3650 tries at 15-120seconds sleep each try
+                recovery_retrials = 0
                 while job_list.get_active():
                     # Log.info("FD: {0}".format(log.fd_show.fd_table_status_str()))
                     try:
@@ -1964,10 +1965,10 @@ class Autosubmit:
                         except BaseException as e:
                             Log.printlog("Error trying to store failed job count", Log.WARNING)
                         Log.result("Storing failed job count...done")
-                        while not recovery and main_loop_retrials > 0:
+                        while not recovery and (recovery_retrials < max_recovery_retrials or max_recovery_retrials <= 0 ):
 
                             delay = min(15 * consecutive_retrials, 120)
-                            main_loop_retrials = main_loop_retrials - 1
+                            recovery_retrials += 1
                             sleep(delay)
                             consecutive_retrials = consecutive_retrials + 1
                             Log.info("Waiting {0} seconds before continue".format(delay))
@@ -1995,8 +1996,8 @@ class Autosubmit:
                         Log.info("Restoring the connection to all experiment platforms")
                         consecutive_retrials = 1
                         delay = min(15 * consecutive_retrials, 120)
-                        while not reconnected and main_loop_retrials > 0:
-                            main_loop_retrials = main_loop_retrials - 1
+                        while not reconnected and (recovery_retrials < max_recovery_retrials or max_recovery_retrials <= 0 ) :
+                            recovery_retrials += 1
                             Log.info("Recovering the remote platform connection")
                             Log.info("Waiting {0} seconds before continue".format(delay))
                             sleep(delay)
@@ -2021,9 +2022,8 @@ class Autosubmit:
                                 reconnected = False
                             except BaseException:
                                 reconnected = False
-                        if main_loop_retrials <= 0:
-                            raise AutosubmitCritical(
-                                "Autosubmit Encounter too much errors during running time, limit of 4hours reached",
+                        if recovery_retrials == max_recovery_retrials and max_recovery_retrials > 0:
+                            raise AutosubmitCritical(f"Autosubmit Encounter too much errors during running time, limit of {max_recovery_retrials*120} reached",
                                 7051, e.message)
                     except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
                         raise AutosubmitCritical(e.message, e.code, e.trace)
