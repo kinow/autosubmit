@@ -571,7 +571,7 @@ class SlurmPlatform(ParamikoPlatform):
         return reason
 
     def get_queue_status(self, in_queue_jobs, list_queue_jobid, as_conf):
-        if len(in_queue_jobs) <= 0:
+        if not in_queue_jobs:
             return
         cmd = self.get_queue_status_cmd(list_queue_jobid)
         self.send_command(cmd)
@@ -659,7 +659,7 @@ class SlurmPlatform(ParamikoPlatform):
                     self.get_files_path(), filename))
                 file_exist = True
             except IOError as e:  # File doesn't exist, retry in sleeptime
-                Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
+                Log.debug("{2} File does not exist.. waiting {0}s for a new retry (retries left: {1})", sleeptime,
                           max_retries - retries, os.path.join(self.get_files_path(), filename))
                 if not wrapper_failed:
                     sleep(sleeptime)
