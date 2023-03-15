@@ -74,9 +74,12 @@ class PJMPlatform(ParamikoPlatform):
         self._submit_script_file = open(self._submit_script_path, 'wb').close()
 
     def submit_error(self,output):
-        #returns false if the job submission message is not found
-        return all(part in output.lower() for part in ["pjsub", "[INFO] PJM 0000"])
-
+        """
+        Check if the output of the submit command contains an error message.
+        :param output: output of the submit cmd
+        :return: boolean
+        """
+        return not all(part.lower() in output.lower() for part in ["pjsub", "[INFO] PJM 0000"])
 
 
 
