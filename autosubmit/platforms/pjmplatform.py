@@ -56,11 +56,11 @@ class PJMPlatform(ParamikoPlatform):
         self.cancel_cmd = None
         self._header = PJMHeader()
         self._wrapper = PJMWrapperFactory(self)
-        #https://software.fujitsu.com/jp/manual/manualfiles/m220008/j2ul2452/02enz007/j2ul-2452-02enz0.pdf pagina 16
+        #https://software.fujitsu.com/jp/manual/manualfiles/m220008/j2ul2452/02enz007/j2ul-2452-02enz0.pdf page 16
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['EXT']
         self.job_status['RUNNING'] = ['RNO','RNE','RUN']
-        self.job_status['QUEUING'] = ['ACC','QUE', 'RNA', 'RNP','HLD'] # NOT SURE ABOUT HOLD HLD
+        self.job_status['QUEUING'] = ['ACC','QUE', 'RNA', 'RNP','HLD'] # TODO NOT SURE ABOUT HOLD HLD
         self.job_status['FAILED'] = ['ERR','CCL','RJT']
         self._pathdir = "\$HOME/LOG_" + self.expid
         self._allow_arrays = False
@@ -75,10 +75,8 @@ class PJMPlatform(ParamikoPlatform):
 
     def submit_error(self,output):
         #returns false if the job submission message is not found
-        if output.lower().find("pjsub".lower()) != -1 and output.lower().find("[INFO] PJM 0000".lower()) != -1:
-            return False
-        else:
-            return True
+        return all(part in output.lower() for part in ["pjsub", "[INFO] PJM 0000"])
+
 
 
 
@@ -309,7 +307,7 @@ class PJMPlatform(ParamikoPlatform):
         except Exception as e:
             return False
     def get_queue_status(self, in_queue_jobs, list_queue_jobid, as_conf):
-        if len(in_queue_jobs) <= 0:
+        if not in_queue_jobs:
             return
         cmd = self.get_queue_status_cmd(list_queue_jobid)
         self.send_command(cmd)
@@ -504,7 +502,7 @@ class PJMPlatform(ParamikoPlatform):
                     self.get_files_path(), filename))
                 file_exist = True
             except IOError as e:  # File doesn't exist, retry in sleeptime
-                Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
+                Log.debug("{2} File does not exist.. waiting {0}s for a new retry (retries left: {1})", sleeptime,
                           max_retries - retries, os.path.join(self.get_files_path(), filename))
                 if not wrapper_failed:
                     sleep(sleeptime)
