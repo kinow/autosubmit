@@ -26,5 +26,5 @@ nose
 coverage
 six>=1.10.0
 Pygments
-packaging==19
+packaging==20
 typing>=3.7
