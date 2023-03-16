@@ -215,7 +215,7 @@ class ParamikoPlatform(Platform):
                     self._host_config['proxycommand'])
                 try:
                     self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                      key_filename=self._host_config_id, sock=self._proxy, timeout=120 , banner_timeout=120)
+                                      key_filename=self._host_config_id, sock=self._proxy, timeout=120 , banner_timeout=120,allow_agent=True)
                 except Exception as e:
                     self._ssh.connect(self._host_config['hostname'], port, username=self.user,
                                       key_filename=self._host_config_id, sock=self._proxy, timeout=120,
