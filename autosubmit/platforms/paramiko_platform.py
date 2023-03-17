@@ -181,7 +181,7 @@ class ParamikoPlatform(Platform):
 
     def agent_auth(self,port):
         """
-        Attempt to authenticate to the given SSH server using the most common authentication methods available. This will always try to use the SSH agent first, and will fall back to using a password if that fails.
+        Attempt to authenticate to the given SSH server using the most common authentication methods available. This will always try to use the SSH agent first, and will fall back to using the others methods if that fails.
         :parameter port: port to connect
         :return: True if authentication was successful, False otherwise
         """
