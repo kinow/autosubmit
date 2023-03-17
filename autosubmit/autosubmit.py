@@ -4581,10 +4581,12 @@ class Autosubmit:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message, 7000)
         except AutosubmitError as e:
+            # TODO: == "" or is None?
             if e.trace == "":
                 e.trace = traceback.format_exc()
             raise AutosubmitError(e.message, e.code, e.trace)
         except AutosubmitCritical as e:
+            # TODO: == "" or is None?
             if e.trace == "":
                 e.trace = traceback.format_exc()
             raise AutosubmitCritical(e.message, e.code, e.trace)
