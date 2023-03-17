@@ -181,8 +181,9 @@ class ParamikoPlatform(Platform):
 
     def agent_auth(self,port):
         """
-        Attempt to authenticate to the given transport using any of the private
-        keys available from an SSH agent.
+        Attempt to authenticate to the given SSH server using the most common authentication methods available. This will always try to use the SSH agent first, and will fall back to using a password if that fails.
+        :parameter port: port to connect
+        :return: True if authentication was successful, False otherwise
         """
         try:
             self._ssh.connect(self._host_config['hostname'], port=port, username=self.user, timeout=60, banner_timeout=60)
@@ -191,21 +192,7 @@ class ParamikoPlatform(Platform):
         except BaseException as e:
             Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
             return False
-
         return True
-        # agent = paramiko.Agent()
-        # agent_keys = agent.get_keys()
-        # if len(agent_keys) == 0:
-        #     return False
-        # for key in agent_keys:
-        #     Log.info('Trying ssh-agent key %s' % hexlify(key.get_fingerprint()))
-        #     try:
-        #         self._ssh.get_transport().auth_publickey(self.user, key)
-        #         Log.info('Sucessfully authenticated with ssh-agent')
-        #         return True
-        #     except BaseException as e:
-        #         Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
-        # return False
     def connect(self, reconnect=False):
         """
         Creates ssh connection to host
