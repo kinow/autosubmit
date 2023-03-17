@@ -186,6 +186,8 @@ class ParamikoPlatform(Platform):
         """
         try:
             self._ssh.connect(self._host_config['hostname'], port, username=self.user, timeout=60, banner_timeout=60)
+            self.transport = self._ssh.get_transport()
+            self.transport.banner_timeout(60)
         except BaseException as e:
             Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
             return False
