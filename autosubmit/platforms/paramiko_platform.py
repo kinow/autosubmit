@@ -185,12 +185,13 @@ class ParamikoPlatform(Platform):
         keys available from an SSH agent.
         """
         try:
-            self._ssh.connect(self._host_config['hostname'], port, username=self.user, timeout=60, banner_timeout=60)
+            self._ssh.connect(self._host_config['hostname'], port=port, username=self.user, timeout=60, banner_timeout=60)
             self.transport = self._ssh.get_transport()
-            self.transport.banner_timeout(60)
+            self.transport.banner_timeout = 60
         except BaseException as e:
             Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
             return False
+
         return True
         # agent = paramiko.Agent()
         # agent_keys = agent.get_keys()
@@ -254,7 +255,7 @@ class ParamikoPlatform(Platform):
                         self._ssh.connect(self._host_config['hostname'], port, username=self.user,
                                           key_filename=self._host_config_id, timeout=60 , banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
                 self.transport = self._ssh.get_transport()
-                self.transport.banner_timeout(60)
+                self.transport.banner_timeout = 60
 
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=pow(4, 12) ,max_packet_size=pow(4, 12) )
             self._ftpChannel.get_channel().settimeout(120)
