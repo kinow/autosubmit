@@ -727,7 +727,7 @@ class ParamikoPlatform(Platform):
                 job.new_status = job_status
             self.get_queue_status(in_queue_jobs,list_queue_jobid,as_conf)
         else:
-            for job in job_list:
+            for job, job_prev_status in job_list:
                 job_status = Status.UNKNOWN
                 Log.warning(
                     'check_job() The job id ({0}) from platform {1} has an status of {2}.', job.id, self.name, job_status)
