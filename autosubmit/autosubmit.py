@@ -1822,9 +1822,9 @@ class Autosubmit:
             # establish the connection to all platforms
             Autosubmit.restore_platforms(platforms_to_test)
 
-            return job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence
+            return job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence, False
         else:
-            return job_list, submitter , as_conf , platforms_to_test, packages_persistence, True
+            return job_list, submitter , None, None, as_conf , platforms_to_test, packages_persistence, True
     @staticmethod
     def get_iteration_info(as_conf,job_list):
         total_jobs = len(job_list.get_job_list())
@@ -1863,7 +1863,7 @@ class Autosubmit:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 try:
                     Log.debug("Preparing run")
-                    job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence = Autosubmit.prepare_run(expid, notransitive,start_time, start_after, run_only_members)
+                    job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence, _ = Autosubmit.prepare_run(expid, notransitive,start_time, start_after, run_only_members)
                 except AutosubmitCritical as e:
                     e.message += " HINT: check the CUSTOM_DIRECTIVE syntax in your jobs configuration files."
                     raise AutosubmitCritical(e.message, 7014, e.trace)
@@ -1970,7 +1970,7 @@ class Autosubmit:
                             consecutive_retrials = consecutive_retrials + 1
                             Log.info("Waiting {0} seconds before continue".format(delay))
                             try:
-                                job_list, submitter, as_conf, platforms_to_test, packages_persistence, recovery  = Autosubmit.prepare_run(expid,
+                                job_list, submitter, _, _, as_conf, platforms_to_test, packages_persistence, recovery  = Autosubmit.prepare_run(expid,
                                                                                                 notransitive,
                                                                                                 start_time,
                                                                                                 start_after,
