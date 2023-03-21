@@ -586,13 +586,12 @@ class SlurmPlatform(ParamikoPlatform):
                 job.new_status = Status.FAILED
                 job.update_status(as_conf)
             elif reason == '(JobHeldUser)':
-                job.new_status = Status.HELD
                 if not job.hold:
-                    # SHOULD BE MORE CLASS (GET_scontrol release but not sure if this can be implemented on others PLATFORMS
+                    # should be self.release_cmd or something like that but it is not implemented
                     self.send_command("scontrol release {0}".format(job.id))
                     job.new_status = Status.QUEUING  # If it was HELD and was released, it should be QUEUING next.
                 else:
-                    pass
+                    job.new_status = Status.HELD
     @staticmethod
     def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads, method="asthreads", partition=""):
         if method == 'srun':
