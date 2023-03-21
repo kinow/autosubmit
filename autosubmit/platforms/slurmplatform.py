@@ -582,7 +582,7 @@ class SlurmPlatform(ParamikoPlatform):
                 Log.error(
                     "Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
                 self.send_command(
-                    self.platform.cancel_cmd + " {0}".format(job.id))
+                    self.cancel_cmd + " {0}".format(job.id))
                 job.new_status = Status.FAILED
                 job.update_status(as_conf)
             elif reason == '(JobHeldUser)':
