@@ -636,8 +636,7 @@ class Autosubmit:
             Autosubmit._init_logs(args, args.logconsole, args.logfile, expid)
 
         if args.command == 'run':
-            return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time,
-                                             args.start_after, args.run_only_members)
+            return Autosubmit.run_experiment(args.expid, args.notransitive,args.start_time,args.start_after, args.run_only_members)
         elif args.command == 'expid':
             return Autosubmit.expid(args.description,args.HPC,args.copy, args.dummy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.operational,args.use_local_minimal) != ''
         elif args.command == 'delete':
@@ -1841,13 +1840,11 @@ class Autosubmit:
         Log.debug("Number of retrials: {0}", default_retrials)
         return total_jobs, safetysleeptime, default_retrials, check_wrapper_jobs_sleeptime
     @staticmethod
-    def run_experiment(expid, notransitive=False, update_version=False, start_time=None, start_after=None,
-                       run_only_members=None):
+    def run_experiment(expid, notransitive=False, start_time=None, start_after=None,run_only_members=None):
         """
         Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).
         :param expid: the experiment id
         :param notransitive: if True, the transitive closure of the graph is not computed
-        :param update_version: if True, the version of the experiment is updated
         :param start_time: the time at which the experiment should start
         :param start_after: the expid after which the experiment should start
         :param run_only_members: the members to run
