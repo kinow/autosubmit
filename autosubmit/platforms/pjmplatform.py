@@ -19,6 +19,7 @@
 import locale
 import os
 import re
+from contextlib import suppress
 from time import sleep
 from time import mktime
 from time import time
@@ -397,7 +398,7 @@ class PJMPlatform(ParamikoPlatform):
             else:
                 return export + self._submit_hold_cmd + job_script
         else:
-            try:
+            with suppress(BaseException):
                 lang = locale.getlocale()[1]
                 if lang is None:
                     lang = locale.getdefaultlocale()[1]
@@ -407,8 +408,6 @@ class PJMPlatform(ParamikoPlatform):
                     self._submit_script_file.write((export + self._submit_cmd + job_script + "\n").encode(lang))
                 else:
                     self._submit_script_file.write((export + self._submit_hold_cmd + job_script + "\n").encode(lang))
-            except BaseException as e:
-                pass
 
 
     def get_checkAlljobs_cmd(self, jobs_id):
