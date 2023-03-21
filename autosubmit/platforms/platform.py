@@ -53,6 +53,14 @@ class Platform(object):
         self._allow_arrays = False
         self._allow_wrappers = False
         self._allow_python_jobs = True
+        self.mkdir_cmd = None
+        self.get_cmd = None
+        self.put_cmd = None
+        self._submit_hold_cmd = None
+        self._submit_command_name = None
+        self._submit_cmd = None
+        self._checkhost_cmd = None
+        self.cancel_cmd = None
 
     def get_multiple_jobids(self,job_list,valid_packages_to_submit,failed_packages,error_message="",hold=False):
         return False,valid_packages_to_submit

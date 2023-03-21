@@ -669,8 +669,8 @@ class ParamikoPlatform(Platform):
                                 job_status = job.check_completion(over_wallclock=True)
                                 if job_status is Status.FAILED:
                                     try:
-                                        job.platform.send_command(
-                                            self.platform.cancel_cmd + " " + str(job.id))
+                                        if self.cancel_cmd is not None:
+                                            job.platform.send_command(self.cancel_cmd + " " + str(job.id))
                                     except:
                                         pass
                             except:
