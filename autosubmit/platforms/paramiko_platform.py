@@ -493,9 +493,8 @@ class ParamikoPlatform(Platform):
         Returns command to get estimated queue time on remote platforms
 
         :param job_id: id of job to check
-        :param job_id: int
+        :param job_id: str
         :return: command to get estimated queue time
-        :rtype: str
         """
         raise NotImplementedError
     def parse_estimated_time(self, output):
