@@ -1698,7 +1698,7 @@ class Autosubmit:
             Autosubmit.database_backup(expid)
         return exp_history
     @staticmethod
-    def prepare_run(expid, notransitive=False, update_version=False, start_time=None, start_after=None,
+    def prepare_run(expid, notransitive=False, start_time=None, start_after=None,
                        run_only_members=None,recover = False):
 
         host = platform.node()
@@ -1866,7 +1866,7 @@ class Autosubmit:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 try:
                     Log.debug("Preparing run")
-                    job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence = Autosubmit.prepare_run(expid, notransitive, update_version, start_time, start_after, run_only_members)
+                    job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence = Autosubmit.prepare_run(expid, notransitive,start_time, start_after, run_only_members)
                 except AutosubmitCritical as e:
                     e.message += " HINT: check the CUSTOM_DIRECTIVE syntax in your jobs configuration files."
                     raise AutosubmitCritical(e.message, 7014, e.trace)
@@ -1975,7 +1975,6 @@ class Autosubmit:
                             try:
                                 job_list, submitter, as_conf, platforms_to_test, packages_persistence, recovery  = Autosubmit.prepare_run(expid,
                                                                                                 notransitive,
-                                                                                                update_version,
                                                                                                 start_time,
                                                                                                 start_after,
                                                                                                 run_only_members,
