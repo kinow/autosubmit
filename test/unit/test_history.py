@@ -22,11 +22,11 @@ import os
 import time
 from shutil import copy2
 from collections import namedtuple
-from .experiment_history import ExperimentHistory
-from .internal_logging import Logging
-from .strategies import StraightWrapperAssociationStrategy, GeneralizedWrapperDistributionStrategy, PlatformInformationHandler
+from autosubmit.history.experiment_history import ExperimentHistory
+from autosubmit.history.internal_logging import Logging
+from autosubmit.history.strategies import StraightWrapperAssociationStrategy, GeneralizedWrapperDistributionStrategy, PlatformInformationHandler
 from autosubmitconfigparser.config.basicconfig import BasicConfig
-from .platform_monitor.slurm_monitor import SlurmMonitor
+from autosubmit.history.platform_monitor.slurm_monitor import SlurmMonitor
 EXPID_TT00_SOURCE = "test_database.db~"
 EXPID_TT01_SOURCE = "test_database_no_run.db~"
 EXPID = "tt00"
@@ -36,6 +36,7 @@ JOBDATA_DIR = BasicConfig.JOBDATA_DIR
 LOCAL_ROOT_DIR = BasicConfig.LOCAL_ROOT_DIR
 job = namedtuple("Job", ["name", "date", "member", "status_str", "children"])
 
+@unittest.skip('TODO: another test that uses actual data. See if there is anything useful, and extract into functional/integration/unit tests that run on any machine')
 class TestExperimentHistory(unittest.TestCase):
   # @classmethod
   # def setUpClass(cls):    
