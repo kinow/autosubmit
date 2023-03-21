@@ -579,7 +579,7 @@ class SlurmPlatform(ParamikoPlatform):
         """
         reason = [x.split(',')[1] for x in output.splitlines()
                   if x.split(',')[0] == str(job_id)]
-        if type(reason) is list:
+        if isinstance(reason,list):
             # convert reason to str
             return ''.join(reason)
         return reason
