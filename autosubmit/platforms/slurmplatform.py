@@ -570,6 +570,13 @@ class SlurmPlatform(ParamikoPlatform):
         return 'sacct -n --jobs {0} -o JobId%25,State,NCPUS,NNodes,Submit,Start,End,ConsumedEnergy,MaxRSS%25,AveRSS%25'.format(job_id)
 
     def parse_queue_reason(self, output, job_id):
+        """
+        Parses the queue reason from the output of the command
+        :param output: output of the command
+        :param job_id: job id
+        :return: queue reason
+        :rtype: str
+        """
         reason = [x.split(',')[1] for x in output.splitlines()
                   if x.split(',')[0] == str(job_id)]
         if type(reason) is list:
@@ -578,6 +585,12 @@ class SlurmPlatform(ParamikoPlatform):
         return reason
 
     def parse_estimated_time(self, output):
+        """
+        Parses the estimated time from the output of the command
+        :param output: output of the command
+        :return: estimated time date and time
+        :rtype: dict
+        """
         parsed_output = {}
         parsed_output["date"] = "Unknown"
         parsed_output["time"] = "Unknown"

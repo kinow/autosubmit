@@ -488,6 +488,26 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
+    def get_estimated_queue_time_cmd(self, job_id):
+        """
+        Returns command to get estimated queue time on remote platforms
+
+        :param job_id: id of job to check
+        :param job_id: int
+        :return: command to get estimated queue time
+        :rtype: str
+        """
+        raise NotImplementedError
+    def parse_estimated_time(self, output):
+        """
+        Parses estimated queue time from output of get_estimated_queue_time_cmd
+
+        :param output: output of get_estimated_queue_time_cmd
+        :type output: str
+        :return: estimated queue time
+        :rtype:
+        """
+        raise NotImplementedError
     def check_job(self, job, default_status=Status.COMPLETED, retries=5, submit_hold_check=False, is_wrapper=False):
         """
         Checks job running status
