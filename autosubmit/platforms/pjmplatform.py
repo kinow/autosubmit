@@ -321,8 +321,6 @@ class PJMPlatform(ParamikoPlatform):
                 if not job.hold:
                     self.send_command("{0} {1}".format(self.cancel_cmd,job.id))
                     job.new_status = Status.QUEUING  # If it was HELD and was released, it should be QUEUING next.
-                else:
-                    pass
     def parse_Alljobs_output(self, output, job_id):
         status = ""
         try:
