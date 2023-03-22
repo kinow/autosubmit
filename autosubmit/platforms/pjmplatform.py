@@ -339,8 +339,6 @@ class PJMPlatform(ParamikoPlatform):
         Convert a list of job_list to job_list_cmd
         :param job_list: list of jobs
         :type job_list: list
-        :param ssh_output: ssh output
-        :type ssh_output: str
         :return: job status
         :rtype: str
         """
