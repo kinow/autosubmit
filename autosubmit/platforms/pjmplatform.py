@@ -18,23 +18,16 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import locale
 import os
-import re
 from contextlib import suppress
 from time import sleep
-from time import mktime
-from time import time
-from datetime import datetime
 from typing import List, Union
 
-from xml.dom.minidom import parseString
-
-from autosubmit.job.job_common import Status, parse_output_number
+from autosubmit.job.job_common import Status
 from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.pjm_header import PJMHeader
 from autosubmit.platforms.wrappers.wrapper_factory import PJMWrapperFactory
 from log.log import AutosubmitCritical, AutosubmitError, Log
-import random
 
 class PJMPlatform(ParamikoPlatform):
     """
