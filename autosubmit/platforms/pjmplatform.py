@@ -87,7 +87,7 @@ class PJMPlatform(ParamikoPlatform):
         :return:
         """
         try:
-            valid_packages_to_submit = [ package for package in valid_packages_to_submit if package.x11 != True]
+            valid_packages_to_submit = [ package for package in valid_packages_to_submit ]
             if len(valid_packages_to_submit) > 0:
                 try:
                     jobs_id = self.submit_Script(hold=hold)
@@ -180,10 +180,6 @@ class PJMPlatform(ParamikoPlatform):
         :return: job id for the submitted job
         :rtype: int
         """
-        if job is None or not job:
-            x11 = False
-        else:
-            x11 = job.x11
         self.get_submit_cmd(script_name, job, hold=hold, export=export)
         return None
 
@@ -357,16 +353,14 @@ class PJMPlatform(ParamikoPlatform):
                 return False
         return True
 
-    def get_submitted_job_id(self, outputlines, x11 = False):
+    def get_submitted_job_id(self, outputlines):
         try:
             jobs_id = []
             for output in outputlines.splitlines():
                 if not self.submit_error(output):
                     jobs_id.append(int(output.split()[5]))
-            if x11 == "true":
-                return jobs_id[0]
-            else:
-                return jobs_id
+
+            return jobs_id
         except IndexError:
             raise AutosubmitCritical(
                 "Submission failed. There are issues on your config file", 7014)
@@ -376,27 +370,18 @@ class PJMPlatform(ParamikoPlatform):
             export = ""
         else:
             export += " ; "
-        if job is None or not job:
-            x11 = False
-        else:
-            x11 = job.x11
 
-        if x11 == "true":
-            if not hold:
-                return export + self._submit_cmd + job_script
-            else:
-                return export + self._submit_hold_cmd + job_script
-        else:
-            with suppress(BaseException):
-                lang = locale.getlocale()[1]
+
+        with suppress(BaseException):
+            lang = locale.getlocale()[1]
+            if lang is None:
+                lang = locale.getdefaultlocale()[1]
                 if lang is None:
-                    lang = locale.getdefaultlocale()[1]
-                    if lang is None:
-                        lang = 'UTF-8'
-                if not hold:
-                    self._submit_script_file.write((export + self._submit_cmd + job_script + "\n").encode(lang))
-                else:
-                    self._submit_script_file.write((export + self._submit_hold_cmd + job_script + "\n").encode(lang))
+                    lang = 'UTF-8'
+            if not hold:
+                self._submit_script_file.write((export + self._submit_cmd + job_script + "\n").encode(lang))
+            else:
+                self._submit_script_file.write((export + self._submit_hold_cmd + job_script + "\n").encode(lang))
 
 
     def get_checkAlljobs_cmd(self, jobs_id):
