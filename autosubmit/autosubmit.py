@@ -1156,7 +1156,7 @@ class Autosubmit:
             os.mkdir(os.path.join(exp_folder, "pkl"))
             os.mkdir(os.path.join(exp_folder, "tmp"))
             os.mkdir(os.path.join(exp_folder, "tmp", "ASLOGS"))
-            os.mkdir(os.path.join(exp_folder, "tmp", "LOG_"+exp_id.upper()))
+            os.mkdir(os.path.join(exp_folder, "tmp", "LOG_"+exp_id))
             os.mkdir(os.path.join(exp_folder, "plot"))
             os.mkdir(os.path.join(exp_folder, "status"))
             # Setting permissions
@@ -1165,7 +1165,7 @@ class Autosubmit:
             os.chmod(os.path.join(exp_folder, "pkl"), 0o755)
             os.chmod(os.path.join(exp_folder, "tmp"), 0o755)
             os.chmod(os.path.join(exp_folder, "tmp", "ASLOGS"), 0o755)
-            os.chmod(os.path.join(exp_folder, "tmp", "LOG_"+exp_id.upper()), 0o755)
+            os.chmod(os.path.join(exp_folder, "tmp", "LOG_"+exp_id), 0o755)
             os.chmod(os.path.join(exp_folder, "plot"), 0o755)
             os.chmod(os.path.join(exp_folder, "status"), 0o755)
         except OSError as e:
