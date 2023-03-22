@@ -312,7 +312,7 @@ class PJMPlatform(ParamikoPlatform):
         for job in in_queue_jobs:
             reason = self.parse_queue_reason(queue_status, job.id)
             if job.queuing_reason_cancel(reason):
-                Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
+                Log.printlog(f"Job {job.name} will be cancelled and set to FAILED as it was queuing due to {reason}",6000)
                 self.send_command(self.cancel_cmd + " {0}".format(job.id))
                 job.new_status = Status.FAILED
                 job.update_status(as_conf)
