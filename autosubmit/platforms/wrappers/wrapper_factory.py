@@ -148,3 +148,41 @@ class EcWrapperFactory(WrapperFactory):
 
     def dependency_directive(self, dependency):
         return '#PBS -v depend=afterok:{0}'.format(dependency)
+
+class PJMWrapperFactory(WrapperFactory):
+
+    def vertical_wrapper(self, **kwargs):
+        return PythonVerticalWrapperBuilder(**kwargs)
+
+    def horizontal_wrapper(self, **kwargs):
+
+        if kwargs["method"] == 'srun':
+            return SrunHorizontalWrapperBuilder(**kwargs)
+        else:
+            return PythonHorizontalWrapperBuilder(**kwargs)
+
+    def hybrid_wrapper_horizontal_vertical(self, **kwargs):
+        return PythonHorizontalVerticalWrapperBuilder(**kwargs)
+
+    def hybrid_wrapper_vertical_horizontal(self, **kwargs):
+        if kwargs["method"] == 'srun':
+            return SrunVerticalHorizontalWrapperBuilder(**kwargs)
+        else:
+            return PythonVerticalHorizontalWrapperBuilder(**kwargs)
+
+    def header_directives(self, **kwargs):
+        return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
+                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'],kwargs['method'],kwargs['partition'])
+
+    def allocated_nodes(self):
+        return self.platform.allocated_nodes()
+
+    #def dependency_directive(self, dependency):
+    #    # There is no option for afterok in the PJM scheduler, but I think it is not needed.
+    #    return '#PJM --dependency=afterok:{0}'.format(dependency)
+
+    def queue_directive(self, queue):
+        return '#PJM -L rscgrp={0}'.format(queue)
+
+    def partition_directive(self, partition):
+        return '#PJM -g {0}'.format(partition)

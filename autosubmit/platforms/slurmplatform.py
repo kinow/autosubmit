@@ -584,22 +584,28 @@ class SlurmPlatform(ParamikoPlatform):
             return ''.join(reason)
         return reason
 
-    def parse_estimated_time(self, output):
-        """
-        Parses the estimated time from the output of the command
-        :param output: output of the command
-        :return: estimated time date and time
-        :rtype: dict
-        """
-        parsed_output = {}
-        parsed_output["date"] = "Unknown"
-        parsed_output["time"] = "Unknown"
-        with suppress(Exception):
-            output = output.split("T")
-            parsed_output["date"] = output[0]
-            parsed_output["time"] = output[1]
-        return parsed_output
-
+    def get_queue_status(self, in_queue_jobs, list_queue_jobid, as_conf):
+        if not in_queue_jobs:
+            return
+        cmd = self.get_queue_status_cmd(list_queue_jobid)
+        self.send_command(cmd)
+        queue_status = self._ssh_output
+        for job in in_queue_jobs:
+            reason = self.parse_queue_reason(queue_status, job.id)
+            if job.queuing_reason_cancel(reason): # this should be a platform method to be implemented
+                Log.error(
+                    "Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
+                self.send_command(
+                    self.cancel_cmd + " {0}".format(job.id))
+                job.new_status = Status.FAILED
+                job.update_status(as_conf)
+            elif reason == '(JobHeldUser)':
+                if not job.hold:
+                    # should be self.release_cmd or something like that but it is not implemented
+                    self.send_command("scontrol release {0}".format(job.id))
+                    job.new_status = Status.QUEUING  # If it was HELD and was released, it should be QUEUING next.
+                else:
+                    job.new_status = Status.HELD
     @staticmethod
     def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads, method="asthreads", partition=""):
         if method == 'srun':
@@ -666,7 +672,7 @@ class SlurmPlatform(ParamikoPlatform):
                     self.get_files_path(), filename))
                 file_exist = True
             except IOError as e:  # File doesn't exist, retry in sleeptime
-                Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
+                Log.debug("{2} File does not exist.. waiting {0}s for a new retry (retries left: {1})", sleeptime,
                           max_retries - retries, os.path.join(self.get_files_path(), filename))
                 if not wrapper_failed:
                     sleep(sleeptime)

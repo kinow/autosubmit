@@ -2256,7 +2256,7 @@ class Autosubmit:
                 if not inspect and len(valid_packages_to_submit) > 0:
                     job_list.save()
                 save_2 = False
-                if platform.type == "slurm" and not inspect and not only_wrappers:
+                if platform.type.lower() in [ "slurm" , "pjm" ] and not inspect and not only_wrappers:
                     # Process the script generated in submit_ready_jobs
                     save_2, valid_packages_to_submit = platform.process_batch_ready_jobs(valid_packages_to_submit,
                                                                                          failed_packages,
@@ -3110,7 +3110,7 @@ class Autosubmit:
                                         "warning: rsync") != -1 or p.get_ssh_output_err().lower().find(
                                         "closed") != -1 or p.get_ssh_output_err().lower().find(
                                         "broken pipe") != -1 or p.get_ssh_output_err().lower().find(
-                                        "directory has vanished") != -1:
+                                        "directory has vanished") != -1 or p.get_ssh_output_err().lower().find("rsync error") != -1 or p.get_ssh_output_err().lower().find("socket") != -1 or p.get_ssh_output_err().lower().find("(code") != -1:
                                         rsync_retries += 1
                                         finished = False
                                     elif p.get_ssh_output_err() == "":

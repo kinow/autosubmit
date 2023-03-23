@@ -30,6 +30,7 @@ from autosubmit.platforms.pbsplatform import PBSPlatform
 from autosubmit.platforms.sgeplatform import SgePlatform
 from autosubmit.platforms.ecplatform import EcPlatform
 from autosubmit.platforms.slurmplatform import SlurmPlatform
+from autosubmit.platforms.pjmplatform import PJMPlatform
 from autosubmit.platforms.locplatform import LocalPlatform
 from autosubmit.platforms.paramiko_platform import ParamikoPlatformException
 
@@ -135,6 +136,9 @@ class ParamikoSubmitter(Submitter):
                         asconf.expid, section, BasicConfig, platform_version)
                 elif platform_type == 'slurm':
                     remote_platform = SlurmPlatform(
+                        asconf.expid, section, BasicConfig)
+                elif platform_type == 'pjm':
+                    remote_platform = PJMPlatform(
                         asconf.expid, section, BasicConfig)
                 else:
                     raise Exception(
