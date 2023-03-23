@@ -18,6 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import locale
 import os
+from contextlib import suppress
 from time import sleep
 from time import mktime
 from time import time
@@ -308,13 +309,16 @@ class SlurmPlatform(ParamikoPlatform):
             self.send_command(cmd)
 
             queue_status = self._ssh_output
-            reason = str()
             reason = self.parse_queue_reason(queue_status, job.id)
-            if reason == '(JobHeldUser)':
-                return True
-            else:
+            self.send_command(self.get_estimated_queue_time_cmd(job.id))
+            estimated_time = self.parse_estimated_time(self._ssh_output)
+            if reason == '(JobHeldAdmin)':  # Job is held by the system
                 self.send_command("scancel {0}".format(job.id))
                 return False
+            else:
+                Log.info(
+                    f"The {job.name} will be elegible to run the day {estimated_time.get('date', 'Unknown')} at {estimated_time.get('time', 'Unknown')}\nQueuing reason is: {reason}")
+                return True
         except BaseException as e:
             try:
                 self.send_command("scancel {0}".format(job.id))
@@ -549,6 +553,8 @@ class SlurmPlatform(ParamikoPlatform):
 
     def get_checkAlljobs_cmd(self, jobs_id):
         return "sacct -n -X --jobs  {1} -o jobid,State".format(self.host, jobs_id)
+    def get_estimated_queue_time_cmd(self, job_id):
+        return f"scontrol -o show JobId {job_id} | grep -Po '(?<=EligibleTime=)[0-9-:T]*'"
 
     def get_queue_status_cmd(self, job_id):
         return 'squeue -j {0} -o %A,%R'.format(job_id)
@@ -564,11 +570,35 @@ class SlurmPlatform(ParamikoPlatform):
         return 'sacct -n --jobs {0} -o JobId%25,State,NCPUS,NNodes,Submit,Start,End,ConsumedEnergy,MaxRSS%25,AveRSS%25'.format(job_id)
 
     def parse_queue_reason(self, output, job_id):
+        """
+        Parses the queue reason from the output of the command
+        :param output: output of the command
+        :param job_id: job id
+        :return: queue reason
+        :rtype: str
+        """
         reason = [x.split(',')[1] for x in output.splitlines()
                   if x.split(',')[0] == str(job_id)]
-        if len(reason) > 0:
-            return reason[0]
+        if isinstance(reason,list):
+            # convert reason to str
+            return ''.join(reason)
         return reason
+
+    def parse_estimated_time(self, output):
+        """
+        Parses the estimated time from the output of the command
+        :param output: output of the command
+        :return: estimated time date and time
+        :rtype: dict
+        """
+        parsed_output = {}
+        parsed_output["date"] = "Unknown"
+        parsed_output["time"] = "Unknown"
+        with suppress(Exception):
+            output = output.split("T")
+            parsed_output["date"] = output[0]
+            parsed_output["time"] = output[1]
+        return parsed_output
 
     @staticmethod
     def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads, method="asthreads", partition=""):

@@ -497,6 +497,25 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
+    def get_estimated_queue_time_cmd(self, job_id):
+        """
+        Returns command to get estimated queue time on remote platforms
+
+        :param job_id: id of job to check
+        :param job_id: str
+        :return: command to get estimated queue time
+        """
+        raise NotImplementedError
+    def parse_estimated_time(self, output):
+        """
+        Parses estimated queue time from output of get_estimated_queue_time_cmd
+
+        :param output: output of get_estimated_queue_time_cmd
+        :type output: str
+        :return: estimated queue time
+        :rtype:
+        """
+        raise NotImplementedError
     def check_job(self, job, default_status=Status.COMPLETED, retries=5, submit_hold_check=False, is_wrapper=False):
         """
         Checks job running status
@@ -694,7 +713,6 @@ class ParamikoPlatform(Platform):
                     Log.error(
                         'check_job() The job id ({0}) status is {1}.', job.id, job_status)
                 job.new_status = job_status
-            reason = str()
             if self.type == 'slurm' and len(in_queue_jobs) > 0:
                 cmd = self.get_queue_status_cmd(list_queue_jobid)
                 self.send_command(cmd)
@@ -724,6 +742,10 @@ class ParamikoPlatform(Platform):
                         job.new_status = Status.WAITING
                         job.platform.send_command(
                             job.platform.cancel_cmd + " {0}".format(job.id))
+                    else:
+                        self.send_command(self.get_estimated_queue_time_cmd(job.id))
+                        estimated_time = self.parse_estimated_time(self._ssh_output)
+                        Log.info(f"{job.name} will be elegible to run the day {estimated_time.get('date', 'Unknown')} at {estimated_time.get('time', 'Unknown')} due: {reason[1:-1]}")
 
         else:
             for job in job_list:
