@@ -99,6 +99,9 @@ class TestParamikoPlatform(TestCase):
         job.id = 'TEST'
         job.name = 'TEST'
         job.status = Status.UNKNOWN
+
+        self.platform.get_queue_status = MagicMock(side_effect=None)
+
         with self.assertRaises(AutosubmitError) as cm:
             # Retries is -1 so that it skips the retry code block completely,
             # as we are not interested in testing that part here.

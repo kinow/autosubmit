@@ -760,6 +760,18 @@ class ParamikoPlatform(Platform):
             job_ids = [job_id.split(',')[0] for job_id in job_ids_names]
         return job_ids
 
+    def get_queue_status(self, in_queue_jobs, list_queue_jobid, as_conf):
+        """Get queue status for a list of jobs.
+
+        The job statuses are normally found via a command sent to the remote platform.
+
+        Each ``job`` in ``in_queue_jobs`` must be updated. Implementations may check
+        for the reason for queueing cancellation, or if the job is held, and update
+        the ``job`` status appropriately.
+        """
+        raise NotImplementedError
+
+
     def get_checkjob_cmd(self, job_id):
         """
         Returns command to check job status on remote platforms
