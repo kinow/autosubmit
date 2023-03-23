@@ -21,8 +21,8 @@ import time
 import random
 import os
 from shutil import copy2
-from .experiment_history_db_manager import ExperimentHistoryDbManager
-from .experiment_status_db_manager import ExperimentStatusDbManager
+from autosubmit.history.database_managers.experiment_history_db_manager import ExperimentHistoryDbManager
+from autosubmit.history.database_managers.experiment_status_db_manager import ExperimentStatusDbManager
 from autosubmit.history.data_classes.experiment_run import ExperimentRun
 from autosubmit.history.data_classes.job_data import JobData
 from autosubmitconfigparser.config.basicconfig import BasicConfig
@@ -35,6 +35,7 @@ BasicConfig.read()
 JOBDATA_DIR = BasicConfig.JOBDATA_DIR
 LOCAL_ROOT_DIR = BasicConfig.LOCAL_ROOT_DIR
 
+@unittest.skip('TODO: looks like another test that used actual experiments data')
 class TestExperimentStatusDatabaseManager(unittest.TestCase):
   """ Covers Experiment Status Database Manager """
   def setUp(self):
@@ -47,7 +48,7 @@ class TestExperimentStatusDatabaseManager(unittest.TestCase):
     self.assertIsNone(exp_status_row_none)
     exp_row_direct = self.exp_status_db.get_experiment_status_row_by_exp_id(exp_status_row.exp_id)
     self.assertTrue(exp_status_row.exp_id == exp_row_direct.exp_id)
-    
+
 
   def test_update_exp_status(self):    
     self.exp_status_db.update_exp_status(EXPID, "RUNNING")
@@ -66,7 +67,7 @@ class TestExperimentStatusDatabaseManager(unittest.TestCase):
     experiment_status = self.exp_status_db.get_experiment_status_row_by_expid(EXPID_NONE)
     self.assertIsNone(experiment_status)
 
-
+@unittest.skip('TODO: looks like another test that used actual experiments data')
 class TestExperimentHistoryDbManager(unittest.TestCase):
   """ Covers Experiment History Database Manager and Data Models """
   def setUp(self):
@@ -90,7 +91,7 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
 
   def test_pragma(self):
     self.assertTrue(self.experiment_database._get_pragma_version() == 17) # Update version on changes
-  
+
   def test_get_job_data(self):
     job_data = self.experiment_database._get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
     self.assertTrue(len(job_data) > 0)
@@ -108,7 +109,7 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
 
     job_data = self.experiment_database.get_job_data_all()
     self.assertTrue(len(job_data) > 0)
-  
+
   def test_insert_and_delete_experiment_run(self):
     new_run = ExperimentRun(19)
     new_id = self.experiment_database._insert_experiment_run(new_run)
@@ -118,7 +119,7 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
     self.experiment_database.delete_experiment_run(new_id)
     last_experiment_run = self.experiment_database.get_experiment_run_dc_with_max_id()
     self.assertTrue(new_id != last_experiment_run.run_id)
-  
+
   def test_insert_and_delete_job_data(self):
     max_run_id = self.experiment_database.get_experiment_run_dc_with_max_id().run_id
     new_job_data_name = "test_001_name_{0}".format(int(time.time()))
@@ -189,7 +190,7 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
       self.assertTrue(job_val.rowstatus == rowstatus)
       self.assertTrue(job_val.id == _id)
     self.experiment_database.update_many_job_data_change_status(backup_changes)
-  
+
   def test_job_data_maxcounter(self):
     new_job_data = ExperimentHistoryDbManager(EXPID_NONE, JOBDATA_DIR) 
     new_job_data.initialize()   

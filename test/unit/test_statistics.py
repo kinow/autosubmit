@@ -11,6 +11,7 @@ from autosubmit.job.job_list import JobList
 import autosubmit.database.db_structure as DbStructure
 # from autosubmit.database.db_jobdata import JobDataStructure, ExperimentGraphDrawing
 
+@unittest.skip("TODO: looks like this test was used by devs to run an existing experiment a49z")
 class TestStatistics(unittest.TestCase):
   def setUp(self):
     self.expid = "a49z"

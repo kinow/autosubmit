@@ -63,8 +63,6 @@ def try_parse_time_to_timestamp(input_):
     return 0
 
 def read_example(example_name):
-  source_path = "autosubmit/history/platform_monitor/output_examples/"
-  file_path = os.path.join(source_path, example_name)
-  with open(file_path, "r") as fp:
-      output_ssh = fp.read()
-  return output_ssh
+  import importlib.resources as pkg_resources
+  from autosubmit.history.platform_monitor import output_examples
+  return pkg_resources.read_text(output_examples, example_name)
