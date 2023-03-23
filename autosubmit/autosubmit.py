@@ -3225,8 +3225,8 @@ class Autosubmit:
         :type placeholders: bool
         """
         # todo
+
         try:
-            performance_metrics = None
             ignore_performance_keys = ["error_message",
                                        "warnings_job_data", "considered"]
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
@@ -3234,11 +3234,11 @@ class Autosubmit:
             if folder_path is not None and len(str(folder_path)) > 0:
                 tmp_path = folder_path
             import platform
-            host = platform.node()
             # Gather experiment info
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             try:
                 as_conf.reload(True)
+                parameters = as_conf.load_parameters()
             except Exception as e:
                 raise AutosubmitCritical(
                     "Unable to gather the parameters from config files, check permissions.", 7012)
@@ -3258,16 +3258,12 @@ class Autosubmit:
                 Log.printlog("Autosubmit couldn't retrieve performance metrics.")
                 performance_metrics = None
             # Preparation for section parameters
-            no_load_sections = False
-            no_load_platforms = False
-
             try:
                 submitter = Autosubmit._get_submitter(as_conf)
                 submitter.load_platforms(as_conf)
                 hpcarch = submitter.platforms[as_conf.get_platform()]
 
             except Exception as e:
-                no_load_platforms = True
                 submitter = Autosubmit._get_submitter(as_conf)
                 submitter.load_local_platform(as_conf)
                 hpcarch = submitter.platforms[as_conf.get_platform()]
@@ -3321,15 +3317,15 @@ class Autosubmit:
                 Log.result("A list of all parameters has been written on {0}".format(
                     os.path.join(tmp_path, parameter_output)))
 
-            if template_file_path is not None and len(str(template_file_path)) > 0:
+            if template_file_path is not None:
                 if os.path.exists(template_file_path):
                     Log.info(
                         "Gathering the selected parameters (all keys are on upper_case)")
                     template_file = open(template_file_path, 'rb')
                     template_content = template_file.read()
-                    for key, value in exp_parameters.items():
+                    for key, value in parameters.items():
                         template_content = re.sub(
-                            '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content, flags=re.I)
+                            '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content, flags=re.I)
                     # Performance metrics
                     if performance_metrics is not None and len(str(performance_metrics)) > 0:
                         for key in performance_metrics:
@@ -3350,7 +3346,7 @@ class Autosubmit:
                         report, os.path.join(tmp_path, report)))
                 else:
                     raise AutosubmitCritical(
-                        "Template {0} doesn't exists ".format(template_file_path), 7014)
+                        f"Template {template_file_path} doesn't exists ", 7014)
         except AutosubmitError as e:
             raise
         except AutosubmitCritical as e:
