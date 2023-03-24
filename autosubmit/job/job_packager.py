@@ -507,7 +507,7 @@ class JobPackager(object):
                                                     else:
                                                         package = JobPackageSimple([job])
                                                     packages_to_submit.append(package)
-                                            Log.info("Wrapper policy is set to flexible and there is a deadlock, As will submit the jobs sequentially")
+                                            Log.info("Wrapper policy is set to flexible and there is a deadlock, Autosubmit will submit the jobs sequentially")
                     else:
                         for job in jobs:
                             job.packed = False
