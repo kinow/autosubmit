@@ -289,10 +289,15 @@ class TestJob(TestCase):
         dummy_platform = MagicMock()
         dummy_platform.serial_platform = dummy_serial_platform
         self.as_conf.substitute_dynamic_variables = MagicMock()
-        self.as_conf.substitute_dynamic_variables.return_value = {'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
+        default = {'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
                                               'M': '%M%', 'M_': '%M_%', 'm': '%m%', 'm_': '%m_%'}
+        self.as_conf.substitute_dynamic_variables.return_value = default
         dummy_platform.custom_directives = '["whatever"]'
         self.as_conf.dynamic_variables = MagicMock()
+        self.as_conf.parameters = MagicMock()
+        self.as_conf.return_value = {}
+        self.as_conf.normalize_parameters_keys = MagicMock()
+        self.as_conf.normalize_parameters_keys.return_value = default
         self.job._platform = dummy_platform
         parameters = {}
         # Act

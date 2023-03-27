@@ -263,7 +263,7 @@ class AutosubmitGit:
                         as_conf.parse_githooks()
                         subprocess.check_output(command_githook, shell=True)
                     command_1 = "cd {0}; {1} ".format(git_path,command_1)
-                    Log.debug('Githook + Checkout and Submodules: {0}', command_githook, command_1)
+                    Log.debug(f'Githook + Checkout and Submodules: {command_githook} {command_1}')
                     output_1 = subprocess.check_output(command_1, shell=True)
                 except BaseException as e:
                     submodule_failure = True

@@ -1133,7 +1133,7 @@ class Job(object):
             parameters['CHUNK_SECOND_TO_LAST_HOUR'] = str(chunk_end_1.hour).zfill(2)
 
             parameters['CHUNK_END_DATE'] = date2str(
-                chunk_end_1, self.date_format)
+                chunk_end, self.date_format)
             parameters['CHUNK_END_YEAR'] = str(chunk_end.year)
             parameters['CHUNK_END_MONTH'] = str(chunk_end.month).zfill(2)
             parameters['CHUNK_END_DAY'] = str(chunk_end.day).zfill(2)
@@ -1142,14 +1142,14 @@ class Job(object):
             parameters['PREV'] = str(subs_dates(self.date, chunk_start, cal))
 
             if chunk == 1:
-                parameters['Chunk_FIRST'] = 'TRUE'
+                parameters['CHUNK_FIRST'] = 'TRUE'
             else:
-                parameters['Chunk_FIRST'] = 'FALSE'
+                parameters['CHUNK_FIRST'] = 'FALSE'
 
             if total_chunk == chunk:
-                parameters['Chunk_LAST'] = 'TRUE'
+                parameters['CHUNK_LAST'] = 'TRUE'
             else:
-                parameters['Chunk_LAST'] = 'FALSE'
+                parameters['CHUNK_LAST'] = 'FALSE'
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['DEPENDENCIES'] = str(as_conf.jobs_data[self.section].get("DEPENDENCIES",""))
         # This shouldn't be necessary anymore as now all sub is done in the as_conf.reload()
@@ -1187,6 +1187,7 @@ class Job(object):
         chunk = 1
         as_conf.reload()
         parameters = parameters.copy()
+        parameters.update(as_conf.parameters)
         parameters.update(default_parameters)
         parameters = as_conf.substitute_dynamic_variables(parameters,25)
         parameters['ROOTDIR'] = os.path.join(
@@ -1197,6 +1198,7 @@ class Job(object):
         parameters = self.update_platform_associated_parameters(as_conf, parameters, self._platform, parameters['CHUNK'])
         parameters = self.update_wrapper_parameters(as_conf, parameters)
         parameters = as_conf.substitute_dynamic_variables(parameters,25)
+        parameters = as_conf.normalize_parameters_keys(parameters,default_parameters)
         # For some reason, there is return but the assignee is also necessary
         self.parameters = parameters
         # This returns is only being used by the mock , to change the mock
@@ -1399,11 +1401,11 @@ class Job(object):
         parameters = self.update_parameters(as_conf, parameters)
         template_content,additional_templates = self.update_content(as_conf)
         if template_content is not False:
-            variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template_content)
+            variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template_content,flags=re.IGNORECASE)
             variables = [variable[1:-1] for variable in variables]
             variables = [variable for variable in variables if variable not in self.default_parameters]
             for template in additional_templates:
-                variables_tmp = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template)
+                variables_tmp = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template,flags=re.IGNORECASE)
                 variables_tmp = [variable[1:-1] for variable in variables_tmp]
                 variables_tmp = [variable for variable in variables_tmp if variable not in self.default_parameters]
                 variables.extend(variables_tmp)
