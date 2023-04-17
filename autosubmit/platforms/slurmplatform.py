@@ -28,7 +28,6 @@ from typing import List, Union
 from xml.dom.minidom import parseString
 
 from autosubmit.job.job_common import Status, parse_output_number
-from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
@@ -172,9 +171,6 @@ class SlurmPlatform(ParamikoPlatform):
                             package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
                     raise AutosubmitError("{0} submission failed, some hold jobs failed to be held".format(self.name), 6015)
             save = True
-        except WrongTemplateException as e:
-            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
-                e.job_name), 7014, str(e))
         except AutosubmitError as e:
             raise
         except AutosubmitCritical as e:
