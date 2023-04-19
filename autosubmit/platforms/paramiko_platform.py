@@ -644,14 +644,14 @@ class ParamikoPlatform(Platform):
         try:
             self.send_command(cmd)
         except AutosubmitError as e:
-            e_msg = str(e.trace)+" "+str(e.message)
+            e_msg = e.error_message
             slurm_error = True
         if not slurm_error:
             while not self._check_jobid_in_queue(self.get_ssh_output(), job_list_cmd) and retries > 0:
                 try:
                     self.send_command(cmd)
                 except AutosubmitError as e:
-                    e_msg = str(e.trace) + " " + str(e.message)
+                    e_msg = e.error_message
                     slurm_error = True
                     break
                 Log.debug('Retrying check job command: {0}', cmd)
@@ -727,7 +727,7 @@ class ParamikoPlatform(Platform):
                 job.new_status = job_status
             self.get_queue_status(in_queue_jobs,list_queue_jobid,as_conf)
         else:
-            for job in job_list:
+            for job, job_prev_status in job_list:
                 job_status = Status.UNKNOWN
                 Log.warning(
                     'check_job() The job id ({0}) from platform {1} has an status of {2}.', job.id, self.name, job_status)
@@ -759,6 +759,18 @@ class ParamikoPlatform(Platform):
             #get all ids by job-name
             job_ids = [job_id.split(',')[0] for job_id in job_ids_names]
         return job_ids
+
+    def get_queue_status(self, in_queue_jobs, list_queue_jobid, as_conf):
+        """Get queue status for a list of jobs.
+
+        The job statuses are normally found via a command sent to the remote platform.
+
+        Each ``job`` in ``in_queue_jobs`` must be updated. Implementations may check
+        for the reason for queueing cancellation, or if the job is held, and update
+        the ``job`` status appropriately.
+        """
+        raise NotImplementedError
+
 
     def get_checkjob_cmd(self, job_id):
         """

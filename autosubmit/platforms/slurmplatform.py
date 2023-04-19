@@ -113,9 +113,7 @@ class SlurmPlatform(ParamikoPlatform):
                             error_message+="\ncheck that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
                                     error_msg[:-1], self.name)
 
-                        if e.trace is None:
-                            e.trace = ""
-                        raise AutosubmitCritical(error_message,7014,e.message+"\n"+str(e.trace))
+                        raise AutosubmitCritical(error_message, 7014, e.error_message)
                 except IOError as e:
                     raise AutosubmitError(
                         "IO issues ", 6016, str(e))

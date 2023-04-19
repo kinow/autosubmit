@@ -3,19 +3,35 @@ import os
 import sys
 from time import sleep
 from datetime import datetime
+from typing import Union
 
 
 class AutosubmitError(Exception):
-    """Exception raised for Autosubmit critical errors .
+    """Exception raised for Autosubmit errors.
+
     Attributes:
-        errorcode -- Classified code
-        message -- explanation of the error
+        message (str): explanation of the error
+        code (int): classified code
+        trace (str): extra information about the error
     """
 
-    def __init__(self, message="Unhandled Error", code=6000, trace=None):
+    def __init__(self, message="Unhandled Error", code=6000, trace: Union[None, str]=None):
         self.code = code
         self.message = message
         self.trace = trace
+
+    @property
+    def error_message(self) -> str:
+        """
+        Return the error message ready to be logged, with both trace
+        (when present) and the message separated by a space. Or just
+        the message if no trace is available.
+
+        :return: ``trace`` and ``message`` separated by a space, or just the
+                 ``message`` if no ``trace`` is available.
+        :rtype: str
+        """
+        return self.message if not self.trace else f'{self.trace} {self.message}'
 
     def __str__(self):
         return " "
