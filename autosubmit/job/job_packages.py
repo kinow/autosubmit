@@ -352,6 +352,7 @@ class JobPackageThread(JobPackageBase):
 
     def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="WRAPPERS", wrapper_info= {}):
         super(JobPackageThread, self).__init__(jobs)
+        # to be pass as "configuration"
         if len(wrapper_info) > 0 :
             self.wrapper_type = wrapper_info[0]
             self.wrapper_policy = wrapper_info[1]
@@ -364,7 +365,6 @@ class JobPackageThread(JobPackageBase):
             self.wrapper_method = None
             self.jobs_in_wrapper = None
             self.extensible_wallclock = 0
-
         self._job_scripts = {}
         # Seems like this one is not used at all in the class
         self._job_dependency = dependency
@@ -393,10 +393,46 @@ class JobPackageThread(JobPackageBase):
                 self.partition = wr_partition
             else:
                 self.partition = jobs[0].partition
+            wr_exclusive = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXCLUSIVE",False)
+            if  wr_exclusive:
+                self.exclusive = wr_exclusive
+            else:
+                self.exclusive = jobs[0].exclusive
+            wr_custom_directives = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("CUSTOM_DIRECTIVES",[])
+            if len(str(wr_custom_directives)) > 0:
+                self.custom_directives = wr_custom_directives
+            else:
+                self.custom_directives = jobs[0].custom_directives
+            wr_executable = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXECUTABLE",None)
+            if wr_executable is None:
+                self.executable = wr_executable
+            else:
+                self.executable = jobs[0].executable
         else:
             self.queue = jobs[0].queue
             self.partition = jobs[0].partition
         self.method = method
+        self._wrapper_factory.as_conf = configuration
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"] = configuration.experiment_data["WRAPPERS"][self.current_wrapper_section]
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["TYPE"] = self.wrapper_type
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["WRAPPER_POLICY"] = self.wrapper_policy
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["INNER_RETRIALS"] = self.inner_retrials
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXTEND_WALLCLOCK"] = self.extensible_wallclock
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["METHOD"] = self.wrapper_method
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXPORT"] = self.export
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["QUEUE"] = self.queue
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["PARTITION"] = self.partition
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXCLUSIVE"] = self.exclusive
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXECUTABLE"] = self.executable
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["CUSTOM_DIRECTIVES"] = self.custom_directives
+
+        pass
+
+
+
+
+
+
 #pipeline
     @property
     def name(self):

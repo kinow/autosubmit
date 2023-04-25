@@ -159,7 +159,7 @@ class Job(object):
         self.partition = ""
         self.total_jobs = None
         self.max_waiting_jobs = None
-
+        self.exclusive = ""
     def __getstate__(self):
         odict = self.__dict__
         if '_platform' in odict:
@@ -1002,6 +1002,7 @@ class Job(object):
 
         self.queue = self.queue
         self.processors = str(as_conf.jobs_data[self.section].get("PROCESSORS",as_conf.platforms_data.get(job_platform.name,{}).get("PROCESSORS","1")))
+        self.exclusive = str(as_conf.jobs_data[self.section].get("EXCLUSIVE",as_conf.platforms_data.get(job_platform.name,{}).get("EXCLUSIVE",False)))
         self.threads = str(as_conf.jobs_data[self.section].get("THREADS",as_conf.platforms_data.get(job_platform.name,{}).get("THREADS","1")))
         self.tasks = str(as_conf.jobs_data[self.section].get("TASKS",as_conf.platforms_data.get(job_platform.name,{}).get("TASKS","1")))
         self.nodes = str(as_conf.jobs_data[self.section].get("NODES",as_conf.platforms_data.get(job_platform.name,{}).get("NODES","")))

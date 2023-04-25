@@ -61,10 +61,10 @@ class PJMPlatform(ParamikoPlatform):
         self._allow_wrappers = True # NOT SURE IF WE NEED WRAPPERS
         self.update_cmds()
         self.config = config
-        exp_id_path = os.path.join(config.LOCAL_ROOT_DIR, self.expid)
+        exp_id_path = os.path.join(self.config.get("LOCAL_ROOT_DIR"), self.expid)
         tmp_path = os.path.join(exp_id_path, "tmp")
         self._submit_script_path = os.path.join(
-            tmp_path, config.LOCAL_ASLOG_DIR, "submit_" + self.name + ".sh")
+            tmp_path, self.config.get("LOCAL_ASLOG_DIR"), "submit_" + self.name + ".sh")
         self._submit_script_file = open(self._submit_script_path, 'wb').close()
 
     def submit_error(self,output):
@@ -164,7 +164,7 @@ class PJMPlatform(ParamikoPlatform):
     def get_submit_script(self):
         self._submit_script_file.close()
         os.chmod(self._submit_script_path, 0o750)
-        return os.path.join(self.config.LOCAL_ASLOG_DIR, os.path.basename(self._submit_script_path))
+        return os.path.join(self.config.get("LOCAL_ASLOG_DIR"), os.path.basename(self._submit_script_path))
 
     def submit_job(self, job, script_name, hold=False, export="none"):
         """
@@ -412,8 +412,7 @@ class PJMPlatform(ParamikoPlatform):
             return reason[0]
         return reason
 
-    @staticmethod
-    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads, method="asthreads", partition=""):
+    def wrapper_header(self,**kwargs):
         if method == 'srun':
             language = "#!/bin/bash"
             return \

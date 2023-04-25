@@ -275,11 +275,17 @@ class TestJobList(TestCase):
         job.type = randrange(0, 2)
         return job
 
-
+import inspect
 class FakeBasicConfig:
     def __init__(self):
         pass
-
+    def props(self):
+        pr = {}
+        for name in dir(self):
+            value = getattr(self, name)
+            if not name.startswith('__') and not inspect.ismethod(value) and not inspect.isfunction(value):
+                pr[name] = value
+        return pr
     DB_DIR = '/dummy/db/dir'
     DB_FILE = '/dummy/db/file'
     DB_PATH = '/dummy/db/path'

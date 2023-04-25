@@ -34,7 +34,7 @@ class TestJob(TestCase):
 
 
     def test_when_the_job_has_more_than_one_processor_returns_the_parallel_platform(self):
-        platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig)
+        platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig().props())
         platform.serial_platform = 'serial-platform'
 
         self.job._platform = platform
@@ -45,7 +45,7 @@ class TestJob(TestCase):
         self.assertEqual(platform, returned_platform)
 
     def test_when_the_job_has_only_one_processor_returns_the_serial_platform(self):
-        platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig)
+        platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig().props())
         platform.serial_platform = 'serial-platform'
 
         self.job._platform = platform
@@ -56,7 +56,7 @@ class TestJob(TestCase):
         self.assertEqual('serial-platform', returned_platform)
 
     def test_set_platform(self):
-        dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig)
+        dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig().props())
         self.assertNotEqual(dummy_platform, self.job.platform)
 
         self.job.platform = dummy_platform
@@ -73,7 +73,7 @@ class TestJob(TestCase):
 
     def test_when_the_job_has_not_a_queue_and_some_processors_returns_the_queue_of_the_platform(self):
         dummy_queue = 'whatever-parallel'
-        dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig)
+        dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig().props())
         dummy_platform.queue = dummy_queue
         self.job.platform = dummy_platform
 
@@ -88,10 +88,10 @@ class TestJob(TestCase):
         serial_queue = 'whatever-serial'
         parallel_queue = 'whatever-parallel'
 
-        dummy_serial_platform = Platform('whatever', 'serial', FakeBasicConfig)
+        dummy_serial_platform = Platform('whatever', 'serial', FakeBasicConfig().props())
         dummy_serial_platform.serial_queue = serial_queue
 
-        dummy_platform = Platform('whatever', 'parallel', FakeBasicConfig)
+        dummy_platform = Platform('whatever', 'parallel', FakeBasicConfig().props())
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.queue = parallel_queue
         dummy_platform.processors_per_node = "1"
@@ -312,8 +312,18 @@ class TestJob(TestCase):
         self.assertEqual('%Y%', parameters['Y'])
         self.assertEqual('%Y_%', parameters['Y_'])
 
-
+import inspect
 class FakeBasicConfig:
+    def __init__(self):
+        pass
+    def props(self):
+        pr = {}
+        for name in dir(self):
+            value = getattr(self, name)
+            if not name.startswith('__') and not inspect.ismethod(value) and not inspect.isfunction(value):
+                pr[name] = value
+        return pr
+    #convert this to dict
     DB_DIR = '/dummy/db/dir'
     DB_FILE = '/dummy/db/file'
     DB_PATH = '/dummy/db/path'
@@ -322,6 +332,7 @@ class FakeBasicConfig:
     LOCAL_PROJ_DIR = '/dummy/local/proj/dir'
     DEFAULT_PLATFORMS_CONF = ''
     DEFAULT_JOBS_CONF = ''
+
 
 
 

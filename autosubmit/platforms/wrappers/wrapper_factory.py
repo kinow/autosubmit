@@ -26,15 +26,20 @@ from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 class WrapperFactory(object):
 
     def __init__(self, platform):
+        self.as_conf = None
         self.platform = platform
         self.wrapper_director = WrapperDirector()
         self.exception = "This type of wrapper is not supported for this platform"
 
     def get_wrapper(self, wrapper_builder, **kwargs):
+        wrapper_data = self.as_conf.experiment_data["CURRENT_WRAPPER"]
         kwargs['allocated_nodes'] = self.allocated_nodes()
         kwargs['dependency'] = self.dependency(kwargs['dependency'])
         kwargs['queue'] = self.queue(kwargs['queue'])
-        kwargs['partition'] = self.partition(kwargs['partition'])
+        kwargs['partition'] = self.partition(wrapper_data['PARTITION'])
+        kwargs["exclusive"] = self.exclusive(wrapper_data['EXCLUSIVE'])
+        kwargs["custom_directives"] = self.custom_directives(wrapper_data["CUSTOM_DIRECTIVES"])
+        kwargs["executable"] = wrapper_data["EXECUTABLE"]
         kwargs['header_directive'] = self.header_directives(**kwargs)
         builder = wrapper_builder(**kwargs)
         return self.wrapper_director.construct(builder)
@@ -59,18 +64,35 @@ class WrapperFactory(object):
 
     def dependency(self, dependency):
         return '#' if dependency is None else self.dependency_directive(dependency)
-
     def queue(self, queue):
         return '#' if not queue else self.queue_directive(queue)
     def partition(self, partition):
         return '#' if not partition else self.partition_directive(partition)
+    def exclusive(self, exclusive):
+        return '#' if not exclusive or str(exclusive).lower() == "false" else self.exclusive_directive(exclusive)
+    def custom_directives(self, custom_directives):
+        return '#' if not custom_directives else self.get_custom_directives(custom_directives)
+    def get_custom_directives(self, custom_directives):
+        """
+        Returns custom directives for the specified job
+        :param job: Job object
+        :return: String with custom directives
+        """
+        # There is no custom directives, so directive is empty
+        if custom_directives != '':
+            return '\n'.join(str(s) for s in custom_directives)
+        return ""
+
     def dependency_directive(self, dependency):
         pass
-
     def queue_directive(self, queue):
         pass
     def partition_directive(self, partition):
         pass
+    def exclusive_directive(self, exclusive):
+        pass
+
+
 
 
 class SlurmWrapperFactory(WrapperFactory):
@@ -95,8 +117,7 @@ class SlurmWrapperFactory(WrapperFactory):
             return PythonVerticalHorizontalWrapperBuilder(**kwargs)
 
     def header_directives(self, **kwargs):
-        return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
-                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'],kwargs['method'],kwargs['partition'])
+        return self.platform.wrapper_header(**kwargs)
 
     def allocated_nodes(self):
         return self.platform.allocated_nodes()
@@ -109,6 +130,8 @@ class SlurmWrapperFactory(WrapperFactory):
 
     def partition_directive(self, partition):
         return '#SBATCH --partition={0}'.format(partition)
+    def exclusive_directive(self, exclusive):
+        return '#SBATCH --exclusive'
 
 
 class LSFWrapperFactory(WrapperFactory):

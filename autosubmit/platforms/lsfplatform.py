@@ -118,8 +118,7 @@ class LsfPlatform(ParamikoPlatform):
             export += " ; "
         return export + self._submit_cmd + job_script
 
-    @staticmethod
-    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, partition=""):
+    def wrapper_header(self,**kwargs):
         return """\
         #!/usr/bin/env python3
         ###############################################################################

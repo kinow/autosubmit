@@ -77,6 +77,8 @@ class ParamikoSubmitter(Submitter):
         :rtype: dict
         """
         exp_data = asconf.experiment_data
+        config = BasicConfig().props()
+        config.update(exp_data)
         raise_message=""
         platforms_used = list()
         hpcarch = asconf.get_platform()
@@ -94,7 +96,7 @@ class ParamikoSubmitter(Submitter):
         platforms = dict()
 
         # Build Local Platform Object
-        local_platform = LocalPlatform(asconf.expid, 'local', BasicConfig)
+        local_platform = LocalPlatform(asconf.expid, 'local', config)
         local_platform.max_wallclock = asconf.get_max_wallclock()
         local_platform.max_processors = asconf.get_max_processors()
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
@@ -118,28 +120,29 @@ class ParamikoSubmitter(Submitter):
 
             platform_type = platform_data[section].get('TYPE', '').lower()
             platform_version = platform_data[section].get('VERSION', '')
+
             try:
                 if platform_type == 'pbs':
                     remote_platform = PBSPlatform(
-                        asconf.expid, section, BasicConfig, platform_version)
+                        asconf.expid, section, config, platform_version)
                 elif platform_type == 'sge':
                     remote_platform = SgePlatform(
-                        asconf.expid, section, BasicConfig)
+                        asconf.expid, section, config)
                 elif platform_type == 'ps':
                     remote_platform = PsPlatform(
-                        asconf.expid, section, BasicConfig)
+                        asconf.expid, section, config)
                 elif platform_type == 'lsf':
                     remote_platform = LsfPlatform(
-                        asconf.expid, section, BasicConfig)
+                        asconf.expid, section, config)
                 elif platform_type == 'ecaccess':
                     remote_platform = EcPlatform(
-                        asconf.expid, section, BasicConfig, platform_version)
+                        asconf.expid, section, config, platform_version)
                 elif platform_type == 'slurm':
                     remote_platform = SlurmPlatform(
-                        asconf.expid, section, BasicConfig)
+                        asconf.expid, section, config)
                 elif platform_type == 'pjm':
                     remote_platform = PJMPlatform(
-                        asconf.expid, section, BasicConfig)
+                        asconf.expid, section, config)
                 else:
                     raise Exception(
                         "Queue type not specified on platform {0}".format(section))
