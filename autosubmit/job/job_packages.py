@@ -123,6 +123,7 @@ class JobPackageBase(object):
     def _create_common_script(self,filename=""):
         pass
 
+
     def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
         :param hold:
@@ -161,6 +162,8 @@ class JobPackageBase(object):
                         else:
                             Log.result("Script {0} OK",job.name)
                     job.update_parameters(configuration, parameters)
+                    # Looking for special variables
+
                     # looking for directives on jobs
                     self._custom_directives = self._custom_directives | set(job.custom_directives)
             else:

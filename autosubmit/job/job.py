@@ -157,7 +157,8 @@ class Job(object):
         self.start_time = None
         self.edge_info = dict()
         self.partition = ""
-
+        self.total_jobs = None
+        self.max_waiting_jobs = None
 
     def __getstate__(self):
         odict = self.__dict__
@@ -995,6 +996,10 @@ class Job(object):
 
         return parameters
     def update_platform_associated_parameters(self,as_conf, parameters, job_platform, chunk):
+        self.executable = str(as_conf.jobs_data[self.section].get("EXECUTABLE", as_conf.platforms_data.get(job_platform.name,{}).get("EXECUTABLE","")))
+        self.total_jobs = int(as_conf.jobs_data[self.section].get("TOTALJOBS", job_platform.total_jobs))
+        self.max_waiting_jobs = int(as_conf.jobs_data[self.section].get("MAXWAITINGJOBS", job_platform.max_waiting_jobs))
+
         self.queue = self.queue
         self.processors = str(as_conf.jobs_data[self.section].get("PROCESSORS",as_conf.platforms_data.get(job_platform.name,{}).get("PROCESSORS","1")))
         self.threads = str(as_conf.jobs_data[self.section].get("THREADS",as_conf.platforms_data.get(job_platform.name,{}).get("THREADS","1")))

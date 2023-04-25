@@ -42,19 +42,8 @@ class JobPackager(object):
     :type jobs_list: JobList object.
     """
 
-    def __init__(self, as_config, platform, jobs_list, hold=False):
-        self.current_wrapper_section = "WRAPPERS"
-        self._as_config = as_config
-        self._platform = platform
-        self._jobs_list = jobs_list
-        self.hold = hold
-        # These are defined in the [wrapper] section of autosubmit_,conf
-        self.wrapper_type = dict()
-        self.wrapper_policy = dict()
-        self.wrapper_method = dict()
-        self.jobs_in_wrapper = dict()
-        self.extensible_wallclock = dict()
-        self.wrapper_info = list()
+    def calculate_job_limits(self,platform,job=None):
+        jobs_list = self._jobs_list
         # Submitted + Queuing Jobs for specific Platform
         queuing_jobs = jobs_list.get_queuing(platform)
         # We now consider the running jobs count
@@ -77,14 +66,37 @@ class JobPackager(object):
 
         waiting_jobs = submitted_jobs_len + queuing_jobs_len
         # Calculate available space in Platform Queue
-        self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
+        if job is not None and job.max_waiting_jobs != platform.max_waiting_jobs is not None:
+            self._max_wait_jobs_to_submit = job.max_waiting_jobs - waiting_jobs
+        else:
+            self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
         # .total_jobs is defined in each section of platforms_.yml, if not from there, it comes form autosubmit_.yml
         # .total_jobs Maximum number of jobs at the same time
-        self._max_jobs_to_submit = platform.total_jobs - queuing_jobs_len
+        if job is not None and job.total_jobs != platform.total_jobs:
+            self._max_jobs_to_submit = job.total_jobs - queuing_jobs_len
+        else:
+            self._max_jobs_to_submit = platform.total_jobs - queuing_jobs_len
         # Subtracting running jobs
         self._max_jobs_to_submit = self._max_jobs_to_submit - running_jobs_len
         self._max_jobs_to_submit = self._max_jobs_to_submit if self._max_jobs_to_submit > 0 else 0
         self.max_jobs = min(self._max_wait_jobs_to_submit,self._max_jobs_to_submit)
+
+    def __init__(self, as_config, platform, jobs_list, hold=False):
+        self.current_wrapper_section = "WRAPPERS"
+        self._as_config = as_config
+        self._platform = platform
+        self._jobs_list = jobs_list
+        self.hold = hold
+        # These are defined in the [wrapper] section of autosubmit_,conf
+        self.wrapper_type = dict()
+        self.wrapper_policy = dict()
+        self.wrapper_method = dict()
+        self.jobs_in_wrapper = dict()
+        self.extensible_wallclock = dict()
+        self.wrapper_info = list()
+        self.calculate_job_limits(platform)
+        self.special_variables = dict()
+
 
 
         #todo add default values
@@ -144,7 +156,13 @@ class JobPackager(object):
                         highest_completed.append(job)
             for job in highest_completed:
                 job.distance_weight = job.distance_weight - 1
-
+    def _special_variables(self,job):
+        special_variables = dict()
+        if job.section not in self.special_variables:
+            special_variables[job.section] = dict()
+            if job.total_jobs != self._platform.total_jobs:
+                special_variables[job.section]["TOTAL_JOBS"] = job
+                self.special_variables.update(special_variables)
     def build_packages(self):
         # type: () -> List[JobPackageBase]
         """
@@ -194,10 +212,27 @@ class JobPackager(object):
         if len(jobs_ready) == 0:
             # If there are no jobs ready, result is tuple of empty
             return packages_to_submit
-        if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
-            # If there is no more space in platform, result is tuple of empty
-            Log.debug("No more space in platform {0} for jobs {1}".format(self._platform.name, [job.name for job in jobs_ready]))
-            return packages_to_submit
+        #check if there are jobs listed on calculate_job_limits
+        for job in jobs_ready:
+            self._special_variables(job)
+        if len(self.special_variables) > 0:
+            for section in self.special_variables:
+                if "TOTAL_JOBS" in self.special_variables[section]:
+                    self.calculate_job_limits(self._platform,self.special_variables[section]["TOTAL_JOBS"])
+                if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
+                    # If there is no more space in platform, result is tuple of empty
+                    Log.debug("No more space in platform {0} for jobs {1}".format(self._platform.name,
+                                                                                  [job.name for job in jobs_ready]))
+                    return packages_to_submit
+                self.calculate_job_limits(self._platform)
+
+        else:
+            self.calculate_job_limits(self._platform)
+            if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
+                # If there is no more space in platform, result is tuple of empty
+                Log.debug("No more space in platform {0} for jobs {1}".format(self._platform.name, [job.name for job in jobs_ready]))
+                return packages_to_submit
+
 
         # Sort by 6 first digits of date
         available_sorted = sorted(
