@@ -1854,7 +1854,7 @@ class Autosubmit:
                         job_list.packages_dict[package_name] = []
                     job_list.packages_dict[package_name].append(job_list.get_job_by_name(job_name))
                 # This function, checks the stored STATUS of jobs inside wrappers. Since "wrapper status" is a memory variable.
-                job_list = Autosubmit.check_wrapper_stored_status(job_list, as_conf)
+                job_list = Autosubmit.check_wrapper_stored_status(as_conf, job_list)
             except Exception as e:
                 raise AutosubmitCritical(
                     "Autosubmit failed while processing job packages. This might be due to a change in your experiment configuration files after 'autosubmit create' was performed.",
@@ -4404,7 +4404,7 @@ class Autosubmit:
 
                     as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
                     # Get original configuration
-                    as_conf.check_conf_files(False, only_experiment_data=True, no_log=True)
+                    as_conf.check_conf_files(running_time=False, only_experiment_data=True, no_log=True)
                     # Getting output type provided by the user in config, 'pdf' as default
                     try:
                         if not Autosubmit._copy_code(as_conf, expid, as_conf.experiment_data.get("PROJECT",{}).get("PROJECT_TYPE","none"), False):
@@ -4412,7 +4412,7 @@ class Autosubmit:
                     except:
                         raise AutosubmitCritical("Error obtaining the project data, check the parameters related to PROJECT and GIT/SVN or LOCAL sections", code=7014)
                     # Update configuration with the new config in the dist ( if any )
-                    as_conf.check_conf_files(True,force_load=True, only_experiment_data=False, no_log=False)
+                    as_conf.check_conf_files(running_time=True,force_load=True, only_experiment_data=False, no_log=False)
                     output_type = as_conf.get_output_type()
 
                     if not os.path.exists(os.path.join(exp_path, "pkl")):
