@@ -609,10 +609,11 @@ class SlurmPlatform(ParamikoPlatform):
     def wrapper_header(self,**kwargs):
         wr_header = f"""
 ###############################################################################
-#              {kwargs["name"].split()[0]+"wrapper"}
+#              {kwargs["name"].split("_")[0]+"_Wrapper"}
 ###############################################################################
 #
 #SBATCH -J {kwargs["name"]}
+{kwargs["queue"]}
 {kwargs["partition"]}
 {kwargs["dependency"]}
 #SBATCH -A {kwargs["project"]}
