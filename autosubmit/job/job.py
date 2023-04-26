@@ -1485,6 +1485,9 @@ class Job(object):
         :type parameters: dict
         """
         as_conf.reload()
+        #TODO
+        parameters['CURRENT_EC_QUEUE'] = self.ec_queue
+
         parameters = parameters.copy()
         parameters.update(as_conf.parameters)
         parameters.update(default_parameters)
