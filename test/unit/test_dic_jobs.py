@@ -553,11 +553,17 @@ class TestDicJobs(TestCase):
         self.dictionary.build_job.assert_called_once_with(mock_section.name, priority, None, None, None, Type.BASH, {},splits)
         self.job_list.graph.add_node.assert_called_once_with(mock_section.name)
 
-
+import inspect
 class FakeBasicConfig:
     def __init__(self):
         pass
-
+    def props(self):
+        pr = {}
+        for name in dir(self):
+            value = getattr(self, name)
+            if not name.startswith('__') and not inspect.ismethod(value) and not inspect.isfunction(value):
+                pr[name] = value
+        return pr
     DB_DIR = '/dummy/db/dir'
     DB_FILE = '/dummy/db/file'
     DB_PATH = '/dummy/db/path'

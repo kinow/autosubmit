@@ -67,6 +67,19 @@ class SlurmHeader(object):
         if job.parameters['CURRENT_PROJ'] != '':
             return "SBATCH -A {0}".format(job.parameters['CURRENT_PROJ'])
         return ""
+    def get_exclusive_directive(self, job):
+        """
+        Returns account directive for the specified job
+
+        :param job: job to create account directive for
+        :type job: Job
+        :return: account directive
+        :rtype: str
+        """
+        # There is no account, so directive is empty
+        if job.exclusive:
+            return "SBATCH --exclusive"
+        return ""
 
     def get_nodes_directive(self, job):
         """

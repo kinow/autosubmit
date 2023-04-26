@@ -918,7 +918,6 @@ class TestJobGraph(TestCase):
         job.split = split
 
         return job
-
 class FakeBasicConfig:
     def __init__(self):
         pass

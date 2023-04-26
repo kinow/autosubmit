@@ -67,10 +67,10 @@ class SlurmPlatform(ParamikoPlatform):
         self._allow_wrappers = True
         self.update_cmds()
         self.config = config
-        exp_id_path = os.path.join(config.LOCAL_ROOT_DIR, self.expid)
+        exp_id_path = os.path.join(self.config.get("LOCAL_ROOT_DIR"), self.expid)
         tmp_path = os.path.join(exp_id_path, "tmp")
         self._submit_script_path = os.path.join(
-            tmp_path, config.LOCAL_ASLOG_DIR, "submit_" + self.name + ".sh")
+            tmp_path, self.config.get("LOCAL_ASLOG_DIR"), "submit_" + self.name + ".sh")
         self._submit_script_file = open(self._submit_script_path, 'wb').close()
 
     def process_batch_ready_jobs(self,valid_packages_to_submit,failed_packages,error_message="",hold=False):
@@ -188,7 +188,7 @@ class SlurmPlatform(ParamikoPlatform):
     def get_submit_script(self):
         self._submit_script_file.close()
         os.chmod(self._submit_script_path, 0o750)
-        return os.path.join(self.config.LOCAL_ASLOG_DIR, os.path.basename(self._submit_script_path))
+        return os.path.join(self.config.get("LOCAL_ASLOG_DIR"), os.path.basename(self._submit_script_path))
 
     def submit_job(self, job, script_name, hold=False, export="none"):
         """
@@ -604,55 +604,38 @@ class SlurmPlatform(ParamikoPlatform):
                     job.new_status = Status.QUEUING  # If it was HELD and was released, it should be QUEUING next.
                 else:
                     job.new_status = Status.HELD
-    @staticmethod
-    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads, method="asthreads", partition=""):
-        if method == 'srun':
-            language = "#!/bin/bash"
-            return \
-                language + """
+    def wrapper_header(self,**kwargs):
+        wr_header = f"""
 ###############################################################################
-#              {0}
+#              {kwargs["name"].split("_")[0]+"_Wrapper"}
 ###############################################################################
 #
-#SBATCH -J {0}
-{1}
-{8}
-#SBATCH -A {2}
-#SBATCH --output={0}.out
-#SBATCH --error={0}.err
-#SBATCH -t {3}:00
-#SBATCH -n {4}
-#SBATCH --cpus-per-task={7}
-{5}
-{6}
+#SBATCH -J {kwargs["name"]}
+{kwargs["queue"]}
+{kwargs["partition"]}
+{kwargs["dependency"]}
+#SBATCH -A {kwargs["project"]}
+#SBATCH --output={kwargs["name"]}.out
+#SBATCH --error={kwargs["name"]}.err
+#SBATCH -t {kwargs["wallclock"]}:00
+#SBATCH -n {kwargs["num_processors"]}
+#SBATCH --cpus-per-task={kwargs["threads"]}
+{kwargs["exclusive"]}
+{kwargs["custom_directives"]}
 
 #
 ###############################################################################
-                """.format(filename, queue, project, wallclock, num_procs, dependency,
-                           '\n'.ljust(13).join(str(s) for s in directives), threads,partition)
+"""
+        if kwargs["method"] == 'srun':
+            language = kwargs["executable"]
+            if language is None or len(language) == 0:
+                language = "#!/bin/bash"
+            return language + wr_header
         else:
-            language = "#!/usr/bin/env python3"
-            return \
-                language + """
-###############################################################################
-#              {0}
-###############################################################################
-#
-#SBATCH -J {0}
-{1}
-{8}
-#SBATCH -A {2}
-#SBATCH --output={0}.out
-#SBATCH --error={0}.err
-#SBATCH -t {3}:00
-#SBATCH --cpus-per-task={7}
-#SBATCH -n {4}
-{5}
-{6}
-#
-###############################################################################
-            """.format(filename, queue, project, wallclock, num_procs, dependency,
-                       '\n'.ljust(13).join(str(s) for s in directives), threads,partition)
+            language = kwargs["executable"]
+            if language is None or len(language) == 0:
+                language = "#!/usr/bin/env python3"
+            return language + wr_header
 
     @staticmethod
     def allocated_nodes():

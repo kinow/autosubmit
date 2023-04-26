@@ -24,7 +24,7 @@ class Platform(object):
         self.name = name # type: str
         self.config = config
         self.tmp_path = os.path.join(
-            self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
+            self.config.get("LOCAL_ROOT_DIR"), self.expid, self.config.get("LOCAL_TMP_DIR"))
         self._serial_platform = None
         self._serial_queue = None
         self._default_queue = None
@@ -61,7 +61,16 @@ class Platform(object):
         self._submit_cmd = None
         self._checkhost_cmd = None
         self.cancel_cmd = None
-
+    def get_exclusive_directive(self, job):
+        """
+        Returns exclusive directive for the specified job
+        :param job: job to create exclusive directive for
+        :type job: Job
+        :return: exclusive directive
+        :rtype: str
+        """
+        # only implemented for slurm
+        return ""
     def get_multiple_jobids(self,job_list,valid_packages_to_submit,failed_packages,error_message="",hold=False):
         return False,valid_packages_to_submit
         #raise NotImplementedError
@@ -440,7 +449,7 @@ class Platform(object):
         """
         filename = job_name + '_STAT'
         stat_local_path = os.path.join(
-            self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
+            self.config.get("LOCAL_ROOT_DIR"), self.expid, self.config.get("LOCAL_TMP_DIR"), filename)
         if os.path.exists(stat_local_path):
             os.remove(stat_local_path)
         if self.check_file_exists(filename):
@@ -480,7 +489,7 @@ class Platform(object):
         """
         filename = job_name
         stat_local_path = os.path.join(
-            self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
+            self.config.get("LOCAL_ROOT_DIR"), self.expid, self.config.get("LOCAL_TMP_DIR"), filename)
         if os.path.exists(stat_local_path):
             os.remove(stat_local_path)
         if self.check_file_exists(filename):
@@ -500,7 +509,7 @@ class Platform(object):
         """
         if self.type == "local":
             path = os.path.join(
-                self.root_dir, self.config.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
+                self.root_dir, self.config.get("LOCAL_TMP_DIR"), 'LOG_{0}'.format(self.expid))
         else:
             path = os.path.join(self.root_dir, 'LOG_{0}'.format(self.expid))
         return path

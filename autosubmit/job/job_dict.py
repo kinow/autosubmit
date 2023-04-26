@@ -378,7 +378,6 @@ class DicJobs:
             job.type = Type.PYTHON2
         elif job_type == 'r':
             job.type = Type.R
-        job.executable = str(parameters[section].get( "EXECUTABLE", ""))
         hpcarch = self.experiment_data.get("DEFAULT",{})
         hpcarch = hpcarch.get("HPCARCH","")
         job.platform_name = str(parameters[section].get("PLATFORM", hpcarch)).upper()
@@ -387,6 +386,7 @@ class DicJobs:
         job.file = str(parameters[section].get( "FILE", ""))
         job.additional_files = parameters[section].get( "ADDITIONAL_FILES", [])
 
+        job.executable = str(parameters[section].get("EXECUTABLE", self.experiment_data["PLATFORMS"].get(job.platform_name,{}).get("EXECUTABLE","")))
         job.queue = str(parameters[section].get( "QUEUE", ""))
         job.ec_queue = str(parameters[section].get("EC_QUEUE", ""))
         if job.ec_queue == "" and job.platform_name != "LOCAL":

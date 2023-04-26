@@ -13,8 +13,15 @@ import autosubmit.platforms.headers.pjm_header
 from tempfile import TemporaryDirectory
 from datetime import datetime
 from autosubmit.job.job import Job, Status
-
+import inspect
 class FakeBasicConfig:
+    def props(self):
+        pr = {}
+        for name in dir(self):
+            value = getattr(self, name)
+            if not name.startswith('__') and not inspect.ismethod(value) and not inspect.isfunction(value):
+                pr[name] = value
+        return pr
     DB_DIR = '/dummy/db/dir'
     DB_FILE = '/dummy/db/file'
     DB_PATH = '/dummy/db/path'
