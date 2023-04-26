@@ -15,11 +15,11 @@ class TestSlurmPlatform(TestCase):
 
     def setUp(self):
         self.local_root_dir = TemporaryDirectory()
-        self.config = TestSlurmPlatform.Config(
-            LOCAL_ROOT_DIR=self.local_root_dir.name,
-            LOCAL_TMP_DIR='tmp',
-            LOCAL_ASLOG_DIR='ASLOG_a000'
-        )
+        self.config = {
+            "LOCAL_ROOT_DIR" : self.local_root_dir.name,
+            "LOCAL_TMP_DIR" : 'tmp',
+            "LOCAL_ASLOG_DIR" : 'ASLOG_a000'
+        }
         # We need to create the submission archive that AS expects to find in this location:
         p = Path(self.local_root_dir.name) / 'a000' / 'tmp' / 'ASLOG_a000'
         p.mkdir(parents=True)

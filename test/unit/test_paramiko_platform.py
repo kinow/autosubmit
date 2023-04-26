@@ -15,10 +15,10 @@ class TestParamikoPlatform(TestCase):
 
     def setUp(self):
         self.local_root_dir = TemporaryDirectory()
-        self.config = TestParamikoPlatform.Config(
-            LOCAL_ROOT_DIR=self.local_root_dir.name,
-            LOCAL_TMP_DIR='tmp'
-        )
+        self.config = {
+            "LOCAL_ROOT_DIR" : self.local_root_dir.name,
+            "LOCAL_TMP_DIR" : 'tmp'
+        }
         self.platform = ParamikoPlatform(expid='a000', name='local', config=self.config)
         self.platform.job_status = {
             'COMPLETED': [],
