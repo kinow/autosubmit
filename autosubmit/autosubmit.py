@@ -2119,7 +2119,7 @@ class Autosubmit:
                         message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
                         raise AutosubmitCritical(message, 7000)
                     except BaseException as e:  # If this happens, there is a bug in the code or an exception not-well caught
-                        raise AutosubmitCritical("There is a bug in the code, please contact via git", 7070, str(e))
+                        raise AutosubmitCritical("There is a bug in the code, please contact via Gitlab", 7070, str(e))
 
 
                 Log.result("No more jobs to run.")
