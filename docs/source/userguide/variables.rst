@@ -37,6 +37,7 @@ This variables are relatives to the current job.
 - **Chunk_END_MONTH**: chunk's end month
 - **Chunk_END_DAY**: chunk's end day
 - **Chunk_END_HOUR**: chunk's end hour
+- **STARTDATES**: list of startdates.
 - **PREV**: days since startdate at the chunk's start
 - **Chunk_FIRST**: True if the current chunk is the first, false otherwise.
 - **Chunk_LAST**: True if the current chunk is the last, false otherwise.
