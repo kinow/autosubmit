@@ -3853,7 +3853,7 @@ class Autosubmit:
             Autosubmit._check_ownership(expid, raise_error=True)
             as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
             # as_conf.reload(force_load=True)
-            as_conf.check_conf_files(refresh=True)
+            as_conf.check_conf_files(False)
         except (AutosubmitError, AutosubmitCritical):
             raise
         except BaseException as e:
