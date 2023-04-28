@@ -3405,7 +3405,7 @@ class Autosubmit:
                 as_conf = AutosubmitConfig(
                     experiment_id, BasicConfig, YAMLParserFactory())
                 as_conf.check_conf_files(False,no_log=True)
-                user = os.stat(as_conf.experiment_file).st_uid
+                user = os.stat(as_conf.conf_folder_yaml).st_uid
                 try:
                     user = pwd.getpwuid(user).pw_name
                 except Exception as e:
@@ -3413,7 +3413,7 @@ class Autosubmit:
                         "The user does not exist anymore in the system, using id instead")
 
                 created = datetime.datetime.fromtimestamp(
-                    os.path.getmtime(as_conf.experiment_file))
+                    os.path.getmtime(as_conf.conf_folder_yaml))
 
                 project_type = as_conf.get_project_type()
                 if as_conf.get_svn_project_url():
@@ -4410,8 +4410,10 @@ class Autosubmit:
                     try:
                         if not Autosubmit._copy_code(as_conf, expid, as_conf.experiment_data.get("PROJECT",{}).get("PROJECT_TYPE","none"), False):
                             return False
-                    except:
-                        raise AutosubmitCritical("Error obtaining the project data, check the parameters related to PROJECT and GIT/SVN or LOCAL sections", code=7014)
+                    except AutosubmitCritical as e:
+                        raise
+                    except BaseException as e:
+                        raise AutosubmitCritical("Error obtaining the project data, check the parameters related to PROJECT and GIT/SVN or LOCAL sections", code=7014,trace=str(e))
                     # Update configuration with the new config in the dist ( if any )
                     as_conf.check_conf_files(running_time=True,force_load=True, only_experiment_data=False, no_log=False)
                     output_type = as_conf.get_output_type()
@@ -5631,6 +5633,7 @@ class Autosubmit:
 
     @staticmethod
     def _change_conf(testid, hpc, start_date, member, chunks, branch, random_select=False):
+        #TODO
         as_conf = AutosubmitConfig(testid, BasicConfig, YAMLParserFactory())
 
         if as_conf.experiment_data.get("RERUN", False):

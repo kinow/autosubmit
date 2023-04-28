@@ -282,8 +282,7 @@ class AutosubmitGit:
             if os.path.exists(project_backup_path):
                 Log.info("Restoring proj folder...")
                 shutil.move(project_backup_path, project_path)
-            raise AutosubmitCritical("Can not clone {0} into {1}".format(
-                git_project_branch + " " + git_project_origin, project_path), 7065)
+            raise AutosubmitCritical(f'Can not clone {git_project_branch+" "+git_project_origin} into {project_path}', 7065)
         if submodule_failure:
             Log.info("Some Submodule failures have been detected. Backup {0} will not be removed.".format(project_backup_path))
             return False
