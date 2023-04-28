@@ -91,6 +91,8 @@ class Job(object):
         self._wrapper_queue = None
         self._platform = None
         self._queue = None
+        self._partition = None
+
         self.retry_delay = "0"
         self.platform_name = None # type: str
         self.section = None # type: str
@@ -156,7 +158,6 @@ class Job(object):
         self.running = "once"
         self.start_time = None
         self.edge_info = dict()
-        self.partition = ""
         self.total_jobs = None
         self.max_waiting_jobs = None
         self.exclusive = ""
@@ -217,7 +218,7 @@ class Job(object):
 
     @property
     def is_serial(self):
-        return str(self.processors) == '1'
+        return str(self.processors) == '1' or str(self.processors) == ''
 
     @property
     def platform(self):
@@ -266,7 +267,30 @@ class Job(object):
         :type value: HPCPlatform
         """
         self._queue = value
+    @property
+    def partition(self):
+        """
+        Returns the queue to be used by the job. Chooses between serial and parallel platforms
 
+        :return HPCPlatform object for the job to use
+        :rtype: HPCPlatform
+        """
+        if self._partition is not None and len(str(self._partition)) > 0:
+            return self._partition
+        if self.is_serial:
+            return self._platform.serial_platform.serial_partition
+        else:
+            return self._platform.partition
+
+    @partition.setter
+    def partition(self, value):
+        """
+        Sets the partion to be used by the job.
+
+        :param value: partion to set
+        :type value: HPCPlatform
+        """
+        self._partition = value
     @property
     def children(self):
         """
@@ -1000,7 +1024,6 @@ class Job(object):
         self.total_jobs = int(as_conf.jobs_data[self.section].get("TOTALJOBS", job_platform.total_jobs))
         self.max_waiting_jobs = int(as_conf.jobs_data[self.section].get("MAXWAITINGJOBS", job_platform.max_waiting_jobs))
 
-        self.queue = self.queue
         self.processors = str(as_conf.jobs_data[self.section].get("PROCESSORS",as_conf.platforms_data.get(job_platform.name,{}).get("PROCESSORS","1")))
         self.exclusive = str(as_conf.jobs_data[self.section].get("EXCLUSIVE",as_conf.platforms_data.get(job_platform.name,{}).get("EXCLUSIVE",False)))
         self.threads = str(as_conf.jobs_data[self.section].get("THREADS",as_conf.platforms_data.get(job_platform.name,{}).get("THREADS","1")))
@@ -1011,6 +1034,9 @@ class Job(object):
             self.tasks = job_platform.processors_per_node
         self.memory = str(as_conf.jobs_data[self.section].get("MEMORY",as_conf.platforms_data.get(job_platform.name,{}).get("MEMORY","")))
         self.memory_per_task = str(as_conf.jobs_data[self.section].get("MEMORY_PER_TASK",as_conf.platforms_data.get(job_platform.name,{}).get("MEMORY_PER_TASK","")))
+        # These are to activate serial platform if neccesary
+        self.queue = self.queue
+        self.partition = self.partition
         self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK",as_conf.platforms_data.get(self.platform_name,{}).get("MAX_WALLCLOCK",None))
         if self.wallclock is None and job_platform.type not in ['ps',"local","PS","LOCAL"]:
             self.wallclock = "01:59"

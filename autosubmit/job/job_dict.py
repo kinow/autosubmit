@@ -388,13 +388,12 @@ class DicJobs:
 
         job.executable = str(parameters[section].get("EXECUTABLE", self.experiment_data["PLATFORMS"].get(job.platform_name,{}).get("EXECUTABLE","")))
         job.queue = str(parameters[section].get( "QUEUE", ""))
+
         job.ec_queue = str(parameters[section].get("EC_QUEUE", ""))
         if job.ec_queue == "" and job.platform_name != "LOCAL":
             job.ec_queue = str(self.experiment_data["PLATFORMS"][job.platform_name].get("EC_QUEUE","hpc"))
 
         job.partition = str(parameters[section].get( "PARTITION", ""))
-        if job.partition == "" and job.platform_name.upper() not in ["LOCAL",""]:
-            job.partition = str(self.experiment_data["PLATFORMS"][job.platform_name].get("PARTITION",""))
         job.check = str(parameters[section].get( "CHECK", "true")).lower()
         job.export = str(parameters[section].get( "EXPORT", ""))
         job.processors = str(parameters[section].get( "PROCESSORS", ""))

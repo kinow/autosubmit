@@ -27,7 +27,9 @@ class Platform(object):
             self.config.get("LOCAL_ROOT_DIR"), self.expid, self.config.get("LOCAL_TMP_DIR"))
         self._serial_platform = None
         self._serial_queue = None
+        self._serial_partition = None
         self._default_queue = None
+        self._partition = None
         self.ec_queue = "hpc"
         self.processors_per_node = "1"
         self.scratch_free_space = None
@@ -203,7 +205,20 @@ class Platform(object):
     @serial_platform.setter
     def serial_platform(self, value):
         self._serial_platform = value
+    @property
+    def partition(self):
+        """
+        Partition to use for jobs
+        :return: queue's name
+        :rtype: str
+        """
+        if self._partition is None:
+            return ''
+        return self._partition
 
+    @partition.setter
+    def partition(self, value):
+        self._partition = value
     @property
     def queue(self):
         """
@@ -211,7 +226,7 @@ class Platform(object):
         :return: queue's name
         :rtype: str
         """
-        if self._default_queue is None:
+        if self._default_queue is None or self._default_queue == "":
             return ''
         return self._default_queue
 
@@ -220,13 +235,28 @@ class Platform(object):
         self._default_queue = value
 
     @property
+    def serial_partition(self):
+        """
+        Partition to use for serial jobs
+        :return: partition's name
+        :rtype: str
+        """
+        if self._serial_partition is None or self._serial_partition == "":
+            return self.partition
+        return self._serial_partition
+
+    @serial_partition.setter
+    def serial_partition(self, value):
+        self._serial_partition = value
+
+    @property
     def serial_queue(self):
         """
         Queue to use for serial jobs
         :return: queue's name
         :rtype: str
         """
-        if self._serial_queue is None:
+        if self._serial_queue is None or self._serial_queue == "":
             return self.queue
         return self._serial_queue
 
@@ -271,6 +301,8 @@ class Platform(object):
         parameters['{0}HOST'.format(prefix)] = self.host
         parameters['{0}QUEUE'.format(prefix)] = self.queue
         parameters['{0}EC_QUEUE'.format(prefix)] = self.ec_queue
+        parameters['{0}PARTITION'.format(prefix)] = self.partition
+
 
         parameters['{0}USER'.format(prefix)] = self.user
         parameters['{0}PROJ'.format(prefix)] = self.project

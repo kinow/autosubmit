@@ -19,6 +19,7 @@
 
 
 import os
+from collections import defaultdict
 
 from log.log import Log,AutosubmitCritical,AutosubmitError
 from autosubmitconfigparser.config.basicconfig import BasicConfig
@@ -66,6 +67,7 @@ class ParamikoSubmitter(Submitter):
         platforms['LOCAL'] = local_platform
         self.platforms = platforms
 
+
     def load_platforms(self, asconf, retries=5):
         """
         Create all the platforms object that will be used by the experiment
@@ -83,13 +85,20 @@ class ParamikoSubmitter(Submitter):
         platforms_used = list()
         hpcarch = asconf.get_platform()
         platforms_used.append(hpcarch)
-
+        platforms_serial_in_paralell = defaultdict(list)
         # Traverse jobs defined in jobs_.conf and add platforms found if not already included
         jobs_data = exp_data.get('JOBS', {})
         for job in jobs_data:
             hpc = jobs_data[job].get('PLATFORM', hpcarch).upper()
             if hpc not in platforms_used:
                 platforms_used.append(hpc)
+        # Traverse used platforms and look for serial_platforms and add them if not already included
+        for platform in platforms_used:
+            hpc = asconf.experiment_data.get("PLATFORMS",{}).get(platform,{}).get("SERIAL_PLATFORM", None)
+            if hpc is not None:
+                platforms_serial_in_paralell[hpc].append(platform)
+                if hpc not in platforms_used:
+                    platforms_used.append(hpc)
 
         platform_data = exp_data.get('PLATFORMS', {})
         # Declare platforms dictionary, key: Platform Name, Value: Platform Object
@@ -186,7 +195,10 @@ class ParamikoSubmitter(Submitter):
             remote_platform.project_dir = platform_data[section].get('SCRATCH_PROJECT_DIR', remote_platform.project)
             remote_platform.temp_dir = platform_data[section].get('TEMP_DIR', "")
             remote_platform._default_queue = platform_data[section].get('QUEUE', "")
+            remote_platform._partition = platform_data[section].get('PARTITION', "")
             remote_platform._serial_queue = platform_data[section].get('SERIAL_QUEUE', "")
+            remote_platform._serial_partition = platform_data[section].get('SERIAL_PARTITION', "")
+
             remote_platform.ec_queue = platform_data[section].get('EC_QUEUE', "hpc")
 
             remote_platform.ec_queue = platform_data[section].get('EC_QUEUE', "hpc")
@@ -207,9 +219,9 @@ class ParamikoSubmitter(Submitter):
             # Executes update_cmds() from corresponding Platform Object
             # Save platform into result dictionary
 
-            serial = platform_data[section].get('SERIAL_PLATFORM',None)
-            if serial is not None and len(str(serial)) > 0:
-                platforms[section].serial_platform = serial.upper()
+        for serial,platforms_with_serial_options in platforms_serial_in_paralell.items():
+            for section in platforms_with_serial_options:
+                platforms[section].serial_platform = platforms[serial]
 
 
         self.platforms = platforms

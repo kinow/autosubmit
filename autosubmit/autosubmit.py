@@ -4415,7 +4415,7 @@ class Autosubmit:
                     except BaseException as e:
                         raise AutosubmitCritical("Error obtaining the project data, check the parameters related to PROJECT and GIT/SVN or LOCAL sections", code=7014,trace=str(e))
                     # Update configuration with the new config in the dist ( if any )
-                    as_conf.check_conf_files(running_time=True,force_load=True, only_experiment_data=False, no_log=False)
+                    as_conf.check_conf_files(running_time=False,force_load=True, only_experiment_data=False, no_log=False)
                     output_type = as_conf.get_output_type()
 
                     if not os.path.exists(os.path.join(exp_path, "pkl")):

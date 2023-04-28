@@ -680,7 +680,7 @@ In this section, we describe the platform configuration using `-QOS` and also `P
 .. warning::
 
     The ``SERIAL_QUEUE`` and ``QUEUE`` field are used for specify a -QOS.
-    For specify a partition, you must use ``CUSTOM_DIRECTIVES``.
+    For specify a partition, you must use ``PARTITION``.
     For specify the memory usage you must use ``MEMORY`` but only in jobs.yml.
 
 The custom directives can be used for multiple parameters at the same time using the follow syntax.

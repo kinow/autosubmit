@@ -143,8 +143,7 @@ class LSFWrapperFactory(WrapperFactory):
         return PythonHorizontalWrapperBuilder(**kwargs)
 
     def header_directives(self, **kwargs):
-        return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
-                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'])
+        return self.platform.wrapper_header(**kwargs)
 
     def queue_directive(self, queue):
         return queue
@@ -162,9 +161,7 @@ class EcWrapperFactory(WrapperFactory):
         return BashHorizontalWrapperBuilder(**kwargs)
 
     def header_directives(self, **kwargs):
-        return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
-                                            kwargs['num_processors'], kwargs['expid'], kwargs['dependency'],
-                                            kwargs['rootdir'], kwargs['directives'],kwargs['threads'])
+        return self.platform.wrapper_header(**kwargs)
 
     def queue_directive(self, queue):
         return queue
@@ -194,8 +191,7 @@ class PJMWrapperFactory(WrapperFactory):
             return PythonVerticalHorizontalWrapperBuilder(**kwargs)
 
     def header_directives(self, **kwargs):
-        return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
-                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'],kwargs['method'],kwargs['partition'])
+        return self.platform.wrapper_header(**kwargs)
 
     def allocated_nodes(self):
         return self.platform.allocated_nodes()

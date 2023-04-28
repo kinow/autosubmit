@@ -62,6 +62,7 @@ suite of variables is defined for the current platform where {PLATFORM_NAME} is 
 - **{PLATFORM_NAME}_USER**: Platform user
 - **{PLATFORM_NAME}_PROJ**: Platform project
 - **{PLATFORM_NAME}_BUDG**: Platform budget
+- **{PLATFORM_NAME}_PARTITION**: Platform partition
 - **{PLATFORM_NAME}_RESERVATION**: You can configure your reservation id for the given platform.
 - **{PLATFORM_NAME}_EXCLUSIVITY**: True if you want to request exclusivity nodes.
 - **{PLATFORM_NAME}_TYPE**: Platform scheduler type
@@ -99,6 +100,7 @@ Project variables
 - **CALENDAR**: calendar used for the experiment. Can be standard or noleap.
 - **ROOTDIR**: local path to experiment's folder
 - **PROJDIR**: local path to experiment's proj folder
+- **STARTDATES**: Startdates of the experiment
 
 Performance Metrics
 ===================
