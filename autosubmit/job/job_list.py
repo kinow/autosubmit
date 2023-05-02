@@ -276,7 +276,7 @@ class JobList(object):
 
     @staticmethod
     def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, graph, option="DEPENDENCIES"):
-        jobs_data = dic_jobs._jobs_data["JOBS"]
+        jobs_data = dic_jobs._jobs_data.get("JOBS",{})
         for job_section in jobs_data.keys():
             Log.debug("Adding dependencies for {0} jobs".format(job_section))
             # If it does not have dependencies, do nothing
