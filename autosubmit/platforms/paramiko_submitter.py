@@ -50,7 +50,7 @@ class ParamikoSubmitter(Submitter):
     def load_local_platform(self, asconf):
         platforms = dict()
         # Build Local Platform Object
-        local_platform = LocalPlatform(asconf.expid, 'local', BasicConfig)
+        local_platform = LocalPlatform(asconf.expid, 'local', BasicConfig().props())
         local_platform.max_wallclock = asconf.get_max_wallclock()
         local_platform.max_processors = asconf.get_max_processors()
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
