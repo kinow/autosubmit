@@ -506,14 +506,14 @@ class JobList(object):
     @staticmethod
     def _valid_parent(parent,member_list,date_list,chunk_list,is_a_natural_relation,filters_to_apply):
         '''
-        Check if the parent is valid for the current_job
+        Check if the parent is valid for the current job
         :param parent: job to check
-        :param member_list:
-        :param date_list:
-        :param chunk_list:
-        :param is_a_natural_relation:
-        :param filters_to_apply:
-        :return:
+        :param member_list: list of members
+        :param date_list: list of dates
+        :param chunk_list: list of chunks
+        :param is_a_natural_relation: if the relation is natural or not
+        :param filters_to_apply: filters to apply
+        :return: True if the parent is valid, False otherwise
         '''
         #check if current_parent is listed on dependency.relationships
         optional = False
@@ -522,6 +522,7 @@ class JobList(object):
             dates_to = str(filter_.get("DATES_TO", "natural")).lower()
             members_to = str(filter_.get("MEMBERS_TO", "natural")).lower()
             chunks_to = str(filter_.get("CHUNKS_TO", "natural")).lower()
+            splits_to = str(filter_.get("SPLITS_TO", "natural")).lower()
             if not is_a_natural_relation:
                 if dates_to == "natural":
                     dates_to = "none"
