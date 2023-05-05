@@ -36,10 +36,12 @@ PLATFORMS.LEVANTE-LOGIN.USER
 PLATFORMS.LEVANTE-LOGIN.PROJECT
 PLATFORMS.LEVANTE.USER
 PLATFORMS.LEVANTE.PROJECT
+DIRECTORIES.TEST_FILE
 """.split("\n")
 expected_output ="""
 DIRECTORIES.INDIR=my-updated-indir
-DIRECTORIES.OUTDIR=-
+DIRECTORIES.OUTDIR=from_main
+DIRECTORIES.TEST_FILE=from_main
 DIRECTORIES.TESTDIR=another-dir
 TESTKEY=abcd
 TESTKEY-TWO=HPCARCH is levante
@@ -49,6 +51,11 @@ PLATFORMS.LEVANTE-LOGIN.PROJECT=bb1153
 PLATFORMS.LEVANTE.USER=b382351
 PLATFORMS.LEVANTE.PROJECT=bb1153
 """.split("\n")
+if Path(report_file).exists():
+    print("OK: report file exists")
+else:
+    print("ERR: report file does not exist")
+    exit(0)
 for line in Path(report_file).read_text().split("\n"):
     if line.split("=")[0] in list_of_parameters_to_find[1:-1]:
         if line in expected_output:
