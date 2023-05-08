@@ -1,3 +1,6 @@
+import shutil
+import tempfile
+
 from unittest import TestCase
 from mock import Mock
 from autosubmit.job.job_list import JobList
@@ -20,8 +23,9 @@ class TestJobGrouping(TestCase):
         self.as_conf.experiment_data["JOBS"] = dict()
         self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
         self.as_conf.experiment_data["PLATFORMS"] = dict()
+        self.temp_directory = tempfile.mkdtemp()
         self.job_list = JobList(self.experiment_id, FakeBasicConfig, YAMLParserFactory(),
-                                JobListPersistenceDb('.', '.'),self.as_conf)
+                                JobListPersistenceDb(self.temp_directory, 'db'),self.as_conf)
         self.parser_mock = Mock(spec='SafeConfigParser')
 
         # Basic workflow with SETUP, INI, SIM, POST, CLEAN
@@ -39,6 +43,9 @@ class TestJobGrouping(TestCase):
                     for chunk in [1, 2]:
                         job = self._createDummyJob('expid_' + date + '_' + member + '_' + str(chunk) + '_' + section, Status.WAITING, date, member, chunk)
                         self.job_list.get_job_list().append(job)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.temp_directory)
 
     def test_group_by_date(self):
         groups_dict = dict()

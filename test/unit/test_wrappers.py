@@ -1,5 +1,8 @@
+import shutil
+import tempfile
+
 from unittest import TestCase
-from mock import Mock,MagicMock
+from mock import MagicMock
 from autosubmit.job.job_packager import JobPackager
 from autosubmit.job.job_packages import JobPackageVertical
 from autosubmit.job.job import Job
@@ -11,7 +14,6 @@ from autosubmit.job.job_list_persistence import JobListPersistenceDb
 from autosubmit.job.job_common import Status
 from random import randrange
 from collections import OrderedDict
-import pytest
 
 
 class TestWrappers(TestCase):
@@ -162,9 +164,9 @@ class TestWrappers(TestCase):
 
         self.as_conf.experiment_data["PLATFORMS"] = dict()
         self.as_conf.experiment_data["WRAPPERS"] = dict()
-
+        self.temp_directory = tempfile.mkdtemp()
         self.job_list = JobList(self.experiment_id, self.config, YAMLParserFactory(),
-                                JobListPersistenceDb('.', '.'),self.as_conf)
+                                JobListPersistenceDb(self.temp_directory, 'db'),self.as_conf)
         self.parser_mock = MagicMock(spec='SafeConfigParser')
 
         self._platform.max_waiting_jobs = 100
@@ -193,6 +195,9 @@ class TestWrappers(TestCase):
         self.job_packager = JobPackager(
             self.as_conf, self._platform, self.job_list)
         self.job_list._ordered_jobs_by_date_member["WRAPPERS"] = dict()
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.temp_directory)
 
     ### ONE SECTION WRAPPER ###
     def test_returned_packages(self):
