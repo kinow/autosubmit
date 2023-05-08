@@ -22,7 +22,6 @@ import requests
 import collections
 import platform
 from .job.job_packager import JobPackager
-from .job.job_exceptions import WrongTemplateException
 from .platforms.paramiko_submitter import ParamikoSubmitter
 from .platforms.platform import Platform
 from .notifications.notifier import Notifier

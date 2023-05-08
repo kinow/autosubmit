@@ -5,7 +5,6 @@ import traceback
 from autosubmit.job.job_common import Status
 from typing import List, Union
 
-from autosubmit.job.job_exceptions import WrongTemplateException
 from log.log import AutosubmitCritical, AutosubmitError, Log
 
 class Platform(object):
@@ -169,10 +168,6 @@ class Platform(object):
                             else:
                                 error_message += "\ncheck that {1} platform has set the correct scheduler. Sections that could be affected: {0}".format(
                                     error_msg[:-1], self.name)
-
-                    except WrongTemplateException as e:
-                        raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
-                            e.job_name), 7014, e.message)
                     except AutosubmitCritical:
                         raise
                     except Exception as e:
@@ -180,9 +175,6 @@ class Platform(object):
                         raise AutosubmitError(
                             "{0} submission failed. May be related to running a job with check=on_submission and another that affect this job template".format(
                                 self.name), 6015, str(e))
-            except WrongTemplateException as e:
-                raise AutosubmitCritical(
-                    "Invalid parameter substitution in {0} template".format(e.job_name), 7014)
             except AutosubmitCritical as e:
                 raise AutosubmitCritical(e.message, e.code, e.trace)
             except AutosubmitError as e:

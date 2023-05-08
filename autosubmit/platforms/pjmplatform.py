@@ -23,7 +23,6 @@ from time import sleep
 from typing import List, Union
 
 from autosubmit.job.job_common import Status
-from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.pjm_header import PJMHeader
 from autosubmit.platforms.wrappers.wrapper_factory import PJMWrapperFactory
@@ -146,9 +145,6 @@ class PJMPlatform(ParamikoPlatform):
                         job.write_submit_time(hold=hold)
                     i += 1
             save = True
-        except WrongTemplateException as e:
-            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
-                e.job_name), 7014, str(e))
         except AutosubmitError as e:
             raise
         except AutosubmitCritical as e:
