@@ -13,14 +13,20 @@ BIN_PATH = '../../bin'
 def check_cmd(command, path=BIN_PATH):
     try:
         output = subprocess.check_output(os.path.join(path, command), shell=True, stderr=subprocess.STDOUT)
+        error = False
     except subprocess.CalledProcessError as e:
         output = e.output
-    return output
+        error = True
+    return output,error
 
 def report_test(expid):
     output = check_cmd("autosubmit report {0} -all -v".format(expid))
     return output
-output = report_test("a009")
+output,error = report_test("a009")
+if error:
+    print("ERR: autosubmit report command failed")
+    print(output.decode("UTF-8"))
+    exit(0)
 report_file = output.decode("UTF-8").split("list of all parameters has been written on ")[1]
 report_file = report_file.split(".txt")[0] + ".txt"
 list_of_parameters_to_find = """
@@ -37,6 +43,8 @@ PLATFORMS.LEVANTE-LOGIN.PROJECT
 PLATFORMS.LEVANTE.USER
 PLATFORMS.LEVANTE.PROJECT
 DIRECTORIES.TEST_FILE
+PROJECT.PROJECT_TYPE
+PROJECT.PROJECT_DESTINATION
 """.split("\n")
 expected_output ="""
 DIRECTORIES.INDIR=my-updated-indir
@@ -50,6 +58,9 @@ PLATFORMS.LEVANTE-LOGIN.USER=b382351
 PLATFORMS.LEVANTE-LOGIN.PROJECT=bb1153
 PLATFORMS.LEVANTE.USER=b382351
 PLATFORMS.LEVANTE.PROJECT=bb1153
+PROJECT.PROJECT_TYPE=none
+PROJECT.PROJECT_DESTINATION=auto-icon
+
 """.split("\n")
 if Path(report_file).exists():
     print("OK: report file exists")
