@@ -3,6 +3,8 @@ from unittest import TestCase
 
 from mock import Mock
 import math
+import shutil
+import tempfile
 from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
@@ -19,8 +21,9 @@ class TestDicJobs(TestCase):
         self.as_conf.experiment_data["JOBS"] = dict()
         self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
         self.as_conf.experiment_data["PLATFORMS"] = dict()
+        self.temp_directory = tempfile.mkdtemp()
         self.job_list = JobList(self.experiment_id, FakeBasicConfig, YAMLParserFactory(),
-                                JobListPersistenceDb('.', '.'),self.as_conf)
+                                JobListPersistenceDb(self.temp_directory, 'db'),self.as_conf)
         self.parser_mock = Mock(spec='SafeConfigParser')
         self.date_list = ['fake-date1', 'fake-date2']
         self.member_list = ['fake-member1', 'fake-member2']
@@ -30,6 +33,9 @@ class TestDicJobs(TestCase):
         self.default_retrials = 999
         self.dictionary = DicJobs(self.job_list,self.date_list, self.member_list, self.chunk_list,
                                   self.date_format, self.default_retrials,self.as_conf.jobs_data,self.as_conf)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.temp_directory)
 
     def test_read_section_running_once_create_jobs_once(self):
         # arrange

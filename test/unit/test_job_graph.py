@@ -1,3 +1,6 @@
+import shutil
+import tempfile
+
 from unittest import TestCase
 from mock import Mock
 
@@ -18,8 +21,9 @@ class TestJobGraph(TestCase):
         self.as_conf.experiment_data["JOBS"] = dict()
         self.as_conf.jobs_data = self.as_conf.experiment_data["JOBS"]
         self.as_conf.experiment_data["PLATFORMS"] = dict()
+        self.temp_directory = tempfile.mkdtemp()
         self.job_list = JobList(self.experiment_id, FakeBasicConfig, YAMLParserFactory(),
-                                JobListPersistenceDb('.', '.'),self.as_conf)
+                                JobListPersistenceDb(self.temp_directory, 'db'),self.as_conf)
         self.parser_mock = Mock(spec='SafeConfigParser')
 
         # Basic workflow with SETUP, INI, SIM, POST, CLEAN
@@ -49,6 +53,9 @@ class TestJobGraph(TestCase):
                         elif section == 'CLEAN':
                             job.add_parent(self.job_list.get_job_by_name('expid_' + date + '_' + member + '_' + str(chunk) + '_POST'))
                         self.job_list.get_job_list().append(job)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(self.temp_directory)
 
     def test_grouping_date(self):
         groups_dict = dict()
