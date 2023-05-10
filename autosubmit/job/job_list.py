@@ -427,8 +427,8 @@ class JobList(object):
         """
         Check if the current_job_value is included in the filter_value
         :param relationship: current filter level to check.
-        :param level_to_check: can be a date, member or chunk.
-        :param value_to_check: can be a date, member or chunk.
+        :param level_to_check: can be a date, member, chunk or split.
+        :param value_to_check: can be a date, member, chunk or split.
         :return:
         """
         optional = False
@@ -457,11 +457,11 @@ class JobList(object):
         :return:
         '''
         # Search all filters in dependency relationship that affect current_job
-        # First level can be Date,member or chunk or generic
-        # Second level can be member or chunk or generic
-        # Third level can only be chunked.
+        # First level can be Date,member or chunk or splits generic
+        # Second level can be member or chunk or splits generic
+        # Third level can only be chunk or splits.
         # If the filter is generic, it will be applied to all section jobs.
-        # Check Date then Member or Chunk then Chunk
+        # Check Date then Member or Chunk or split then Chunk or split then split
         optional = False
         filters_to_apply = []
         # this should be a list
@@ -479,6 +479,7 @@ class JobList(object):
                                 filters_to_apply = filters_to_apply_c
                     elif "CHUNKS_FROM" in filters_to_apply[filter_number]:
                         filters_to_apply,optional = JobList._check_relationship(filters_to_apply[filter_number],"CHUNKS_FROM",current_job.chunk)
+
             # Check Member then Chunk
             if len(filters_to_apply[0]) == 0:
                 filters_to_apply,optional = JobList._check_relationship(relationships,"MEMBERS_FROM",current_job.member)
@@ -486,14 +487,22 @@ class JobList(object):
                     filters_to_apply_c,optional = JobList._check_relationship(filters_to_apply,"CHUNKS_FROM",current_job.chunk)
                     if len(filters_to_apply_c) > 0:
                         filters_to_apply = filters_to_apply_c
-            #Check Chunk
+            #Check Chunk then splits
             if len(filters_to_apply[0]) == 0:
                 filters_to_apply,optional = JobList._check_relationship(relationships,"CHUNKS_FROM",current_job.chunk)
+                if len(filters_to_apply) > 0 and ( "SPLITS_FROM" in filters_to_apply):
+                    filters_to_apply_s,optional = JobList._check_relationship(filters_to_apply,"SPLITS_FROM",current_job.split)
+                    if len(filters_to_apply_s) > 0:
+                        filters_to_apply = filters_to_apply_s
+            # Check Splits
+            if len(filters_to_apply[0]) == 0:
+                filters_to_apply,optional = JobList._check_relationship(relationships,"SPLITS_FROM",current_job.split)
             # Generic filter
             if len(filters_to_apply[0]) == 0:
                 relationships.pop("CHUNKS_FROM",None)
                 relationships.pop("MEMBERS_FROM",None)
                 relationships.pop("DATES_FROM",None)
+                relationships.pop("SPLITS_FROM",None)
                 filters_to_apply = [relationships]
 
         if len(filters_to_apply) == 1 and len(filters_to_apply[0]) == 0:
@@ -530,27 +539,34 @@ class JobList(object):
                     members_to = "none"
                 if chunks_to == "natural":
                     chunks_to = "none"
+                if splits_to == "natural":
+                    splits_to = "none"
 
 
             associative_list["dates"] = date_list
             associative_list["members"] = member_list
             associative_list["chunks"] = chunk_list
+            if parent.splits is not None:
+                associative_list["splits"] = [ str(split) for split in range(1,int(parent.splits)+1) ]
+            else:
+                associative_list["splits"] = None
 
             if dates_to == "natural":
                 associative_list["dates"] = [date2str(parent.date)] if parent.date is not None else date_list
-
             if members_to == "natural":
                 associative_list["members"] = [parent.member] if parent.member is not None else member_list
             if chunks_to == "natural":
                 associative_list["chunks"] = [parent.chunk] if parent.chunk is not None else chunk_list
+            if splits_to == "natural":
+                associative_list["splits"] = [parent.split]
             parsed_parent_date = date2str(parent.date) if parent.date is not None else None
             # Apply all filters to look if this parent is an appropriated candidate for the current_job
             valid_dates   = JobList._apply_filter(parsed_parent_date, dates_to, associative_list["dates"], "dates")
             valid_members = JobList._apply_filter(parent.member, members_to, associative_list["members"],"members")
             valid_chunks  = JobList._apply_filter(parent.chunk, chunks_to, associative_list["chunks"], "chunks")
-
-            if valid_dates and valid_members and valid_chunks:
-                if dates_to.find("?") != -1 or members_to.find("?") != -1 or chunks_to.find("?") != -1:
+            valid_splits  = JobList._apply_filter(parent.split, splits_to, associative_list["splits"], "splits")
+            if valid_dates and valid_members and valid_chunks and valid_splits:
+                if dates_to.find("?") != -1 or members_to.find("?") != -1 or chunks_to.find("?") != -1 or splits_to.find("?") != -1:
                     optional = True
                 return True,optional
         return False,optional
@@ -589,7 +605,9 @@ class JobList(object):
             #if dependency.sign in ["+", "-"]:
              #   natural_jobs = dic_jobs.get_jobs(dependency.section, date, member,chunk)
             #else:
-            natural_jobs = dic_jobs.get_jobs(dependency.section, date, member,chunk)
+            natural_jobs = dic_jobs.get_jobs(dependency.section, date, member, chunk)
+            if job.split is not None:
+                natural_jobs = [p_job for p_job in natural_jobs if p_job.split == job.split]
             if dependency.sign in ['?']:
                 optional_section = True
             else:
@@ -617,28 +635,16 @@ class JobList(object):
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply,optional_from = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
             if len(filters_to_apply) == 0:
-                filters_to_apply.append({"DATES_TO": "natural", "MEMBERS_TO": "natural", "CHUNKS_TO": "natural"})
+                filters_to_apply.append({"DATES_TO": "natural", "MEMBERS_TO": "natural", "CHUNKS_TO": "natural", "SPLITS_TO": "natural"})
             for parent in all_parents:
-                # Generic for all dependencies
-                if dependency.delay == -1 or chunk > dependency.delay:
-                    if isinstance(parent, list):
-                        if job.split is not None and len(str(job.split)) > 0:
-                            parent = list(filter(
-                                lambda _parent: _parent.split == job.split, parent))
-                            parent = parent[0]
-                        else:
-                            if dependency.splits is not None and len(str(dependency.splits)) > 0:
-                                parent = [_parent for _parent in parent if _parent.split in dependency.splits]
                 # If splits is not None, the job is a list of jobs
                 if parent.name == job.name:
                     continue
                 # Check if it is a natural relation based in autosubmit terms ( same date,member,chunk ).
-                if parent in natural_jobs and ((job.chunk is None or parent.chunk is None or parent.chunk <= job.chunk ) and (parent.split is None or job.split is None or parent.split <= job.split) ) :
+                if parent in natural_jobs and ((job.chunk is None or parent.chunk is None or parent.chunk <= job.chunk ) and (parent.split is None or job.split is None or parent.split != job.split) ) :
                     natural_relationship = True
                 else:
                     natural_relationship = False
-                if job.name.find("a002_20120101_0_2_SIM") != -1:
-                    print("test")
                 # Check if the current parent is a valid parent based on the dependencies set on expdef.conf
                 valid,optional_to = JobList._valid_parent(parent, member_list, parsed_date_list, chunk_list, natural_relationship,filters_to_apply)
                 if not valid:

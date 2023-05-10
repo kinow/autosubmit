@@ -287,7 +287,7 @@ class DicJobs:
             else:
                 for d in self._date_list:
                     self._get_date(jobs, dic, d, member, chunk)
-        if len(jobs) > 1 and isinstance(jobs[0], Iterable):
+        if isinstance(jobs[0], Iterable):
             try:
                 jobs_flattened = [job for jobs_to_flatten in jobs for job in jobs_to_flatten]
                 jobs = jobs_flattened
@@ -355,6 +355,7 @@ class DicJobs:
         job.date = date
         job.member = member
         job.chunk = chunk
+        job.splits = self.experiment_data["JOBS"].get(job.section,{}).get("SPLITS", None)
         job.date_format = self._date_format
         job.delete_when_edgeless = str(parameters[section].get("DELETE_WHEN_EDGELESS", "true")).lower()
 
