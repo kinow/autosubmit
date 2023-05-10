@@ -84,6 +84,7 @@ class Job(object):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
     def __init__(self, name, job_id, status, priority):
+        self.splits = None
         self.script_name_wrapper = None
         self.delay_end = datetime.datetime.now()
         self.delay_retrials = "0"
@@ -1113,6 +1114,7 @@ class Job(object):
         parameters['SDATE'] = date2str(self.date, self.date_format)
         parameters['MEMBER'] = self.member
         parameters['SPLIT'] = self.split
+        parameters['SPLITS'] = self.splits
         parameters['DELAY'] = self.delay
         parameters['FREQUENCY'] = self.frequency
         parameters['SYNCHRONIZE'] = self.synchronize
