@@ -1406,20 +1406,6 @@ class Job(object):
                 parameters['CHUNK_LAST'] = 'FALSE'
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['DEPENDENCIES'] = str(as_conf.jobs_data[self.section].get("DEPENDENCIES",""))
-        # This shouldn't be necessary anymore as now all sub is done in the as_conf.reload()
-        # if len(self.export) > 0:
-        #     variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', self.export)
-        #     if len(variables) > 0:
-        #         variables = [variable[1:-1] for variable in variables]
-        #         for key in variables:
-        #             try:
-        #                 self.export = re.sub(
-        #                     '%(?<!%%)' + key + '%(?!%%)', parameters[key], self.export, flags=re.I)
-        #             except Exception as e:
-        #                 self.export = re.sub(
-        #                     '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.export, flags=re.I)
-        #                 Log.debug(
-        #                     "PARAMETER export: Variable: {0} doesn't exist".format(str(e)))
         self.dependencies = parameters['DEPENDENCIES']
         parameters['EXPORT'] = self.export
         parameters['PROJECT_TYPE'] = as_conf.get_project_type()
