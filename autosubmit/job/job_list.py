@@ -449,8 +449,59 @@ class JobList(object):
         if len(filters) == 0:
             filters = [{}]
         return filters,optional
+
     @staticmethod
-    def _filter_dates(current_job,relationships):
+    def _check_dates(relationships, current_job):
+        filters_to_apply, optional = JobList._check_relationship(relationships, "DATES_FROM", date2str(current_job.date))
+        for filter in filters_to_apply:
+            if "MEMBERS_FROM" in filter:
+                filters_to_apply_m, optional_m = JobList._check_members(filter, current_job)
+                if len(filters_to_apply_m) > 0:
+                    filters_to_apply = filters_to_apply_m
+                    optional = optional_m
+            if "CHUNKS_FROM" in filter:
+                filters_to_apply_c, optional_c = JobList._check_chunks(filter, current_job)
+                if len(filters_to_apply_c) > 0:
+                    filters_to_apply = filters_to_apply_c
+                    optional = optional_c
+            if "SPLITS_FROM" in filter:
+                filters_to_apply_s, optional_s = JobList._check_splits(filter, current_job)
+                if len(filters_to_apply_s) > 0:
+                    filters_to_apply = filters_to_apply_s
+                    optional = optional_s
+        return filters_to_apply, optional
+
+    @staticmethod
+    def _check_members(relationships, current_job):
+        filters_to_apply, optional = JobList._check_relationship(relationships, "MEMBERS_FROM", current_job.member)
+        for filter in filters_to_apply:
+            if "CHUNKS_FROM" in filter:
+                filters_to_apply_c, optional_c = JobList._check_chunks(filter, current_job)
+                if len(filters_to_apply_c) > 0:
+                    filters_to_apply = filters_to_apply_c
+                    optional = optional_c
+            if "SPLITS_FROM" in filter:
+                filters_to_apply_s, optional_s = JobList._check_splits(filter, current_job)
+                if len(filters_to_apply_s) > 0:
+                    filters_to_apply = filters_to_apply_s
+                    optional = optional_s
+        return filters_to_apply, optional
+
+    @staticmethod
+    def _check_chunks(relationships, current_job):
+        filters_to_apply, optional = JobList._check_relationship(relationships, "CHUNKS_FROM", current_job.chunk)
+        for filter in filters_to_apply:
+            if "SPLITS_FROM" in filter:
+                filters_to_apply_s, optional_s = JobList._check_splits(filter, current_job)
+                if len(filters_to_apply_s) > 0:
+                    filters_to_apply = filters_to_apply_s
+                    optional = optional_s
+        return filters_to_apply, optional
+
+    @staticmethod
+    def _check_splits(relationships, current_job):
+        filters_to_apply, optional = JobList._check_relationship(relationships, "SPLITS_FROM", current_job.split)
+        return filters_to_apply, optional
 
     @staticmethod
     def _filter_current_job(current_job,relationships):
@@ -481,7 +532,21 @@ class JobList(object):
         # Check if filter_from-filter_to relationship is set
         if relationships is not None and len(relationships) > 0:
             # CHECK IF DATES FILTERS IS SET
-            filters_to_apply,optional = JobList._check_relationship(relationships,"DATES_FROM",date2str(current_job.date))
+            if "DATES_FROM" in relationships:
+                filters_to_apply, optional = JobList._check_dates(relationships, current_job)
+            elif "MEMBERS_FROM" in relationships:
+                filters_to_apply, optional = JobList._check_members(relationships, current_job)
+            elif "CHUNKS_FROM" in relationships:
+                filters_to_apply, optional = JobList._check_chunks(relationships, current_job)
+            elif "SPLITS_FROM" in relationships:
+                filters_to_apply, optional = JobList._check_splits(relationships, current_job)
+            else:
+                relationships.pop("CHUNKS_FROM", None)
+                relationships.pop("MEMBERS_FROM", None)
+                relationships.pop("DATES_FROM", None)
+                relationships.pop("SPLITS_FROM", None)
+                filters_to_apply = [relationships]
+            return filters_to_apply,optional
             # IF DATES FILTERS IS SET
             if len(filters_to_apply[0]) > 0:
                 for filter_number in range(len(filters_to_apply)):
@@ -489,16 +554,16 @@ class JobList(object):
                     if "MEMBERS_FROM" in filters_to_apply[filter_number]:
                         filters_to_apply_m,optional = JobList._check_relationship(filters_to_apply[filter_number],"MEMBERS_FROM",current_job.member)
                         # IF MEMBERS FILTERS IS SET
-                        if len(filters_to_apply_m[filter_number]) > 0:
-                            filters_to_apply = filters_to_apply_m
-                        if "CHUNKS_FROM" in filters_to_apply[filter_number]:
-                            filters_to_apply_c,optional = JobList._check_relationship(filters_to_apply[filter_number],"CHUNKS_FROM",current_job.chunk)
-                            if len(filters_to_apply_c[filter_number]) > 0:
-                                filters_to_apply = filters_to_apply_c
-                            if "SPLITS_FROM" in filters_to_apply[filter_number]:
-                                filters_to_apply_s,optional = JobList._check_relationship(filters_to_apply[filter_number],"SPLITS_FROM",current_job.split)
-                                if len(filters_to_apply_s[filter_number]) > 0:
-                                    filters_to_apply = filters_to_apply_s
+                    if len(filters_to_apply_m[filter_number]) > 0:
+                        filters_to_apply = filters_to_apply_m
+                    if "CHUNKS_FROM" in filters_to_apply[filter_number]:
+                        filters_to_apply_c,optional = JobList._check_relationship(filters_to_apply[filter_number],"CHUNKS_FROM",current_job.chunk)
+                        if len(filters_to_apply_c[filter_number]) > 0:
+                            filters_to_apply = filters_to_apply_c
+                    if "SPLITS_FROM" in filters_to_apply[filter_number]:
+                        filters_to_apply_s,optional = JobList._check_relationship(filters_to_apply[filter_number],"SPLITS_FROM",current_job.split)
+                        if len(filters_to_apply_s[filter_number]) > 0:
+                            filters_to_apply = filters_to_apply_s
                     # CHECK IF CHUNKS FILTERS IS SET (MEMBERS FILTERS IS NOT SET)
                     elif "CHUNKS_FROM" in filters_to_apply[filter_number]:
                         filters_to_apply_c,optional = JobList._check_relationship(filters_to_apply[filter_number],"CHUNKS_FROM",current_job.chunk)
@@ -513,10 +578,8 @@ class JobList(object):
                         filters_to_apply,optional = JobList._check_relationship(filters_to_apply[filter_number],"SPLITS_FROM",current_job.split)
             # IF DATES FILTERS IS NOT SET, check if MEMBERS FILTERS IS SET
             if len(filters_to_apply[0]) == 0:
+                filters_to_apply, optional = JobList._check_relationship(relationships, "MEMBERS_FROM", current_job.member)
                 for filter_number in range(len(filters_to_apply)):
-                    filters_to_apply_m,optional = JobList._check_relationship(relationships,"MEMBERS_FROM",current_job.member)
-                    if len(filters_to_apply_m[filter_number]) > 0:
-                        filters_to_apply = filters_to_apply_m
                     if "CHUNKS_FROM" in filters_to_apply:
                         filters_to_apply_c,optional = JobList._check_relationship(filters_to_apply,"CHUNKS_FROM",current_job.chunk)
                         if len(filters_to_apply_c) > 0:
@@ -527,14 +590,16 @@ class JobList(object):
                             filters_to_apply = filters_to_apply_s
             #Check Chunk then splits
             if len(filters_to_apply[0]) == 0:
-                filters_to_apply,optional = JobList._check_relationship(relationships,"CHUNKS_FROM",current_job.chunk)
-                if len(filters_to_apply) > 0 and ( "SPLITS_FROM" in filters_to_apply):
-                    filters_to_apply_s,optional = JobList._check_relationship(filters_to_apply,"SPLITS_FROM",current_job.split)
-                    if len(filters_to_apply_s) > 0:
-                        filters_to_apply = filters_to_apply_s
+                filters_to_apply, optional = JobList._check_relationship(relationships, "CHUNKS_FROM", current_job.chunk)
+                for filter_number in range(len(filters_to_apply)):
+                    if "SPLITS_FROM" in filters_to_apply[filter_number]:
+                        filters_to_apply_s,optional = JobList._filter_splits(filters_to_apply, "SPLITS_FROM", current_job.split)
+                        if len(filters_to_apply_s) > 0:
+                            filters_to_apply = filters_to_apply_s
             # Check Splits
             if len(filters_to_apply[0]) == 0:
-                filters_to_apply,optional = JobList._check_relationship(relationships,"SPLITS_FROM",current_job.split)
+                filters_to_apply, optional = JobList._check_relationship(relationships, "SPLITS_FROM",current_job.split)
+
             # Global filter
             if len(filters_to_apply[0]) == 0:
                 relationships.pop("CHUNKS_FROM",None)
