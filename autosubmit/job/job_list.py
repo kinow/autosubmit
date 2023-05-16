@@ -25,12 +25,19 @@ from contextlib import suppress
 from shutil import move
 from threading import Thread
 from typing import List, Dict
+from pathlib import Path
 
 import math
 import networkx as nx
 from bscearth.utils.date import date2str, parse_date
 from networkx import DiGraph
 from time import localtime, strftime, mktime
+
+import math
+import networkx as nx
+from bscearth.utils.date import date2str, parse_date
+from networkx import DiGraph
+from time import localtime, strftime, mktime, time
 
 import autosubmit.database.db_structure as DbStructure
 from autosubmit.helpers.data_transfer import JobRow
@@ -45,8 +52,6 @@ from autosubmitconfigparser.config.basicconfig import BasicConfig
 from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from log.log import AutosubmitCritical, AutosubmitError, Log
 
-
-# Log.get_logger("Log.Autosubmit")
 
 
 def threaded(fn):
@@ -97,6 +102,7 @@ class JobList(object):
         self.graph = DiGraph()
         self.depends_on_previous_chunk = dict()
         self.depends_on_previous_split = dict()
+        self.path_to_logs = Path(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR,f'LOG_{self.expid}')
 
     @property
     def expid(self):
@@ -1671,6 +1677,21 @@ class JobList(object):
         else:
             return completed_jobs
 
+    def get_completed_without_logs(self, platform=None):
+        """
+        Returns a list of completed jobs wihtout updated logs
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: completed jobs
+        :rtype: list
+        """
+
+        completed_jobs = [job for job in self._job_list if (platform is None or job.platform.name == platform.name) and
+                          job.status == Status.COMPLETED and job.updated_log is False ]
+
+        return completed_jobs
+
     def get_uncompleted(self, platform=None, wrapper=False):
         """
         Returns a list of completed jobs
@@ -2499,6 +2520,30 @@ class JobList(object):
 
         return jobs_to_check
 
+    def update_log_status(self, job):
+        """
+        Updates the log err and log out.
+        """
+        if not hasattr(job,
+                       "updated_log") or not job.updated_log:  # hasattr for backward compatibility (job.updated_logs is only for newer jobs, as the loaded ones may not have this set yet)
+            # order path_to_logs by name and get the two last element
+            err = ""
+            out = ""
+            log_file = None
+            for log_file in sorted(self.path_to_logs.glob(f"{job.name}.*"))[-3:]:  # cmd, err, out
+                if "err" in log_file.suffix:
+                    err = log_file.name
+                elif "out" in log_file.suffix:
+                    out = log_file.name
+            job.local_logs = (out, err)
+            job.remote_logs = (out, err)
+            if log_file:
+                if not hasattr(job, "ready_start_date") or not job.ready_start_date or log_file.name.split(".")[
+                    -2] >= job.ready_start_date:  # hasattr for backward compatibility
+                    job.updated_log = True
+                if not job.updated_log:
+                    job.platform.add_job_to_log_recover(job)
+
     def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time=False):
         # type: (AutosubmitConfig, bool, bool, object, bool) -> bool
         """
@@ -2576,16 +2621,22 @@ class JobList(object):
                     job.packed = False
                     save = True
         # Check checkpoint jobs, the status can be Any
-        for job in self.check_special_status():
+        for job in ( job for job in self.check_special_status() ):
             job.status = Status.READY
+            # Run start time in format (YYYYMMDDHH:MM:SS) from current time
+            job.ready_start_date = strftime("%Y%m%d%H%M%S")
             job.id = None
             job.packed = False
             job.wrapper_type = None
             save = True
             Log.debug(f"Special condition fullfilled for job {job.name}")
         # if waiting jobs has all parents completed change its State to READY
-        for job in self.get_completed():
+        for job in ( job for job in self.get_completed() ):
             job.packed = False
+            # Log name has this format:
+                # a02o_20000101_fc0_2_SIM.20240212115021.err
+                # $jobname.$(YYYYMMDDHHMMSS).err or .out
+            self.update_log_status(job)
             if job.synchronize is not None and len(str(job.synchronize)) > 0:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):
@@ -2672,6 +2723,9 @@ class JobList(object):
                             parent.status == Status.SKIPPED or parent.status == Status.FAILED]
                     if len(tmp2) == len(job.parents) and len(tmp3) != len(job.parents):
                         job.status = Status.READY
+                        job.packed = False
+                        # Run start time in format (YYYYMMDDHH:MM:SS) from current time
+                        job.ready_start_date = strftime("%Y%m%d%H%M%S")
                         job.packed = False
                         job.hold = False
                         save = True

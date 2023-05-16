@@ -1,5 +1,6 @@
+import copy
+
 import locale
-from binascii import hexlify
 from contextlib import suppress
 from time import sleep
 import sys
@@ -7,7 +8,6 @@ import socket
 import os
 import paramiko
 import datetime
-import time
 import select
 import re
 from datetime import timedelta
@@ -15,17 +15,17 @@ import random
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
-from bscearth.utils.date import date2str
 from log.log import AutosubmitError, AutosubmitCritical, Log
 from paramiko.ssh_exception import (SSHException)
 import Xlib.support.connect as xlib_connect
 from threading import Thread
+import threading
 import getpass
 from paramiko.agent import Agent
 
 def threaded(fn):
     def wrapper(*args, **kwargs):
-        thread = Thread(target=fn, args=args, kwargs=kwargs)
+        thread = Thread(target=fn, args=args, kwargs=kwargs, name=f"{args[0].name}_X11")
         thread.start()
         return thread
 
@@ -134,6 +134,7 @@ class ParamikoPlatform(Platform):
                     except:
                         message = "Timeout connection"
                 return message
+
         except EOFError as e:
             self.connected = False
             raise AutosubmitError("[{0}] not alive. Host: {1}".format(
@@ -162,7 +163,7 @@ class ParamikoPlatform(Platform):
                         "First connection to {0} is failed, check host configuration or try another login node ".format(self.host), 7050,str(e))
             while self.connected is False and retry < retries:
                 try:
-                      self.connect(True)
+                    self.connect(True)
                 except Exception as e:
                     pass
                 retry += 1
@@ -266,7 +267,7 @@ class ParamikoPlatform(Platform):
                         except Exception as e:
                             self._ssh.connect(self._host_config['hostname'], port, username=self.user,
                                               key_filename=self._host_config_id, sock=self._proxy, timeout=60,
-                                              banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+                                              banner_timeout=60, disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
                     else:
                         try:
                             self._ssh.connect(self._host_config['hostname'], port, username=self.user,
@@ -300,7 +301,10 @@ class ParamikoPlatform(Platform):
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=pow(4, 12) ,max_packet_size=pow(4, 12) )
             self._ftpChannel.get_channel().settimeout(120)
             self.connected = True
-        except SSHException as e:
+            if not self.log_retrieval_process_active:
+                self.log_retrieval_process_active = True
+                self.recover_job_logs()
+        except SSHException:
             raise
         except IOError as e:
             if "refused" in str(e.strerror).lower():
@@ -644,6 +648,9 @@ class ParamikoPlatform(Platform):
             job_status = Status.UNKNOWN
             Log.error(
                 'check_job() The job id ({0}) status is {1}.', job_id, job_status)
+
+        if job_status in [Status.FAILED, Status.COMPLETED]:
+            job.updated_log = False
         if submit_hold_check:
             return job_status
         else:
@@ -775,7 +782,6 @@ class ParamikoPlatform(Platform):
                 elif retries == 0:
                     job_status = Status.COMPLETED
                     job.update_status(as_conf)
-
                 else:
                     job_status = Status.UNKNOWN
                     Log.error(
@@ -887,6 +893,7 @@ class ParamikoPlatform(Platform):
             sys.stdout.write(session.recv(4096))
         while session.recv_stderr_ready():
             sys.stderr.write(session.recv_stderr(4096))
+
     @threaded
     def x11_status_checker(self, session, session_fileno):
         self.transport.accept()
@@ -1325,16 +1332,16 @@ class ParamikoPlatform(Platform):
             if self.transport:
                 self.transport.close()
                 self.transport.stop_thread()
-        with suppress(Exception):
-            del self._ssh._agent # May not be in all runs
-        with suppress(Exception):
-            del self._ssh._transport
-        with suppress(Exception):
-            del self._ftpChannel
-        with suppress(Exception):
-            del self.transport
-        with suppress(Exception):
-            del self._ssh
+        # with suppress(Exception):
+        #     del self._ssh._agent # May not be in all runs
+        # with suppress(Exception):
+        #     del self._ssh._transport
+        # with suppress(Exception):
+        #     del self._ftpChannel
+        # with suppress(Exception):
+        #     del self.transport
+        # with suppress(Exception):
+        #     del self._ssh
 
     def check_tmp_exists(self):
         try:
@@ -1366,8 +1373,6 @@ class ParamikoPlatform(Platform):
         """
         Creates log dir on remote host
         """
-
-
         try:
             if self.send_command(self.get_mkdir_cmd()):
                 Log.debug('{0} has been created on {1} .',

@@ -61,6 +61,7 @@ class SgePlatform(ParamikoPlatform):
                                      'ds', 'dS', 'dT', 'dRs', 'dRS', 'dRT']
         self._pathdir = "\$HOME/LOG_" + self.expid
         self.update_cmds()
+        self.log_retrieval_process_active = False
 
     def submit_Script(self, hold=False):
         pass
@@ -114,7 +115,7 @@ class SgePlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self.get_qstatjob(job_id)
 
-    def connect(self,reconnect=False):
+    def connect(self, reconnect=False):
         """
         In this case, it does nothing because connection is established for each command
 
@@ -122,6 +123,9 @@ class SgePlatform(ParamikoPlatform):
         :rtype: bool
         """
         self.connected = True
+        if not self.log_retrieval_process_active:
+            self.log_retrieval_process_active = True
+            self.recover_job_logs()
     def restore_connection(self):
         """
         In this case, it does nothing because connection is established for each command
@@ -130,6 +134,7 @@ class SgePlatform(ParamikoPlatform):
         :rtype: bool
         """
         self.connected = True
+
     def test_connection(self):
         """
         In this case, it does nothing because connection is established for each command
@@ -138,3 +143,5 @@ class SgePlatform(ParamikoPlatform):
         :rtype: bool
         """
         self.connected = True
+        self.connected(True)
+

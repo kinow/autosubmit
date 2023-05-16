@@ -170,6 +170,10 @@ class EcPlatform(ParamikoPlatform):
                 self.connected = False
         except:
             self.connected = False
+        if not self.log_retrieval_process_active:
+            self.log_retrieval_process_active = True
+            self.recover_job_logs()
+
     def restore_connection(self):
         """
         In this case, it does nothing because connection is established for each command
@@ -187,6 +191,7 @@ class EcPlatform(ParamikoPlatform):
                 self.connected = False
         except:
             self.connected = False
+
     def test_connection(self):
         """
         In this case, it does nothing because connection is established for each command
