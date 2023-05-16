@@ -61,6 +61,7 @@ class SgePlatform(ParamikoPlatform):
                                      'ds', 'dS', 'dT', 'dRs', 'dRS', 'dRT']
         self._pathdir = "\$HOME/LOG_" + self.expid
         self.update_cmds()
+        self.log_retrieval_process_active = False
 
     def submit_Script(self, hold=False):
         pass

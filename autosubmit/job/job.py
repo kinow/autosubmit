@@ -1013,7 +1013,7 @@ class Job(object):
         if it exists, remote_log variable is updated
         """
         try:
-            if self.wrapper_type == "vertical":
+            if self.wrapper_type and self.wrapper_type == "vertical":
                 platform.check_stat_file_by_retrials(stat_file + str(max_logs), retries=1)
                 for i in range(max_logs-1,-1,-1):
                     if platform.check_stat_file_by_retrials(stat_file + str(i), retries=1, first=False):

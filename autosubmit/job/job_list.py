@@ -1692,6 +1692,21 @@ class JobList(object):
 
         return completed_jobs
 
+    def get_completed_without_logs(self, platform=None):
+        """
+        Returns a list of completed jobs wihtout updated logs
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: completed jobs
+        :rtype: list
+        """
+
+        completed_jobs = [job for job in self._job_list if (platform is None or job.platform.name == platform.name) and
+                          job.status == Status.COMPLETED and job.updated_log is False ]
+
+        return completed_jobs
+
     def get_uncompleted(self, platform=None, wrapper=False):
         """
         Returns a list of completed jobs
@@ -2621,7 +2636,7 @@ class JobList(object):
                     job.packed = False
                     save = True
         # Check checkpoint jobs, the status can be Any
-        for job in self.check_special_status():
+        for job in ( job for job in self.check_special_status() ):
             job.status = Status.READY
             # Run start time in format (YYYYMMDDHH:MM:SS) from current time
             job.ready_start_date = strftime("%Y%m%d%H%M%S")
@@ -2631,7 +2646,7 @@ class JobList(object):
             save = True
             Log.debug(f"Special condition fullfilled for job {job.name}")
         # if waiting jobs has all parents completed change its State to READY
-        for job in self.get_completed():
+        for job in ( job for job in self.get_completed() ):
             job.packed = False
             # Log name has this format:
                 # a02o_20000101_fc0_2_SIM.20240212115021.err
