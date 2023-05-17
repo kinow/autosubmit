@@ -46,8 +46,10 @@ from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 from log.log import Log, AutosubmitCritical, AutosubmitError
 from typing import List, Union
 from functools import reduce
-Log.get_logger("Autosubmit")
 from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
+from autosubmit.helpers.parameters import autosubmit_parameter, autosubmit_parameters
+
+Log.get_logger("Autosubmit")
 
 # A wrapper for encapsulate threads , TODO: Python 3+ to be replaced by the < from concurrent.futures >
 
@@ -61,21 +63,70 @@ def threaded(fn):
     return wrapper
 
 
+# This decorator contains groups of parameters, with each
+# parameter described. This is only for parameters which
+# are not properties of Job. Otherwise, please use the
+# ``autosubmit_parameter`` (singular!) decorator for the
+# ``@property`` annotated members. The variable groups
+# are cumulative, so you can add to ``job``, for instance,
+# in multiple files as long as the variable names are
+# unique per group.
+@autosubmit_parameters(
+    parameters={
+        'chunk': {
+            'day_before': 'Day before the start date.',
+            'chunk_end_in_days': 'Chunk length in days.',
+            'chunk_start_date': 'Chunk start date.',
+            'chunk_start_year': 'Chunk start year.',
+            'chunk_start_month': 'Chunk start month.',
+            'chunk_start_day': 'Chunk start day.',
+            'chunk_start_hour': 'Chunk start hour.',
+            'chunk_end_date': 'Chunk end date.',
+            'chunk_end_year': 'Chunk end year.',
+            'chunk_end_month': 'Chunk end month.',
+            'chunk_end_day': 'Chunk end day.',
+            'chunk_end_hour': 'Chunk end hour.',
+            'prev': 'Days since start date at the chunk\'s start.',
+            'chunk_first': 'True if the current chunk is the first, false otherwise.',
+            'chunk_last': 'True if the current chunk is the last, false otherwise.',
+            'notify_on': 'Determine the job statuses you want to be notified.'
+        },
+        'config': {
+            'config.autosubmit_version': 'Current version of Autosubmit.',
+            'config.totaljobs': 'Total number of jobs in the workflow.',
+            'config.maxwaitingjobs': 'Maximum number of jobs permitted in the waiting status.'
+        },
+        'experiment': {
+            'experiment.datelist': 'List of start dates',
+            'experiment.calendar': 'Calendar used for the experiment. Can be standard or noleap.',
+            'experiment.chunksize': 'Size of each chunk.',
+            'experiment.numchunks': 'Number of chunks of the experiment.',
+            'experiment.chunksizeunit': 'Unit of the chunk size. Can be hour, day, month, or year.',
+            'experiment.members': 'List of members.'
+        },
+        'default': {
+            'default.expid': 'Job experiment ID.',
+            'default.hpcarch': 'Default HPC platform name.',
+            'default.custom_config': 'Custom configuration location.',
+        },
+        'job': {
+            'rootdir': 'Experiment folder path.',
+            'projdir': 'Project folder path.',
+            'nummembers': 'Number of members of the experiment.'
+        },
+        'project': {
+            'project.project_type': 'Type of the project.',
+            'project.project_destination': 'Folder to hold the project sources.'
+        }
+    }
+)
 class Job(object):
-    """
-    Class to handle all the tasks with Jobs at HPC.
+    """Class to handle all the tasks with Jobs at HPC.
+
     A job is created by default with a name, a jobid, a status and a type.
     It can have children and parents. The inheritance reflects the dependency between jobs.
-    If Job2 must wait until Job1 is completed then Job2 is a child of Job1. Inversely Job1 is a parent of Job2
-
-    :param name: job's name
-    :type name: str
-    :param job_id: job's id
-    :type job_id: int
-    :param status: job initial status
-    :type status: Status
-    :param priority: job's priority
-    :type priority: int
+    If Job2 must wait until Job1 is completed then Job2 is a child of Job1.
+    Inversely Job1 is a parent of Job2
     """
 
     CHECK_ON_SUBMISSION = 'on_submission'
@@ -86,7 +137,7 @@ class Job(object):
     def __init__(self, name, job_id, status, priority):
         self.script_name_wrapper = None
         self.delay_end = datetime.datetime.now()
-        self.delay_retrials = "0"
+        self._delay_retrials = "0"
         self.wrapper_type = None
         self._wrapper_queue = None
         self._platform = None
@@ -95,34 +146,35 @@ class Job(object):
 
         self.retry_delay = "0"
         self.platform_name = None # type: str
-        self.section = None # type: str
-        self.wallclock = None # type: str
+        #: (str): Type of the job, as given on job configuration file. (job: TASKTYPE)
+        self._section = None # type: str
+        self._wallclock = None # type: str
         self.wchunkinc = None
-        self.tasks = '1'
-        self.nodes = ""
+        self._tasks = '1'
+        self._nodes = ""
         self.default_parameters = {'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
                               'M': '%M%', 'M_': '%M_%', 'm': '%m%', 'm_': '%m_%'}
-        self.threads = '1'
-        self.processors = '1'
-        self.memory = ''
-        self.memory_per_task = ''
-        self.chunk = None
-        self.member = None
+        self._threads = '1'
+        self._processors = '1'
+        self._memory = ''
+        self._memory_per_task = ''
+        self._chunk = None
+        self._member = None
         self.date = None
         self.name = name
-        self.split = None
-        self.delay = None
-        self.frequency = None
-        self.synchronize = None
+        self._split = None
+        self._delay = None
+        self._frequency = None
+        self._synchronize = None
         self.skippable = False
         self.repacked = 0
         self._long_name = None
         self.long_name = name
         self.date_format = ''
         self.type = Type.BASH
-        self.hyperthreading = "none"
-        self.scratch_free_space = None
-        self.custom_directives = []
+        self._hyperthreading = "none"
+        self._scratch_free_space = None
+        self._custom_directives = []
         self.undefined_variables = set()
         self.log_retries = 5
         self.id = job_id
@@ -140,7 +192,8 @@ class Job(object):
         self.priority = priority
         self._parents = set()
         self._children = set()
-        self.fail_count = 0
+        #: (int) Number of failed attempts to run this job. (FAIL_COUNT)
+        self._fail_count = 0
         self.expid = name.split('_')[0] # type: str
         self.parameters = dict()
         self._tmp_path = os.path.join(
@@ -149,41 +202,255 @@ class Job(object):
         self._platform = None
         self.check = 'true'
         self.check_warnings = False
-        self.packed = False
+        self._packed = False
         self.hold = False # type: bool
         self.distance_weight = 0
         self.level = 0
-        self.export = "none"
-        self.dependencies = []
+        self._export = "none"
+        self._dependencies = []
         self.running = "once"
         self.start_time = None
         self.edge_info = dict()
         self.total_jobs = None
         self.max_waiting_jobs = None
         self.exclusive = ""
+
+    @property
+    @autosubmit_parameter(name='tasktype')
+    def section(self):
+        """Type of the job, as given on job configuration file."""
+        return self._section
+
+    @section.setter
+    def section(self, value):
+        self._section = value
+
+    @property
+    @autosubmit_parameter(name='jobname')
+    def name(self):
+        """Current job full name."""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    @property
+    @autosubmit_parameter(name='fail_count')
+    def fail_count(self):
+        """Number of failed attempts to run this job."""
+        return self._fail_count
+
+    @fail_count.setter
+    def fail_count(self, value):
+        self._fail_count = value
+
+    @property
+    @autosubmit_parameter(name='sdate')
+    def sdate(self):
+        """Current start date."""
+        return date2str(self.date, self.date_format)
+
+    @property
+    @autosubmit_parameter(name='member')
+    def member(self):
+        """Current member."""
+        return self._member
+
+    @member.setter
+    def member(self, value):
+        self.value = value
+
+    @property
+    @autosubmit_parameter(name='chunk')
+    def chunk(self):
+        """Current chunk."""
+        return self._chunk
+
+    @chunk.setter
+    def chunk(self, value):
+        self.value = value
+
+    @property
+    @autosubmit_parameter(name='split')
+    def split(self):
+        """Current split."""
+        return self._split
+
+    @split.setter
+    def split(self, value):
+        self._split = value
+
+    @property
+    @autosubmit_parameter(name='delay')
+    def delay(self):
+        """Current delay."""
+        return self._delay
+
+    @delay.setter
+    def delay(self, value):
+        self._delay = value
+
+    @delay.setter
+    def delay(self, value):
+        self._delay = value
+
+    @property
+    @autosubmit_parameter(name='wallclock')
+    def wallclock(self):
+        """Duration for which nodes used by job will remain allocated."""
+        return self._wallclock
+
+    @wallclock.setter
+    def wallclock(self, value):
+        self._wallclock = value
+
+    @property
+    @autosubmit_parameter(name='hyperthreading')
+    def hyperthreading(self):
+        """Detects if hyperthreading is enabled or not."""
+        return self._hyperthreading
+
+    @hyperthreading.setter
+    def hyperthreading(self, value):
+        self._hyperthreading = value
+
+    @property
+    @autosubmit_parameter(name='nodes')
+    def nodes(self):
+        """Number of nodes that the job will use."""
+        return self._nodes
+
+    @nodes.setter
+    def nodes(self, value):
+        self._nodes = value
+
+    @property
+    @autosubmit_parameter(name=['numthreads', 'threads', 'cpus_per_task'])
+    def threads(self):
+        """Number of threads that the job will use."""
+        return self._threads
+
+    @threads.setter
+    def threads(self, value):
+        self._threads = value
+
+    @property
+    @autosubmit_parameter(name=['numtask', 'tasks', 'tasks_per_node'])
+    def tasks(self):
+        """Number of tasks that the job will use."""
+        return self._tasks
+
+    @tasks.setter
+    def tasks(self, value):
+        self._tasks = value
+
+    @property
+    @autosubmit_parameter(name='scratch_free_space')
+    def scratch_free_space(self):
+        """Percentage of free space required on the ``scratch``."""
+        return self._scratch_free_space
+
+    @scratch_free_space.setter
+    def scratch_free_space(self, value):
+        self._scratch_free_space = value
+
+    @property
+    @autosubmit_parameter(name='memory')
+    def memory(self):
+        """Memory requested for the job."""
+        return self._memory
+
+    @memory.setter
+    def memory(self, value):
+        self._memory = value
+
+    @property
+    @autosubmit_parameter(name='memory_per_task')
+    def memory_per_task(self):
+        """Memory requested per task."""
+        return self._memory_per_task
+
+    @memory_per_task.setter
+    def memory_per_task(self, value):
+        self._memory_per_task = value
+
+    @property
+    @autosubmit_parameter(name='frequency')
+    def frequency(self):
+        """TODO."""
+        return self._frequency
+
+    @frequency.setter
+    def frequency(self, value):
+        self._frequency = value
+
+    @property
+    @autosubmit_parameter(name='synchronize')
+    def synchronize(self):
+        """TODO."""
+        return self._synchronize
+
+    @synchronize.setter
+    def synchronize(self, value):
+        self._synchronize = value
+
+    @property
+    @autosubmit_parameter(name='dependencies')
+    def dependencies(self):
+        """Current job dependencies."""
+        return self._dependencies
+
+    @dependencies.setter
+    def dependencies(self, value):
+        self._dependencies = value
+
+    @property
+    @autosubmit_parameter(name='delay_retrials')
+    def delay_retrials(self):
+        """TODO"""
+        return self._delay_retrials
+
+    @delay_retrials.setter
+    def delay_retrials(self, value):
+        self._delay_retrials = value
+
+    @property
+    @autosubmit_parameter(name='packed')
+    def packed(self):
+        """TODO"""
+        return self._packed
+
+    @packed.setter
+    def packed(self, value):
+        self._packed = value
+
+    @property
+    @autosubmit_parameter(name='export')
+    def export(self):
+        """TODO."""
+        return self._export
+
+    @export.setter
+    def export(self, value):
+        self._export = value
+
+    @property
+    @autosubmit_parameter(name='custom_directives')
+    def custom_directives(self):
+        """List of custom directives."""
+        return self._custom_directives
+
+    @custom_directives.setter
+    def custom_directives(self, value):
+        self._custom_directives = value
+
     def __getstate__(self):
         odict = self.__dict__
         if '_platform' in odict:
             odict = odict.copy()  # copy the dict since we change it
             del odict['_platform']  # remove filehandle entry
         return odict
-
-    # def __str__(self):
-    #     return self.name
-
-    def print_job(self):
-        """
-        Prints debug information about the job
-        """
-        Log.debug('NAME: {0}', self.name)
-        Log.debug('JOBID: {0}', self.id)
-        Log.debug('STATUS: {0}', self.status)
-        Log.debug('PRIORITY: {0}', self.priority)
-        Log.debug('TYPE: {0}', self.type)
-        Log.debug('PARENTS: {0}', [p.name for p in self.parents])
-        Log.debug('CHILDREN: {0}', [c.name for c in self.children])
-        Log.debug('FAIL_COUNT: {0}', self.fail_count)
-        Log.debug('EXPID: {0}', self.expid)
 
     @property
     def parents(self):
@@ -244,9 +511,10 @@ class Job(object):
         self._platform = value
 
     @property
+    @autosubmit_parameter(name="current_queue")
     def queue(self):
         """
-        Returns the queue to be used by the job. Chooses between serial and parallel platforms
+        Returns the queue to be used by the job. Chooses between serial and parallel platforms.
 
         :return HPCPlatform object for the job to use
         :rtype: HPCPlatform
@@ -366,21 +634,15 @@ class Job(object):
             return float(minutes) / 60 + float(hours)
         return 0
 
-    def log_job(self):
-        """
-        Prints job information in log
-        """
-        Log.debug("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
-        Log.debug("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
+    @property
+    @autosubmit_parameter(name=['numproc', 'processors'])
+    def processors(self):
+        """Number of processors that the job will use."""
+        return self._processors
 
-        #Log.status("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
-        #Log.status("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
-
-    def print_parameters(self):
-        """
-        Print sjob parameters in log
-        """
-        Log.info(self.parameters)
+    @processors.setter
+    def processors(self, value):
+        self._processors = value
 
     def inc_fail_count(self):
         """
@@ -465,39 +727,6 @@ class Job(object):
         """
         return self.parents.__len__()
 
-    def compare_by_status(self, other):
-        """
-        Compare jobs by status value
-
-        :param other: job to compare
-        :type other: Job
-        :return: comparison result
-        :rtype: bool
-        """
-        return self.status < other.status
-
-    def compare_by_id(self, other):
-        """
-        Compare jobs by ID
-
-        :param other: job to compare
-        :type other: Job
-        :return: comparison result
-        :rtype: bool
-        """
-        return self.id < other.id
-
-    def compare_by_name(self, other):
-        """
-        Compare jobs by name
-
-        :param other: job to compare
-        :type other: Job
-        :return: comparison result
-        :rtype: bool
-        """
-        return self.name < other.name
-
     def _get_from_stat(self, index):
         """
         Returns value from given row index position in STAT file associated to job
@@ -554,15 +783,6 @@ class Job(object):
         :rtype: str
         """
         return self._get_from_stat(0)
-
-    def check_retrials_submit_time(self):
-        """
-        Returns list of submit datetime for retrials from total stats file
-
-        :return: date and time
-        :rtype: list[int]
-        """
-        return self._get_from_total_stats(0)
 
     def check_retrials_end_time(self):
         """
@@ -849,6 +1069,7 @@ class Job(object):
             if param:
                 time_params[name] = int(param)
         return datetime.timedelta(**time_params),format_
+
     # Duplicated for wrappers and jobs to fix in 4.0.0
     def is_over_wallclock(self, start_time, wallclock):
         """
@@ -1019,6 +1240,7 @@ class Job(object):
         parameters['CURRENT_LOGDIR'] = job_platform.get_files_path()
 
         return parameters
+
     def update_platform_associated_parameters(self,as_conf, parameters, job_platform, chunk):
         self.executable = str(as_conf.jobs_data[self.section].get("EXECUTABLE", as_conf.platforms_data.get(job_platform.name,{}).get("EXECUTABLE","")))
         self.total_jobs = int(as_conf.jobs_data[self.section].get("TOTALJOBS", job_platform.total_jobs))
@@ -1073,10 +1295,10 @@ class Job(object):
         parameters['NUMTHREADS'] = self.threads
         parameters['THREADS'] = self.threads
         parameters['CPUS_PER_TASK'] = self.threads
-        parameters['NUMTASK'] = self.tasks
-        parameters['TASKS'] = self.tasks
+        parameters['NUMTASK'] = self._tasks
+        parameters['TASKS'] = self._tasks
         parameters['NODES'] = self.nodes
-        parameters['TASKS_PER_NODE'] = self.tasks
+        parameters['TASKS_PER_NODE'] = self._tasks
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
         parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
@@ -1084,6 +1306,7 @@ class Job(object):
         parameters['HYPERTHREADING'] = self.hyperthreading
         parameters['CURRENT_QUEUE'] = self.queue
         return parameters
+
     def update_wrapper_parameters(self,as_conf, parameters):
         wrappers = as_conf.experiment_data.get("WRAPPERS", {})
         if len(wrappers) > 0:
@@ -1107,10 +1330,11 @@ class Job(object):
             parameters[wrapper_section + "_EXTENSIBLE"] = int(
                 as_conf.get_extensible_wallclock(as_conf.experiment_data["WRAPPERS"].get(wrapper_section)))
         return parameters
+
     def update_job_parameters(self,as_conf, parameters):
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
-        parameters['SDATE'] = date2str(self.date, self.date_format)
+        parameters['SDATE'] = self.sdate
         parameters['MEMBER'] = self.member
         parameters['SPLIT'] = self.split
         parameters['DELAY'] = self.delay
@@ -1203,6 +1427,7 @@ class Job(object):
         parameters['PROJECT_TYPE'] = as_conf.get_project_type()
         self.wchunkinc = as_conf.get_wchunkinc(self.section)
         return parameters
+
     def update_parameters(self, as_conf, parameters,
                           default_parameters={'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
                                               'M': '%M%', 'M_': '%M_%', 'm': '%m%', 'm_': '%m_%'}):
@@ -1216,7 +1441,6 @@ class Job(object):
         :param parameters:
         :type parameters: dict
         """
-        chunk = 1
         as_conf.reload()
         parameters = parameters.copy()
         parameters.update(as_conf.parameters)
@@ -1233,8 +1457,9 @@ class Job(object):
         parameters = as_conf.normalize_parameters_keys(parameters,default_parameters)
         # For some reason, there is return but the assignee is also necessary
         self.parameters = parameters
-        # This returns is only being used by the mock , to change the mock
+        # This return is only being used by the mock , to change the mock
         return parameters
+
     def update_content_extra(self,as_conf,files):
         additional_templates = []
         for file in files:
@@ -1244,6 +1469,7 @@ class Job(object):
                 template = open(os.path.join(as_conf.get_project_dir(), file), 'r').read()
             additional_templates += [template]
         return additional_templates
+
     def update_content(self, as_conf):
         """
         Create the script content to be run for the job
@@ -1580,12 +1806,6 @@ class Job(object):
                 thread_write_finish = Thread(target=ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR).write_platform_data_after_finish, args=(job_data_dc, self.platform))
                 thread_write_finish.name = "JOB_data_{}".format(self.name)
                 thread_write_finish.start()
-
-    def write_total_stat_by_retries_fix_newline(self):
-        path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-        f = open(path, 'a')
-        f.write('\n')
-        f.close()
 
     def write_total_stat_by_retries(self,total_stats, first_retrial = False):
         """

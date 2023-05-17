@@ -2,119 +2,174 @@
 Variables reference
 ###################
 
-Autosubmit uses a variable substitution system to facilitate the development of the templates. This variables can be
-used on the template in the form %VARIABLE_NAME%.
+Autosubmit uses a variable substitution system to facilitate the
+development of the templates. These variables can be used on templates
+with the syntax ``%VARIABLE_NAME%``.
 
-All configuration variables non related to current_job or platform are accessible by calling first to their parents. ex: %PROJECT.PROJECT_TYPE% or %DEFAULT.EXPID%
+All configuration variables that are not related to the current job
+or platform are accessible by accessing first their parents, e.g.
+``%PROJECT.PROJECT_TYPE% or %DEFAULT.EXPID%``.
 
-You can review all variables at any given time by using the command :ref:`report`:
+You can review all variables at any given time by using the
+:ref:`report <report>` command, as illustrated below.
 
-    $ autosubmit report expid -all
+
+.. code-block:: console
+    :caption: Example usage of ``autosubmit report``
+
+    $ autosubmit report $expid -all
+
+The command will save the list of variables available to a file
+in the experiment area. Each group of variables of Autosubmit are
+detailed in the next sections on this page.
+
+.. note:: All the variable tables are displayed in alphabetical order.
+
+
+.. note::
+
+    Configuration files such as ``myapp.yml`` may contain some
+    configuration like:
+
+    .. code-block:: yaml
+
+        MYAPP:
+          MYPARAMETER: 42
+          ANOTHER_PARAMETER: 1984
+
+    If you configured Autosubmit to include this file with the
+    rest of your configuration, then those variables will be
+    available to each job, and can be accessed with:
+    ``%MYAPP.MYPARAMETER%`` and ``%MYAPP.ANOTHER_PARAMETER%``.
 
 
 Job variables
 =============
 
-This variables are relatives to the current job.
+These variables are relatives to the current job. These variables
+appear in the output of the :ref:`report <report>` command with the
+pattern ``JOBS.${JOB_ID}.${JOB_VARIABLE}=${VALUE}``. They can be used in
+templates with ``%JOB_VARIABLE%``.
 
-- **TASKTYPE**: type of the job, as given on job configuration file.
-- **JOBNAME**: current job full name.
-- **FAIL_COUNT**: number of failed attempts to run this job.
-- **SDATE**: current startdate.
-- **MEMBER**: current member.
-- **CHUNK**: current chunk.
-- **SPLIT**: current split.
-- **DELAY**: current delay.
-- **DAY_BEFORE**: day before the startdate
-- **Chunk_End_IN_DAYS**: chunk's length in days
-- **Chunk_START_DATE**: chunk's start date
-- **Chunk_START_YEAR**: chunk's start year
-- **Chunk_START_MONTH**: chunk's start month
-- **Chunk_START_DAY**: chunk's start day
-- **Chunk_START_HOUR**: chunk's start hour
-- **Chunk_END_DATE**: chunk's end date
-- **Chunk_END_YEAR**: chunk's end year
-- **Chunk_END_MONTH**: chunk's end month
-- **Chunk_END_DAY**: chunk's end day
-- **Chunk_END_HOUR**: chunk's end hour
-- **STARTDATES**: list of startdates.
-- **PREV**: days since startdate at the chunk's start
-- **Chunk_FIRST**: True if the current chunk is the first, false otherwise.
-- **Chunk_LAST**: True if the current chunk is the last, false otherwise.
-- **NUMPROC**: Number of processors that the job will use.
-- **NUMTHREADS**: Number of threads that the job will use.
-- **NUMTASKS**: Number of tasks that the job will use.
-- **NODES**: Number of nodes that the job will use.
-- **HYPERTHREADING**: Detects if hyperthreading is enabled or not.
-- **WALLCLOCK**: Number of processors that the job will use.
-- **SCRATCH_FREE_SPACE**: Percentage of free space required on the ``scratch``.
-- **NOTIFY_ON**: Determine the job statuses you want to be notified.
+.. autosubmit-variables:: job
+
+
+The following variables are present only in jobs that contain a date
+(e.g. ``RUNNING=date``).
+
+
+.. autosubmit-variables:: chunk
+
 
 Platform variables
 ==================
 
-This variables are relative to the platforms defined on the jobs conf. A full set of the next variables are defined for
-each platform defined on the platforms configuration file, substituting {PLATFORM_NAME} for each platform's name. Also, a
-suite of variables is defined for the current platform where {PLATFORM_NAME} is substituted by CURRENT.
+These variables are relative to the platforms defined in each
+job configuration. The table below shows the complete set of variables
+available in the current platform. These variables appear in the
+output of the :ref:`report <report>` command with the pattern
+``JOBS.${JOB_ID}.${PLATFORM_VARIABLE}=${VALUE}``. They can be used in
+templates with ``%PLATFORM_VARIABLE%``.
 
-- **{PLATFORM_NAME}_ARCH**: Platform name
-- **{PLATFORM_NAME}_HOST**: Platform url
-- **{PLATFORM_NAME}_USER**: Platform user
-- **{PLATFORM_NAME}_PROJ**: Platform project
-- **{PLATFORM_NAME}_BUDG**: Platform budget
-- **{PLATFORM_NAME}_PARTITION**: Platform partition
-- **{PLATFORM_NAME}_RESERVATION**: You can configure your reservation id for the given platform.
-- **{PLATFORM_NAME}_EXCLUSIVITY**: True if you want to request exclusivity nodes.
-- **{PLATFORM_NAME}_TYPE**: Platform scheduler type
-- **{PLATFORM_NAME}_VERSION**: Platform scheduler version
-- **{PLATFORM_NAME}_SCRATCH_DIR**: Platform's scratch folder path
-- **{PLATFORM_NAME}_ROOTDIR**: Platform's experiment folder path
-- **{PLATFORM_NAME}_CUSTOM_DIRECTIVES**: Platform's custom directives for the resource manager.
+A series of variables is also available in each platform, and appear
+in the output of the :ref:`report <report>` command with the pattern
+``JOBS.${JOB_ID}.PLATFORMS.${PLATFORM_ID}.${PLATFORM_VARIABLE}=${VALUE}``.
+They can be used in templates with ``PLATFORMS.%PLATFORM_ID%.%PLATFORM_VARIABLE%``.
 
-.. hint::
-    The variables ``_USER``, ``_PROJ`` and ``_BUDG`` has no value on the LOCAL platform.
-
-.. hint::
-    Until now, the variables ``_RESERVATION`` and ``_EXCLUSIVITY`` are only available for MN.
-
-It is also defined a suite of variables for the experiment's default platform:
-
-- **HPCARCH**: Default HPC platform name
-- **HPCHOST**: Default HPC platform url
-- **HPCUSER**: Default HPC platform user
-- **HPCPROJ**: Default HPC platform project
-- **HPCBUDG**: Default HPC platform budget
-- **HPCTYPE**: Default HPC platform scheduler type
-- **HPCVERSION**: Default HPC platform scheduler version
-- **SCRATCH_DIR**: Default HPC platform scratch folder path
-- **HPCROOTDIR**: Default HPC platform experiment's folder path
+.. autosubmit-variables:: platform
 
 
-Project variables
+.. note::
+    The variables ``_USER``, ``_PROJ`` and ``_BUDG``
+    have no value on the LOCAL platform.
+
+    Certain variables (e.g. ``_RESERVATION``,
+    ``_EXCLUSIVITY``) are only available for certain
+    platforms (e.g. MareNostrum).
+
+A set of variables for the experiment's default platform are
+also available.
+
+.. TODO: Some variables do not exist anymore, like HPCHOST, HPCUSER, HPCDUG, etc.
+
+.. list-table::
+    :widths: 25 75
+    :header-rows: 1
+
+    * - Variable
+      - Description
+    * - **HPCARCH**
+      - Default HPC platform name.
+    * - **HPCHOST**
+      - Default HPC platform url.
+    * - **HPCUSER**
+      - Default HPC platform user.
+    * - **HPCPROJ**
+      - Default HPC platform project.
+    * - **HPCBUDG**
+      - Default HPC platform budget.
+    * - **HPCTYPE**
+      - Default HPC platform scheduler type.
+    * - **HPCVERSION**
+      - Default HPC platform scheduler version.
+    * - **SCRATCH_DIR**
+      - Default HPC platform scratch folder path.
+    * - **HPCROOTDIR**
+      - Default HPC platform experiment's folder path.
+
+Other variables
 =================
 
-- **NUMMEMBERS**: number of members of the experiment
-- **NUMCHUNKS**: number of chunks of the experiment
-- **CHUNKSIZE**: size of each chunk
-- **CHUNKSIZEUNIT**: unit of the chuk size. Can be hour, day, month or year.
-- **CALENDAR**: calendar used for the experiment. Can be standard or noleap.
-- **ROOTDIR**: local path to experiment's folder
-- **PROJDIR**: local path to experiment's proj folder
-- **STARTDATES**: Startdates of the experiment
+.. autosubmit-variables:: config
 
-Performance Metrics
-===================
 
-Currently, these variables apply only to the report function of Autosubmit. See :ref:`report`.
+.. autosubmit-variables:: default
 
-- **SYPD**: Simulated years per day.
-- **ASYPD**: Actual simulated years per day.
-- **RSYPD**: Raw simulated years per day.
-- **CHSY**: Core hours per simulated year.
-- **JPSY**: Joules per simulated year.
-- **Parallelization**: Number of cores requested for the simulation job.
 
-For more information about these metrics please visit: 
+.. autosubmit-variables:: experiment
 
-https://earth.bsc.es/gitlab/wuruchi/autosubmitreact/-/wikis/Performance-Metrics.
+
+.. autosubmit-variables:: project
+
+
+.. note::
+
+    Depending on your project type other variables may
+    be available. For example, if you choose Git, then
+    you should have ``%PROJECT_ORIGIN%``. If you choose
+    Subversion, then you will have ``%PROJECT_URL%``.
+    The same variables from the project template (created
+    with the ``expid`` subcommand) are available in your
+    job template scripts.
+
+
+Performance Metrics variables
+=============================
+
+These variables apply only to the :ref:`report <report>` subcommand.
+
+.. list-table::
+    :widths: 25 75
+    :header-rows: 1
+
+    * - Variable
+      - Description
+    * - **ASYPD**
+      - Actual simulated years per day.
+    * - **CHSY**
+      - Core hours per simulated year.
+    * - **JPSY**
+      - Joules per simulated year.
+    * - **Parallelization**
+      - Number of cores requested for the simulation job.
+    * - **RSYPD**
+      - Raw simulated years per day.
+    * - **SYPD**
+      - Simulated years per day.
+
+
+.. FIXME: this link is broken, and should probably not be under wuruchi's
+..        gitlab account.
+.. For more information about these metrics please visit
+.. https://earth.bsc.es/gitlab/wuruchi/autosubmitreact/-/wikis/Performance-Metrics.
 

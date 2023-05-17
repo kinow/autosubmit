@@ -20,6 +20,7 @@ import os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
+sys.path.append(os.path.abspath('ext'))  # path to custom extensions.
 
 # -- General configuration ------------------------------------------------
 
@@ -34,8 +35,12 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.autosectionlabel',
     'sphinx_rtd_theme',
-    'sphinx_reredirects'
+    'sphinx_reredirects',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.napoleon',
+    'autosubmit_variables'
 ]
+autosummary_generate = True
 
 autosectionlabel_prefix_document = True
 
