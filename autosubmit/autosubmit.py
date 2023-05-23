@@ -1051,7 +1051,7 @@ class Autosubmit:
         :return: None
         """
 
-        def add_comments_to_yaml(yaml_data, parameters, /, keys=None):
+        def add_comments_to_yaml(yaml_data, parameters, keys=None):
             """A recursive generator that visits every leaf node and yields the flatten parameter."""
             if keys is None:
                 keys = []

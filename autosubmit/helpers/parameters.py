@@ -1,6 +1,7 @@
 import functools
 import inspect
 from collections import defaultdict
+from typing import Dict
 
 PARAMETERS = defaultdict(defaultdict)
 """Global default dictionary holding a multi-level dictionary with the Autosubmit
@@ -21,7 +22,7 @@ to populate the comments in the Autosubmit YAML configuration files.
 """
 
 
-def autosubmit_parameters(cls=None, /, *, parameters: dict):
+def autosubmit_parameters(cls=None, *, parameters: Dict):
     """Decorator for Autosubmit configuration parameters defined in a class.
 
     This is useful for parameters that are not defined in a single function or

@@ -259,7 +259,7 @@ class Job(object):
 
     @member.setter
     def member(self, value):
-        self.value = value
+        self._member = value
 
     @property
     @autosubmit_parameter(name='chunk')
@@ -269,7 +269,7 @@ class Job(object):
 
     @chunk.setter
     def chunk(self, value):
-        self.value = value
+        self._chunk = value
 
     @property
     @autosubmit_parameter(name='split')
