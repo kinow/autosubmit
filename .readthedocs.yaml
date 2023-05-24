@@ -7,9 +7,17 @@ version: 2
 
 # Set the version of Python and other tools you might need
 build:
-  os: ubuntu-20.04
+  os: ubuntu-22.04
   tools:
     python: "3.9"
+  jobs:
+    post_install:
+      # ruamel.yaml.clib appears to cause the build to fail when
+      # using new API in ruamel.yaml
+      # refs:
+      # - https://earth.bsc.es/gitlab/es/autosubmit/-/merge_requests/340/
+      # - https://yaml.readthedocs.io/en/latest/api.html
+      - pip uninstall ruamel.yaml.clib -y
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
@@ -21,6 +29,6 @@ formats: all
 # Optionally declare the Python requirements required to build your docs
 python:
    install:
-   - method: setuptools
+   - method: pip
      path: .
    - requirements: docs/requirements.txt
