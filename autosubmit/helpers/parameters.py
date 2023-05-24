@@ -45,10 +45,11 @@ def autosubmit_parameters(cls=None, *, parameters: Dict):
 
     wrap.parameters = parameters
 
-    if cls is None:
-        return wrap
+    # NOTE: This is not reachable code, as the parameters must be defined!
+    # if cls is not None:
+    #     raise ValueError(f'You must provide a list of parameters')
 
-    return wrap(cls)
+    return wrap
 
 
 def autosubmit_parameter(func=None, *, name, group=None):

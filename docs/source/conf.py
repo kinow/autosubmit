@@ -36,11 +36,8 @@ extensions = [
     'sphinx.ext.autosectionlabel',
     'sphinx_rtd_theme',
     'sphinx_reredirects',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.napoleon',
     'autosubmit_variables'
 ]
-autosummary_generate = True
 
 autosectionlabel_prefix_document = True
 

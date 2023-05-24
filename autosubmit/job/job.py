@@ -291,10 +291,6 @@ class Job(object):
     def delay(self, value):
         self._delay = value
 
-    @delay.setter
-    def delay(self, value):
-        self._delay = value
-
     @property
     @autosubmit_parameter(name='wallclock')
     def wallclock(self):
