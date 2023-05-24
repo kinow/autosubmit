@@ -1041,13 +1041,21 @@ class Autosubmit:
                 except Exception as e:
                     Log.warning("Error converting {0} to yml: {1}".format(conf_file.replace(copy_id,exp_id),str(e)))
 
-    def generate_as_config(exp_id: str, dummy: bool=False, minimal_configuration: bool=False, local: bool=False) -> None:
+    @staticmethod
+    def generate_as_config(
+            exp_id: str,
+            dummy: bool=False,
+            minimal_configuration: bool=False,
+            local: bool=False,
+            parameters: Dict[str, Union[Dict, List, str]] = None
+    ) -> None:
         """Retrieve the configuration from autosubmitconfigparser package.
 
         :param exp_id: Experiment ID
         :param dummy: Whether the experiment is a dummy one or not.
         :param minimal_configuration: Whether the experiment is configured with minimal configuration or not.
         :param local: Whether the experiment project type is local or not.
+        :param parameters: Optional list of parameters to be used when processing the configuration files.
         :return: None
         """
 
@@ -1095,22 +1103,24 @@ class Autosubmit:
                             yield key, value
 
         template_files = resource_listdir('autosubmitconfigparser.config', 'files')
-        parameter_comments = dict(recurse_into_parameters(PARAMETERS))
+        if parameters is None:
+            parameters = PARAMETERS
+        parameter_comments = dict(recurse_into_parameters(parameters))
 
         for as_conf_file in template_files:
-            origin = resource_filename('autosubmitconfigparser.config', 'files/'+as_conf_file)
+            origin = resource_filename('autosubmitconfigparser.config', str(Path('files', as_conf_file)))
             target = None
 
             if dummy:
                 if as_conf_file.endswith('dummy.yml'):
                     file_name = f'{as_conf_file.split("-")[0]}_{exp_id}.yml'
-                    target = Path(BasicConfig.LOCAL_ROOT_DIR / exp_id / 'conf' / file_name)
+                    target = Path(BasicConfig.LOCAL_ROOT_DIR, exp_id, 'conf', file_name)
             elif minimal_configuration:
                 if (not local and as_conf_file.endswith('git-minimal.yml')) or as_conf_file.endswith("local-minimal.yml"):
-                    target = Path(BasicConfig.LOCAL_ROOT_DIR / exp_id / 'conf/minimal.yml')
+                    target = Path(BasicConfig.LOCAL_ROOT_DIR, exp_id, 'conf/minimal.yml')
             else:
                 if not as_conf_file.endswith('dummy.yml') and not as_conf_file.endswith('minimal.yml'):
-                    file_name = f'{as_conf_file[:-4]}_{exp_id}.yml'
+                    file_name = f'{Path(as_conf_file).stem}_{exp_id}.yml'
                     target = Path(BasicConfig.LOCAL_ROOT_DIR, exp_id, 'conf', file_name)
 
             # Here we annotate the copied configuration with comments from the Python source code.
