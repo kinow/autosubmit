@@ -287,7 +287,7 @@ class DicJobs:
             else:
                 for d in self._date_list:
                     self._get_date(jobs, dic, d, member, chunk)
-        if isinstance(jobs[0], Iterable):
+        if len(jobs) > 0 and isinstance(jobs[0], list):
             try:
                 jobs_flattened = [job for jobs_to_flatten in jobs for job in jobs_to_flatten]
                 jobs = jobs_flattened
