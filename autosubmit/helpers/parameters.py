@@ -58,7 +58,7 @@ def autosubmit_parameter(func=None, *, name, group=None):
     Used to annotate properties of classes
 
     Attributes:
-        func (Callable): wrapped function.
+        func (Callable): wrapped function. Always ``None`` due to how we call the decorator.
         name (Union[str, List[str]]): parameter name.
         group (str): group name. Default to caller module name.
     """
@@ -79,20 +79,24 @@ def autosubmit_parameter(func=None, *, name, group=None):
         if parameter_name not in PARAMETERS[group]:
             PARAMETERS[group][parameter_name] = None
 
-    def parameter_decorator(func):
-        group = parameter_decorator.group
-        names = parameter_decorator.names
-        for name in names:
-            if func.__doc__:
-                PARAMETERS[group][name] = func.__doc__.strip().split('\n')[0]
+    def parameter_decorator(wrapped_func):
+        parameter_group = parameter_decorator.__group
+        parameter_names = parameter_decorator.__names
+        for p_name in parameter_names:
+            if wrapped_func.__doc__:
+                PARAMETERS[parameter_group][p_name] = wrapped_func.__doc__.strip().split('\n')[0]
 
-        @functools.wraps(func)
+        # Delete the members created as we are not using them hereafter
+        del parameter_decorator.__group
+        del parameter_decorator.__names
+
+        @functools.wraps(wrapped_func)
         def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+            return wrapped_func(*args, **kwargs)
 
         return wrapper
 
-    parameter_decorator.group = group
-    parameter_decorator.names = names
+    parameter_decorator.__group = group
+    parameter_decorator.__names = names
 
     return parameter_decorator
