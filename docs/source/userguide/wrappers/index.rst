@@ -392,7 +392,7 @@ Considering the following configuration:
               "20120201":
                 CHUNKS_FROM:
                 1:
-                  DATES_TO: "º"
+                  DATES_TO: "20120101"
                   CHUNKS_TO: "1"
         RUNNING: chunk
         SYNCHRONIZE: member
