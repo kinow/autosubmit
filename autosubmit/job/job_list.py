@@ -449,21 +449,51 @@ class JobList(object):
     @staticmethod
     def _check_dates(relationships, current_job):
         filters_to_apply = JobList._check_relationship(relationships, "DATES_FROM", date2str(current_job.date))
+        # there could be multiple filters that apply... per example
+        # Current task date is 20020201, and member is fc2
+        # Dummy example, not specially usefull in a real case
+        #DATES_FROM:
+            #all:
+                #MEMBERS_FROM:
+                    #ALL: ...
+                #CHUNKS_FROM:
+                    #ALL: ...
+            #20020201:
+                #MEMBERS_FROM:
+                    #fc2:
+                        #DATES_TO: "20020201"
+                        #MEMBERS_TO: "fc2"
+                        #CHUNKS_TO: "ALL"
+                #SPLITS_FROM:
+                    #ALL:
+                        #SPLITS_TO: "1"
+        # this "for" iterates for ALL and fc2 as current task is selected in both filters
+        # The dict in this step is:
+        # [{MEMBERS_FROM{..},CHUNKS_FROM{...}},{MEMBERS_FROM{..},SPLITS_FROM{...}}]
         for i,filter in enumerate(filters_to_apply):
+            # {MEMBERS_FROM{..},CHUNKS_FROM{...}} I want too look ALL filters not only one, but I want to go recursivily until get the  _TO filter
             optional = filter.pop("OPTIONAL", False)
+            # This is not an if_else, because the current level ( dates ) could have two different filters.
+            # Second case commented: ( date_from 20020201 )
+            # Will enter, go recursivily to the similar methods and in the end it will do:
+            # Will enter members_from, and obtain [{DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", CHUNKS_FROM{...}]
             if "MEMBERS_FROM" in filter:
                 filters_to_apply_m = JobList._check_members({"MEMBERS_FROM": (filter.pop("MEMBERS_FROM")),"OPTIONAL":optional}, current_job)
                 if len(filters_to_apply_m) > 0:
                     filters_to_apply[i] = filters_to_apply_m
+            # Will enter chunks_from, and obtain [{DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"]
             if "CHUNKS_FROM" in filter:
                 filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter.pop("CHUNKS_FROM")),"OPTIONAL":optional}, current_job)
                 if len(filters_to_apply_c) > 0 and len(filters_to_apply_c[0]) > 0:
                     filters_to_apply[i] = filters_to_apply_c
+            #IGNORED
             if "SPLITS_FROM" in filter:
                 filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM")),"OPTIONAL":optional}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i] = filters_to_apply_s
+        # Unify filters from all filters_from where the current job is included to have a single SET of filters_to
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
+        # {DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"}
         return filters_to_apply
 
     @staticmethod
@@ -572,7 +602,7 @@ class JobList(object):
         if current_job.section.lower() == "opa":
             print("debugging")
         if relationships is not None and len(relationships) > 0:
-            # Look for a starting point
+            # Look for a starting point, this can be if else becasue they're exclusive as a DATE_FROM can't be in a MEMBER_FROM and so on
             if "DATES_FROM" in relationships:
                 filters_to_apply = JobList._check_dates(relationships, current_job)
             elif "MEMBERS_FROM" in relationships:
