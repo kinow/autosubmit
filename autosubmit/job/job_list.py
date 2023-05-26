@@ -448,6 +448,12 @@ class JobList(object):
 
     @staticmethod
     def _check_dates(relationships, current_job):
+        """
+        Check if the current_job_value is included in the filter_from and retrieve filter_to value
+        :param relationships: Remaining filters to apply.
+        :param current_job: Current job to check.
+        :return:  filters_to_apply
+        """
         filters_to_apply = JobList._check_relationship(relationships, "DATES_FROM", date2str(current_job.date))
         # there could be multiple filters that apply... per example
         # Current task date is 20020201, and member is fc2
@@ -498,6 +504,12 @@ class JobList(object):
 
     @staticmethod
     def _check_members(relationships, current_job):
+        """
+        Check if the current_job_value is included in the filter_from and retrieve filter_to value
+        :param relationships: Remaining filters to apply.
+        :param current_job: Current job to check.
+        :return: filters_to_apply
+        """
         filters_to_apply = JobList._check_relationship(relationships, "MEMBERS_FROM", current_job.member)
         for i,filter in enumerate(filters_to_apply):
             optional = filter.pop("OPTIONAL", False)
@@ -514,6 +526,12 @@ class JobList(object):
 
     @staticmethod
     def _check_chunks(relationships, current_job):
+        """
+        Check if the current_job_value is included in the filter_from and retrieve filter_to value
+        :param relationships: Remaining filters to apply.
+        :param current_job: Current job to check.
+        :return: filters_to_apply
+        """
         filters_to_apply = JobList._check_relationship(relationships, "CHUNKS_FROM", current_job.chunk)
         for i,filter in enumerate(filters_to_apply):
             optional = filter.pop("OPTIONAL", False)
@@ -526,6 +544,12 @@ class JobList(object):
 
     @staticmethod
     def _check_splits(relationships, current_job):
+        """
+        Check if the current_job_value is included in the filter_from and retrieve filter_to value
+        :param relationships: Remaining filters to apply.
+        :param current_job: Current job to check.
+        :return: filters_to_apply
+        """
         filters_to_apply = JobList._check_relationship(relationships, "SPLITS_FROM", current_job.split)
         # No more FROM sections to check, unify _to FILTERS and return
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
@@ -533,6 +557,13 @@ class JobList(object):
 
     @staticmethod
     def _unify_to_filter(unified_filter,filter_to,filter_type):
+        """
+        Unify filter_to filters into a single dictionary
+        :param unified_filter: Single dictionary with all filters_to
+        :param filter_to: Current dictionary that contains the filters_to
+        :param filter_type: "DATES_TO", "MEMBERS_TO", "CHUNKS_TO", "SPLITS_TO"
+        :return: unified_filter
+        """
         if "all" not in unified_filter[filter_type]:
             aux = filter_to.pop(filter_type, None)
             if aux:
@@ -546,6 +577,12 @@ class JobList(object):
                         unified_filter[filter_type].add(element)
     @staticmethod
     def _normalize_to_filters(filter_to,filter_type):
+        """
+        Normalize filter_to filters to a single string or "all"
+        :param filter_to: Unified filter_to dictionary
+        :param filter_type: "DATES_TO", "MEMBERS_TO", "CHUNKS_TO", "SPLITS_TO"
+        :return:
+        """
         if len(filter_to[filter_type]) == 0:
             filter_to.pop(filter_type, None)
         elif "all" in filter_to[filter_type]:
@@ -556,6 +593,11 @@ class JobList(object):
 
     @staticmethod
     def _unify_to_filters(filter_to_apply):
+        """
+        Unify all filter_to filters into a single dictionary ( of current selection )
+        :param filter_to_apply: Filters to apply
+        :return: Single dictionary with all filters_to
+        """
         unified_filter = {"DATES_TO": set(), "MEMBERS_TO": set(), "CHUNKS_TO": set(), "SPLITS_TO": set()}
         for filter_to in filter_to_apply:
             if len(filter_to) > 0:
@@ -575,10 +617,10 @@ class JobList(object):
     @staticmethod
     def _filter_current_job(current_job,relationships):
         '''
-        Check if the current_job is included in the filter_value ( from)
-        :param current_job: current job to check
-        :param dependency: dependency to check
-        :return: filter_to_apply(dict), boolean
+        This function will filter the current job based on the relationships given
+        :param current_job: Current job to filter
+        :param relationships: Relationships to apply
+        :return: dict() with the filters to apply, or empty dict() if no filters to apply
         '''
 
         # This function will look if the given relationship is set for the given job DATEs,MEMBER,CHUNK,SPLIT ( _from filters )
