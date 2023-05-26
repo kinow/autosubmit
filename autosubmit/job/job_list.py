@@ -417,7 +417,7 @@ class JobList(object):
         else:
             to_filter.append(filter_value)
 
-        if str(to_filter).find(str(parent_value).upper()) != -1:
+        if str(parent_value).upper() in str(to_filter).upper():
             return True
         else:
             return False
