@@ -5,7 +5,7 @@ from typing import Dict
 
 PARAMETERS = defaultdict(defaultdict)
 """Global default dictionary holding a multi-level dictionary with the Autosubmit
-parameters. At the first level we have the paramete groups.
+parameters. At the first level we have the parameter groups.
 
   - ``JOB``
 
