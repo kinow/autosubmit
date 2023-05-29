@@ -12,7 +12,7 @@ There is one central database that supports the core functionality of experiment
 The name and location of the central database are defined in the .autosubmitrc config file while the other auxiliary DBs have a predefined name. There are also log files with important information about experiment execution and some other relevant information such as experiment job statuses, timestamps, error messages among other things inside these files.
 
 .. figure:: fig/dbs-highlevel.png
-   :name: simple
+   :name: simple_database
    :width: 100%
    :align: center
    :alt: High level view of the Autosubmit storage system

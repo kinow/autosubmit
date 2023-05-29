@@ -5,6 +5,7 @@ import traceback
 from autosubmit.job.job_common import Status
 from typing import List, Union
 
+from autosubmit.helpers.parameters import autosubmit_parameter
 from log.log import AutosubmitCritical, AutosubmitError, Log
 
 class Platform(object):
@@ -20,7 +21,7 @@ class Platform(object):
         """
         self.connected = False
         self.expid = expid # type: str
-        self.name = name # type: str
+        self._name = name # type: str
         self.config = config
         self.tmp_path = os.path.join(
             self.config.get("LOCAL_ROOT_DIR"), self.expid, self.config.get("LOCAL_TMP_DIR"))
@@ -33,21 +34,21 @@ class Platform(object):
         self.processors_per_node = "1"
         self.scratch_free_space = None
         self.custom_directives = None
-        self.host = ''
-        self.user = ''
-        self.project = ''
-        self.budget = ''
-        self.reservation = ''
-        self.exclusivity = ''
-        self.type = ''
-        self.scratch = ''
-        self.project_dir = ''
+        self._host = ''
+        self._user = ''
+        self._project = ''
+        self._budget = ''
+        self._reservation = ''
+        self._exclusivity = ''
+        self._type = ''
+        self._scratch = ''
+        self._project_dir = ''
         self.temp_dir = ''
-        self.root_dir = ''
+        self._root_dir = ''
         self.service = None
         self.scheduler = None
         self.directory = None
-        self.hyperthreading = False
+        self._hyperthreading = False
         self.max_wallclock = '2:00'
         self.total_jobs = 20
         self.max_processors = "480"
@@ -62,6 +63,127 @@ class Platform(object):
         self._submit_cmd = None
         self._checkhost_cmd = None
         self.cancel_cmd = None
+
+    @property
+    @autosubmit_parameter(name='current_arch')
+    def name(self):
+        """Platform name."""
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    @property
+    @autosubmit_parameter(name='current_host')
+    def host(self):
+        """Platform url."""
+        return self._host
+
+    @host.setter
+    def host(self, value):
+        self._host = value
+
+    @property
+    @autosubmit_parameter(name='current_user')
+    def user(self):
+        """Platform user."""
+        return self._user
+
+    @user.setter
+    def user(self, value):
+        self._user = value
+
+    @property
+    @autosubmit_parameter(name='current_proj')
+    def project(self):
+        """Platform project."""
+        return self._project
+
+    @project.setter
+    def project(self, value):
+        self._project = value
+
+    @property
+    @autosubmit_parameter(name='current_budg')
+    def budget(self):
+        """Platform budget."""
+        return self._budget
+
+    @budget.setter
+    def budget(self, value):
+        self._budget = value
+
+    @property
+    @autosubmit_parameter(name='current_reservation')
+    def reservation(self):
+        """You can configure your reservation id for the given platform."""
+        return self._reservation
+
+    @reservation.setter
+    def reservation(self, value):
+        self._reservation = value
+
+    @property
+    @autosubmit_parameter(name='current_exclusivity')
+    def exclusivity(self):
+        """True if you want to request exclusivity nodes."""
+        return self._exclusivity
+
+    @exclusivity.setter
+    def exclusivity(self, value):
+        self._exclusivity = value
+
+    @property
+    @autosubmit_parameter(name='current_hyperthreading')
+    def hyperthreading(self):
+        """TODO"""
+        return self._hyperthreading
+
+    @hyperthreading.setter
+    def hyperthreading(self, value):
+        self._hyperthreading = value
+
+    @property
+    @autosubmit_parameter(name='current_type')
+    def type(self):
+        """Platform scheduler type."""
+        return self._type
+
+    @type.setter
+    def type(self, value):
+        self._type = value
+
+    @property
+    @autosubmit_parameter(name='current_scratch_dir')
+    def scratch(self):
+        """Platform's scratch folder path."""
+        return self._scratch
+
+    @scratch.setter
+    def scratch(self, value):
+        self._scratch = value
+
+    @property
+    @autosubmit_parameter(name='current_proj_dir')
+    def project_dir(self):
+        """Platform's project folder path."""
+        return self._project_dir
+
+    @project_dir.setter
+    def project_dir(self, value):
+        self._project_dir = value
+
+    @property
+    @autosubmit_parameter(name='current_rootdir')
+    def root_dir(self):
+        """Platform's experiment folder path."""
+        return self._root_dir
+
+    @root_dir.setter
+    def root_dir(self, value):
+        self._root_dir = value
+
     def get_exclusive_directive(self, job):
         """
         Returns exclusive directive for the specified job
@@ -197,10 +319,13 @@ class Platform(object):
     @serial_platform.setter
     def serial_platform(self, value):
         self._serial_platform = value
+
     @property
+    @autosubmit_parameter(name='current_partition')
     def partition(self):
         """
-        Partition to use for jobs
+        Partition to use for jobs.
+
         :return: queue's name
         :rtype: str
         """
@@ -211,6 +336,7 @@ class Platform(object):
     @partition.setter
     def partition(self, value):
         self._partition = value
+
     @property
     def queue(self):
         """
@@ -524,9 +650,10 @@ class Platform(object):
         else:
             return False
 
+    @autosubmit_parameter(name='current_logdir')
     def get_files_path(self):
         """
-        Get the path to the platform's LOG directory
+        The platform's LOG directory.
 
         :return: platform's LOG directory
         :rtype: str

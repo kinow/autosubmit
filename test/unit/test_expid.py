@@ -1,6 +1,11 @@
+import tempfile
 from unittest import TestCase
 from mock import Mock, patch
-from autosubmit.experiment.experiment_common import new_experiment, next_experiment_id
+from autosubmit.autosubmit import Autosubmit
+from autosubmit.experiment.experiment_common import new_experiment
+from textwrap import dedent
+from pathlib import Path
+from autosubmitconfigparser.config.basicconfig import BasicConfig
 
 
 class TestExpid(TestCase):
@@ -54,3 +59,48 @@ class TestExpid(TestCase):
     def _build_db_mock(current_experiment_id, mock_db_common):
         mock_db_common.last_name_used = Mock(return_value=current_experiment_id)
         mock_db_common.check_experiment_exists = Mock(return_value=False)
+
+    @patch('autosubmit.autosubmit.resource_listdir')
+    @patch('autosubmit.autosubmit.resource_filename')
+    def test_autosubmit_generate_config(self, resource_filename_mock, resource_listdir_mock):
+        expid = 'ff99'
+        original_local_root_dir = BasicConfig.LOCAL_ROOT_DIR
+
+        with tempfile.NamedTemporaryFile(suffix='.yaml', mode='w') as source_yaml, tempfile.TemporaryDirectory() as temp_dir:
+            # Our processed and commented YAML output file must be written here
+            Path(temp_dir, expid, 'conf').mkdir(parents=True)
+            BasicConfig.LOCAL_ROOT_DIR = temp_dir
+
+            source_yaml.write(
+dedent('''JOB:
+  JOBNAME: SIM
+  PLATFORM: local
+CONFIG:
+  TEST: The answer?
+  ROOT: No'''))
+            source_yaml.flush()
+            resource_listdir_mock.return_value = [Path(source_yaml.name).name]
+            resource_filename_mock.return_value = source_yaml.name
+
+            parameters = {
+                'JOB': {
+                    'JOBNAME': 'sim'
+                },
+                'CONFIG': {
+                    'CONFIG.TEST': '42'
+                }
+            }
+            Autosubmit.generate_as_config(exp_id=expid, parameters=parameters)
+
+            source_text = Path(source_yaml.name).read_text()
+            source_name = Path(source_yaml.name)
+            output_text = Path(temp_dir, expid, 'conf', f'{source_name.stem}_{expid}.yml').read_text()
+
+            self.assertNotEquals(source_text, output_text)
+            self.assertFalse('# sim' in source_text)
+            self.assertTrue('# sim' in output_text)
+            self.assertFalse('# 42' in source_text)
+            self.assertTrue('# 42' in output_text)
+
+        # Reset the local root dir.
+        BasicConfig.LOCAL_ROOT_DIR = original_local_root_dir

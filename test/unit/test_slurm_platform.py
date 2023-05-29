@@ -31,6 +31,28 @@ class TestSlurmPlatform(TestCase):
     def tearDown(self) -> None:
         self.local_root_dir.cleanup()
 
+    def test_properties(self):
+        props = {
+            'name': 'foo',
+            'host': 'localhost1',
+            'user': 'sam',
+            'project': 'proj1',
+            'budget': 100,
+            'reservation': 1,
+            'exclusivity': True,
+            'hyperthreading': True,
+            'type': 'SuperSlurm',
+            'scratch': '/scratch/1',
+            'project_dir': '/proj1',
+            'root_dir': '/root_1',
+            'partition': 'inter',
+            'queue': 'prio1'
+        }
+        for prop, value in props.items():
+            setattr(self.platform, prop, value)
+        for prop, value in props.items():
+            self.assertEqual(value, getattr(self.platform, prop))
+
     def test_slurm_platform_submit_script_raises_autosubmit_critical_with_trace(self):
         package = MagicMock()
         package.jobs.return_value = []

@@ -7,6 +7,7 @@ from autosubmit.job.job import Job
 from autosubmit.platforms.platform import Platform
 from mock import Mock, MagicMock
 from mock import patch
+import datetime
 
 # compatibility with both versions (2 & 3)
 from sys import version_info
@@ -311,6 +312,19 @@ class TestJob(TestCase):
         self.assertEqual('%d_%', parameters['d_'])
         self.assertEqual('%Y%', parameters['Y'])
         self.assertEqual('%Y_%', parameters['Y_'])
+
+    def test_sdate(self):
+        """Test that the property getter for ``sdate`` works as expected."""
+        for test in [
+            [None, None, ''],
+            [datetime.datetime(1975, 5, 25, 22, 0, 0, 0, datetime.timezone.utc), 'H', '1975052522'],
+            [datetime.datetime(1975, 5, 25, 22, 30, 0, 0, datetime.timezone.utc), 'M', '197505252230'],
+            [datetime.datetime(1975, 5, 25, 22, 30, 0, 0, datetime.timezone.utc), 'S', '19750525223000'],
+            [datetime.datetime(1975, 5, 25, 22, 30, 0, 0, datetime.timezone.utc), None, '19750525']
+        ]:
+            self.job.date = test[0]
+            self.job.date_format = test[1]
+            self.assertEquals(test[2], self.job.sdate)
 
 import inspect
 class FakeBasicConfig:
