@@ -1237,6 +1237,8 @@ class Job(object):
         parameters['CURRENT_PROJ_DIR'] = job_platform.project_dir
         parameters['CURRENT_ROOTDIR'] = job_platform.root_dir
         parameters['CURRENT_LOGDIR'] = job_platform.get_files_path()
+        for key,value in as_conf.platforms_data.get(job_platform.name,{}).items():
+            parameters["CURRENT_"+key.upper()] = value
 
         return parameters
 
