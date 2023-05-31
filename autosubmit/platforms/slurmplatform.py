@@ -614,8 +614,10 @@ class SlurmPlatform(ParamikoPlatform):
 #SBATCH --output={kwargs["name"]}.out
 #SBATCH --error={kwargs["name"]}.err
 #SBATCH -t {kwargs["wallclock"]}:00
-#SBATCH -n {kwargs["num_processors"]}
-#SBATCH --cpus-per-task={kwargs["threads"]}
+{kwargs["threads"]}
+{kwargs["nodes"]}
+{kwargs["num_processors"]}
+{kwargs["tasks"]}
 {kwargs["exclusive"]}
 {kwargs["custom_directives"]}
 

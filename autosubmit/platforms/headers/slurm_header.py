@@ -38,7 +38,45 @@ class SlurmHeader(object):
             return ""
         else:
             return "SBATCH --qos={0}".format(job.parameters['CURRENT_QUEUE'])
+    def get_proccesors_directive(self, job):
+        """
+        Returns processors directive for the specified job
 
+        :param job: job to create processors directive for
+        :type job: Job
+        :return: processors directive
+        :rtype: str
+        """
+        # There is no processors, so directive is empty
+        if job.processors == '' or job.processors == '1' and int(job.nodes) > 1:
+            return ""
+        else:
+            return "SBATCH -n {0}".format(job.processors)
+    def get_nodes_directive(self, job):
+        """
+        Returns nodes directive for the specified job
+
+        :param job: job to create nodes directive for
+        :type job: Job
+        :return: nodes directive
+        :rtype: str
+        """
+        # There is no nodes, so directive is empty
+        if job.num_nodes == '':
+            return ""
+        else:
+            return "SBATCH -N {0}".format(job.num_nodes)
+    def get_tasks_directive(self,job):
+        """
+        Returns tasks directive for the specified job
+        :param job: job to create tasks directive for
+        :return: tasks directive
+        :rtype: str
+        """
+        if job.num_tasks == '':
+            return ""
+        else:
+            return "SBATCH --ntasks-per-node {0}".format(job.tasks)
     def get_partition_directive(self, job):
         """
         Returns partition directive for the specified job
@@ -172,7 +210,7 @@ class SlurmHeader(object):
 #%THREADS_PER_TASK_DIRECTIVE%
 #%TASKS_PER_NODE_DIRECTIVE%
 #%NODES_DIRECTIVE%
-#SBATCH -n %NUMPROC%
+#%NUMPROC_DIRECTIVE%
 #SBATCH -t %WALLCLOCK%:00
 #SBATCH -J %JOBNAME%
 #SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
@@ -195,7 +233,7 @@ class SlurmHeader(object):
 #%MEMORY_PER_TASK_DIRECTIVE%
 #%THREADS_PER_TASK_DIRECTIVE%
 #%NODES_DIRECTIVE%
-#SBATCH -n %NUMPROC%
+#%NUMPROC_DIRECTIVE%
 #%TASKS_PER_NODE_DIRECTIVE%
 #SBATCH -t %WALLCLOCK%:00
 #SBATCH -J %JOBNAME%

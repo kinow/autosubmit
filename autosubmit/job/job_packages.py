@@ -381,7 +381,7 @@ class JobPackageThread(JobPackageBase):
             if self.export.lower() != "none" and len(self.export) > 0:
                 for job in self.jobs:
                     if job.export.lower() != "none" and len(job.export) > 0:
-                        self.export == job.export
+                        self.export = job.export
                         break
             wr_queue = configuration.get_wrapper_queue(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
             if wr_queue is not None and len(str(wr_queue)) > 0:
@@ -389,12 +389,12 @@ class JobPackageThread(JobPackageBase):
             else:
                 self.queue = jobs[0].queue
             wr_partition = configuration.get_wrapper_partition(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
-            if wr_partition is not None and len(str(wr_partition)) > 0:
+            if wr_partition and len(str(wr_partition)) > 0:
                 self.partition = wr_partition
             else:
                 self.partition = jobs[0].partition
             wr_exclusive = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXCLUSIVE",False)
-            if  wr_exclusive:
+            if wr_exclusive:
                 self.exclusive = wr_exclusive
             else:
                 self.exclusive = jobs[0].exclusive
@@ -404,13 +404,32 @@ class JobPackageThread(JobPackageBase):
             else:
                 self.custom_directives = jobs[0].custom_directives
             wr_executable = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXECUTABLE",None)
-            if wr_executable is None:
+            if wr_executable:
                 self.executable = wr_executable
             else:
                 self.executable = jobs[0].executable
+            wr_tasks = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("TASKS",None)
+            if wr_tasks:
+                self.tasks = wr_tasks
+            else:
+                self.tasks = jobs[0].tasks
+            wr_nodes = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("NODES",None)
+            if wr_nodes:
+                self.nodes = wr_nodes
+            else:
+                self.nodes = jobs[0].nodes
+            wr_threads = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("THREADS",None)
+            if wr_threads:
+                self.threads = wr_threads
+            else:
+                self.threads = jobs[0].threads
         else:
             self.queue = jobs[0].queue
             self.partition = jobs[0].partition
+            self.nodes = jobs[0].nodes
+            self.tasks = jobs[0].tasks
+            self.threads = jobs[0].threads
+            self._num_processors = jobs[0].num_processors
         self.method = method
         self._wrapper_factory.as_conf = configuration
         self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"] = configuration.experiment_data["WRAPPERS"][self.current_wrapper_section]
@@ -421,19 +440,15 @@ class JobPackageThread(JobPackageBase):
         self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["METHOD"] = self.wrapper_method
         self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXPORT"] = self.export
         self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["QUEUE"] = self.queue
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["NODES"] = self.nodes
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["TASKS"] = self.tasks
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["THREADS"] = self.threads
+        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["PROCESSORS"] = self._num_processors
         self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["PARTITION"] = self.partition
         self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXCLUSIVE"] = self.exclusive
         self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXECUTABLE"] = self.executable
         self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["CUSTOM_DIRECTIVES"] = self.custom_directives
 
-        pass
-
-
-
-
-
-
-#pipeline
     @property
     def name(self):
         return self._name
