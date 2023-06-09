@@ -169,5 +169,37 @@ class TestJobList(unittest.TestCase):
         self.mock_job.chunk = 2
         result = JobList._check_chunks(self.relationships_chunks, self.mock_job)
         self.assertEqual(result, {})
+    def test_valid_parent(self):
+        # Call the function to get the result
+
+        date_list = ["20020201"]
+        member_list = ["fc1", "fc2", "fc3"]
+        chunk_list = [1, 2, 3]
+        is_a_natural_relation = False
+        # Filter_to values
+        filter_ = {
+                "DATES_TO": "20020201",
+                "MEMBERS_TO": "fc2",
+                "CHUNKS_TO": "ALL",
+                "SPLITS_TO": "1"
+            }
+        # PArent job values
+        self.mock_job.date = datetime.strptime("20020201", "%Y%m%d")
+        self.mock_job.member = "fc2"
+        self.mock_job.chunk = 1
+        self.mock_job.split = 1
+        result = JobList._valid_parent(self.mock_job, date_list, member_list, chunk_list, is_a_natural_relation, filter_)
+        # it returns a tuple, the first element is the result, the second is the optional flag
+        self.assertEqual(result, (True,False))
+        filter_ = {
+                "DATES_TO": "20020201",
+                "MEMBERS_TO": "fc2",
+                "CHUNKS_TO": "ALL",
+                "SPLITS_TO": "1?"
+            }
+        result = JobList._valid_parent(self.mock_job, date_list, member_list, chunk_list, is_a_natural_relation, filter_)
+        self.assertEqual(result, (True,True))
+
+
 if __name__ == '__main__':
     unittest.main()
