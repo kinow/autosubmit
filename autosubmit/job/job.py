@@ -441,6 +441,14 @@ class Job(object):
     @custom_directives.setter
     def custom_directives(self, value):
         self._custom_directives = value
+    @property
+    @autosubmit_parameter(name='splits')
+    def splits(self):
+        """Number of splits."""
+        return self._splits
+    @splits.setter
+    def splits(self, value):
+        self._splits = value
 
     def __getstate__(self):
         odict = self.__dict__
