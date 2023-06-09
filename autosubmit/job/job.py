@@ -444,7 +444,7 @@ class Job(object):
     @property
     @autosubmit_parameter(name='splits')
     def splits(self):
-        """Number of splits."""
+        """Max number of splits."""
         return self._splits
     @splits.setter
     def splits(self, value):
