@@ -67,8 +67,8 @@ class TestJobPackage(TestCase):
                                 JobListPersistenceDb(self.temp_directory, 'db'), self.as_conf)
         self.parser_mock = MagicMock(spec='SafeConfigParser')
 
-        self._platform.max_waiting_jobs = 100
-        self._platform.total_jobs = 100
+        self.platform.max_waiting_jobs = 100
+        self.platform.total_jobs = 100
         self.as_conf.experiment_data["WRAPPERS"]["WRAPPERS"] = options
         self._wrapper_factory.as_conf = self.as_conf
         self.jobs[0].wallclock = "00:00"
@@ -104,15 +104,15 @@ class TestJobPackage(TestCase):
 
 
     def setUp(self):
-        self._platform = MagicMock()
-        self._platform.queue = "debug"
-        self._platform.partition = "debug"
-        self._platform.serial_platform = self._platform
-        self._platform.serial_queue = "debug-serial"
-        self._platform.serial_partition = "debug-serial"
+        self.platform = MagicMock()
+        self.platform.queue = "debug"
+        self.platform.partition = "debug"
+        self.platform.serial_platform = self.platform
+        self.platform.serial_queue = "debug-serial"
+        self.platform.serial_partition = "debug-serial"
         self.jobs = [Job('dummy1', 0, Status.READY, 0),
                      Job('dummy2', 0, Status.READY, 0)]
-        self.jobs[0]._platform = self.jobs[1]._platform = self._platform
+        self.jobs[0]._platform = self.jobs[1]._platform = self.platform
         self.job_package = JobPackageSimple(self.jobs)
     def test_default_parameters(self):
         options = {
