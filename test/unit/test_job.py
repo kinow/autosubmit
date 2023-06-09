@@ -259,6 +259,33 @@ class TestJob(TestCase):
         exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path, self.job.name + '_COMPLETED'))
         self.assertEqual(Status.FAILED, self.job.status)
 
+    def test_total_processors(self):
+        for test in [
+            {
+                'processors': '',
+                'nodes': 0,
+                'expected': 1
+            },
+            {
+                'processors': '',
+                'nodes': 10,
+                'expected': ''
+            },
+            {
+                'processors': '42',
+                'nodes': 2,
+                'expected': 42
+            },
+            {
+                'processors': '1:9',
+                'nodes': 0,
+                'expected': 10
+            }
+        ]:
+            self.job.processors = test['processors']
+            self.job.nodes = test['nodes']
+            self.assertEqual(self.job.total_processors, test['expected'])
+
     def test_job_script_checking_contains_the_right_default_variables(self):
         # This test (and feature) was implemented in order to avoid
         # false positives on the checking process with auto-ecearth3

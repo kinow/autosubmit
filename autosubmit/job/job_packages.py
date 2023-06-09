@@ -370,13 +370,16 @@ class JobPackageThread(JobPackageBase):
         self._job_dependency = dependency
         self._common_script = None
         self._wallclock = '00:00'
-        self._num_processors = '0'
+        # depends on the type of wrapper
+        if not hasattr(self,"_num_processors"):
+            self._num_processors = '0'
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
         self.current_wrapper_section = wrapper_section
         self.inner_retrials = 0
         if configuration is not None:
-            self.inner_retrials = configuration.get_retrials()
+            self.inner_retrials = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("INNER_RETRIALS",configuration.get_retrials())
+
             self.export = configuration.get_wrapper_export(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
             if self.export.lower() != "none" and len(self.export) > 0:
                 for job in self.jobs:
@@ -393,8 +396,8 @@ class JobPackageThread(JobPackageBase):
                 self.partition = wr_partition
             else:
                 self.partition = jobs[0].partition
-            wr_exclusive = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXCLUSIVE",False)
-            if wr_exclusive:
+            wr_exclusive = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXCLUSIVE",None)
+            if wr_exclusive is not None:
                 self.exclusive = wr_exclusive
             else:
                 self.exclusive = jobs[0].exclusive
@@ -429,7 +432,6 @@ class JobPackageThread(JobPackageBase):
             self.nodes = jobs[0].nodes
             self.tasks = jobs[0].tasks
             self.threads = jobs[0].threads
-            self._num_processors = jobs[0].num_processors
         self.method = method
         self._wrapper_factory.as_conf = configuration
         self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"] = configuration.experiment_data["WRAPPERS"][self.current_wrapper_section]
@@ -633,12 +635,13 @@ class JobPackageVertical(JobPackageThread):
     :param: dependency:
     """
     def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="WRAPPERS", wrapper_info = {}):
-        super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section, wrapper_info = wrapper_info)
+        self._num_processors = 0
         for job in jobs:
             if int(job.processors) >= int(self._num_processors):
                 self._num_processors = job.processors
-            self._threads = job.threads
-
+                self._threads = job.threads
+        super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section, wrapper_info = wrapper_info)
+        for job in jobs:
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
                                                                                   str(random.randint(1, 10000)),

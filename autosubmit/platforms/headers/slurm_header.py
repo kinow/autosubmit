@@ -52,20 +52,6 @@ class SlurmHeader(object):
             return ""
         else:
             return "SBATCH -n {0}".format(job.processors)
-    def get_nodes_directive(self, job):
-        """
-        Returns nodes directive for the specified job
-
-        :param job: job to create nodes directive for
-        :type job: Job
-        :return: nodes directive
-        :rtype: str
-        """
-        # There is no nodes, so directive is empty
-        if job.num_nodes == '':
-            return ""
-        else:
-            return "SBATCH -N {0}".format(job.num_nodes)
     def get_tasks_directive(self,job):
         """
         Returns tasks directive for the specified job
