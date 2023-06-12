@@ -75,7 +75,7 @@ def threaded(fn):
     parameters={
         'chunk': {
             'day_before': 'Day before the start date.',
-            'chunk_end_in_days': 'Chunk length in days.',
+            'chunk_end_in_days': 'Days passed from the start of the simulation until the end of the chunk.',
             'chunk_start_date': 'Chunk start date.',
             'chunk_start_year': 'Chunk start year.',
             'chunk_start_month': 'Chunk start month.',
@@ -89,6 +89,7 @@ def threaded(fn):
             'prev': 'Days since start date at the chunk\'s start.',
             'chunk_first': 'True if the current chunk is the first, false otherwise.',
             'chunk_last': 'True if the current chunk is the last, false otherwise.',
+            'run_days': 'Chunk length in days.',
             'notify_on': 'Determine the job statuses you want to be notified.'
         },
         'config': {
