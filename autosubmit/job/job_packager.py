@@ -98,7 +98,6 @@ class JobPackager(object):
         self.special_variables = dict()
 
 
-
         #todo add default values
         #Wrapper building starts here
         for wrapper_section,wrapper_data in self._as_config.experiment_data.get("WRAPPERS",{}).items():
