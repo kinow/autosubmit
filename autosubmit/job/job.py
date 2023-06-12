@@ -135,6 +135,7 @@ class Job(object):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
     def __init__(self, name, job_id, status, priority):
+        self.splits = None
         self.script_name_wrapper = None
         self.delay_end = datetime.datetime.now()
         self._delay_retrials = "0"
@@ -440,6 +441,14 @@ class Job(object):
     @custom_directives.setter
     def custom_directives(self, value):
         self._custom_directives = value
+    @property
+    @autosubmit_parameter(name='splits')
+    def splits(self):
+        """Max number of splits."""
+        return self._splits
+    @splits.setter
+    def splits(self, value):
+        self._splits = value
 
     def __getstate__(self):
         odict = self.__dict__
@@ -1333,6 +1342,7 @@ class Job(object):
         parameters['SDATE'] = self.sdate
         parameters['MEMBER'] = self.member
         parameters['SPLIT'] = self.split
+        parameters['SPLITS'] = self.splits
         parameters['DELAY'] = self.delay
         parameters['FREQUENCY'] = self.frequency
         parameters['SYNCHRONIZE'] = self.synchronize
@@ -1404,20 +1414,6 @@ class Job(object):
                 parameters['CHUNK_LAST'] = 'FALSE'
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['DEPENDENCIES'] = str(as_conf.jobs_data[self.section].get("DEPENDENCIES",""))
-        # This shouldn't be necessary anymore as now all sub is done in the as_conf.reload()
-        # if len(self.export) > 0:
-        #     variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', self.export)
-        #     if len(variables) > 0:
-        #         variables = [variable[1:-1] for variable in variables]
-        #         for key in variables:
-        #             try:
-        #                 self.export = re.sub(
-        #                     '%(?<!%%)' + key + '%(?!%%)', parameters[key], self.export, flags=re.I)
-        #             except Exception as e:
-        #                 self.export = re.sub(
-        #                     '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.export, flags=re.I)
-        #                 Log.debug(
-        #                     "PARAMETER export: Variable: {0} doesn't exist".format(str(e)))
         self.dependencies = parameters['DEPENDENCIES']
         parameters['EXPORT'] = self.export
         parameters['PROJECT_TYPE'] = as_conf.get_project_type()

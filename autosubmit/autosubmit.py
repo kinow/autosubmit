@@ -808,6 +808,7 @@ class Autosubmit:
                 os.mkdir(aslogs_path)
             if owner:
                 os.chmod(tmp_path, 0o775)
+
                 Log.set_file(os.path.join(aslogs_path, args.command + '.log'), "out", log_level)
                 Log.set_file(os.path.join(aslogs_path, args.command + '_err.log'), "err")
                 if args.command in ["run"]:
