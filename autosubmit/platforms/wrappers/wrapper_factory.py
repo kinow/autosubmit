@@ -32,7 +32,7 @@ class WrapperFactory(object):
         self.exception = "This type of wrapper is not supported for this platform"
 
     def get_wrapper(self, wrapper_builder, **kwargs):
-        wrapper_data = self.as_conf.experiment_data["CURRENT_WRAPPER"]
+        wrapper_data = kwargs['wrapper_data']
         kwargs['allocated_nodes'] = self.allocated_nodes()
         kwargs['dependency'] = self.dependency(kwargs['dependency'])
         kwargs['queue'] = self.queue(kwargs['queue'])
@@ -43,9 +43,10 @@ class WrapperFactory(object):
         kwargs['nodes'] = self.nodes(wrapper_data['NODES'])
         kwargs['tasks'] = self.tasks(wrapper_data['TASKS'])
         kwargs['threads'] = self.threads(kwargs['threads'])
-        if int(wrapper_data['NODES']) > 1 and kwargs['num_processors'] == '1':
-            kwargs['num_processors'] = None
-        kwargs['num_processors'] = self.processors(kwargs['num_processors'])
+        if str(wrapper_data['NODES']).isdigit() and int(wrapper_data['NODES']) > 1 and kwargs['num_processors'] == '1':
+            kwargs['num_processors'] = "#"
+        else:
+            kwargs['num_processors'] = self.processors(kwargs['num_processors'])
         kwargs['header_directive'] = self.header_directives(**kwargs)
         builder = wrapper_builder(**kwargs)
         return self.wrapper_director.construct(builder)

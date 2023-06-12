@@ -48,7 +48,11 @@ class SlurmHeader(object):
         :rtype: str
         """
         # There is no processors, so directive is empty
-        if job.processors == '' or job.processors == '1' and int(job.nodes) > 1:
+        if job.nodes == "":
+            job_nodes = 0
+        else:
+            job_nodes = job.nodes
+        if job.processors == '' or job.processors == '1' and int(job_nodes) > 1:
             return ""
         else:
             return "SBATCH -n {0}".format(job.processors)

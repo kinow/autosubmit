@@ -34,7 +34,7 @@ from configparser import ConfigParser
 
 from .monitor.monitor import Monitor
 from .database.db_common import get_autosubmit_version, check_experiment_exists
-from .database.db_common import delete_experiment, update_experiment_descrip_version, get_experiment_descrip
+from .database.db_common import delete_experiment, get_experiment_descrip
 from .database.db_structure import get_structure
 from .experiment.experiment_common import copy_experiment
 from .experiment.experiment_common import new_experiment
@@ -43,10 +43,8 @@ from .job.job_grouping import JobGrouping
 from .job.job_list_persistence import JobListPersistencePkl
 from .job.job_list_persistence import JobListPersistenceDb
 from .job.job_package_persistence import JobPackagePersistence
-from .job.job_packages import JobPackageThread, JobPackageBase
 from .job.job_list import JobList
 from .job.job_utils import SubJob, SubJobManager
-from .job.job import Job
 from autosubmit.helpers.parameters import PARAMETERS
 from .git.autosubmit_git import AutosubmitGit
 from .job.job_common import Status
@@ -55,14 +53,8 @@ from autosubmitconfigparser.config.basicconfig import BasicConfig
 import locale
 from distutils.util import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, Set, Tuple, Union
 from autosubmit.database.db_common import update_experiment_descrip_version
-
-import sqlite3
-
-# try:
-#    import pythondialog as dialog
-# except Exception:
 dialog = None
 from time import sleep
 import argparse
@@ -72,7 +64,6 @@ import tarfile
 import time
 import copy
 import os
-import glob
 import pwd
 import sys
 import shutil

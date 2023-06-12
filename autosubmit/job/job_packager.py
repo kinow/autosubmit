@@ -104,7 +104,10 @@ class JobPackager(object):
             if isinstance(wrapper_data,collections.abc.Mapping ):
                 self.wrapper_type[wrapper_section] = self._as_config.get_wrapper_type(wrapper_data)
                 self.wrapper_policy[wrapper_section] = self._as_config.get_wrapper_policy(wrapper_data)
-                self.wrapper_method[wrapper_section] = self._as_config.get_wrapper_method(wrapper_data).lower()
+                if self._as_config.get_wrapper_method(wrapper_data) is None:
+                    self.wrapper_method[wrapper_section] = "asthread"
+                else:
+                    self.wrapper_method[wrapper_section] = self._as_config.get_wrapper_method(wrapper_data).lower()
                 self.jobs_in_wrapper[wrapper_section] = self._as_config.get_wrapper_jobs(wrapper_data)
                 self.extensible_wallclock[wrapper_section] = self._as_config.get_extensible_wallclock(wrapper_data)
         self.wrapper_info = [self.wrapper_type,self.wrapper_policy,self.wrapper_method,self.jobs_in_wrapper,self.extensible_wallclock] # to pass to job_packages
@@ -287,14 +290,6 @@ class JobPackager(object):
                                     wrapper_limits["max_by_section"][sectionN] = wrapper_limits["max"]
                                 wrapper_limits["min"] = min(self._as_config.jobs_data[sectionN].get("MIN_WRAPPED",min_value),min_value)
                         hard_limit_wrapper =  wrapper_limits["max"]
-                        #if self.wrapper_type[self.current_wrapper_section].lower() == "vertical":
-                        #    for k in dependencies_keys:
-                        #        if "-" in k:
-                        #            k_divided = k.split("-")
-                        #            if k_divided[0] not in self.jobs_in_wrapper[self.current_wrapper_section]:
-                        #                number = int(k_divided[1].strip(" "))
-                        #                if number < wrapper_limits["max"]:
-                        #                    hard_limit_wrapper = number
                         wrapper_limits["min"] = min(wrapper_limits["min"], hard_limit_wrapper)
                         wrapper_limits["min_v"] = self._as_config.get_min_wrapped_jobs_vertical(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
                         wrapper_limits["min_h"] = self._as_config.get_min_wrapped_jobs_horizontal(self._as_config.experiment_data["WRAPPERS"][self.current_wrapper_section])
@@ -909,14 +904,20 @@ class JobPackagerHorizontal(object):
         for section in jobs_by_section:
             current_package_by_section[section] = 0
             for job in jobs_by_section[section]:
+                if str(job.processors).isdigit() and str(job.nodes).isdigit() and int(job.nodes) > 1 and int(job.processors) <= 1:
+                    job.processors = 0
+                if job.total_processors == "":
+                    job_total_processors = 0
+                else:
+                    job_total_processors = int(job.total_processors)
                 if len(current_package) < self.wrapper_limits["max_h"] and len(current_package) < self.wrapper_limits["max"]  and current_package_by_section[section] < self.wrapper_limits["max_by_section"][section]:
                     if int(job.tasks) != 0 and int(job.tasks) != int(self.processors_node) and \
-                            int(job.tasks) < job.total_processors:
+                            int(job.tasks) < job_total_processors:
                         nodes = int(
-                            ceil(job.total_processors / float(job.tasks)))
+                            ceil(job_total_processors / float(job.tasks)))
                         total_processors = int(self.processors_node) * nodes
                     else:
-                        total_processors = job.total_processors
+                        total_processors = job_total_processors
                     if (self._current_processors + total_processors) <= int(self.max_processors):
                         current_package.append(job)
                         self._current_processors += total_processors

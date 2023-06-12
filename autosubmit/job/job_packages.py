@@ -447,24 +447,22 @@ class JobPackageThread(JobPackageBase):
             self.tasks = jobs[0].tasks
             self.threads = jobs[0].threads
         self.method = method
-        self._wrapper_factory.as_conf = configuration
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"] = configuration.experiment_data["WRAPPERS"][self.current_wrapper_section]
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["TYPE"] = self.wrapper_type
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["WRAPPER_POLICY"] = self.wrapper_policy
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["INNER_RETRIALS"] = self.inner_retrials
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXTEND_WALLCLOCK"] = self.extensible_wallclock
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["METHOD"] = self.wrapper_method
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXPORT"] = self.export
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["QUEUE"] = self.queue
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["NODES"] = self.nodes
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["TASKS"] = self.tasks
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["THREADS"] = self.threads
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["PROCESSORS"] = self._num_processors
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["PARTITION"] = self.partition
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXCLUSIVE"] = self.exclusive
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["EXECUTABLE"] = self.executable
-        self._wrapper_factory.as_conf.experiment_data["CURRENT_WRAPPER"]["CUSTOM_DIRECTIVES"] = self.custom_directives
-
+        self._wrapper_data = configuration.experiment_data["WRAPPERS"][self.current_wrapper_section]
+        self._wrapper_data["TYPE"] = self.wrapper_type
+        self._wrapper_data["WRAPPER_POLICY"] = self.wrapper_policy
+        self._wrapper_data["INNER_RETRIALS"] = self.inner_retrials
+        self._wrapper_data["EXTEND_WALLCLOCK"] = self.extensible_wallclock
+        self._wrapper_data["METHOD"] = self.wrapper_method
+        self._wrapper_data["EXPORT"] = self.export
+        self._wrapper_data["QUEUE"] = self.queue
+        self._wrapper_data["NODES"] = self.nodes
+        self._wrapper_data["TASKS"] = self.tasks
+        self._wrapper_data["THREADS"] = self.threads
+        self._wrapper_data["PROCESSORS"] = self._num_processors
+        self._wrapper_data["PARTITION"] = self.partition
+        self._wrapper_data["EXCLUSIVE"] = self.exclusive
+        self._wrapper_data["EXECUTABLE"] = self.executable
+        self._wrapper_data["CUSTOM_DIRECTIVES"] = self.custom_directives
     @property
     def name(self):
         return self._name
@@ -727,7 +725,7 @@ class JobPackageVertical(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level,partition=self.partition)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level,partition=self.partition,wrapper_data=self._wrapper_data)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -757,7 +755,7 @@ class JobPackageHorizontal(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data)
 
 class JobPackageHybrid(JobPackageThread):
     """
@@ -802,7 +800,7 @@ class JobPackageVerticalHorizontal(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition)
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data)
 
 
 class JobPackageHorizontalVertical(JobPackageHybrid):
@@ -813,5 +811,5 @@ class JobPackageHorizontalVertical(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition)
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data)
 

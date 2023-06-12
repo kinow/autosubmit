@@ -124,18 +124,18 @@ class TestJobPackage(TestCase):
         }
 
         self.setUpWrappers(options)
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["TYPE"], "vertical")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["JOBS_IN_WRAPPER"], "None")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["METHOD"], "ASThread")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["POLICY"], "flexible")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["EXTEND_WALLCLOCK"], 0)
+        self.assertEqual(self.job_package_wrapper._wrapper_data["TYPE"], "vertical")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["JOBS_IN_WRAPPER"], "None")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["METHOD"], "ASThread")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["POLICY"], "flexible")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["EXTEND_WALLCLOCK"], 0)
 
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["EXCLUSIVE"], True)
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["INNER_RETRIALS"], 0)
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["QUEUE"], "debug")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["PARTITION"], "debug")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["THREADS"], "1")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["TASKS"], "1")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["EXCLUSIVE"], True)
+        self.assertEqual(self.job_package_wrapper._wrapper_data["INNER_RETRIALS"], 0)
+        self.assertEqual(self.job_package_wrapper._wrapper_data["QUEUE"], "debug")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["PARTITION"], "debug")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["THREADS"], "1")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["TASKS"], "1")
 
         options_slurm = {
             'EXCLUSIVE': False,
@@ -147,13 +147,13 @@ class TestJobPackage(TestCase):
             'CUSTOM_DIRECTIVES': "['#SBATCH --mem=1000']"
         }
         self.setUpWrappers(options_slurm)
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["EXCLUSIVE"], False)
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["INNER_RETRIALS"], 30)
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["QUEUE"], "bsc32")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["PARTITION"], "bsc32")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["THREADS"], "30")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["TASKS"], "40")
-        self.assertEqual(self.as_conf.experiment_data["CURRENT_WRAPPER"]["CUSTOM_DIRECTIVES"], "['#SBATCH --mem=1000']")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["EXCLUSIVE"], False)
+        self.assertEqual(self.job_package_wrapper._wrapper_data["INNER_RETRIALS"], 30)
+        self.assertEqual(self.job_package_wrapper._wrapper_data["QUEUE"], "bsc32")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["PARTITION"], "bsc32")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["THREADS"], "30")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["TASKS"], "40")
+        self.assertEqual(self.job_package_wrapper._wrapper_data["CUSTOM_DIRECTIVES"], "['#SBATCH --mem=1000']")
 
 
 
