@@ -4631,6 +4631,9 @@ class Autosubmit:
                             packages = packages_persistence.load(True)
                         else:
                             packages = None
+                        Log.info("\nSaving unified data..")
+                        as_conf.save()
+                        Log.info("")
 
                         Log.info("\nPlotting the jobs list...")
                         monitor_exp = Monitor()
