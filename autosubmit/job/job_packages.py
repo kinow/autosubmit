@@ -352,7 +352,21 @@ class JobPackageThread(JobPackageBase):
 
     def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="WRAPPERS", wrapper_info= {}):
         super(JobPackageThread, self).__init__(jobs)
-        # to be pass as "configuration"
+        """
+        :param dependency: Dependency
+        :type dependency: String
+        :param jobs_resources: Resources to be used by the jobs, if any
+        :type jobs_resources: Dictionary
+        :param method: Method to be used to submit the jobs, ASThread by default
+        :type method: String
+        :param configuration: Autosubmit configuration
+        :type configuration: Autosubmitconfigparser instance
+            
+        """
+        # This function is called from the JobPackageThread constructor
+        # and from the JobPackageThread.create_scripts function
+        # It is in charge of merging ( switch ) the wrapper info by checking if the value is defined by the user in the wrapper section, current wrapper section, job or platform in that order.
+        # Some variables are calculated in futher functions, like num_processors and wallclock.
         if len(wrapper_info) > 0 :
             self.wrapper_type = wrapper_info[0]
             self.wrapper_policy = wrapper_info[1]
