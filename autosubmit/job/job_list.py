@@ -667,6 +667,7 @@ class JobList(object):
             elif "SPLITS_FROM" in relationships:
                 filters_to_apply = JobList._check_splits(relationships, current_job)
             else:
+                relationships.pop("OPTIONAL", None)
                 relationships.pop("CHUNKS_FROM", None)
                 relationships.pop("MEMBERS_FROM", None)
                 relationships.pop("DATES_FROM", None)
