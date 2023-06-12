@@ -58,6 +58,26 @@ class TestJobList(unittest.TestCase):
                     }
                 }
             }
+        self.relationships_chunks2 = {
+                "OPTIONAL": False,
+                "CHUNKS_FROM": {
+                    "1": {
+                        "DATES_TO": "20020201",
+                        "MEMBERS_TO": "fc2",
+                        "CHUNKS_TO": "ALL",
+                        "SPLITS_TO": "1"
+                    },
+                    "2": {
+                        "SPLITS_FROM": {
+                            "5": {
+                                "SPLITS_TO": "2"
+                            }
+                        }
+                    }
+                }
+            }
+
+
         self.relationships_splits = {
                 "OPTIONAL": False,
                 "SPLITS_FROM": {
@@ -157,7 +177,6 @@ class TestJobList(unittest.TestCase):
         # Call the function to get the result
 
         self.mock_job.chunk = 1
-
         result = JobList._check_chunks(self.relationships_chunks, self.mock_job)
         expected_output = {
                 "DATES_TO": "20020201",
@@ -169,6 +188,17 @@ class TestJobList(unittest.TestCase):
         self.mock_job.chunk = 2
         result = JobList._check_chunks(self.relationships_chunks, self.mock_job)
         self.assertEqual(result, {})
+        # test splits_from
+        self.mock_job.split = 5
+        result = JobList._check_chunks(self.relationships_chunks2, self.mock_job)
+        expected_output2 = {
+                "SPLITS_TO": "2"
+            }
+        self.assertEqual(result, expected_output2)
+        self.mock_job.split = 1
+        result = JobList._check_chunks(self.relationships_chunks2, self.mock_job)
+        self.assertEqual(result, {})
+
     def test_valid_parent(self):
         # Call the function to get the result
 
