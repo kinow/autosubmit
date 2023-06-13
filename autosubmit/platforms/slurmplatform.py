@@ -88,6 +88,7 @@ class SlurmPlatform(ParamikoPlatform):
                 try:
                     jobs_id = self.submit_Script(hold=hold)
                 except AutosubmitError as e:
+                    Log.error(f'TRACE:{e.trace}\n{e.message}')
                     jobnames = [job.name for job in valid_packages_to_submit[0].jobs]
                     for jobname in jobnames:
                         jobid = self.get_jobid_by_jobname(jobname)
@@ -631,7 +632,7 @@ class SlurmPlatform(ParamikoPlatform):
             return language + wr_header
         else:
             language = kwargs["executable"]
-            if language is None or len(language) == 0:
+            if language is None or len(language) == 0 or "bash" in language:
                 language = "#!/usr/bin/env python3"
             return language + wr_header
 

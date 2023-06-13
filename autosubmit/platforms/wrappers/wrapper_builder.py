@@ -32,10 +32,11 @@ class WrapperDirector:
 
         header = self._builder.build_header()
         job_thread = self._builder.build_job_thread()
-        if "bash" not in header[0:15]:
-            main = self._builder.build_main()
-        else:
-            nodes,main = self._builder.build_main() #What to do with nodes?
+        #if "bash" not in header[0:15]:
+
+        main = self._builder.build_main()
+        #else:
+        #    nodes,main = self._builder.build_main() #What to do with nodes?
         # change to WrapperScript object
         wrapper_script = header + job_thread + main
         wrapper_script = wrapper_script.replace("_NEWLINE_", '\\n')
