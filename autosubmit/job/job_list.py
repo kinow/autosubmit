@@ -70,6 +70,7 @@ class JobList(object):
         self._persistence_file = "job_list_" + expid
         self._job_list = list()
         self._base_job_list = list()
+        self.jobs_edges = dict()
         self._expid = expid
         self._config = config
         self.experiment_data = as_conf.experiment_data
@@ -732,6 +733,18 @@ class JobList(object):
                     return True, True
             return True, False
         return False,False
+
+    def _add_edge_info(self,job,parent):
+        """
+        Special relations to be check in the update_list method
+        :param job: Current job
+        :param parent: parent jobs to check
+        :return:
+        """
+        if job.name not in self.jobs_edges:
+            self.jobs_edges[job.name] = []
+        else:
+            self.jobs_edges[job.name].append(parent)
     @staticmethod
     def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
                                  graph):
@@ -784,8 +797,17 @@ class JobList(object):
                     job.add_parent(parent)
                     JobList._add_edge(graph, job, parent)
                     # Could be more variables in the future
-                    if optional:
-                        job.add_edge_info(parent.name,special_variables={"optional":True})
+                    # todo
+                    checkpoint = False
+                    if optional and checkpoint:
+                        JobList._add_edge_info(job,parent)
+                        job.add_edge_info(parent.name,special_variables={"optional":True,"checkpoint":True})
+                    if optional and not checkpoint:
+                        #JobList._add_edge_info(job)
+                        job.add_edge_info(parent.name, special_variables={"optional": True})
+                    if not optional and checkpoint:
+                        JobList._add_edge_info(job,parent)
+                        job.add_edge_info(parent.name, special_variables={"checkpoint": True})
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph, other_parents)
 
