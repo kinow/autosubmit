@@ -95,7 +95,7 @@ class JobPackageBase(object):
     @threaded
     def check_scripts(self,jobs,configuration, parameters,only_generate,hold):
         for job in jobs:
-            if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
+            if str(job.check).lower() == str(Job.CHECK_ON_SUBMISSION).lower():
                 if only_generate:
                     exit_ = True
                     break

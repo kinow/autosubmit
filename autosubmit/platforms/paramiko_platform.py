@@ -1263,7 +1263,7 @@ class ParamikoPlatform(Platform):
     def check_tmp_exists(self):
         try:
             if self.send_command("ls {0}".format(self.temp_dir)):
-                if "no such file or directory" in self.get_ssh_output_err().lower():
+                if "no such file or directory" in str(self.get_ssh_output_err()).lower():
                     return False
                 else:
                     return True

@@ -102,12 +102,14 @@ class PJMPlatform(ParamikoPlatform):
                     if e.trace is not None:
                         has_trace_bad_parameters = self.submit_error(e.trace)
                     else:
+                        e.trace = ""
                         has_trace_bad_parameters = False
                     if e.message is not None:
                         has_message_bad_parameters = self.submit_error(e.message)
                     else:
+                        e.message = ""
                         has_message_bad_parameters = False
-                    if has_trace_bad_parameters or has_message_bad_parameters or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1 or e.message.lower().find("scheduler is not installed") != -1 or e.message.lower().find("failed") != -1 or e.message.lower().find("not available") != -1:
+                    if has_trace_bad_parameters or has_message_bad_parameters or e.message.lower().find("invalid partition") != -1 or e.message.lower().find("invalid qos") != -1 or e.message.lower().find("scheduler is not installed") != -1 or e.message.lower().find("failed") != -1 or e.message.lower().find("not available") != -1:
                         error_msg = ""
                         for package_tmp in valid_packages_to_submit:
                             for job_tmp in package_tmp.jobs:
@@ -362,7 +364,7 @@ class PJMPlatform(ParamikoPlatform):
                 "Submission failed. There are issues on your config file", 7014)
 
     def get_submit_cmd(self, job_script, job, hold=False, export=""):
-        if (export is None or export.lower() == "none") or len(export) == 0:
+        if (export is None or str(export).lower() == "none") or len(export) == 0:
             export = ""
         else:
             export += " ; "

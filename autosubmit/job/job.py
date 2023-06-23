@@ -1381,6 +1381,9 @@ class Job(object):
         return parameters
 
     def update_job_parameters(self,as_conf, parameters):
+        #todo
+        self.ec_queue = as_conf.get_ec_queue(self)
+
         if self.checkpoint: # To activate placeholder sustitution per <empty> in the template
             parameters["AS_CHECKPOINT"] = self.checkpoint
         parameters['JOBNAME'] = self.name

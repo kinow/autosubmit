@@ -162,9 +162,14 @@ class EcPlatform(ParamikoPlatform):
         :rtype: bool
         """
         output = subprocess.check_output(self._checkvalidcert_cmd, shell=True).decode(locale.getlocale()[1])
-        if output.lower().find("yes") != -1:
-            self.connected = True
-        else:
+        if not output:
+            output = ""
+        try:
+            if output.lower().find("yes") != -1:
+                self.connected = True
+            else:
+                self.connected = False
+        except:
             self.connected = False
     def restore_connection(self):
         """
@@ -174,9 +179,14 @@ class EcPlatform(ParamikoPlatform):
         :rtype: bool
         """
         output = subprocess.check_output(self._checkvalidcert_cmd, shell=True).decode(locale.getlocale()[1])
-        if output.lower().find("yes") != -1:
-            self.connected = True
-        else:
+        if not output:
+            output = ""
+        try:
+            if output.lower().find("yes") != -1:
+                self.connected = True
+            else:
+                self.connected = False
+        except:
             self.connected = False
     def test_connection(self):
         """
@@ -186,10 +196,16 @@ class EcPlatform(ParamikoPlatform):
         :rtype: bool
         """
         output = subprocess.check_output(self._checkvalidcert_cmd, shell=True).decode(locale.getlocale()[1])
-        if output.lower().find("yes") != -1:
-            self.connected = True
-            return "OK"
-        else:
+        if not output:
+            output = ""
+        try:
+            if output.lower().find("yes") != -1:
+                self.connected = True
+                return "OK"
+            else:
+                self.connected = False
+                return "Invalid certificate"
+        except:
             self.connected = False
             return "Invalid certificate"
 
