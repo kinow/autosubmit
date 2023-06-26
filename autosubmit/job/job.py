@@ -221,7 +221,9 @@ class Job(object):
         self.total_jobs = None
         self.max_waiting_jobs = None
         self.exclusive = ""
-
+        self._check_point = ""
+        # internal
+        self.current_checkpoint_step = 0
     @property
     @autosubmit_parameter(name='tasktype')
     def section(self):
@@ -253,6 +255,23 @@ class Job(object):
         self._fail_count = value
 
     @property
+    @autosubmit_parameter(name='checkpoint')
+    def checkpoint(self):
+        """Generates a checkpoint step for this job based on job.type"""
+        return self._checkpoint
+    @checkpoint.setter
+    def checkpoint(self):
+        """Generates a checkpoint step for this job based on job.type"""
+        if self.type == Type.PYTHON:
+            self._checkpoint = "checkpoint()"
+        elif self.type == Type.R:
+            self._checkpoint = "checkpoint()"
+        else: # bash
+            self._checkpoint = "as_checkpoint"
+
+    def get_checkpoint_files(self):
+        """Downloads checkpoint files from remote host. If they aren't already in local."""
+        self.platform.get_checkpoint_files(self)
     @autosubmit_parameter(name='sdate')
     def sdate(self):
         """Current start date."""
@@ -1346,6 +1365,7 @@ class Job(object):
         return parameters
 
     def update_job_parameters(self,as_conf, parameters):
+        parameters["AS_CHECKPOINT"] = self.checkpoint
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
         parameters['SDATE'] = self.sdate

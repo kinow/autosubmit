@@ -797,11 +797,13 @@ class JobList(object):
                     job.add_parent(parent)
                     JobList._add_edge(graph, job, parent)
                     # Could be more variables in the future
-                    # todo
-                    checkpoint = False
+                    # todo, default to TRUE for testing propouses
+                    checkpoint = "!r"
+                    #checkpoint = "!r1"
+                    #checkpoint = "!r1,2,3"
                     if optional and checkpoint:
                         JobList._add_edge_info(job,parent)
-                        job.add_edge_info(parent.name,special_variables={"optional":True,"checkpoint":True})
+                        job.add_edge_info(parent.name,special_variables={"optional":True,"checkpoint":checkpoint})
                     if optional and not checkpoint:
                         #JobList._add_edge_info(job)
                         job.add_edge_info(parent.name, special_variables={"optional": True})
@@ -1908,6 +1910,10 @@ class JobList(object):
     def parameters(self, value):
         self._parameters = value
 
+    def check_checkpoint(self, job, parent):
+        """ Check if a checkpoint step exists for this edge"""
+        return job.get_checkpoint_files(parent.name)
+
     def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time=False):
         # type: (AutosubmitConfig, bool, bool, object, bool) -> bool
         """
@@ -2001,8 +2007,6 @@ class JobList(object):
                         Log.debug(
                             "Resetting sync job: {0} status to: WAITING for parents completion...".format(
                                 job.name))
-
-
         Log.debug('Updating WAITING jobs')
         if not fromSetStatus:
             all_parents_completed = []
