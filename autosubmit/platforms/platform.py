@@ -512,6 +512,28 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
+    def get_checkpoint_files(self,job):
+        """
+        Get all the checkpoint files
+
+        :param job_name: name of the job
+        :type job_name: str
+        """
+        from pathlib import Path
+        local_checkpoint_path = Path(f"{self.get_files_path()}/CHECKPOINT_{job.current_checkpoint_step}")
+        if Path(local_checkpoint_path).exists():
+            return True
+        while self.check_file_exists(f'{job.name}_CHECKPOINT_{job.current_checkpoint_step}'):
+            # check if it exists locally
+            if not self.check_file_exists(f'{job.name}_CHECKPOINT_{job.current_checkpoint_step}', False):
+                if self.get_file('{0}_CHECKPOINT'.format(job.name), must_exist=False):
+                    return True
+                else:
+                    return False
+            else:
+                return False
+
+        self.get_files(['{0}_checkpoint'.format(job_name), '{0}_checkpoint.json'.format(job_name)], False)
     def get_completed_files(self, job_name, retries=0, recovery=False, wrapper_failed=False):
         """
         Get the COMPLETED file of the given job
