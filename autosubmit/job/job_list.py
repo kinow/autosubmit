@@ -275,8 +275,7 @@ class JobList(object):
                 raise AutosubmitCritical("Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.conf".format(wrapper_section),7014,str(e))
 
 
-    @staticmethod
-    def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, graph, option="DEPENDENCIES"):
+    def _add_dependencies(self,date_list, member_list, chunk_list, dic_jobs, graph, option="DEPENDENCIES"):
         jobs_data = dic_jobs._jobs_data.get("JOBS",{})
         for job_section in jobs_data.keys():
             Log.debug("Adding dependencies for {0} jobs".format(job_section))
@@ -295,7 +294,7 @@ class JobList(object):
                     dependencies_keys[dependency] = {}
             if dependencies_keys is None:
                 dependencies_keys = {}
-            dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs, job_section)
+            dependencies = self._manage_dependencies(dependencies_keys, dic_jobs, job_section)
 
             for job in dic_jobs.get_jobs(job_section):
                 num_jobs = 1
@@ -303,7 +302,7 @@ class JobList(object):
                     num_jobs = len(job)
                 for i in range(num_jobs):
                     _job = job[i] if num_jobs > 1 else job
-                    JobList._manage_job_dependencies(dic_jobs, _job, date_list, member_list, chunk_list, dependencies_keys,
+                    self._manage_job_dependencies(dic_jobs, _job, date_list, member_list, chunk_list, dependencies_keys,
                                                      dependencies, graph)
         pass
 
@@ -423,24 +422,48 @@ class JobList(object):
         else:
             return False
 
+    @staticmethod
+    def _parse_checkpoint(data):
+        checkpoint = {"STATUS": None, "FROM_STEP": None}
+        data = data.lower()
+        if data[0] == "r":
+            checkpoint["STATUS"] = Status.RUNNING
+            if len(data) > 1:
+                checkpoint["FROM_STEP"] = data[1:]
+            else:
+                checkpoint["FROM_STEP"] = "1"
+        elif data[0] == "f":
+            checkpoint["STATUS"] = Status.FAILED
+            if len(data) > 1:
+                checkpoint["FROM_STEP"] = data[1:]
+            else:
+                checkpoint["FROM_STEP"] = "1"
+        elif data[0] == "q":
+            checkpoint["STATUS"] = Status.QUEUING
+        elif data[0] == "s":
+            checkpoint["STATUS"] = Status.SUBMITTED
+        return checkpoint
 
     @staticmethod
-    def _check_relationship(relationships,level_to_check,value_to_check):
+    def _check_relationship(relationships, level_to_check, value_to_check):
         """
         Check if the current_job_value is included in the filter_value
-        :param relationship: current filter level to check.
+        :param relationships: current filter level to check.
         :param level_to_check: can be a date, member, chunk or split.
         :param value_to_check: Can be None, a date, a member, a chunk or a split.
         :return:
         """
         filters = []
-        for filter_range,filter_data in relationships.get(level_to_check,{}).items():
+        for filter_range, filter_data in relationships.get(level_to_check, {}).items():
             if not value_to_check or str(filter_range).upper() in "ALL" or str(value_to_check).upper() in str(filter_range).upper():
                 if filter_data:
                     if "?" in filter_range:
                         filter_data["OPTIONAL"] = True
                     else:
                         filter_data["OPTIONAL"] = relationships["OPTIONAL"]
+                    if "!" in filter_range:
+                        filter_data["CHECKPOINT"] = "!"+filter_range.split("!")[1]
+                        #JobList._parse_checkpoint(filter_range.split("!")[1])
                 filters.append(filter_data)
         # Normalize the filter return
         if len(filters) == 0:
@@ -486,22 +509,22 @@ class JobList(object):
             # Will enter, go recursivily to the similar methods and in the end it will do:
             # Will enter members_from, and obtain [{DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", CHUNKS_FROM{...}]
             if "MEMBERS_FROM" in filter:
-                filters_to_apply_m = JobList._check_members({"MEMBERS_FROM": (filter.pop("MEMBERS_FROM")),"OPTIONAL":optional}, current_job)
+                filters_to_apply_m = JobList._check_members({"MEMBERS_FROM": (filter.pop("MEMBERS_FROM")), "OPTIONAL":optional}, current_job)
                 if len(filters_to_apply_m) > 0:
                     filters_to_apply[i].update(filters_to_apply_m)
             # Will enter chunks_from, and obtain [{DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"]
             if "CHUNKS_FROM" in filter:
-                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter.pop("CHUNKS_FROM")),"OPTIONAL":optional}, current_job)
+                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter.pop("CHUNKS_FROM")), "OPTIONAL":optional}, current_job)
                 if len(filters_to_apply_c) > 0 and len(filters_to_apply_c[0]) > 0:
                     filters_to_apply[i].update(filters_to_apply_c)
-            #IGNORED
+            # IGNORED
             if "SPLITS_FROM" in filter:
                 filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM")),"OPTIONAL":optional}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
         # Unify filters from all filters_from where the current job is included to have a single SET of filters_to
         if optional:
-            for i,filter in enumerate(filters_to_apply):
+            for i in range(0, len(filters_to_apply)):
                 filters_to_apply[i]["OPTIONAL"] = True
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
         # {DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"}
@@ -517,19 +540,19 @@ class JobList(object):
         """
         filters_to_apply = JobList._check_relationship(relationships, "MEMBERS_FROM", current_job.member)
         optional = False
-        for i,filter in enumerate(filters_to_apply):
-            optional = filter.pop("OPTIONAL", False)
-            if "CHUNKS_FROM" in filter:
-                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter.pop("CHUNKS_FROM")),"OPTIONAL":optional}, current_job)
+        for i, filter_ in enumerate(filters_to_apply):
+            optional = filter_.pop("OPTIONAL", False)
+            if "CHUNKS_FROM" in filter_:
+                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter_.pop("CHUNKS_FROM")),"OPTIONAL":optional}, current_job)
                 if len(filters_to_apply_c) > 0:
                     filters_to_apply[i].update(filters_to_apply_c)
 
-            if "SPLITS_FROM" in filter:
-                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM")),"OPTIONAL":optional}, current_job)
+            if "SPLITS_FROM" in filter_:
+                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter_.pop("SPLITS_FROM")),"OPTIONAL":optional}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
         if optional:
-            for i,filter in enumerate(filters_to_apply):
+            for i in range(0, len(filters_to_apply) > 0):
                 filters_to_apply[i]["OPTIONAL"] = True
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
         return filters_to_apply
@@ -584,11 +607,22 @@ class JobList(object):
             if aux:
                 aux = aux.split(",")
                 for element in aux:
-                    if element.lower().strip("?") in ["natural","none"] and len(unified_filter[filter_type]) > 0:
+                    # element is SECTION(alphanumeric) then ? or ! can figure and then ! or ? can figure
+                    # Get only the first alphanumeric part
+                    parsed_element = re.findall(r"[\w']+", element)[0].lower()
+                    # Get the rest
+                    data = element[len(parsed_element):]
+                    if parsed_element in ["natural", "none"] and len(unified_filter[filter_type]) > 0:
                         continue
                     else:
-                        if filter_to.get("OPTIONAL",False) and element[-1] != "?":
-                            element += "?"
+                        if filter_to.get("OPTIONAL", False) or "?" in data:
+                            if "?" not in element:
+                                element += "?"
+                        if "!" in data:
+                            element = parsed_element+data
+                        elif filter_to.get("CHECKPOINT", None):
+                            element = parsed_element+filter_to.get("CHECKPOINT", None)
+
                         unified_filter[filter_type].add(element)
     @staticmethod
     def _normalize_to_filters(filter_to,filter_type):
@@ -631,8 +665,7 @@ class JobList(object):
 
     @staticmethod
     def _filter_current_job(current_job,relationships):
-        '''
-        This function will filter the current job based on the relationships given
+        ''' This function will filter the current job based on the relationships given
         :param current_job: Current job to filter
         :param relationships: Relationships to apply
         :return: dict() with the filters to apply, or empty dict() if no filters to apply
@@ -658,6 +691,8 @@ class JobList(object):
         if relationships is not None and len(relationships) > 0:
             if "OPTIONAL" not in relationships:
                 relationships["OPTIONAL"] = False
+            if "CHECKPOINT" not in relationships:
+                relationships["CHECKPOINT"] = None
             # Look for a starting point, this can be if else becasue they're exclusive as a DATE_FROM can't be in a MEMBER_FROM and so on
             if "DATES_FROM" in relationships:
                 filters_to_apply = JobList._check_dates(relationships, current_job)
@@ -669,6 +704,7 @@ class JobList(object):
                 filters_to_apply = JobList._check_splits(relationships, current_job)
             else:
                 relationships.pop("OPTIONAL", None)
+                relationships.pop("CHECKPOINT", None)
                 relationships.pop("CHUNKS_FROM", None)
                 relationships.pop("MEMBERS_FROM", None)
                 relationships.pop("DATES_FROM", None)
@@ -745,8 +781,8 @@ class JobList(object):
             self.jobs_edges[job.name] = []
         else:
             self.jobs_edges[job.name].append(parent)
-    @staticmethod
-    def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
+
+    def _manage_job_dependencies(self,dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
                                  graph):
         '''
         Manage the dependencies of a job
@@ -795,20 +831,19 @@ class JobList(object):
                 # If the parent is valid, add it to the graph
                 if valid:
                     job.add_parent(parent)
-                    JobList._add_edge(graph, job, parent)
+                    self._add_edge(graph, job, parent)
                     # Could be more variables in the future
                     # todo, default to TRUE for testing propouses
-                    checkpoint = "!r"
-                    #checkpoint = "!r1"
-                    #checkpoint = "!r1,2,3"
+                    # Do parse checkpoint
+                    checkpoint= {"status":Status.RUNNING,"from_step":2}
                     if optional and checkpoint:
-                        JobList._add_edge_info(job,parent)
+                        self._add_edge_info(job,parent)
                         job.add_edge_info(parent.name,special_variables={"optional":True,"checkpoint":checkpoint})
                     if optional and not checkpoint:
                         #JobList._add_edge_info(job)
                         job.add_edge_info(parent.name, special_variables={"optional": True})
                     if not optional and checkpoint:
-                        JobList._add_edge_info(job,parent)
+                        self._add_edge_info(job,parent)
                         job.add_edge_info(parent.name, special_variables={"checkpoint": True})
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph, other_parents)
@@ -1914,6 +1949,18 @@ class JobList(object):
         """ Check if a checkpoint step exists for this edge"""
         return job.get_checkpoint_files(parent.name)
 
+    def check_checkpoint_parent_status(self):
+        """
+        Check if all parents of a job have the correct status for checkpointing
+        :return: jobs that fullfill the special conditions """
+        jobs_to_check = []
+        for job, parent_to_check in self.jobs_edges.keys():
+            checkpoint_info = job.edge_info.get(parent_to_check.name, {}).get("checkpoint", None)
+            if checkpoint_info:
+                if job.get_checkpoint_files(checkpoint_info["from_step"]):
+                    if parent_to_check.status != checkpoint_info["status"]:
+                        jobs_to_check.append(job)
+        return jobs_to_check
     def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time=False):
         # type: (AutosubmitConfig, bool, bool, object, bool) -> bool
         """
@@ -1936,7 +1983,7 @@ class JobList(object):
         write_log_status = False
         if not first_time:
             for job in self.get_failed():
-                if self.jobs_data[job.section].get("RETRIALS",None) is None:
+                if self.jobs_data[job.section].get("RETRIALS", None) is None:
                     retrials = int(as_conf.get_retrials())
                 else:
                     retrials = int(job.retrials)
@@ -1950,7 +1997,7 @@ class JobList(object):
                         else:
                             aux_job_delay = int(job.delay_retrials)
 
-                        if self.jobs_data[job.section].get("DELAY_RETRY_TIME",None) or aux_job_delay <= 0:
+                        if self.jobs_data[job.section].get("DELAY_RETRY_TIME", None) or aux_job_delay <= 0:
                             delay_retry_time = str(as_conf.get_delay_retry_time())
                         else:
                             delay_retry_time = job.retry_delay
@@ -1958,7 +2005,7 @@ class JobList(object):
                             retry_delay = job.fail_count * int(delay_retry_time[:-1]) + int(delay_retry_time[:-1])
                         elif "*" in delay_retry_time:
                             retry_delay = int(delay_retry_time[1:])
-                            for retrial_amount in range(0,job.fail_count):
+                            for retrial_amount in range(0, job.fail_count):
                                 retry_delay += retry_delay * 10
                         else:
                             retry_delay = int(delay_retry_time)
@@ -1985,6 +2032,17 @@ class JobList(object):
                     job.status = Status.FAILED
                     job.packed = False
                     save = True
+        # Check checkpoint jobs, the status can be Ready, Running, Queuing
+        for job in self.check_checkpoint_parent_status():
+            # Check if all jobs fullfill the conditions to a job be ready
+            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent in self.jobs_edges[job] ]
+            if len(tmp) == len(job.parents):
+                job.status = Status.READY
+                job.id = None
+                job.packed = False
+                job.wrapper_type = None
+                save = True
+                Log.debug(f"Special condition fullfilled for job {job.name}")
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
             if job.synchronize is not None and len(str(job.synchronize)) > 0:
