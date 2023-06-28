@@ -66,10 +66,10 @@ class JobPackager(object):
 
         waiting_jobs = submitted_jobs_len + queuing_jobs_len
         # Calculate available space in Platform Queue
-        if job is not None and job.max_waiting_jobs != platform.max_waiting_jobs is not None:
-            self._max_wait_jobs_to_submit = job.max_waiting_jobs - waiting_jobs
+        if job is not None and job.max_waiting_jobs and platform.max_waiting_jobs and int(job.max_waiting_jobs) != int(platform.max_waiting_jobs):
+            self._max_wait_jobs_to_submit = int(job.max_waiting_jobs) - int(waiting_jobs)
         else:
-            self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
+            self._max_wait_jobs_to_submit = int(platform.max_waiting_jobs) - int(waiting_jobs)
         # .total_jobs is defined in each section of platforms_.yml, if not from there, it comes form autosubmit_.yml
         # .total_jobs Maximum number of jobs at the same time
         if job is not None and job.total_jobs != platform.total_jobs:
@@ -86,6 +86,7 @@ class JobPackager(object):
         self._as_config = as_config
         self._platform = platform
         self._jobs_list = jobs_list
+        self._max_wait_jobs_to_submit = 9999999
         self.hold = hold
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = dict()
