@@ -6,6 +6,7 @@ from autosubmit.experiment.experiment_common import new_experiment
 from textwrap import dedent
 from pathlib import Path
 from autosubmitconfigparser.config.basicconfig import BasicConfig
+from itertools import permutations, product
 
 
 class TestExpid(TestCase):
@@ -104,3 +105,79 @@ CONFIG:
 
         # Reset the local root dir.
         BasicConfig.LOCAL_ROOT_DIR = original_local_root_dir
+
+    @patch('autosubmit.autosubmit.YAML.dump')
+    @patch('autosubmit.autosubmit.resource_listdir')
+    @patch('autosubmit.autosubmit.resource_filename')
+    def test_autosubmit_generate_config_resource_listdir_order(
+            self,
+            resource_filename_mock,
+            resource_listdir_mock,
+            yaml_mock
+    ) -> None:
+        """
+        In https://earth.bsc.es/gitlab/es/autosubmit/-/issues/1063 we had a bug
+        where we relied on the order of returned entries of ``pkg_resources.resource_listdir``
+        (which is actually undefined per https://importlib-resources.readthedocs.io/en/latest/migration.html).
+
+        We use the arrays below to test that defining a git minimal, we process only
+        the expected files. We permute and then product the arrays to get as many test
+        cases as possible.
+
+        For every test case, we know that for dummy and minimal we get just one configuration
+        template file used. But for other cases we get as many files as we have that are not
+        ``*minimal.yml`` nor ``*dummy.yml``. In our test cases here, when not dummy and not minimal
+        we must get 2 files, since we have ``include_me_please.yml`` and ``me_too.yml``.
+
+        :param resource_filename_mock: mocked resource_listdir
+        :param resource_listdir_mock: mocked resource_filename
+        :param yaml_mock: mocked YAML dump function
+        :return: None
+        """
+
+        # unique lists of resources, no repetitions
+        resources = permutations(['dummy.yml', 'local-minimal.yml', 'git-minimal.yml', 'include_me_please.yml', 'me_too.yml'])
+        dummy = [True, False]
+        local = [True, False]
+        minimal_configuration = [True, False]
+        test_cases = product(resources, dummy, local, minimal_configuration)
+        keys = ['resources', 'dummy', 'local', 'minimal_configuration']
+
+        for test_case in test_cases:
+            test = dict(zip(keys, test_case))
+            expid = 'ff99'
+            original_local_root_dir = BasicConfig.LOCAL_ROOT_DIR
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                Path(temp_dir, expid, 'conf').mkdir(parents=True)
+                BasicConfig.LOCAL_ROOT_DIR = temp_dir
+
+                resources_return = []
+                filenames_return = []
+
+                for file_name in test['resources']:
+                    input_path = Path(temp_dir, file_name)
+                    with open(input_path, 'w+') as source_yaml:
+
+                        source_yaml.write('TEST: YES')
+                        source_yaml.flush()
+
+                        resources_return.append(input_path.name)  # path
+                        filenames_return.append(source_yaml.name)  # textiowrapper
+
+                resource_listdir_mock.return_value = resources_return
+                resource_filename_mock.side_effect = filenames_return
+
+                Autosubmit.generate_as_config(
+                    exp_id=expid,
+                    dummy=test['dummy'],
+                    minimal_configuration=test['minimal_configuration'],
+                    local=test['local'])
+
+                msg = f'Incorrect call count for resources={",".join(resources_return)}, dummy={test["dummy"]}, minimal_configuration={test["minimal_configuration"]}, local={test["local"]}'
+                expected = 2 if (not test['dummy'] and not test['minimal_configuration']) else 1
+                self.assertEqual(yaml_mock.call_count, expected, msg=msg)
+                yaml_mock.reset_mock()
+
+            # Reset the local root dir.
+            BasicConfig.LOCAL_ROOT_DIR = original_local_root_dir
