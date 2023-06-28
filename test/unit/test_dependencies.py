@@ -11,6 +11,7 @@ class TestJobList(unittest.TestCase):
         # Define common test case inputs here
         self.relationships_dates = {
                 "OPTIONAL": False,
+                "CHECKPOINT": None,
                 "DATES_FROM": {
                     "20020201": {
                         "MEMBERS_FROM": {
@@ -34,6 +35,7 @@ class TestJobList(unittest.TestCase):
 
         self.relationships_members = {
                 "OPTIONAL": False,
+                "CHECKPOINT": None,
                 "MEMBERS_FROM": {
                     "fc2": {
                         "SPLITS_FROM": {
@@ -49,6 +51,7 @@ class TestJobList(unittest.TestCase):
             }
         self.relationships_chunks = {
                 "OPTIONAL": False,
+                "CHECKPOINT": None,
                 "CHUNKS_FROM": {
                     "1": {
                         "DATES_TO": "20020201",
@@ -60,6 +63,7 @@ class TestJobList(unittest.TestCase):
             }
         self.relationships_chunks2 = {
                 "OPTIONAL": False,
+                "CHECKPOINT": None,
                 "CHUNKS_FROM": {
                     "1": {
                         "DATES_TO": "20020201",
@@ -77,9 +81,9 @@ class TestJobList(unittest.TestCase):
                 }
             }
 
-
         self.relationships_splits = {
                 "OPTIONAL": False,
+                "CHECKPOINT": None,
                 "SPLITS_FROM": {
                     "1": {
                         "DATES_TO": "20020201",
@@ -108,6 +112,42 @@ class TestJobList(unittest.TestCase):
         self.mock_job.member = None
         self.mock_job.chunk = None
         self.mock_job.split = None
+
+    def test_parse_checkpoint(self):
+        data = "r2"
+        correct = {"FROM_STEP": '2', "STATUS":Status.RUNNING}
+        result = JobList._parse_checkpoint(data)
+        self.assertEqual(result, correct)
+        data = "r"
+        correct = {"FROM_STEP": '1', "STATUS":Status.RUNNING}
+        result = JobList._parse_checkpoint(data)
+        self.assertEqual(result, correct)
+        data = "f2"
+        correct = {"FROM_STEP": '2', "STATUS":Status.FAILED}
+        result = JobList._parse_checkpoint(data)
+        self.assertEqual(result, correct)
+        data = "f"
+        correct = {"FROM_STEP": '1', "STATUS":Status.FAILED}
+        result = JobList._parse_checkpoint(data)
+        self.assertEqual(result, correct)
+        data = "s"
+        correct = {"FROM_STEP": None, "STATUS":Status.SUBMITTED}
+        result = JobList._parse_checkpoint(data)
+        self.assertEqual(result, correct)
+        data = "s2"
+        correct = {"FROM_STEP": None, "STATUS":Status.SUBMITTED}
+        result = JobList._parse_checkpoint(data)
+        self.assertEqual(result, correct)
+        data = "q"
+        correct = {"FROM_STEP": None, "STATUS":Status.QUEUING}
+        result = JobList._parse_checkpoint(data)
+        self.assertEqual(result, correct)
+        data = "q2"
+        correct = {"FROM_STEP": None, "STATUS":Status.QUEUING}
+        result = JobList._parse_checkpoint(data)
+        self.assertEqual(result, correct)
+
+
     def test_simple_dependency(self):
         result_d = JobList._check_dates({}, self.mock_job)
         result_m = JobList._check_members({}, self.mock_job)

@@ -219,6 +219,7 @@ class Job(object):
         self._check_point = ""
         # internal
         self.current_checkpoint_step = 0
+
     @property
     @autosubmit_parameter(name='tasktype')
     def section(self):
@@ -584,6 +585,7 @@ class Job(object):
         :type value: HPCPlatform
         """
         self._partition = value
+
     @property
     def children(self):
         """
@@ -1514,7 +1516,7 @@ class Job(object):
                 template_file.close()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 5'
+                    template = '%AS_CHECKPOINT%;sleep 320;%AS_CHECKPOINT%;sleep 320'
                 elif self.type == Type.PYTHON2:
                     template = 'time.sleep(5)' + "\n"
                 elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
