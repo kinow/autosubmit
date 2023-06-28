@@ -1234,6 +1234,8 @@ class Job(object):
             else:
                 return default_status
     def update_platform_parameters(self,as_conf,parameters,job_platform):
+        for key,value in as_conf.platforms_data.get(job_platform.name,{}).items():
+            parameters["CURRENT_"+key.upper()] = value
         parameters['CURRENT_ARCH'] = job_platform.name
         parameters['CURRENT_HOST'] = job_platform.host
         parameters['CURRENT_USER'] = job_platform.user
@@ -1247,9 +1249,6 @@ class Job(object):
         parameters['CURRENT_PROJ_DIR'] = job_platform.project_dir
         parameters['CURRENT_ROOTDIR'] = job_platform.root_dir
         parameters['CURRENT_LOGDIR'] = job_platform.get_files_path()
-        for key,value in as_conf.platforms_data.get(job_platform.name,{}).items():
-            parameters["CURRENT_"+key.upper()] = value
-
         return parameters
 
     def update_platform_associated_parameters(self,as_conf, parameters, job_platform, chunk):
@@ -1452,7 +1451,7 @@ class Job(object):
         parameters = self.update_wrapper_parameters(as_conf, parameters)
         parameters = as_conf.normalize_parameters_keys(parameters,default_parameters)
 
-        parameters = as_conf.substitute_dynamic_variables(parameters,25)
+        parameters = as_conf.substitute_dynamic_variables(parameters,80)
         parameters = as_conf.normalize_parameters_keys(parameters,default_parameters)
         # For some reason, there is return but the assignee is also necessary
         self.parameters = parameters
