@@ -186,6 +186,7 @@ class Job(object):
         self.x11 = False
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
+        self._checkpoint = None
         self.script_name = self.name + ".cmd"
         self.status = status
         self.prev_status = status
@@ -216,7 +217,6 @@ class Job(object):
         self.total_jobs = None
         self.max_waiting_jobs = None
         self.exclusive = ""
-        self._check_point = ""
         # internal
         self.current_checkpoint_step = 0
 
@@ -265,9 +265,13 @@ class Job(object):
         else: # bash
             self._checkpoint = "as_checkpoint"
 
-    def get_checkpoint_files(self):
-        """Downloads checkpoint files from remote host. If they aren't already in local."""
-        self.platform.get_checkpoint_files(self)
+    def get_checkpoint_files(self,steps):
+        """
+        Downloads checkpoint files from remote host. If they aren't already in local.
+        :param steps: list of steps to download
+        :return: the max step downloaded
+        """
+        return self.platform.get_checkpoint_files(self,steps)
     @autosubmit_parameter(name='sdate')
     def sdate(self):
         """Current start date."""
@@ -706,7 +710,7 @@ class Job(object):
         """
         self.children.add(new_child)
 
-    def add_edge_info(self,parent_name, special_variables):
+    def add_edge_info(self,parent_name, special_variables={}):
         """
         Adds edge information to the job
 
