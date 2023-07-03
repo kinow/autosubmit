@@ -770,7 +770,7 @@ class JobList(object):
             return True, False
         return False,False
 
-    def _add_edge_info(self,job,parent):
+    def _add_edge_info(self,job,special_variables):
         """
         Special relations to be check in the update_list method
         :param job: Current job
@@ -778,9 +778,12 @@ class JobList(object):
         :return:
         """
         if job.name not in self.jobs_edges:
-            self.jobs_edges[job.name] = []
+            self.jobs_edges[job] = special_variables.get("FROMSTEP", 0)
         else:
-            self.jobs_edges[job.name].append(parent)
+            if special_variables.get("FROMSTEP", 0) > self.jobs_edges[job]:
+                self.jobs_edges[job] = special_variables.get("FROMSTEP", 0)
+
+
 
     def _manage_job_dependencies(self,dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
                                  graph):
@@ -837,7 +840,7 @@ class JobList(object):
                     # Do parse checkpoint
                     checkpoint= {"status":Status.RUNNING,"from_step":2}
                     if optional and checkpoint:
-                        self._add_edge_info(job,parent)
+                        self._add_edge_info(job,special_variables={"optional":True,"checkpoint":checkpoint})
                         job.add_edge_info(parent.name,special_variables={"optional":True,"checkpoint":checkpoint})
                     if optional and not checkpoint:
                         #JobList._add_edge_info(job)
@@ -1954,12 +1957,14 @@ class JobList(object):
         Check if all parents of a job have the correct status for checkpointing
         :return: jobs that fullfill the special conditions """
         jobs_to_check = []
-        for job, parent_to_check in self.jobs_edges.keys():
-            checkpoint_info = job.edge_info.get(parent_to_check.name, {}).get("checkpoint", None)
-            if checkpoint_info:
-                if job.get_checkpoint_files(checkpoint_info["from_step"]):
-                    if parent_to_check.status != checkpoint_info["status"]:
-                        jobs_to_check.append(job)
+        for job, checkpoint_step in self.jobs_edges.items():
+            if checkpoint_step > 0:
+                max_step = job.get_checkpoint_files(checkpoint_step)
+            else:
+                max_step = None
+            for parent in parent_to_check:                    #if checkpoint_info:
+                if parent.status != checkpoint_info["status"]:
+                    jobs_to_check.append(job)
         return jobs_to_check
     def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time=False):
         # type: (AutosubmitConfig, bool, bool, object, bool) -> bool

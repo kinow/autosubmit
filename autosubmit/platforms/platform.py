@@ -513,19 +513,28 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
-    def get_checkpoint_files(self, job, step_to_check):
+    def get_checkpoint_files(self, job, max_step):
         """
-        Get all the checkpoint files of the given job
+        Get all the checkpoint files of a job
+        :param job: Get the checkpoint files
+        :type job: Job
+        :param max_step: max step possible
+        :type max_step: int
         """
 
-        if step_to_check >= job.current_checkpoint_step:
-            return True
-        local_checkpoint_path = Path(f"{self.get_files_path()}/CHECKPOINT_{step_to_check}")
-        while self.check_file_exists(local_checkpoint_path):
+        if job.current_checkpoint_step >= max_step:
+            return job.current_checkpoint_step
+        local_checkpoint_path = Path(f"{self.get_files_path()}/CHECKPOINT_{job.current_checkpoint_step}")
+        self.get_file(local_checkpoint_path, False, ignore_log=True)
+        while self.check_file_exists(local_checkpoint_path) and job.current_checkpoint_step <= max_step:
+            self.remove_checkpoint_file(local_checkpoint_path)
             job.current_checkpoint_step += 1
+            local_checkpoint_path = Path(f"{self.get_files_path()}/CHECKPOINT_{job.current_checkpoint_step}")
+            self.get_file(local_checkpoint_path, False, ignore_log=True)
             self.remove_checkpoint_file(local_checkpoint_path)
         else:
-            return False
+            self.remove_checkpoint_file(local_checkpoint_path)
+        return job.current_checkpoint_step
     def get_completed_files(self, job_name, retries=0, recovery=False, wrapper_failed=False):
         """
         Get the COMPLETED file of the given job
