@@ -24,6 +24,7 @@ import pickle
 import traceback
 import math
 import copy
+from collections import defaultdict
 from time import localtime, strftime, mktime
 from shutil import move
 from autosubmit.job.job import Job
@@ -55,7 +56,6 @@ def threaded(fn):
         return thread
     return wrapper
 
-
 class JobList(object):
     """
     Class to manage the list of jobs to be run by autosubmit
@@ -70,7 +70,10 @@ class JobList(object):
         self._persistence_file = "job_list_" + expid
         self._job_list = list()
         self._base_job_list = list()
-        self.jobs_edges = dict()
+        # convert job_edges_structure function to lambda
+        self.jobs_edges = {}
+        #"now str"
+
         self._expid = expid
         self._config = config
         self.experiment_data = as_conf.experiment_data
@@ -445,25 +448,77 @@ class JobList(object):
         return checkpoint
 
     @staticmethod
+    def _parse_filter_to_check(value_to_check):
+        """
+        Parse the filter to check and return the value to check.
+        Selection process:
+        value_to_check can be:
+        a range: [0:], [:N], [0:N], [:-1], [0:N:M] ...
+        a value: N
+        a list of values : 0,2,4,5,7,10 ...
+        a range with step: [0::M], [::2], [0::3], [::3] ...
+        :param value_to_check: value to check.
+        :return: parsed value to check.
+        """
+        # regex
+        value_to_check = str(value_to_check).upper()
+        if value_to_check is None:
+            return None
+        elif value_to_check == "ALL":
+            return "ALL"
+        elif value_to_check == "NONE":
+            return None
+        elif value_to_check == 1:
+            # range
+            if value_to_check[0] == ":":
+                # [:N]
+                return slice(None, int(value_to_check[1:]))
+            elif value_to_check[-1] == ":":
+                # [N:]
+                return slice(int(value_to_check[:-1]), None)
+            else:
+                # [N:M]
+                return slice(int(value_to_check.split(":")[0]), int(value_to_check.split(":")[1]))
+        elif value_to_check.count(":") == 2:
+# range with step
+            if value_to_check[0] == ":":
+                # [::M]
+                return slice(None, None, int(value_to_check[2:]))
+            elif value_to_check[-1] == ":":
+                # [N::]
+                return slice(int(value_to_check[:-2]), None, None)
+            else:
+                # [N::M]
+                return slice(int(value_to_check.split(":")[0]), None, int(value_to_check.split(":")[2]))
+        elif "," in value_to_check:
+            # list
+            return value_to_check.split(",")
+        else:
+            # value
+            return value_to_check
+
+
+
+
+    @staticmethod
     def _check_relationship(relationships, level_to_check, value_to_check):
         """
         Check if the current_job_value is included in the filter_value
         :param relationships: current filter level to check.
-        :param level_to_check: can be a date, member, chunk or split.
+        :param level_to_check: Can be date_from, member_from, chunk_from, split_from.
         :param value_to_check: Can be None, a date, a member, a chunk or a split.
         :return:
         """
         filters = []
-        for filter_range, filter_data in relationships.get(level_to_check, {}).items():
-            if not value_to_check or str(filter_range).upper() in "ALL" or str(value_to_check).upper() in str(filter_range).upper():
-                if filter_data:
-                    if "?" in filter_range:
-                        filter_data["OPTIONAL"] = True
-                    else:
-                        filter_data["OPTIONAL"] = relationships["OPTIONAL"]
-                    if "!" in filter_range:
-                        filter_data["CHECKPOINT"] = "!"+filter_range.split("!")[1]
-                        #JobList._parse_checkpoint(filter_range.split("!")[1])
+        relationship = relationships.get(level_to_check, {})
+        status = relationship.pop("STATUS", relationships.get("STATUS", None))
+        from_step = relationship.pop("FROM_STEP", relationships.get("FROM_STEP", None))
+        for filter_range, filter_data in relationship.items():
+            if not value_to_check or str(value_to_check).upper() in str(JobList._parse_filter_to_check(filter_range)).upper():
+                if not filter_data.get("STATUS", None):
+                    filter_data["STATUS"] = status
+                if not filter_data.get("FROM_STEP", None):
+                    filter_data["FROM_STEP"] = from_step
                 filters.append(filter_data)
         # Normalize the filter return
         if len(filters) == 0:
@@ -478,7 +533,7 @@ class JobList(object):
         :param current_job: Current job to check.
         :return:  filters_to_apply
         """
-        optional = False
+        
         filters_to_apply = JobList._check_relationship(relationships, "DATES_FROM", date2str(current_job.date))
         # there could be multiple filters that apply... per example
         # Current task date is 20020201, and member is fc2
@@ -503,29 +558,25 @@ class JobList(object):
         # [{MEMBERS_FROM{..},CHUNKS_FROM{...}},{MEMBERS_FROM{..},SPLITS_FROM{...}}]
         for i,filter in enumerate(filters_to_apply):
             # {MEMBERS_FROM{..},CHUNKS_FROM{...}} I want too look ALL filters not only one, but I want to go recursivily until get the  _TO filter
-            optional = filter.pop("OPTIONAL", False)
             # This is not an if_else, because the current level ( dates ) could have two different filters.
             # Second case commented: ( date_from 20020201 )
             # Will enter, go recursivily to the similar methods and in the end it will do:
             # Will enter members_from, and obtain [{DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", CHUNKS_FROM{...}]
             if "MEMBERS_FROM" in filter:
-                filters_to_apply_m = JobList._check_members({"MEMBERS_FROM": (filter.pop("MEMBERS_FROM")), "OPTIONAL":optional}, current_job)
+                filters_to_apply_m = JobList._check_members({"MEMBERS_FROM": (filter.pop("MEMBERS_FROM"))}, current_job)
                 if len(filters_to_apply_m) > 0:
                     filters_to_apply[i].update(filters_to_apply_m)
             # Will enter chunks_from, and obtain [{DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"]
             if "CHUNKS_FROM" in filter:
-                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter.pop("CHUNKS_FROM")), "OPTIONAL":optional}, current_job)
+                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter.pop("CHUNKS_FROM"))}, current_job)
                 if len(filters_to_apply_c) > 0 and len(filters_to_apply_c[0]) > 0:
                     filters_to_apply[i].update(filters_to_apply_c)
             # IGNORED
             if "SPLITS_FROM" in filter:
-                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM")),"OPTIONAL":optional}, current_job)
+                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM"))}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
         # Unify filters from all filters_from where the current job is included to have a single SET of filters_to
-        if optional:
-            for i in range(0, len(filters_to_apply)):
-                filters_to_apply[i]["OPTIONAL"] = True
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
         # {DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"}
         return filters_to_apply
@@ -539,21 +590,15 @@ class JobList(object):
         :return: filters_to_apply
         """
         filters_to_apply = JobList._check_relationship(relationships, "MEMBERS_FROM", current_job.member)
-        optional = False
         for i, filter_ in enumerate(filters_to_apply):
-            optional = filter_.pop("OPTIONAL", False)
             if "CHUNKS_FROM" in filter_:
-                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter_.pop("CHUNKS_FROM")),"OPTIONAL":optional}, current_job)
+                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter_.pop("CHUNKS_FROM"))}, current_job)
                 if len(filters_to_apply_c) > 0:
                     filters_to_apply[i].update(filters_to_apply_c)
-
             if "SPLITS_FROM" in filter_:
-                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter_.pop("SPLITS_FROM")),"OPTIONAL":optional}, current_job)
+                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter_.pop("SPLITS_FROM"))}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
-        if optional:
-            for i in range(0, len(filters_to_apply) > 0):
-                filters_to_apply[i]["OPTIONAL"] = True
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
         return filters_to_apply
 
@@ -565,17 +610,13 @@ class JobList(object):
         :param current_job: Current job to check.
         :return: filters_to_apply
         """
-        optional = False
+        
         filters_to_apply = JobList._check_relationship(relationships, "CHUNKS_FROM", current_job.chunk)
         for i,filter in enumerate(filters_to_apply):
-            optional = filter.pop("OPTIONAL", False)
             if "SPLITS_FROM" in filter:
-                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM")),"OPTIONAL":optional}, current_job)
+                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM"))}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
-        if optional:
-            for i,filter in enumerate(filters_to_apply):
-                filters_to_apply[i]["OPTIONAL"] = True
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
         return filters_to_apply
 
@@ -607,7 +648,6 @@ class JobList(object):
             if aux:
                 aux = aux.split(",")
                 for element in aux:
-                    # element is SECTION(alphanumeric) then ? or ! can figure and then ! or ? can figure
                     # Get only the first alphanumeric part
                     parsed_element = re.findall(r"[\w']+", element)[0].lower()
                     # Get the rest
@@ -615,14 +655,8 @@ class JobList(object):
                     if parsed_element in ["natural", "none"] and len(unified_filter[filter_type]) > 0:
                         continue
                     else:
-                        if filter_to.get("OPTIONAL", False) or "?" in data:
-                            if "?" not in element:
-                                element += "?"
-                        if "!" in data:
-                            element = parsed_element+data
-                        elif filter_to.get("CHECKPOINT", None):
-                            element = parsed_element+filter_to.get("CHECKPOINT", None)
-
+                        if "?" not in element:
+                            element += data
                         unified_filter[filter_type].add(element)
     @staticmethod
     def _normalize_to_filters(filter_to,filter_type):
@@ -649,18 +683,20 @@ class JobList(object):
         """
         unified_filter = {"DATES_TO": set(), "MEMBERS_TO": set(), "CHUNKS_TO": set(), "SPLITS_TO": set()}
         for filter_to in filter_to_apply:
+            if "STATUS" not in unified_filter and filter_to.get("STATUS", None):
+                unified_filter["STATUS"] = filter_to["STATUS"]
+            if "FROM_STEP" not in unified_filter and filter_to.get("FROM_STEP", None):
+                unified_filter["FROM_STEP"] = filter_to["FROM_STEP"]
             if len(filter_to) > 0:
                 JobList._unify_to_filter(unified_filter,filter_to,"DATES_TO")
                 JobList._unify_to_filter(unified_filter,filter_to,"MEMBERS_TO")
                 JobList._unify_to_filter(unified_filter,filter_to,"CHUNKS_TO")
                 JobList._unify_to_filter(unified_filter,filter_to,"SPLITS_TO")
-                filter_to.pop("OPTIONAL", None)
 
         JobList._normalize_to_filters(unified_filter,"DATES_TO")
         JobList._normalize_to_filters(unified_filter,"MEMBERS_TO")
         JobList._normalize_to_filters(unified_filter,"CHUNKS_TO")
         JobList._normalize_to_filters(unified_filter,"SPLITS_TO")
-
         return unified_filter
 
     @staticmethod
@@ -689,10 +725,6 @@ class JobList(object):
         filters_to_apply = {}
         # Check if filter_from-filter_to relationship is set
         if relationships is not None and len(relationships) > 0:
-            if "OPTIONAL" not in relationships:
-                relationships["OPTIONAL"] = False
-            if "CHECKPOINT" not in relationships:
-                relationships["CHECKPOINT"] = None
             # Look for a starting point, this can be if else becasue they're exclusive as a DATE_FROM can't be in a MEMBER_FROM and so on
             if "DATES_FROM" in relationships:
                 filters_to_apply = JobList._check_dates(relationships, current_job)
@@ -764,24 +796,22 @@ class JobList(object):
         valid_chunks  = JobList._apply_filter(parent.chunk, chunks_to, associative_list["chunks"], "chunks")
         valid_splits  = JobList._apply_filter(parent.split, splits_to, associative_list["splits"], "splits")
         if valid_dates and valid_members and valid_chunks and valid_splits:
-            for value in [dates_to, members_to, chunks_to, splits_to]:
-                if "?" in value:
-                    return True, True
-            return True, False
-        return False,False
+            return True
+        return False
 
-    def _add_edge_info(self,job,special_variables):
+    def _add_edge_info(self,job,parent,special_status):
         """
         Special relations to be check in the update_list method
         :param job: Current job
         :param parent: parent jobs to check
         :return:
         """
-        if job.name not in self.jobs_edges:
-            self.jobs_edges[job] = special_variables.get("FROMSTEP", 0)
+        if job not in self.jobs_edges:
+            self.jobs_edges[job] = {}
+        if special_status not in self.jobs_edges[job]:
+            self.jobs_edges[job][special_status] = []
         else:
-            if special_variables.get("FROMSTEP", 0) > self.jobs_edges[job]:
-                self.jobs_edges[job] = special_variables.get("FROMSTEP", 0)
+            self.jobs_edges[job][special_status].append(parent)
 
 
 
@@ -830,24 +860,15 @@ class JobList(object):
                 else:
                     natural_relationship = False
                 # Check if the current parent is a valid parent based on the dependencies set on expdef.conf
-                valid,optional = JobList._valid_parent(parent, member_list, parsed_date_list, chunk_list, natural_relationship,filters_to_apply)
                 # If the parent is valid, add it to the graph
-                if valid:
+                if  JobList._valid_parent(parent, member_list, parsed_date_list, chunk_list, natural_relationship,filters_to_apply):
                     job.add_parent(parent)
                     self._add_edge(graph, job, parent)
                     # Could be more variables in the future
-                    # todo, default to TRUE for testing propouses
                     # Do parse checkpoint
-                    checkpoint= {"status":Status.RUNNING,"from_step":2}
-                    if optional and checkpoint:
-                        self._add_edge_info(job,special_variables={"optional":True,"checkpoint":checkpoint})
-                        job.add_edge_info(parent.name,special_variables={"optional":True,"checkpoint":checkpoint})
-                    if optional and not checkpoint:
-                        #JobList._add_edge_info(job)
-                        job.add_edge_info(parent.name, special_variables={"optional": True})
-                    if not optional and checkpoint:
-                        self._add_edge_info(job,parent)
-                        job.add_edge_info(parent.name, special_variables={"checkpoint": True})
+                    if filters_to_apply.get("STATUS",None):
+                        self._add_edge_info(job, parent, filters_to_apply["STATUS"])
+                        job.add_edge_info(parent.name,{filters_to_apply["STATUS"],filters_to_apply["FROM_STEP"]})
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph, other_parents)
 
@@ -1957,6 +1978,7 @@ class JobList(object):
         Check if all parents of a job have the correct status for checkpointing
         :return: jobs that fullfill the special conditions """
         jobs_to_check = []
+        todo
         for job, checkpoint_step in self.jobs_edges.items():
             if checkpoint_step > 0:
                 max_step = job.get_checkpoint_files(checkpoint_step)

@@ -710,7 +710,7 @@ class Job(object):
         """
         self.children.add(new_child)
 
-    def add_edge_info(self,parent_name, special_variables={}):
+    def add_edge_info(self, parent_name, special_variables):
         """
         Adds edge information to the job
 
@@ -722,8 +722,9 @@ class Job(object):
         if parent_name not in self.edge_info:
             self.edge_info[parent_name] = special_variables
         else:
+            #TODO
             self.edge_info[parent_name].update(special_variables)
-        pass
+
     def delete_parent(self, parent):
         """
         Remove a parent from the job
