@@ -46,7 +46,7 @@ Description of most used commands
     * - **create <expid>**
       - Generates the experiment workflow.
     * - **run <expid>**
-      - Euns the experiment workflow.
+      - Runs the experiment workflow.
     * - **monitor <expid>**
       - Shows the experiment workflow structure and status.
     * - **inspect <expid>**
