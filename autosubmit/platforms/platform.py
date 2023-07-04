@@ -524,16 +524,12 @@ class Platform(object):
 
         if job.current_checkpoint_step >= max_step:
             return job.current_checkpoint_step
-        local_checkpoint_path = Path(f"{self.get_files_path()}/CHECKPOINT_{job.current_checkpoint_step}")
-        self.get_file(local_checkpoint_path, False, ignore_log=True)
-        while self.check_file_exists(local_checkpoint_path) and job.current_checkpoint_step <= max_step:
-            self.remove_checkpoint_file(local_checkpoint_path)
+        remote_checkpoint_path = f"{self.get_files_path()}/CHECKPOINT_"
+        self.get_file(remote_checkpoint_path+job.current_checkpoint_step, False, ignore_log=True)
+        while self.check_file_exists(remote_checkpoint_path+job.current_checkpoint_step) and job.current_checkpoint_step < max_step:
+            self.remove_checkpoint_file(remote_checkpoint_path+job.current_checkpoint_step)
             job.current_checkpoint_step += 1
-            local_checkpoint_path = Path(f"{self.get_files_path()}/CHECKPOINT_{job.current_checkpoint_step}")
-            self.get_file(local_checkpoint_path, False, ignore_log=True)
-            self.remove_checkpoint_file(local_checkpoint_path)
-        else:
-            self.remove_checkpoint_file(local_checkpoint_path)
+            self.get_file(remote_checkpoint_path+job.current_checkpoint_step, False, ignore_log=True)
         return job.current_checkpoint_step
     def get_completed_files(self, job_name, retries=0, recovery=False, wrapper_failed=False):
         """
