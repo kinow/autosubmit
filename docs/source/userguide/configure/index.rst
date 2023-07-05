@@ -79,7 +79,7 @@ identifier and add this text:s
     new_job:
         FILE: <new_job_template>
 
-This will create a new job named "new_job" that will be executed once at the default platform. This job will user the
+This will create a new job named "new_job" that will be executed once at the default platform. This job will use the
 template located at <new_job_template> (path is relative to project folder).
 
 This is the minimum job definition and usually is not enough. You usually will need to add some others parameters:
