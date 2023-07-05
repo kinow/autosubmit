@@ -70,10 +70,7 @@ class JobList(object):
         self._persistence_file = "job_list_" + expid
         self._job_list = list()
         self._base_job_list = list()
-        # convert job_edges_structure function to lambda
         self.jobs_edges = {}
-        #"now str"
-
         self._expid = expid
         self._config = config
         self.experiment_data = as_conf.experiment_data
@@ -799,19 +796,19 @@ class JobList(object):
             return True
         return False
 
-    def _add_edge_info(self,job,parent,special_status):
+    def _add_edge_info(self,job,special_status):
         """
         Special relations to be check in the update_list method
         :param job: Current job
         :param parent: parent jobs to check
         :return:
         """
-        if job not in self.jobs_edges:
-            self.jobs_edges[job] = {}
-        if special_status not in self.jobs_edges[job]:
-            self.jobs_edges[job][special_status] = []
-        else:
-            self.jobs_edges[job][special_status].append(parent)
+        if special_status not in self.jobs_edges:
+            self.jobs_edges[special_status] = set()
+        self.jobs_edges[special_status].add(job)
+        if "ALL" not in self.jobs_edges:
+            self.jobs_edges["ALL"] = set()
+        self.jobs_edges["ALL"].add(job)
 
 
 
@@ -832,6 +829,7 @@ class JobList(object):
         parsed_date_list = []
         for dat in date_list:
             parsed_date_list.append(date2str(dat))
+        special_conditions = dict()
         for key in dependencies_keys:
             dependency = dependencies.get(key,None)
             if dependency is None:
@@ -850,6 +848,12 @@ class JobList(object):
             all_parents = list(set(other_parents + parents_jobs))
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
             filters_to_apply = JobList._filter_current_job(job,copy.deepcopy(dependency.relationships))
+            if "?" in [filters_to_apply.get("SPLITS_TO",""),filters_to_apply.get("DATES_TO",""),filters_to_apply.get("MEMBERS_TO",""),filters_to_apply.get("CHUNKS_TO","")]:
+                only_marked_status = True
+            else:
+                only_marked_status = False
+            special_conditions["STATUS"] = filters_to_apply.pop("STATUS", None)
+            special_conditions["FROM_STEP"] = filters_to_apply.pop("FROM_STEP", None)
             for parent in all_parents:
                 # If splits is not None, the job is a list of jobs
                 if parent.name == job.name:
@@ -861,14 +865,25 @@ class JobList(object):
                     natural_relationship = False
                 # Check if the current parent is a valid parent based on the dependencies set on expdef.conf
                 # If the parent is valid, add it to the graph
+
                 if  JobList._valid_parent(parent, member_list, parsed_date_list, chunk_list, natural_relationship,filters_to_apply):
                     job.add_parent(parent)
                     self._add_edge(graph, job, parent)
                     # Could be more variables in the future
                     # Do parse checkpoint
-                    if filters_to_apply.get("STATUS",None):
-                        self._add_edge_info(job, parent, filters_to_apply["STATUS"])
-                        job.add_edge_info(parent.name,{filters_to_apply["STATUS"],filters_to_apply["FROM_STEP"]})
+                    if special_conditions.get("STATUS",None):
+                        if only_marked_status:
+                            if str(job.split)+"?" in filters_to_apply.get("SPLITS_TO","") or str(job.chunk)+"?" in filters_to_apply.get("CHUNKS_TO","") or str(job.member)+"?" in filters_to_apply.get("MEMBERS_TO","") or str(job.date)+"?" in filters_to_apply.get("DATES_TO",""):
+                                selected = False
+                            else:
+                                selected = True
+                        else:
+                            selected = True
+                        if selected:
+                            job.max_checkpoint_step = int(special_conditions.get("FROM_STEP", 0)) if int(special_conditions.get("FROM_STEP",
+                                                                                                               0)) > job.max_checkpoint_step else job.max_checkpoint_step
+                            self._add_edge_info(job, special_conditions["STATUS"])
+                            job.add_edge_info(parent,special_conditions)
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph, other_parents)
 
@@ -1973,20 +1988,24 @@ class JobList(object):
         """ Check if a checkpoint step exists for this edge"""
         return job.get_checkpoint_files(parent.name)
 
-    def check_checkpoint_parent_status(self):
+    def check_special_status(self):
         """
         Check if all parents of a job have the correct status for checkpointing
         :return: jobs that fullfill the special conditions """
         jobs_to_check = []
-        todo
-        for job, checkpoint_step in self.jobs_edges.items():
-            if checkpoint_step > 0:
-                max_step = job.get_checkpoint_files(checkpoint_step)
-            else:
-                max_step = None
-            for parent in parent_to_check:                    #if checkpoint_info:
-                if parent.status != checkpoint_info["status"]:
-                    jobs_to_check.append(job)
+        for status, sorted_job_list in self.jobs_edges.items():
+            if status == "ALL":
+                continue
+            for job in sorted_job_list:
+                if status in ["RUNNING", "FAILED"]:
+                    if job.platform.connected: # This will be true only when used under setstatus/run
+                        job.get_checkpoint_files()
+                for parent in job.edge_info[status]:
+                    if parent[0].status == Status.WAITING:
+                        if status in ["RUNNING", "FAILED"] and int(parent[1]) >= job.current_checkpoint_step:
+                            continue
+                        else:
+                            jobs_to_check.append(parent[0])
         return jobs_to_check
     def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time=False):
         # type: (AutosubmitConfig, bool, bool, object, bool) -> bool
@@ -2059,10 +2078,10 @@ class JobList(object):
                     job.status = Status.FAILED
                     job.packed = False
                     save = True
-        # Check checkpoint jobs, the status can be Ready, Running, Queuing
-        for job in self.check_checkpoint_parent_status():
+        # Check checkpoint jobs, the status can be Any
+        for job in self.check_special_status():
             # Check if all jobs fullfill the conditions to a job be ready
-            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent in self.jobs_edges[job] ]
+            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent in self.jobs_edges["ALL"] ]
             if len(tmp) == len(job.parents):
                 job.status = Status.READY
                 job.id = None
