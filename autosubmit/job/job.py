@@ -219,6 +219,7 @@ class Job(object):
         self.exclusive = ""
         # internal
         self.current_checkpoint_step = 0
+        self.max_checkpoint_step = 0
 
     @property
     @autosubmit_parameter(name='tasktype')
@@ -265,13 +266,13 @@ class Job(object):
         else: # bash
             self._checkpoint = "as_checkpoint"
 
-    def get_checkpoint_files(self,steps):
+    def get_checkpoint_files(self):
         """
         Downloads checkpoint files from remote host. If they aren't already in local.
         :param steps: list of steps to download
         :return: the max step downloaded
         """
-        return self.platform.get_checkpoint_files(self,steps)
+        return self.platform.get_checkpoint_files(self)
     @autosubmit_parameter(name='sdate')
     def sdate(self):
         """Current start date."""
@@ -710,20 +711,19 @@ class Job(object):
         """
         self.children.add(new_child)
 
-    def add_edge_info(self, parent_name, special_variables):
+    def add_edge_info(self, parent, special_variables):
         """
         Adds edge information to the job
 
-        :param parent_name: parent name
-        :type parent_name: str
+        :param parent: parent job
+        :type parent: Job
         :param special_variables: special variables
         :type special_variables: dict
         """
-        if parent_name not in self.edge_info:
-            self.edge_info[parent_name] = special_variables
+        if special_variables["STATUS"] not in self.edge_info:
+            self.edge_info[special_variables["STATUS"]] = [(parent, special_variables.get("FROM_STEP", 0))]
         else:
-            #TODO
-            self.edge_info[parent_name].update(special_variables)
+            self.edge_info[special_variables["STATUS"]].append((parent, special_variables.get("FROM_STEP", 0)))
 
     def delete_parent(self, parent):
         """
