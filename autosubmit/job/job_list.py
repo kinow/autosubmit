@@ -874,9 +874,9 @@ class JobList(object):
                     if special_conditions.get("STATUS",None):
                         if only_marked_status:
                             if str(job.split)+"?" in filters_to_apply.get("SPLITS_TO","") or str(job.chunk)+"?" in filters_to_apply.get("CHUNKS_TO","") or str(job.member)+"?" in filters_to_apply.get("MEMBERS_TO","") or str(job.date)+"?" in filters_to_apply.get("DATES_TO",""):
-                                selected = False
-                            else:
                                 selected = True
+                            else:
+                                selected = False
                         else:
                             selected = True
                         if selected:
