@@ -43,6 +43,7 @@ Welcome to autosubmit's documentation!
    /userguide/monitor_and_check/index
    /userguide/set_and_share_the_configuration/index
    /userguide/variables
+   /userguide/expids
 
 .. toctree::
    :caption: Database Documentation
