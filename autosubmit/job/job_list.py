@@ -439,94 +439,162 @@ class JobList(object):
         else:
             return False
 
-    @staticmethod
-    def _parse_checkpoint(data):
-        checkpoint = {"STATUS": None, "FROM_STEP": None}
-        data = data.lower()
-        if data[0] == "r":
-            checkpoint["STATUS"] = Status.RUNNING
-            if len(data) > 1:
-                checkpoint["FROM_STEP"] = data[1:]
-            else:
-                checkpoint["FROM_STEP"] = "1"
-        elif data[0] == "f":
-            checkpoint["STATUS"] = Status.FAILED
-            if len(data) > 1:
-                checkpoint["FROM_STEP"] = data[1:]
-            else:
-                checkpoint["FROM_STEP"] = "1"
-        elif data[0] == "q":
-            checkpoint["STATUS"] = Status.QUEUING
-        elif data[0] == "s":
-            checkpoint["STATUS"] = Status.SUBMITTED
-        return checkpoint
+
 
     @staticmethod
-    def _parse_filter_to_check(value_to_check):
+    def _parse_filters_to_check(list_of_values_to_check,value_list=[]):
+        final_values = []
+        list_of_values_to_check = str(list_of_values_to_check).upper()
+        if list_of_values_to_check is None:
+            return None
+        elif list_of_values_to_check == "ALL":
+            return ["ALL"]
+        elif list_of_values_to_check == "NONE":
+            return None
+        elif list_of_values_to_check == "NATURAL":
+            return ["NATURAL"]
+        elif "," in list_of_values_to_check:
+            for value_to_check in list_of_values_to_check.split(","):
+                final_values.extend(JobList._parse_filter_to_check(value_to_check,value_list))
+        else:
+            final_values = JobList._parse_filter_to_check(list_of_values_to_check,value_list)
+        return final_values
+
+
+    @staticmethod
+    def _parse_filter_to_check(value_to_check,value_list=[]):
         """
         Parse the filter to check and return the value to check.
         Selection process:
         value_to_check can be:
         a range: [0:], [:N], [0:N], [:-1], [0:N:M] ...
-        a value: N
-        a list of values : 0,2,4,5,7,10 ...
+        a value: N.
         a range with step: [0::M], [::2], [0::3], [::3] ...
         :param value_to_check: value to check.
+        :param value_list: list of values to check. Dates, members, chunks or splits.
         :return: parsed value to check.
         """
-        # regex
+
         value_to_check = str(value_to_check).upper()
-        if value_to_check is None:
-            return None
-        elif value_to_check == "ALL":
-            return "ALL"
-        elif value_to_check == "NONE":
-            return None
-        elif value_to_check == 1:
+        if value_to_check.count(":") == 1:
             # range
-            if value_to_check[0] == ":":
+            if value_to_check[1] == ":":
                 # [:N]
-                return slice(None, int(value_to_check[1:]))
-            elif value_to_check[-1] == ":":
+                # Find N index in the list
+                start = None
+                end = value_to_check.split(":")[1].strip("[]")
+                # get index in the value_list
+                if len(value_list) > 0:
+                    end = value_list.index(end)
+                else:
+                    end = int(end)
+            elif value_to_check[-2] == ":":
                 # [N:]
-                return slice(int(value_to_check[:-1]), None)
+                # Find N index in the list
+                start = value_to_check.split(":")[0].strip("[]")
+                end = None
+                # get index in the value_list
+                if len(value_list) > 0:
+                    start = value_list.index(start)
+                else:
+                    start = int(start)
             else:
                 # [N:M]
-                return slice(int(value_to_check.split(":")[0]), int(value_to_check.split(":")[1]))
+                # Find N index in the list
+                start = value_to_check.split(":")[0].strip("[]")
+                end = value_to_check.split(":")[1].strip("[]")
+                step = None
+                # get index in the value_list
+                if len(value_list) > 0:
+                    start = value_list.index(start)
+                    end = value_list.index(end)
+                else:
+                    start = int(start)
+                    end = int(end)
+            if end is not None:
+                end+=1
+            if len(value_list) > 0:
+                return value_list[slice(start, end)]
+            else:
+                return [ str(number_gen) for number_gen in range(start, end)]
         elif value_to_check.count(":") == 2:
             # range with step
-            if value_to_check[0] == ":":
-                # [::M]
-                return slice(None, None, int(value_to_check[2:]))
-            elif value_to_check[-1] == ":":
-                # [N::]
-                return slice(int(value_to_check[:-2]), None, None)
+            if value_to_check[-2] == ":" and value_to_check[-3] == ":":  # [N::]
+                # Find N index in the list
+                start = value_to_check.split(":")[0].strip("[]")
+                end = None
+                step = None
+                # get index in the value_list
+                if len(value_list) > 0:
+                    start = value_list.index(start)
+                else:
+                    start = int(start)
+            elif value_to_check[1] == ":" and value_to_check[2] == ":":  # [::S]
+                # Find N index in the list
+                start = None
+                end = None
+                step = value_to_check.split(":")[-1].strip("[]")
+                # get index in the value_list
+                step = int(step)
+            elif value_to_check[1] == ":" and value_to_check[-2] == ":": # [:M:]
+                # Find N index in the list
+                start = None
+                end = value_to_check.split(":")[1].strip("[]")
+                step = None
+                # get index in the value_list
+                if len(value_list) > 0:
+                    end = value_list.index(end)
+                else:
+                    end = int(end)
+            else: # [N:M:S]
+                # Find N index in the list
+                start = value_to_check.split(":")[0].strip("[]")
+                end = value_to_check.split(":")[1].strip("[]")
+                step = value_to_check.split(":")[2].strip("[]")
+                # get index in the value_list
+                if len(value_list) > 0:
+                    start = value_list.index(start)
+                    end = value_list.index(end)
+                else:
+                    start = int(start)
+                    end = int(end)
+                step = int(step)
+            if end is not None:
+                end+=1
+            if len(value_list) > 0:
+                return value_list[slice(start, end, step)]
             else:
-                # [N::M]
-                return slice(int(value_to_check.split(":")[0]), None, int(value_to_check.split(":")[2]))
-        elif "," in value_to_check:
-            # list
-            return value_to_check.split(",")
+                return [str(number_gen) for number_gen in range(start, end, step)]
         else:
             # value
-            return value_to_check
+            return [value_to_check]
+
 
     @staticmethod
     def _check_relationship(relationships, level_to_check, value_to_check):
         """
         Check if the current_job_value is included in the filter_value
         :param relationships: current filter level to check.
-        :param level_to_check: Can be date_from, member_from, chunk_from, split_from.
+        :param level_to_check: Can be dates_from, members_from, chunks_from, splits_from.
         :param value_to_check: Can be None, a date, a member, a chunk or a split.
         :return:
         """
         filters = []
+        if level_to_check == "DATES_FROM":
+            values_list = self._date_list
+        elif level_to_check == "MEMBERS_FROM":
+            values_list = self._member_list
+        elif level_to_check == "CHUNKS_FROM":
+            values_list = self._chunk_list
+        else:
+            values_list = [] # need to obtain the MAX amount of splits set in the workflow
+
         relationship = relationships.get(level_to_check, {})
         status = relationship.pop("STATUS", relationships.get("STATUS", None))
         from_step = relationship.pop("FROM_STEP", relationships.get("FROM_STEP", None))
         for filter_range, filter_data in relationship.items():
             if not value_to_check or str(value_to_check).upper() in str(
-                    JobList._parse_filter_to_check(filter_range)).upper():
+                    JobList._parse_filters_to_check(filter_range)).upper():
                 if not filter_data.get("STATUS", None):
                     filter_data["STATUS"] = status
                 if not filter_data.get("FROM_STEP", None):
