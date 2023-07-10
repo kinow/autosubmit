@@ -1,17 +1,21 @@
-import unittest
-
 import mock
+import unittest
 from copy import deepcopy
-from autosubmit.job.job_list import JobList
+from datetime import datetime
+
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
-from datetime import datetime
+from autosubmit.job.job_list import JobList
+
+
 class TestJobList(unittest.TestCase):
     def setUp(self):
+        self.date_list = ["20020201", "20020202", "20020203", "20020204", "20020205", "20020206", "20020207", "20020208", "20020209", "20020210"]
+        self.member_list = ["fc1", "fc2", "fc3", "fc4", "fc5", "fc6", "fc7", "fc8", "fc9", "fc10"]
+        self.chunk_list = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+        self.split_list = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
         # Define common test case inputs here
         self.relationships_dates = {
-                "OPTIONAL": False,
-                "CHECKPOINT": None,
                 "DATES_FROM": {
                     "20020201": {
                         "MEMBERS_FROM": {
@@ -34,8 +38,6 @@ class TestJobList(unittest.TestCase):
         self.relationships_dates_optional["DATES_FROM"]["20020201"]["SPLITS_FROM"] = { "ALL": { "SPLITS_TO": "1?" } }
 
         self.relationships_members = {
-                "OPTIONAL": False,
-                "CHECKPOINT": None,
                 "MEMBERS_FROM": {
                     "fc2": {
                         "SPLITS_FROM": {
@@ -50,8 +52,6 @@ class TestJobList(unittest.TestCase):
                 }
             }
         self.relationships_chunks = {
-                "OPTIONAL": False,
-                "CHECKPOINT": None,
                 "CHUNKS_FROM": {
                     "1": {
                         "DATES_TO": "20020201",
@@ -62,8 +62,6 @@ class TestJobList(unittest.TestCase):
                 }
             }
         self.relationships_chunks2 = {
-                "OPTIONAL": False,
-                "CHECKPOINT": None,
                 "CHUNKS_FROM": {
                     "1": {
                         "DATES_TO": "20020201",
@@ -82,8 +80,6 @@ class TestJobList(unittest.TestCase):
             }
 
         self.relationships_splits = {
-                "OPTIONAL": False,
-                "CHECKPOINT": None,
                 "SPLITS_FROM": {
                     "1": {
                         "DATES_TO": "20020201",
@@ -170,6 +166,46 @@ class TestJobList(unittest.TestCase):
                 "SPLITS_TO": "1?"
             }
         self.assertEqual(result, expected_output)
+    def test_parse_filters_to_check(self):
+        result = JobList._parse_filters_to_check("20020201,20020202,20020203",self.date_list)
+        expected_output = ["20020201","20020202","20020203"]
+        self.assertEqual(result, expected_output)
+        result = JobList._parse_filters_to_check("20020201,[20020203:20020205]",self.date_list)
+        
+
+    def test_parse_filter_to_check(self):
+        # Call the function to get the result
+        # Value can have the following formats:
+        # a range: [0:], [:N], [0:N], [:-1], [0:N:M] ...
+        # a value: N
+        # a range with step: [0::M], [::2], [0::3], [::3] ...
+        result = JobList._parse_filter_to_check("20020201",self.date_list)
+        expected_output = ["20020201"]
+        self.assertEqual(result, expected_output)
+        result = JobList._parse_filter_to_check("[20020201:20020203]",self.date_list)
+        expected_output = ["20020201","20020202","20020203"]
+        self.assertEqual(result, expected_output)
+        result = JobList._parse_filter_to_check("[20020201:20020203:2]",self.date_list)
+        expected_output = ["20020201","20020203"]
+        self.assertEqual(result, expected_output)
+        result = JobList._parse_filter_to_check("[20020202:]",self.date_list)
+        expected_output = self.date_list[1:]
+        self.assertEqual(result, expected_output)
+        result = JobList._parse_filter_to_check("[:20020203]",self.date_list)
+        expected_output = self.date_list[:3]
+        self.assertEqual(result, expected_output)
+        result = JobList._parse_filter_to_check("[::2]",self.date_list)
+        expected_output = self.date_list[::2]
+        self.assertEqual(result, expected_output)
+        result = JobList._parse_filter_to_check("[20020203::]",self.date_list)
+        expected_output = self.date_list[2:]
+        self.assertEqual(result, expected_output)
+        result = JobList._parse_filter_to_check("[:20020203:]",self.date_list)
+        expected_output = self.date_list[:3]
+        self.assertEqual(result, expected_output)
+
+
+
     def test_check_dates(self):
         # Call the function to get the result
         self.mock_job.date = datetime.strptime("20020201", "%Y%m%d")
