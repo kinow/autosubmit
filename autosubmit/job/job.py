@@ -721,9 +721,9 @@ class Job(object):
         :type special_variables: dict
         """
         if special_variables["STATUS"] not in self.edge_info:
-            self.edge_info[special_variables["STATUS"]] = [(parent, special_variables.get("FROM_STEP", 0))]
-        else:
-            self.edge_info[special_variables["STATUS"]].append((parent, special_variables.get("FROM_STEP", 0)))
+            self.edge_info[special_variables["STATUS"]] = {}
+
+        self.edge_info[special_variables["STATUS"]][parent.name] = (parent,special_variables.get("FROM_STEP", 0))
 
     def delete_parent(self, parent):
         """
