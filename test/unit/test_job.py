@@ -1,16 +1,18 @@
 from unittest import TestCase
+
+import datetime
+import inspect
 import os
 import sys
-from autosubmitconfigparser.config.configcommon import AutosubmitConfig
-from autosubmit.job.job_common import Status
-from autosubmit.job.job import Job
-from autosubmit.platforms.platform import Platform
 from mock import Mock, MagicMock
 from mock import patch
-import datetime
-
 # compatibility with both versions (2 & 3)
 from sys import version_info
+
+from autosubmit.job.job import Job
+from autosubmit.job.job_common import Status
+from autosubmit.platforms.platform import Platform
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 
 if version_info.major == 2:
     import builtins as builtins
@@ -362,7 +364,6 @@ class TestJob(TestCase):
             self.job.date_format = test[1]
             self.assertEquals(test[2], self.job.sdate)
 
-import inspect
 class FakeBasicConfig:
     def __init__(self):
         pass

@@ -21,33 +21,33 @@
 Main module for Autosubmit. Only contains an interface class to all functionality implemented on Autosubmit
 """
 
+from collections import OrderedDict
+
+import copy
+import datetime
+import json
+import locale
 import os
 import re
-import time
-import json
-import datetime
 import textwrap
-from collections import OrderedDict
-import copy
+import time
+from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
+from functools import reduce
+from threading import Thread
+from time import sleep
+from typing import List, Union
 
-import locale
-
-from autosubmitconfigparser.config.configcommon import AutosubmitConfig
-from autosubmit.job.job_common import Status, Type, increase_wallclock_by_chunk
+from autosubmit.helpers.parameters import autosubmit_parameter, autosubmit_parameters
+from autosubmit.history.experiment_history import ExperimentHistory
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
+from autosubmit.job.job_common import Status, Type, increase_wallclock_by_chunk
 from autosubmit.job.job_utils import get_job_package_code
-from autosubmitconfigparser.config.basicconfig import BasicConfig
-from autosubmit.history.experiment_history import ExperimentHistory
-from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
-from time import sleep
-from threading import Thread
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
-from log.log import Log, AutosubmitCritical, AutosubmitError
-from typing import List, Union
-from functools import reduce
+from autosubmitconfigparser.config.basicconfig import BasicConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
-from autosubmit.helpers.parameters import autosubmit_parameter, autosubmit_parameters
+from log.log import Log, AutosubmitCritical, AutosubmitError
 
 Log.get_logger("Autosubmit")
 
@@ -261,6 +261,7 @@ class Job(object):
     def checkpoint(self):
         """Generates a checkpoint step for this job based on job.type"""
         return self._checkpoint
+
     @checkpoint.setter
     def checkpoint(self):
         """Generates a checkpoint step for this job based on job.type"""
@@ -273,11 +274,11 @@ class Job(object):
 
     def get_checkpoint_files(self):
         """
-        Downloads checkpoint files from remote host. If they aren't already in local.
-        :param steps: list of steps to download
-        :return: the max step downloaded
+        Check if there is a file on the remote host that contains the checkpoint
         """
         return self.platform.get_checkpoint_files(self)
+
+    @property
     @autosubmit_parameter(name='sdate')
     def sdate(self):
         """Current start date."""

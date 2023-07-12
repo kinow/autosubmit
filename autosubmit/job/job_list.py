@@ -569,9 +569,7 @@ class JobList(object):
             # value
             return [value_to_check]
 
-
-    @staticmethod
-    def _check_relationship(relationships, level_to_check, value_to_check):
+    def _check_relationship(self, relationships, level_to_check, value_to_check):
         """
         Check if the current_job_value is included in the filter_value
         :param relationships: current filter level to check.
@@ -581,6 +579,10 @@ class JobList(object):
         """
         filters = []
         if level_to_check == "DATES_FROM":
+            try:
+                value_to_check = date2str(value_to_check, "%Y%m%d")
+            except:
+                pass
             values_list = self._date_list
         elif level_to_check == "MEMBERS_FROM":
             values_list = self._member_list
@@ -593,8 +595,8 @@ class JobList(object):
         status = relationship.pop("STATUS", relationships.get("STATUS", None))
         from_step = relationship.pop("FROM_STEP", relationships.get("FROM_STEP", None))
         for filter_range, filter_data in relationship.items():
-            if not value_to_check or str(value_to_check).upper() in str(
-                    JobList._parse_filters_to_check(filter_range)).upper():
+            if filter_range in ["ALL","NATURAL"] or ( not value_to_check or str(value_to_check).upper() in str(
+                    JobList._parse_filters_to_check(filter_range)).upper()):
                 if not filter_data.get("STATUS", None):
                     filter_data["STATUS"] = status
                 if not filter_data.get("FROM_STEP", None):
@@ -605,8 +607,8 @@ class JobList(object):
             filters = [{}]
         return filters
 
-    @staticmethod
-    def _check_dates(relationships, current_job):
+
+    def _check_dates(self, relationships, current_job):
         """
         Check if the current_job_value is included in the filter_from and retrieve filter_to value
         :param relationships: Remaining filters to apply.
@@ -614,7 +616,7 @@ class JobList(object):
         :return:  filters_to_apply
         """
 
-        filters_to_apply = JobList._check_relationship(relationships, "DATES_FROM", date2str(current_job.date))
+        filters_to_apply = self._check_relationship(relationships, "DATES_FROM", date2str(current_job.date))
         # there could be multiple filters that apply... per example
         # Current task date is 20020201, and member is fc2
         # Dummy example, not specially usefull in a real case
@@ -643,17 +645,17 @@ class JobList(object):
             # Will enter, go recursivily to the similar methods and in the end it will do:
             # Will enter members_from, and obtain [{DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", CHUNKS_FROM{...}]
             if "MEMBERS_FROM" in filter:
-                filters_to_apply_m = JobList._check_members({"MEMBERS_FROM": (filter.pop("MEMBERS_FROM"))}, current_job)
+                filters_to_apply_m = self._check_members({"MEMBERS_FROM": (filter.pop("MEMBERS_FROM"))}, current_job)
                 if len(filters_to_apply_m) > 0:
                     filters_to_apply[i].update(filters_to_apply_m)
             # Will enter chunks_from, and obtain [{DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"]
             if "CHUNKS_FROM" in filter:
-                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter.pop("CHUNKS_FROM"))}, current_job)
+                filters_to_apply_c = self._check_chunks({"CHUNKS_FROM": (filter.pop("CHUNKS_FROM"))}, current_job)
                 if len(filters_to_apply_c) > 0 and len(filters_to_apply_c[0]) > 0:
                     filters_to_apply[i].update(filters_to_apply_c)
             # IGNORED
             if "SPLITS_FROM" in filter:
-                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM"))}, current_job)
+                filters_to_apply_s = self._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM"))}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
         # Unify filters from all filters_from where the current job is included to have a single SET of filters_to
@@ -661,29 +663,28 @@ class JobList(object):
         # {DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"}
         return filters_to_apply
 
-    @staticmethod
-    def _check_members(relationships, current_job):
+
+    def _check_members(self,relationships, current_job):
         """
         Check if the current_job_value is included in the filter_from and retrieve filter_to value
         :param relationships: Remaining filters to apply.
         :param current_job: Current job to check.
         :return: filters_to_apply
         """
-        filters_to_apply = JobList._check_relationship(relationships, "MEMBERS_FROM", current_job.member)
+        filters_to_apply = self._check_relationship(relationships, "MEMBERS_FROM", current_job.member)
         for i, filter_ in enumerate(filters_to_apply):
             if "CHUNKS_FROM" in filter_:
-                filters_to_apply_c = JobList._check_chunks({"CHUNKS_FROM": (filter_.pop("CHUNKS_FROM"))}, current_job)
+                filters_to_apply_c = self._check_chunks({"CHUNKS_FROM": (filter_.pop("CHUNKS_FROM"))}, current_job)
                 if len(filters_to_apply_c) > 0:
                     filters_to_apply[i].update(filters_to_apply_c)
             if "SPLITS_FROM" in filter_:
-                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter_.pop("SPLITS_FROM"))}, current_job)
+                filters_to_apply_s = self._check_splits({"SPLITS_FROM": (filter_.pop("SPLITS_FROM"))}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
         return filters_to_apply
 
-    @staticmethod
-    def _check_chunks(relationships, current_job):
+    def _check_chunks(self,relationships, current_job):
         """
         Check if the current_job_value is included in the filter_from and retrieve filter_to value
         :param relationships: Remaining filters to apply.
@@ -691,17 +692,16 @@ class JobList(object):
         :return: filters_to_apply
         """
 
-        filters_to_apply = JobList._check_relationship(relationships, "CHUNKS_FROM", current_job.chunk)
+        filters_to_apply = self._check_relationship(relationships, "CHUNKS_FROM", current_job.chunk)
         for i, filter in enumerate(filters_to_apply):
             if "SPLITS_FROM" in filter:
-                filters_to_apply_s = JobList._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM"))}, current_job)
+                filters_to_apply_s = self._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM"))}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
         return filters_to_apply
 
-    @staticmethod
-    def _check_splits(relationships, current_job):
+    def _check_splits(self,relationships, current_job):
         """
         Check if the current_job_value is included in the filter_from and retrieve filter_to value
         :param relationships: Remaining filters to apply.
@@ -709,7 +709,7 @@ class JobList(object):
         :return: filters_to_apply
         """
 
-        filters_to_apply = JobList._check_relationship(relationships, "SPLITS_FROM", current_job.split)
+        filters_to_apply = self._check_relationship(relationships, "SPLITS_FROM", current_job.split)
         # No more FROM sections to check, unify _to FILTERS and return
         filters_to_apply = JobList._unify_to_filters(filters_to_apply)
         return filters_to_apply
@@ -780,8 +780,7 @@ class JobList(object):
         JobList._normalize_to_filters(unified_filter, "SPLITS_TO")
         return unified_filter
 
-    @staticmethod
-    def _filter_current_job(current_job, relationships):
+    def _filter_current_job(self,current_job, relationships):
         ''' This function will filter the current job based on the relationships given
         :param current_job: Current job to filter
         :param relationships: Relationships to apply
@@ -808,13 +807,13 @@ class JobList(object):
         if relationships is not None and len(relationships) > 0:
             # Look for a starting point, this can be if else becasue they're exclusive as a DATE_FROM can't be in a MEMBER_FROM and so on
             if "DATES_FROM" in relationships:
-                filters_to_apply = JobList._check_dates(relationships, current_job)
+                filters_to_apply = self._check_dates(relationships, current_job)
             elif "MEMBERS_FROM" in relationships:
-                filters_to_apply = JobList._check_members(relationships, current_job)
+                filters_to_apply = self._check_members(relationships, current_job)
             elif "CHUNKS_FROM" in relationships:
-                filters_to_apply = JobList._check_chunks(relationships, current_job)
+                filters_to_apply = self._check_chunks(relationships, current_job)
             elif "SPLITS_FROM" in relationships:
-                filters_to_apply = JobList._check_splits(relationships, current_job)
+                filters_to_apply = self._check_splits(relationships, current_job)
             else:
                 relationships.pop("OPTIONAL", None)
                 relationships.pop("CHECKPOINT", None)
@@ -928,10 +927,8 @@ class JobList(object):
             natural_jobs = dic_jobs.get_jobs(dependency.section, date, member, chunk)
             all_parents = list(set(other_parents + parents_jobs))
             # Get dates_to, members_to, chunks_to of the deepest level of the relationship.
-            filters_to_apply = JobList._filter_current_job(job, copy.deepcopy(dependency.relationships))
-            if "?" in filters_to_apply.get("SPLITS_TO", "") or "?" in filters_to_apply.get("DATES_TO",
-                                                                                           "") or "?" in filters_to_apply.get(
-                    "MEMBERS_TO", "") or "?" in filters_to_apply.get("CHUNKS_TO", ""):
+            filters_to_apply = self._filter_current_job(job, copy.deepcopy(dependency.relationships))
+            if "?" in filters_to_apply.get("SPLITS_TO", "") or "?" in filters_to_apply.get("DATES_TO","") or "?" in filters_to_apply.get("MEMBERS_TO", "") or "?" in filters_to_apply.get("CHUNKS_TO", ""):
                 only_marked_status = True
             else:
                 only_marked_status = False
