@@ -401,14 +401,16 @@ class JobList(object):
         if "NONE" in str(parent_value).upper():
             return True
         to_filter = JobList._parse_filter_to_check(filter_value,associative_list)
-        if "ALL" in to_filter:
+        if len(to_filter) == 0:
+            return False
+        elif "ALL".casefold() == str(to_filter[0]).casefold():
             return True
-        elif "NATURAL" in to_filter:
+        elif "NATURAL" == str(to_filter[0]).casefold():
             if parent_value is None or parent_value in associative_list:
                 return True
-        elif "NONE" in to_filter:
+        elif "NONE" == str(to_filter[0]).casefold():
             return False
-        elif str(parent_value).upper() in to_filter:
+        elif str(parent_value).casefold() in ( str(filter_).casefold() for filter_ in to_filter):
             return True
         else:
             return False
@@ -448,8 +450,8 @@ class JobList(object):
         :param value_list: list of values to check. Dates, members, chunks or splits.
         :return: parsed value to check.
         """
-
-        value_to_check = str(value_to_check).upper()
+        if len(value_list) > 0 and type(value_list[0]) == str: # We dont want to cast split or chunk values
+            value_to_check = str(value_to_check).upper()
         if value_to_check.count(":") == 1:
             # range
             if value_to_check[1] == ":":
@@ -563,16 +565,19 @@ class JobList(object):
         filters = []
         if level_to_check == "DATES_FROM":
             try:
-                value_to_check = date2str(value_to_check, "%Y%m%d")
+                value_to_check = date2str(value_to_check, "%Y%m%d") # need to convert in some cases
             except:
                 pass
-            values_list = self._date_list
+            try:
+                values_list = [date2str(date_, "%Y%m%d") for date_ in self._date_list] # need to convert in some cases
+            except:
+                values_list = self._date_list
         elif level_to_check == "MEMBERS_FROM":
-            values_list = self._member_list
+            values_list = self._member_list # Str list
         elif level_to_check == "CHUNKS_FROM":
-            values_list = self._chunk_list
+            values_list = self._chunk_list # int list
         else:
-            values_list = [] # need to obtain the MAX amount of splits set in the workflow
+            values_list = [] # splits, int list ( artificially generated later )
 
         relationship = relationships.get(level_to_check, {})
         status = relationship.pop("STATUS", relationships.get("STATUS", None))

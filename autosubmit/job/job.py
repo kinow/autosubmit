@@ -1373,7 +1373,8 @@ class Job(object):
         return parameters
 
     def update_job_parameters(self,as_conf, parameters):
-        parameters["AS_CHECKPOINT"] = self.checkpoint
+        if self.checkpoint: # To activate placeholder sustitution per <empty> in the template
+            parameters["AS_CHECKPOINT"] = self.checkpoint
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
         parameters['SDATE'] = self.sdate
@@ -1455,6 +1456,8 @@ class Job(object):
         parameters['EXPORT'] = self.export
         parameters['PROJECT_TYPE'] = as_conf.get_project_type()
         self.wchunkinc = as_conf.get_wchunkinc(self.section)
+        for key,value in as_conf.jobs_data.get(self.section,{}).items():
+            parameters["CURRENT_"+key.upper()] = value
         return parameters
 
     def update_parameters(self, as_conf, parameters,
@@ -1528,7 +1531,7 @@ class Job(object):
                 template_file.close()
             else:
                 if self.type == Type.BASH:
-                    template = '%AS_CHECKPOINT%;sleep 320;%AS_CHECKPOINT%;sleep 320'
+                    template = '%CURRENT_TESTNAME%;%AS_CHECKPOINT%;sleep 320;%AS_CHECKPOINT%;sleep 320'
                 elif self.type == Type.PYTHON2:
                     template = 'time.sleep(5)' + "\n"
                 elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
