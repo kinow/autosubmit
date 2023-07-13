@@ -397,44 +397,18 @@ class JobList(object):
 
         :return: boolean
         """
-        to_filter = []
-        # strip special chars if any
         filter_value = filter_value.strip("?")
-        if str(parent_value).lower().find("none") != -1:
+        if "NONE" in str(parent_value).upper():
             return True
-        if filter_value.lower().find("all") != -1:
+        to_filter = JobList._parse_filter_to_check(filter_value,associative_list)
+        if "ALL" in to_filter:
             return True
-        elif filter_value.lower().find("natural") != -1:
+        elif "NATURAL" in to_filter:
             if parent_value is None or parent_value in associative_list:
                 return True
-        elif filter_value.lower().find("none") != -1:
+        elif "NONE" in to_filter:
             return False
-        elif filter_value.find(",") != -1:
-            aux_filter = filter_value.split(",")
-            if filter_type not in ["chunks", "splits"]:
-                for value in aux_filter:
-                    if str(value).isdigit():
-                        to_filter.append(associative_list[int(value)])
-                    else:
-                        to_filter.append(value)
-            else:
-                to_filter = aux_filter
-            del aux_filter
-        elif filter_value.find(":") != -1:
-            start_end = filter_value.split(":")
-            start = start_end[0].strip("[]")
-            end = start_end[1].strip("[]")
-            del start_end
-            if filter_type not in ["chunks", "splits"]:  # chunk directly
-                for value in range(int(start), int(end) + 1):
-                    to_filter.append(value)
-            else:  # index
-                for value in range(int(start + 1), int(end) + 1):
-                    to_filter.append(value)
-        else:
-            to_filter.append(filter_value)
-
-        if str(parent_value).upper() in str(to_filter).upper():
+        elif str(parent_value).upper() in to_filter:
             return True
         else:
             return False
@@ -596,7 +570,7 @@ class JobList(object):
         from_step = relationship.pop("FROM_STEP", relationships.get("FROM_STEP", None))
         for filter_range, filter_data in relationship.items():
             if filter_range in ["ALL","NATURAL"] or ( not value_to_check or str(value_to_check).upper() in str(
-                    JobList._parse_filters_to_check(filter_range)).upper()):
+                    JobList._parse_filters_to_check(filter_range,values_list)).upper()):
                 if not filter_data.get("STATUS", None):
                     filter_data["STATUS"] = status
                 if not filter_data.get("FROM_STEP", None):
