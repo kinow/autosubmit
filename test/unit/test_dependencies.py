@@ -300,6 +300,7 @@ class TestJobList(unittest.TestCase):
         date_list = ["20020201"]
         member_list = ["fc1", "fc2", "fc3"]
         chunk_list = [1, 2, 3]
+        self.mock_job.splits = 10
         is_a_natural_relation = False
         # Filter_to values
         filter_ = {
@@ -331,6 +332,7 @@ class TestJobList(unittest.TestCase):
                 "SPLITS_TO": "1?"
             }
         self.mock_job.split = 2
+
         result = self.JobList._valid_parent(self.mock_job, member_list, date_list, chunk_list, is_a_natural_relation, filter_)
         self.assertEqual(result, False)
         filter_ = {
