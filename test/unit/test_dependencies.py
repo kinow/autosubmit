@@ -324,6 +324,34 @@ class TestJobList(unittest.TestCase):
             }
         result = self.JobList._valid_parent(self.mock_job, member_list, date_list, chunk_list, is_a_natural_relation, filter_)
         self.assertEqual(result, True)
+        filter_ = {
+                "DATES_TO": "20020201",
+                "MEMBERS_TO": "fc2",
+                "CHUNKS_TO": "ALL",
+                "SPLITS_TO": "1?"
+            }
+        self.mock_job.split = 2
+        result = self.JobList._valid_parent(self.mock_job, member_list, date_list, chunk_list, is_a_natural_relation, filter_)
+        self.assertEqual(result, False)
+        filter_ = {
+                "DATES_TO": "[20020201:20020205]",
+                "MEMBERS_TO": "fc2",
+                "CHUNKS_TO": "ALL",
+                "SPLITS_TO": "1"
+            }
+        self.mock_job.split = 1
+        result = self.JobList._valid_parent(self.mock_job, member_list, date_list, chunk_list, is_a_natural_relation, filter_)
+        self.assertEqual(result, True)
+        filter_ = {
+                "DATES_TO": "[20020201:20020205]",
+                "MEMBERS_TO": "fc2",
+                "CHUNKS_TO": "ALL",
+                "SPLITS_TO": "1"
+            }
+        self.mock_job.date = datetime.strptime("20020206", "%Y%m%d")
+        result = self.JobList._valid_parent(self.mock_job, member_list, date_list, chunk_list, is_a_natural_relation, filter_)
+        self.assertEqual(result, False)
+
 
 
 if __name__ == '__main__':

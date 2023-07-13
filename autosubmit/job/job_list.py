@@ -481,7 +481,10 @@ class JobList(object):
                 # get index in the value_list
                 if len(value_list) > 0:
                     start = value_list.index(start)
-                    end = value_list.index(end)
+                    try:
+                        end = value_list.index(end)
+                    except ValueError:
+                        end = len(value_list)-1
                 else:
                     start = int(start)
                     end = int(end)
@@ -517,7 +520,10 @@ class JobList(object):
                 step = None
                 # get index in the value_list
                 if len(value_list) > 0:
-                    end = value_list.index(end)
+                    try:
+                        end = value_list.index(end)
+                    except ValueError:
+                        end = len(value_list)-1
                 else:
                     end = int(end)
             else: # [N:M:S]
@@ -528,7 +534,10 @@ class JobList(object):
                 # get index in the value_list
                 if len(value_list) > 0:
                     start = value_list.index(start)
-                    end = value_list.index(end)
+                    try:
+                        end = value_list.index(end)
+                    except ValueError:
+                        end = len(value_list)-1
                 else:
                     start = int(start)
                     end = int(end)
