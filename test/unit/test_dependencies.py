@@ -297,7 +297,6 @@ class TestJobList(unittest.TestCase):
 
     def test_valid_parent(self):
         # Call the function to get the result
-
         date_list = ["20020201"]
         member_list = ["fc1", "fc2", "fc3"]
         chunk_list = [1, 2, 3]
@@ -314,7 +313,7 @@ class TestJobList(unittest.TestCase):
         self.mock_job.member = "fc2"
         self.mock_job.chunk = 1
         self.mock_job.split = 1
-        result = self.JobList._valid_parent(self.mock_job, date_list, member_list, chunk_list, is_a_natural_relation, filter_)
+        result = self.JobList._valid_parent(self.mock_job, member_list, date_list, chunk_list, is_a_natural_relation, filter_)
         # it returns a tuple, the first element is the result, the second is the optional flag
         self.assertEqual(result, True)
         filter_ = {
@@ -323,7 +322,7 @@ class TestJobList(unittest.TestCase):
                 "CHUNKS_TO": "ALL",
                 "SPLITS_TO": "1?"
             }
-        result = self.JobList._valid_parent(self.mock_job, date_list, member_list, chunk_list, is_a_natural_relation, filter_)
+        result = self.JobList._valid_parent(self.mock_job, member_list, date_list, chunk_list, is_a_natural_relation, filter_)
         self.assertEqual(result, True)
 
 
