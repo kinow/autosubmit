@@ -14,47 +14,48 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+import collections
+import locale
+import platform
+import requests
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import threading
 import traceback
-import requests
-import collections
-import platform
-from .job.job_packager import JobPackager
-from .platforms.paramiko_submitter import ParamikoSubmitter
-from .platforms.platform import Platform
-from .notifications.notifier import Notifier
-from .notifications.mail_notifier import MailNotifier
 from bscearth.utils.date import date2str
-from pathlib import Path
-from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
-from ruamel.yaml import YAML
 from configparser import ConfigParser
+from distutils.util import strtobool
+from pathlib import Path
+from ruamel.yaml import YAML
+from typing import Dict, Set, Tuple, Union
 
-from .monitor.monitor import Monitor
-from .database.db_common import get_autosubmit_version, check_experiment_exists
+from autosubmit.database.db_common import update_experiment_descrip_version
+from autosubmit.helpers.parameters import PARAMETERS
+from autosubmitconfigparser.config.basicconfig import BasicConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
+from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
+from log.log import Log, AutosubmitError, AutosubmitCritical
+from .database.db_common import create_db
 from .database.db_common import delete_experiment, get_experiment_descrip
+from .database.db_common import get_autosubmit_version, check_experiment_exists
 from .database.db_structure import get_structure
 from .experiment.experiment_common import copy_experiment
 from .experiment.experiment_common import new_experiment
-from .database.db_common import create_db
-from .job.job_grouping import JobGrouping
-from .job.job_list_persistence import JobListPersistencePkl
-from .job.job_list_persistence import JobListPersistenceDb
-from .job.job_package_persistence import JobPackagePersistence
-from .job.job_list import JobList
-from .job.job_utils import SubJob, SubJobManager
-from autosubmit.helpers.parameters import PARAMETERS
 from .git.autosubmit_git import AutosubmitGit
 from .job.job_common import Status
-from autosubmitconfigparser.config.configcommon import AutosubmitConfig
-from autosubmitconfigparser.config.basicconfig import BasicConfig
-import locale
-from distutils.util import strtobool
-from log.log import Log, AutosubmitError, AutosubmitCritical
-from typing import Dict, Set, Tuple, Union
-from autosubmit.database.db_common import update_experiment_descrip_version
+from .job.job_grouping import JobGrouping
+from .job.job_list import JobList
+from .job.job_list_persistence import JobListPersistenceDb
+from .job.job_list_persistence import JobListPersistencePkl
+from .job.job_package_persistence import JobPackagePersistence
+from .job.job_packager import JobPackager
+from .job.job_utils import SubJob, SubJobManager
+from .monitor.monitor import Monitor
+from .notifications.mail_notifier import MailNotifier
+from .notifications.notifier import Notifier
+from .platforms.paramiko_submitter import ParamikoSubmitter
+from .platforms.platform import Platform
+
 dialog = None
 from time import sleep
 import argparse
@@ -73,7 +74,7 @@ import signal
 import datetime
 
 import portalocker
-from pkg_resources import require, resource_listdir, resource_exists, resource_string, resource_filename
+from pkg_resources import require, resource_listdir, resource_string, resource_filename
 from collections import defaultdict
 from pyparsing import nestedExpr
 from .history.experiment_status import ExperimentStatus
@@ -210,10 +211,12 @@ class Autosubmit:
 
             group.add_argument('-op', '--operational', action='store_true',
                                help='creates a new experiment with operational experiment id')
-            subparser.add_argument('-H', '--HPC', required=False, default="local",
+            subparser.add_argument('-H', '--HPC', required=True, default="local",
                                    help='specifies the HPC to use for the experiment')
             subparser.add_argument('-d', '--description', type=str, required=True,
                                    help='sets a description for the experiment to store in the database.')
+            group.add_argument('-t', '--testcase', action='store_true',
+                               help='creates a new experiment with testcase experiment id')
 
             # Delete
             subparser = subparsers.add_parser(
@@ -514,17 +517,25 @@ class Autosubmit:
             # Test Case
             subparser = subparsers.add_parser(
                 'testcase', description='create test case experiment')
-            subparser.add_argument(
+            group = subparser.add_mutually_exclusive_group()
+            group.add_argument(
                 '-y', '--copy', help='makes a copy of the specified experiment')
+            group.add_argument('-min', '--minimal_configuration', action='store_true',
+                               help='creates a new experiment with minimal configuration, usually combined with -repo')
             subparser.add_argument(
                 '-d', '--description', required=True, help='description of the test case')
             subparser.add_argument('-c', '--chunks', help='chunks to run')
             subparser.add_argument('-m', '--member', help='member to run')
             subparser.add_argument('-s', '--stardate', help='stardate to run')
             subparser.add_argument(
-                '-H', '--HPC', required=True, help='HPC to run experiment on it')
-            subparser.add_argument(
-                '-b', '--branch', help='branch of git to run (or revision from subversion)')
+                '-H', '--HPC', required=False, help='HPC to run experiment on it')
+
+            subparser.add_argument('-repo', '--git_repo', type=str, default="", required=False,
+                                   help='sets a git repository for the experiment')
+            subparser.add_argument('-b', '--git_branch', type=str, default="", required=False,
+                                   help='sets a git branch for the experiment')
+            subparser.add_argument('-conf', '--git_as_conf', type=str, default="", required=False,help='sets the git path to as_conf')
+            subparser.add_argument('-local', '--use_local_minimal', required=False, action="store_true", help='uses local minimal file instead of git')
 
             # Database Fix
             subparser = subparsers.add_parser(
@@ -638,7 +649,7 @@ class Autosubmit:
         if args.command == 'run':
             return Autosubmit.run_experiment(args.expid, args.notransitive,args.start_time,args.start_after, args.run_only_members)
         elif args.command == 'expid':
-            return Autosubmit.expid(args.description,args.HPC,args.copy, args.dummy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.operational,args.use_local_minimal) != ''
+            return Autosubmit.expid(args.description,args.HPC,args.copy, args.dummy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.operational,args.testcase,args.use_local_minimal) != ''
         elif args.command == 'delete':
             return Autosubmit.delete(args.expid, args.force)
         elif args.command == 'monitor':
@@ -686,8 +697,7 @@ class Autosubmit:
                                          args.group_by, args.expand, args.expand_status, args.notransitive,
                                          args.check_wrapper, args.detail)
         elif args.command == 'testcase':
-            return Autosubmit.testcase(args.copy, args.description, args.chunks, args.member, args.stardate,
-                                       args.HPC, args.branch)
+            return Autosubmit.testcase(args.description, args.chunks, args.member, args.stardate, args.HPC, args.copy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.use_local_minimal)
         elif args.command == 'test':
             return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
         elif args.command == 'refresh':
@@ -1182,7 +1192,7 @@ class Autosubmit:
                     f.write(content)
 
     @staticmethod
-    def expid(description,hpc="", copy_id='', dummy=False,minimal_configuration=False, git_repo="",git_branch="",git_as_conf="",operational=False, use_local_minimal=False):
+    def expid(description, hpc="", copy_id='', dummy=False, minimal_configuration=False, git_repo="", git_branch="", git_as_conf="", operational=False,  testcase = False,use_local_minimal=False):
         """
         Creates a new experiment for given HPC
         description: description of the experiment
@@ -1217,10 +1227,10 @@ class Autosubmit:
                 if not os.path.exists(copy_id_folder):
                     raise AutosubmitCritical(
                         "Experiment {0} doesn't exists".format(copy_id), 7011)
-                exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, False, operational)
+                exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, testcase, operational)
             else:
                 # Create a new experiment from scratch
-                exp_id = new_experiment(description, Autosubmit.autosubmit_version, False, operational)
+                exp_id = new_experiment(description, Autosubmit.autosubmit_version, testcase, operational)
 
             if exp_id == '':
                 raise AutosubmitCritical("No expid", 7011)
@@ -5637,35 +5647,44 @@ class Autosubmit:
         return result
 
     @staticmethod
-    def testcase(copy_id, description, chunks=None, member=None, start_date=None, hpc=None, branch=None):
+    def testcase(description, chunks=None, member=None, start_date=None, hpc=None, copy_id=None, minimal_configuration=False, git_repo=None, git_branch=None, git_as_conf=None, use_local_minimal=False):
         """
-        Method to create a test case. It creates a new experiment whose id starts by 't'.
-
-
-        :param copy_id: experiment identifier
-        :type copy_id: str
-        :param description: test case experiment description
+        Method to conduct a test for a given experiment. It creates a new experiment for a given experiment with a
+        given number of chunks with a random start date and a random member to be run on a random HPC.
+        :param description: description of the experiment
         :type description: str
-        :param chunks: number of chunks to be run by the experiment. If None, it uses configured chunk(s).
+        :param chunks: number of chunks to be run by the experiment
         :type chunks: int
-        :param member: member to be used by the test. If None, it uses configured member(s).
+        :param member: member to be used by the test. If None, a random member will be chosen
         :type member: str
-        :param start_date: start date to be used by the test. If None, it uses configured start date(s).
+        :param start_date: start date of the experiment. If None, a random start date will be chosen
         :type start_date: str
-        :param hpc: HPC to be used by the test. If None, it uses configured HPC.
+        :param hpc: HPC to be used by the test. If None, a random HPC will be chosen
         :type hpc: str
-        :param branch: branch or revision to be used by the test. If None, it uses configured branch.
-        :type branch: str
-        :return: test case id
+        :param copy_id: copy id to be used by the test. If None, a random copy id will be chosen
+        :type copy_id: str
+        :param minimal_configuration: if True, the experiment will be run with a minimal configuration
+        :type minimal_configuration: bool
+        :param git_repo: git repository to be used by the test. If None, a random git repository will be chosen
+        :type git_repo: str
+        :param git_branch: git branch to be used by the test. If None, a random git branch will be chosen
+        :type git_branch: str
+        :param git_as_conf: git autosubmit configuration to be used by the test. If None, a random git autosubmit configuration will be chosen
+        :type git_as_conf: str
+        :param use_local_minimal: if True, the experiment will be run with a local minimal configuration
+        :type use_local_minimal: bool
+        :return: experiment identifier
         :rtype: str
         """
 
-        testcaseid = Autosubmit.expid(hpc, description, copy_id, False, True)
+
+
+        testcaseid = Autosubmit.expid(description, hpc, copy_id, False, minimal_configuration, git_repo, git_branch, git_as_conf, use_local_minimal=use_local_minimal, testcase=True)
         if testcaseid == '':
             return False
-
-        Autosubmit._change_conf(
-            testcaseid, hpc, start_date, member, chunks, branch, False)
+        # Disabled for now
+        # Autosubmit._change_conf(
+        #     testcaseid, hpc, start_date, member, chunks, None, False)
 
         return testcaseid
 
