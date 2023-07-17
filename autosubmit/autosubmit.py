@@ -211,7 +211,7 @@ class Autosubmit:
 
             group.add_argument('-op', '--operational', action='store_true',
                                help='creates a new experiment with operational experiment id')
-            subparser.add_argument('-H', '--HPC', required=True, default="local",
+            subparser.add_argument('-H', '--HPC', required=False, default="local",
                                    help='specifies the HPC to use for the experiment')
             subparser.add_argument('-d', '--description', type=str, required=True,
                                    help='sets a description for the experiment to store in the database.')
@@ -528,7 +528,7 @@ class Autosubmit:
             subparser.add_argument('-m', '--member', help='member to run')
             subparser.add_argument('-s', '--stardate', help='stardate to run')
             subparser.add_argument(
-                '-H', '--HPC', required=False, help='HPC to run experiment on it')
+                '-H', '--HPC', required=True, help='HPC to run experiment on it')
 
             subparser.add_argument('-repo', '--git_repo', type=str, default="", required=False,
                                    help='sets a git repository for the experiment')
