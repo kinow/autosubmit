@@ -387,7 +387,7 @@ class JobList(object):
         return splits
 
     @staticmethod
-    def _apply_filter(parent_value, filter_value, associative_list, filter_type="dates"):
+    def _apply_filter(parent_value, filter_value, associative_list, level_to_check="DATES_FROM"):
         """
         Check if the current_job_value is included in the filter_value
         :param parent_value:
@@ -398,17 +398,19 @@ class JobList(object):
         :return: boolean
         """
         filter_value = filter_value.strip("?")
-        if "NONE" in str(parent_value).upper():
+        if "NONE".casefold() in str(parent_value).casefold():
             return True
-        to_filter = JobList._parse_filter_to_check(filter_value,associative_list)
-        if len(to_filter) == 0:
+        to_filter = JobList._parse_filters_to_check(filter_value,associative_list,level_to_check)
+        if to_filter is None:
+            return False
+        elif len(to_filter) == 0:
             return False
         elif "ALL".casefold() == str(to_filter[0]).casefold():
             return True
-        elif "NATURAL" == str(to_filter[0]).casefold():
+        elif "NATURAL".casefold() == str(to_filter[0]).casefold():
             if parent_value is None or parent_value in associative_list:
                 return True
-        elif "NONE" == str(to_filter[0]).casefold():
+        elif "NONE".casefold() == str(to_filter[0]).casefold():
             return False
         elif str(parent_value).casefold() in ( str(filter_).casefold() for filter_ in to_filter):
             return True
@@ -418,27 +420,27 @@ class JobList(object):
 
 
     @staticmethod
-    def _parse_filters_to_check(list_of_values_to_check,value_list=[]):
+    def _parse_filters_to_check(list_of_values_to_check,value_list=[],level_to_check="DATES_FROM"):
         final_values = []
         list_of_values_to_check = str(list_of_values_to_check).upper()
         if list_of_values_to_check is None:
             return None
-        elif list_of_values_to_check == "ALL":
+        elif list_of_values_to_check.casefold() == "ALL".casefold() :
             return ["ALL"]
-        elif list_of_values_to_check == "NONE":
-            return None
-        elif list_of_values_to_check == "NATURAL":
+        elif list_of_values_to_check.casefold() == "NONE".casefold():
+            return ["NONE"]
+        elif list_of_values_to_check.casefold() == "NATURAL".casefold():
             return ["NATURAL"]
         elif "," in list_of_values_to_check:
             for value_to_check in list_of_values_to_check.split(","):
-                final_values.extend(JobList._parse_filter_to_check(value_to_check,value_list))
+                final_values.extend(JobList._parse_filter_to_check(value_to_check,value_list,level_to_check))
         else:
-            final_values = JobList._parse_filter_to_check(list_of_values_to_check,value_list)
+            final_values = JobList._parse_filter_to_check(list_of_values_to_check,value_list,level_to_check)
         return final_values
 
 
     @staticmethod
-    def _parse_filter_to_check(value_to_check,value_list=[]):
+    def _parse_filter_to_check(value_to_check,value_list=[],level_to_check="DATES_FROM"):
         """
         Parse the filter to check and return the value to check.
         Selection process:
@@ -450,8 +452,7 @@ class JobList(object):
         :param value_list: list of values to check. Dates, members, chunks or splits.
         :return: parsed value to check.
         """
-        if len(value_list) > 0 and type(value_list[0]) == str: # We dont want to cast split or chunk values
-            value_to_check = str(value_to_check).upper()
+        step = 1
         if value_to_check.count(":") == 1:
             # range
             if value_to_check[1] == ":":
@@ -459,54 +460,32 @@ class JobList(object):
                 # Find N index in the list
                 start = None
                 end = value_to_check.split(":")[1].strip("[]")
-                # get index in the value_list
-                if len(value_list) > 0:
-                    end = value_list.index(end)
-                else:
+                if level_to_check in ["CHUNKS_FROM","SPLITS_FROM"]:
                     end = int(end)
             elif value_to_check[-2] == ":":
                 # [N:]
                 # Find N index in the list
                 start = value_to_check.split(":")[0].strip("[]")
-                end = None
-                # get index in the value_list
-                if len(value_list) > 0:
-                    start = value_list.index(start)
-                else:
+                if level_to_check in ["CHUNKS_FROM","SPLITS_FROM"]:
                     start = int(start)
+                end = None
             else:
                 # [N:M]
                 # Find N index in the list
                 start = value_to_check.split(":")[0].strip("[]")
                 end = value_to_check.split(":")[1].strip("[]")
-                step = None
-                # get index in the value_list
-                if len(value_list) > 0:
-                    start = value_list.index(start)
-                    try:
-                        end = value_list.index(end)
-                    except ValueError:
-                        end = len(value_list)-1
-                else:
+                step = 1
+                if level_to_check in ["CHUNKS_FROM","SPLITS_FROM"]:
                     start = int(start)
                     end = int(end)
-            if end is not None:
-                end+=1
-            if len(value_list) > 0:
-                return value_list[slice(start, end)]
-            else:
-                return [ str(number_gen) for number_gen in range(start, end)]
         elif value_to_check.count(":") == 2:
             # range with step
             if value_to_check[-2] == ":" and value_to_check[-3] == ":":  # [N::]
                 # Find N index in the list
                 start = value_to_check.split(":")[0].strip("[]")
                 end = None
-                step = None
-                # get index in the value_list
-                if len(value_list) > 0:
-                    start = value_list.index(start)
-                else:
+                step = 1
+                if level_to_check in ["CHUNKS_FROM","SPLITS_FROM"]:
                     start = int(start)
             elif value_to_check[1] == ":" and value_to_check[2] == ":":  # [::S]
                 # Find N index in the list
@@ -519,40 +498,37 @@ class JobList(object):
                 # Find N index in the list
                 start = None
                 end = value_to_check.split(":")[1].strip("[]")
-                step = None
-                # get index in the value_list
-                if len(value_list) > 0:
-                    try:
-                        end = value_list.index(end)
-                    except ValueError:
-                        end = len(value_list)-1
-                else:
+                if level_to_check in ["CHUNKS_FROM","SPLITS_FROM"]:
                     end = int(end)
+                step = 1
             else: # [N:M:S]
                 # Find N index in the list
                 start = value_to_check.split(":")[0].strip("[]")
                 end = value_to_check.split(":")[1].strip("[]")
                 step = value_to_check.split(":")[2].strip("[]")
-                # get index in the value_list
-                if len(value_list) > 0:
-                    start = value_list.index(start)
-                    try:
-                        end = value_list.index(end)
-                    except ValueError:
-                        end = len(value_list)-1
-                else:
+                step = int(step)
+                if level_to_check in ["CHUNKS_FROM","SPLITS_FROM"]:
                     start = int(start)
                     end = int(end)
-                step = int(step)
-            if end is not None:
-                end+=1
-            if len(value_list) > 0:
-                return value_list[slice(start, end, step)]
-            else:
-                return [str(number_gen) for number_gen in range(start, end, step)]
         else:
             # value
             return [value_to_check]
+        ## values to return
+        if len(value_list) > 0:
+            if start is None:
+                start = value_list[0]
+            if end is None:
+                end = value_list[-1]
+            try:
+                return value_list[slice(value_list.index(start), value_list.index(end)+1, int(step))]
+            except ValueError:
+                return value_list[slice(0,len(value_list)-1,int(step))]
+        else:
+            if not start:
+                start = 0
+            if end is None:
+                return []
+            return [number_gen for number_gen in range(int(start), int(end)+1, int(step))]
 
     def _check_relationship(self, relationships, level_to_check, value_to_check):
         """
@@ -583,8 +559,8 @@ class JobList(object):
         status = relationship.pop("STATUS", relationships.get("STATUS", None))
         from_step = relationship.pop("FROM_STEP", relationships.get("FROM_STEP", None))
         for filter_range, filter_data in relationship.items():
-            if filter_range in ["ALL","NATURAL"] or ( not value_to_check or str(value_to_check).upper() in str(
-                    JobList._parse_filters_to_check(filter_range,values_list)).upper()):
+            if filter_range.casefold() in ["ALL".casefold(),"NATURAL".casefold()] or ( not value_to_check or str(value_to_check).upper() in str(
+                    JobList._parse_filters_to_check(filter_range,values_list,level_to_check)).upper()):
                 if not filter_data.get("STATUS", None):
                     filter_data["STATUS"] = status
                 if not filter_data.get("FROM_STEP", None):
@@ -621,7 +597,7 @@ class JobList(object):
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
         # Unify filters from all filters_from where the current job is included to have a single SET of filters_to
-        filters_to_apply = JobList._unify_to_filters(filters_to_apply)
+        filters_to_apply = self._unify_to_filters(filters_to_apply)
         # {DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"}
         return filters_to_apply
 
@@ -643,7 +619,7 @@ class JobList(object):
                 filters_to_apply_s = self._check_splits({"SPLITS_FROM": (filter_.pop("SPLITS_FROM"))}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
-        filters_to_apply = JobList._unify_to_filters(filters_to_apply)
+        filters_to_apply = self._unify_to_filters(filters_to_apply)
         return filters_to_apply
 
     def _check_chunks(self,relationships, current_job):
@@ -660,7 +636,7 @@ class JobList(object):
                 filters_to_apply_s = self._check_splits({"SPLITS_FROM": (filter.pop("SPLITS_FROM"))}, current_job)
                 if len(filters_to_apply_s) > 0:
                     filters_to_apply[i].update(filters_to_apply_s)
-        filters_to_apply = JobList._unify_to_filters(filters_to_apply)
+        filters_to_apply = self._unify_to_filters(filters_to_apply)
         return filters_to_apply
 
     def _check_splits(self,relationships, current_job):
@@ -673,11 +649,10 @@ class JobList(object):
 
         filters_to_apply = self._check_relationship(relationships, "SPLITS_FROM", current_job.split)
         # No more FROM sections to check, unify _to FILTERS and return
-        filters_to_apply = JobList._unify_to_filters(filters_to_apply)
+        filters_to_apply = self._unify_to_filters(filters_to_apply)
         return filters_to_apply
 
-    @staticmethod
-    def _unify_to_filter(unified_filter, filter_to, filter_type):
+    def _unify_to_filter(self,unified_filter, filter_to, filter_type):
         """
         Unify filter_to filters into a single dictionary
         :param unified_filter: Single dictionary with all filters_to
@@ -685,21 +660,49 @@ class JobList(object):
         :param filter_type: "DATES_TO", "MEMBERS_TO", "CHUNKS_TO", "SPLITS_TO"
         :return: unified_filter
         """
-        if "all" not in unified_filter[filter_type]:
+        if filter_type == "DATES_TO":
+            value_list = self._date_list
+            level_to_check = "DATES_FROM"
+        elif filter_type == "MEMBERS_TO":
+            value_list = self._member_list
+            level_to_check = "MEMBERS_FROM"
+        elif filter_type == "CHUNKS_TO":
+            value_list = self._chunk_list
+            level_to_check = "CHUNKS_FROM"
+        elif filter_type == "SPLITS_TO":
+            value_list = self._split_list
+            level_to_check = "SPLITS_FROM"
+        if "all".casefold() not in unified_filter[filter_type].casefold():
             aux = filter_to.pop(filter_type, None)
             if aux:
                 aux = aux.split(",")
                 for element in aux:
-                    # Get only the first alphanumeric part
-                    parsed_element = re.findall(r"[\w']+", element)[0].lower()
-                    # Get the rest
-                    data = element[len(parsed_element):]
-                    if parsed_element in ["natural", "none"] and len(unified_filter[filter_type]) > 0:
+                    if element == "":
+                        continue
+                    # Get only the first alphanumeric part and [:] chars
+                    parsed_element = re.findall(r"([\[:\]a-zA-Z0-9]+)", element)[0].lower()
+                    extra_data = element[len(parsed_element):]
+                    parsed_element = JobList._parse_filter_to_check(parsed_element, value_list = value_list, level_to_check = filter_type)
+                    # convert list to str
+                    skip = False
+                    if isinstance(parsed_element, list):
+                        # check if any element is natural or none
+                        for ele in parsed_element:
+                            if ele.lower() in ["natural", "none"]:
+                                skip = True
+                    else:
+                        if parsed_element.lower() in ["natural", "none"]:
+                            skip = True
+                    if skip and len(unified_filter[filter_type]) > 0:
                         continue
                     else:
-                        if "?" not in element:
-                            element += data
-                        unified_filter[filter_type].add(element)
+                        for ele in parsed_element:
+                            if ele not in unified_filter[filter_type]:
+                                if len(unified_filter[filter_type]) > 0 and unified_filter[filter_type][-1] == ",":
+                                    unified_filter[filter_type] += ele + extra_data
+                                else:
+                                    unified_filter[filter_type] += "," + ele + extra_data + ","
+        return unified_filter
 
     @staticmethod
     def _normalize_to_filters(filter_to, filter_type):
@@ -709,32 +712,35 @@ class JobList(object):
         :param filter_type: "DATES_TO", "MEMBERS_TO", "CHUNKS_TO", "SPLITS_TO"
         :return:
         """
-        if len(filter_to[filter_type]) == 0:
+        if len(filter_to[filter_type]) == 0 or ("," in filter_to[filter_type] and len(filter_to[filter_type]) == 1):
             filter_to.pop(filter_type, None)
-        elif "all" in filter_to[filter_type]:
+        elif "all".casefold() in filter_to[filter_type]:
             filter_to[filter_type] = "all"
         else:
-            # transform to str separated by commas if multiple elements
-            filter_to[filter_type] = ",".join(filter_to[filter_type])
+            # delete last comma
+            if "," in filter_to[filter_type][-1]:
+                filter_to[filter_type] = filter_to[filter_type][:-1]
+            # delete first comma
+            if "," in filter_to[filter_type][0]:
+                filter_to[filter_type] = filter_to[filter_type][1:]
 
-    @staticmethod
-    def _unify_to_filters(filter_to_apply):
+    def _unify_to_filters(self,filter_to_apply):
         """
         Unify all filter_to filters into a single dictionary ( of current selection )
         :param filter_to_apply: Filters to apply
         :return: Single dictionary with all filters_to
         """
-        unified_filter = {"DATES_TO": set(), "MEMBERS_TO": set(), "CHUNKS_TO": set(), "SPLITS_TO": set()}
+        unified_filter = {"DATES_TO": "", "MEMBERS_TO": "", "CHUNKS_TO": "", "SPLITS_TO": ""}
         for filter_to in filter_to_apply:
             if "STATUS" not in unified_filter and filter_to.get("STATUS", None):
                 unified_filter["STATUS"] = filter_to["STATUS"]
             if "FROM_STEP" not in unified_filter and filter_to.get("FROM_STEP", None):
                 unified_filter["FROM_STEP"] = filter_to["FROM_STEP"]
             if len(filter_to) > 0:
-                JobList._unify_to_filter(unified_filter, filter_to, "DATES_TO")
-                JobList._unify_to_filter(unified_filter, filter_to, "MEMBERS_TO")
-                JobList._unify_to_filter(unified_filter, filter_to, "CHUNKS_TO")
-                JobList._unify_to_filter(unified_filter, filter_to, "SPLITS_TO")
+                self._unify_to_filter(unified_filter, filter_to, "DATES_TO")
+                self._unify_to_filter(unified_filter, filter_to, "MEMBERS_TO")
+                self._unify_to_filter(unified_filter, filter_to, "CHUNKS_TO")
+                self._unify_to_filter(unified_filter, filter_to, "SPLITS_TO")
 
         JobList._normalize_to_filters(unified_filter, "DATES_TO")
         JobList._normalize_to_filters(unified_filter, "MEMBERS_TO")
@@ -777,8 +783,6 @@ class JobList(object):
             elif "SPLITS_FROM" in relationships:
                 filters_to_apply = self._check_splits(relationships, current_job)
             else:
-                relationships.pop("OPTIONAL", None)
-                relationships.pop("CHECKPOINT", None)
                 relationships.pop("CHUNKS_FROM", None)
                 relationships.pop("MEMBERS_FROM", None)
                 relationships.pop("DATES_FROM", None)
@@ -2079,16 +2083,18 @@ class JobList(object):
             if status == "ALL":
                 continue
             for job in sorted_job_list:
+                if job.status != Status.WAITING:
+                    continue
                 if status in ["RUNNING", "FAILED"]:
                     if job.platform.connected:  # This will be true only when used under setstatus/run
                         job.get_checkpoint_files()
                 for parent in job.edge_info[status].values():
-                    if parent[0].status == Status.WAITING:
-                        if status in ["RUNNING", "FAILED"] and parent[1] and int(parent[1]) >= job.current_checkpoint_step:
-                            continue
-                        else:
-                            jobs_to_check.append(parent[0])
+                    if status in ["RUNNING", "FAILED"] and parent[1] and int(parent[1]) >= job.current_checkpoint_step:
+                        continue
+                    else:
+                        jobs_to_check.append(parent[0])
         return jobs_to_check
+
 
     def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time=False):
         # type: (AutosubmitConfig, bool, bool, object, bool) -> bool
