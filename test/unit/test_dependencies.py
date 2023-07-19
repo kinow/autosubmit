@@ -260,6 +260,11 @@ class TestJobList(unittest.TestCase):
                 "SPLITS_TO": "1"
             }
         self.assertEqual(result, expected_output)
+        # failure
+        self.mock_job.date = datetime.strptime("20020301", "%Y%m%d")
+        result = self.JobList._check_dates(self.relationships_dates, self.mock_job)
+        self.assertEqual(result, {})
+
 
     def test_check_members(self):
         # Call the function to get the result
@@ -275,6 +280,10 @@ class TestJobList(unittest.TestCase):
             }
         self.assertEqual(result, expected_output)
         self.mock_job.member = "fc3"
+        result = self.JobList._check_members(self.relationships_members, self.mock_job)
+        self.assertEqual(result, {})
+        # FAILURE
+        self.mock_job.member = "fc99"
         result = self.JobList._check_members(self.relationships_members, self.mock_job)
         self.assertEqual(result, {})
 
@@ -294,6 +303,10 @@ class TestJobList(unittest.TestCase):
         self.mock_job.split = 2
         result = self.JobList._check_splits(self.relationships_splits, self.mock_job)
         self.assertEqual(result, {})
+        # failure
+        self.mock_job.split = 99
+        result = self.JobList._check_splits(self.relationships_splits, self.mock_job)
+        self.assertEqual(result, {})
 
     def test_check_chunks(self):
         # Call the function to get the result
@@ -310,16 +323,13 @@ class TestJobList(unittest.TestCase):
         self.mock_job.chunk = 2
         result = self.JobList._check_chunks(self.relationships_chunks, self.mock_job)
         self.assertEqual(result, {})
-        # # test splits_from
-        # self.mock_job.split = 5
-        # result = self.JobList._check_chunks(self.relationships_chunks2, self.mock_job)
-        # expected_output2 = {
-        #         "SPLITS_TO": "2"
-        #     }
-        # self.assertEqual(result, expected_output2)
-        # self.mock_job.split = 1
-        # result = self.JobList._check_chunks(self.relationships_chunks2, self.mock_job)
-        # self.assertEqual(result, {})
+        # failure
+        self.mock_job.chunk = 99
+        result = self.JobList._check_chunks(self.relationships_chunks, self.mock_job)
+        self.assertEqual(result, {})
+
+
+
 
     def test_check_general(self):
         # Call the function to get the result
