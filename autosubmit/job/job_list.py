@@ -412,7 +412,7 @@ class JobList(object):
                 return True
         elif "NONE".casefold() == str(to_filter[0]).casefold():
             return False
-        elif str(parent_value).casefold() in ( str(filter_).casefold() for filter_ in to_filter):
+        elif len( [ filter_ for filter_ in to_filter if str(parent_value).casefold() in str(filter_).casefold() ] )>0:
             return True
         else:
             return False
@@ -791,7 +791,7 @@ class JobList(object):
         return filters_to_apply
 
     @staticmethod
-    def _valid_parent(parent, member_list, date_list, chunk_list, is_a_natural_relation, filter_):
+    def _valid_parent(parent, member_list, date_list, chunk_list, is_a_natural_relation, filter_,child):
         '''
         Check if the parent is valid for the current job
         :param parent: job to check
@@ -815,6 +815,7 @@ class JobList(object):
         members_to = str(filter_.get("MEMBERS_TO", "natural")).lower()
         chunks_to = str(filter_.get("CHUNKS_TO", "natural")).lower()
         splits_to = str(filter_.get("SPLITS_TO", "natural")).lower()
+        
         if not is_a_natural_relation:
             if dates_to == "natural":
                 dates_to = "none"
@@ -824,15 +825,29 @@ class JobList(object):
                 chunks_to = "none"
             if splits_to == "natural":
                 splits_to = "none"
-        if dates_to == "natural":
+        if "natural" in dates_to:
             associative_list["dates"] = [date2str(parent.date)] if parent.date is not None else date_list
-        if members_to == "natural":
+        if "natural" in members_to:
             associative_list["members"] = [parent.member] if parent.member is not None else member_list
-        if chunks_to == "natural":
+        if "natural" in chunks_to:
             associative_list["chunks"] = [parent.chunk] if parent.chunk is not None else chunk_list
-        if splits_to == "natural":
+        if "natural" in splits_to:
             associative_list["splits"] = [parent.split] if parent.split is not None else parent.splits
         parsed_parent_date = date2str(parent.date) if parent.date is not None else None
+        # Check for each * char in the filters
+        # Get all the dates that match * in the filter in a list separated by ,
+        if "*" in dates_to:
+            dates_to = [ dat for dat in date_list.split(",") if dat is not None and "*" not in dat or ("*" in dat and date2str(child.date,"%Y%m%d") in dat) ]
+            dates_to = ",".join(dates_to)
+        if "*" in members_to:
+            members_to = [ mem for mem in member_list.split(",") if mem is not None and "*" not in mem or ("*" in mem and str(child.member) in mem) ]
+            members_to = ",".join(members_to)
+        if "*" in chunks_to:
+            chunks_to = [ chu for chu in chunk_list.split(",") if chu is not None and "*" not in chu or ("*" in chu and str(child.chunk) in chu) ]
+            chunks_to = ",".join(chunks_to)
+        if "*" in splits_to:
+            splits_to = [ spl for spl in splits_to.split(",") if child.split is None or spl is None or "*" not in spl or ("*" in spl and str(child.split) in spl) ]
+            splits_to = ",".join(splits_to)
         # Apply all filters to look if this parent is an appropriated candidate for the current_job
         valid_dates = JobList._apply_filter(parsed_parent_date, dates_to, associative_list["dates"], "dates")
         valid_members = JobList._apply_filter(parent.member, members_to, associative_list["members"], "members")
@@ -913,7 +928,7 @@ class JobList(object):
                 # If the parent is valid, add it to the graph
 
                 if JobList._valid_parent(parent, member_list, parsed_date_list, chunk_list, natural_relationship,
-                                         filters_to_apply):
+                                         filters_to_apply,child):
                     job.add_parent(parent)
                     self._add_edge(graph, job, parent)
                     # Could be more variables in the future
