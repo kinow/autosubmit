@@ -20,12 +20,13 @@
 
 
 import os
+import random
+import time
 from datetime import timedelta
 
-import time
-import random
 from autosubmit.job.job_common import Status
-from log.log import Log,AutosubmitCritical,AutosubmitError
+from log.log import Log, AutosubmitCritical
+
 Log.get_logger("Autosubmit")
 from autosubmit.job.job import Job
 from bscearth.utils.date import sum_str_hours
@@ -725,7 +726,7 @@ class JobPackageVertical(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level,partition=self.partition,wrapper_data=self._wrapper_data)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level,partition=self.partition,wrapper_data=self._wrapper_data,num_processors_value=self._num_processors)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -755,7 +756,7 @@ class JobPackageHorizontal(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data,num_processors_value=self._num_processors)
 
 class JobPackageHybrid(JobPackageThread):
     """
@@ -800,7 +801,7 @@ class JobPackageVerticalHorizontal(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data)
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data,num_processors_value=self._num_processors)
 
 
 class JobPackageHorizontalVertical(JobPackageHybrid):
@@ -811,5 +812,5 @@ class JobPackageHorizontalVertical(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data)
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data,num_processors_value=self._num_processors)
 

@@ -1,8 +1,10 @@
 from unittest import TestCase
-from math import ceil
-from autosubmit.platforms.wrappers.wrapper_builder import PythonWrapperBuilder
-import textwrap
+
 import collections
+import textwrap
+from math import ceil
+
+from autosubmit.platforms.wrappers.wrapper_builder import PythonWrapperBuilder
 
 
 class TestMachinefiles(TestCase):
@@ -17,7 +19,7 @@ class TestMachinefiles(TestCase):
 
         wrapper_builder = PythonWrapperBuilder(header_directive='', jobs_scripts=self.job_scripts,
                                                num_processors=num_processors, expid='a000',
-                                               jobs_resources=jobs_resources,threads='1',retrials=0,wallclock_by_level=None)
+                                               jobs_resources=jobs_resources,threads='1',retrials=0,wallclock_by_level=None,num_processors_value=num_processors)
 
         nodes = self._create_nodelist(num_processors)
         cores_list = wrapper_builder.build_cores_list()
@@ -59,7 +61,7 @@ class TestMachinefiles(TestCase):
 
         wrapper_builder = PythonWrapperBuilder(header_directive='', jobs_scripts=self.job_scripts,
                                                num_processors=num_processors, expid='a000',
-                                               jobs_resources=jobs_resources,threads='1',retrials=0,wallclock_by_level=None)
+                                               jobs_resources=jobs_resources,threads='1',retrials=0,wallclock_by_level=None,num_processors_value=num_processors)
 
         nodes = self._create_nodelist(num_processors)
         cores_list = wrapper_builder.build_cores_list()
