@@ -20,7 +20,6 @@
 from autosubmit.platforms.wrappers.wrapper_builder import WrapperDirector, PythonVerticalWrapperBuilder, \
     PythonHorizontalWrapperBuilder, PythonHorizontalVerticalWrapperBuilder, PythonVerticalHorizontalWrapperBuilder, \
     BashHorizontalWrapperBuilder, BashVerticalWrapperBuilder, SrunHorizontalWrapperBuilder,SrunVerticalHorizontalWrapperBuilder
-from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 
 
 class WrapperFactory(object):
@@ -43,6 +42,10 @@ class WrapperFactory(object):
         kwargs['nodes'] = self.nodes(wrapper_data['NODES'])
         kwargs['tasks'] = self.tasks(wrapper_data['TASKS'])
         kwargs['threads'] = self.threads(kwargs['threads'])
+        if str(kwargs['num_processors']).isdigit():
+            kwargs['num_processors_value'] = int(kwargs['num_processors'])
+        else:
+            kwargs['num_processors_value'] = 1
         if str(wrapper_data['NODES']).isdigit() and int(wrapper_data['NODES']) > 1 and kwargs['num_processors'] == '1':
             kwargs['num_processors'] = "#"
         else:

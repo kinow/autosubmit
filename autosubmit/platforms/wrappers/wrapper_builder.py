@@ -17,9 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-import textwrap
 import random
 import string
+import textwrap
+
 
 class WrapperDirector:
     """
@@ -50,6 +51,7 @@ class WrapperBuilder(object):
         self.job_scripts = kwargs['jobs_scripts']
         self.threads = kwargs['threads']
         self.num_procs = kwargs['num_processors']
+        self.num_procs_value = kwargs['num_processors_value']
         self.expid = kwargs['expid']
         self.jobs_resources = kwargs.get('jobs_resources', dict())
         self.allocated_nodes = kwargs.get('allocated_nodes', '')
@@ -202,7 +204,7 @@ while total_cores > 0:
         processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
 processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
 
-        """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
+        """).format(self.num_procs_value, str(self.jobs_resources), '\n'.ljust(13))
 
     def build_machinefiles(self):
         machinefile_function = self.get_machinefile_function()
@@ -720,7 +722,7 @@ while total_cores > 0:
         processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
 
 processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
-        """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
+        """).format(self.num_procs_value, str(self.jobs_resources), '\n'.ljust(13))
 
     def build_machinefiles(self):
         machinefile_function = self.get_machinefile_function()
