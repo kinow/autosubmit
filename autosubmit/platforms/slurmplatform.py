@@ -18,18 +18,16 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import locale
 import os
-from contextlib import suppress
-from time import sleep
-from time import mktime
-from time import time
 from datetime import datetime
+from time import mktime
+from time import sleep
+from time import time
 from typing import List, Union
-
 from xml.dom.minidom import parseString
 
 from autosubmit.job.job_common import Status, parse_output_number
-from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
+from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
 from log.log import AutosubmitCritical, AutosubmitError, Log
 
@@ -88,8 +86,8 @@ class SlurmPlatform(ParamikoPlatform):
                 try:
                     jobs_id = self.submit_Script(hold=hold)
                 except AutosubmitError as e:
-                    Log.error(f'TRACE:{e.trace}\n{e.message}')
                     jobnames = [job.name for job in valid_packages_to_submit[0].jobs]
+                    Log.error(f'TRACE:{e.trace}\n{e.message} JOBS:{jobnames}')
                     for jobname in jobnames:
                         jobid = self.get_jobid_by_jobname(jobname)
                         #cancel bad submitted job if jobid is encountered
