@@ -398,6 +398,7 @@ class JobList(object):
         :return: boolean
         """
         filter_value = filter_value.strip("?")
+        filter_value = filter_value.strip("*")
         if "NONE".casefold() in str(parent_value).casefold():
             return True
         to_filter = JobList._parse_filters_to_check(filter_value,associative_list,level_to_check)
@@ -412,7 +413,7 @@ class JobList(object):
                 return True
         elif "NONE".casefold() == str(to_filter[0]).casefold():
             return False
-        elif len( [ filter_ for filter_ in to_filter if str(parent_value).casefold() in str(filter_).casefold() ] )>0:
+        elif len( [ filter_ for filter_ in to_filter if str(parent_value).casefold() == str(filter_).casefold() ] )>0:
             return True
         else:
             return False
@@ -670,7 +671,7 @@ class JobList(object):
             value_list = self._chunk_list
             level_to_check = "CHUNKS_FROM"
         elif filter_type == "SPLITS_TO":
-            value_list = self._split_list
+            value_list = []
             level_to_check = "SPLITS_FROM"
         if "all".casefold() not in unified_filter[filter_type].casefold():
             aux = filter_to.pop(filter_type, None)
@@ -688,20 +689,20 @@ class JobList(object):
                     if isinstance(parsed_element, list):
                         # check if any element is natural or none
                         for ele in parsed_element:
-                            if ele.lower() in ["natural", "none"]:
+                            if type(ele) is str and ele.lower() in ["natural", "none"]:
                                 skip = True
                     else:
-                        if parsed_element.lower() in ["natural", "none"]:
+                        if type(parsed_element) is str and parsed_element.lower() in ["natural", "none"]:
                             skip = True
                     if skip and len(unified_filter[filter_type]) > 0:
                         continue
                     else:
                         for ele in parsed_element:
-                            if ele not in unified_filter[filter_type]:
+                            if str(ele) not in unified_filter[filter_type]:
                                 if len(unified_filter[filter_type]) > 0 and unified_filter[filter_type][-1] == ",":
-                                    unified_filter[filter_type] += ele + extra_data
+                                    unified_filter[filter_type] += str(ele) + extra_data
                                 else:
-                                    unified_filter[filter_type] += "," + ele + extra_data + ","
+                                    unified_filter[filter_type] += "," + str(ele) + extra_data + ","
         return unified_filter
 
     @staticmethod
@@ -837,16 +838,16 @@ class JobList(object):
         # Check for each * char in the filters
         # Get all the dates that match * in the filter in a list separated by ,
         if "*" in dates_to:
-            dates_to = [ dat for dat in date_list.split(",") if dat is not None and "*" not in dat or ("*" in dat and date2str(child.date,"%Y%m%d") in dat) ]
+            dates_to = [ dat for dat in date_list.split(",") if dat is not None and "*" not in dat or ("*" in dat and date2str(child.date,"%Y%m%d") == dat.split("*")[0]) ]
             dates_to = ",".join(dates_to)
         if "*" in members_to:
-            members_to = [ mem for mem in member_list.split(",") if mem is not None and "*" not in mem or ("*" in mem and str(child.member) in mem) ]
+            members_to = [ mem for mem in member_list.split(",") if mem is not None and "*" not in mem or ("*" in mem and str(child.member) == mem.split("*")[0]) ]
             members_to = ",".join(members_to)
         if "*" in chunks_to:
-            chunks_to = [ chu for chu in chunk_list.split(",") if chu is not None and "*" not in chu or ("*" in chu and str(child.chunk) in chu) ]
+            chunks_to = [ chu for chu in chunk_list.split(",") if chu is not None and "*" not in chu or ("*" in chu and str(child.chunk) == chu.split("*")[0]) ]
             chunks_to = ",".join(chunks_to)
         if "*" in splits_to:
-            splits_to = [ spl for spl in splits_to.split(",") if child.split is None or spl is None or "*" not in spl or ("*" in spl and str(child.split) in spl) ]
+            splits_to = [ spl for spl in splits_to.split(",") if child.split is None or spl is None or "*" not in spl or ("*" in spl and str(child.split) == spl.split("*")[0]) ]
             splits_to = ",".join(splits_to)
         # Apply all filters to look if this parent is an appropriated candidate for the current_job
         valid_dates = JobList._apply_filter(parsed_parent_date, dates_to, associative_list["dates"], "dates")
@@ -928,7 +929,7 @@ class JobList(object):
                 # If the parent is valid, add it to the graph
 
                 if JobList._valid_parent(parent, member_list, parsed_date_list, chunk_list, natural_relationship,
-                                         filters_to_apply,child):
+                                         filters_to_apply,job):
                     job.add_parent(parent)
                     self._add_edge(graph, job, parent)
                     # Could be more variables in the future
