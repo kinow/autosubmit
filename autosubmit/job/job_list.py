@@ -13,14 +13,13 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import copy
 import datetime
 import math
 import os
 import pickle
-# You should have received a copy of the GNU General Public License
-# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import re
 import traceback
 from bscearth.utils.date import date2str, parse_date
@@ -413,7 +412,7 @@ class JobList(object):
                 return True
         elif "NONE".casefold() == str(to_filter[0]).casefold():
             return False
-        elif len( [ filter_ for filter_ in to_filter if str(parent_value).casefold() == str(filter_).casefold() ] )>0:
+        elif len( [ filter_ for filter_ in to_filter if str(parent_value).casefold() == str(filter_).strip("*").strip("?").casefold() ] )>0:
             return True
         else:
             return False
@@ -2102,13 +2101,21 @@ class JobList(object):
                 if job.status != Status.WAITING:
                     continue
                 if status in ["RUNNING", "FAILED"]:
+                    # check checkpoint if any
                     if job.platform.connected:  # This will be true only when used under setstatus/run
                         job.get_checkpoint_files()
+                non_completed_parents_current = 0
+                completed_parents = len([parent for parent in job.parents if parent.status == Status.COMPLETED])
                 for parent in job.edge_info[status].values():
                     if status in ["RUNNING", "FAILED"] and parent[1] and int(parent[1]) >= job.current_checkpoint_step:
                         continue
                     else:
-                        jobs_to_check.append(parent[0])
+                        status_str = Status.VALUE_TO_KEY[parent[0].status]
+                        if Status.LOGICAL_ORDER.index(status_str) >= Status.LOGICAL_ORDER.index(status):
+                            non_completed_parents_current += 1
+                if ( non_completed_parents_current + completed_parents ) == len(job.parents):
+                    jobs_to_check.append(job)
+
         return jobs_to_check
 
 
@@ -2185,16 +2192,12 @@ class JobList(object):
                     save = True
         # Check checkpoint jobs, the status can be Any
         for job in self.check_special_status():
-            # Check if all jobs fullfill the conditions to a job be ready
-            tmp = [parent for parent in job.parents if
-                   parent.status == Status.COMPLETED or parent in self.jobs_edges["ALL"]]
-            if len(tmp) == len(job.parents):
-                job.status = Status.READY
-                job.id = None
-                job.packed = False
-                job.wrapper_type = None
-                save = True
-                Log.debug(f"Special condition fullfilled for job {job.name}")
+            job.status = Status.READY
+            job.id = None
+            job.packed = False
+            job.wrapper_type = None
+            save = True
+            Log.debug(f"Special condition fullfilled for job {job.name}")
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
             if job.synchronize is not None and len(str(job.synchronize)) > 0:

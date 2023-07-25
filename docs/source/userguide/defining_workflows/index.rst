@@ -212,14 +212,23 @@ This can be achieved using the START_CONDITIONS feature based on the dependencie
 
 Start conditions are achieved by adding the keyword `STATUS` and optionally `FROM_STEP` keywords into any dependency that you want.
 
-The `STATUS` keyword can be used to select the status of the dependency that you want to check. The possible values are:
+The `STATUS` keyword can be used to select the status of the dependency that you want to check. The possible values ( case-insensitive ) are:
 
-* `running`: The dependency must be running.
-* `completed`: The dependency must have completed.
-* `failed`: The dependency must have failed.
-* `queuing`: The dependency must be queuing.
-* `submitted`: The dependency must have been submitted.
-* `ready`: The dependency must be ready to be submitted.
+* "WAITING": The task is waiting for its dependencies to be completed.
+* "DELAYED": The task is delayed by a delay condition.
+* "PREPARED": The task is prepared to be submitted.
+* "READY": The task is ready to be submitted.
+* "SUBMITTED": The task is submitted.
+* "HELD": The task is held.
+* "QUEUING": The task is queuing.
+* "RUNNING": The task is running.
+* "SKIPPED": The task is skipped.
+* "FAILED": The task is failed.
+* "UNKNOWN": The task is unknown.
+* "COMPLETED": The task is completed. # Default
+* "SUSPENDED": The task is suspended.
+
+The status are ordered, so if you select "RUNNING" status, the task will be run if the dependency is running or any status after it.
 
 The `FROM_STEP` keyword can be used to select the step of the dependency that you want to check. The possible value is an integer.
 Additionally, the target dependency, must call to %AS_CHECKPOINT% inside their scripts. This will create a checkpoint that will be used to check the amount of steps processed.
@@ -370,28 +379,28 @@ There is also an special character '*' that can be used to specify that the spli
 
     ini:
         FILE: ini.sh
-        RUNNING: member
+        RUNNING: once
 
     sim:
         FILE: sim.sh
         DEPENDENCIES: ini sim-1
-        RUNNING: chunk
+        RUNNING: once
 
     asim:
         FILE: asim.sh
         DEPENDENCIES: sim
-        RUNNING: chunk
+        RUNNING: once
         SPLITS: 3
 
     post:
         FILE: post.sh
-        RUNNING: chunk
+        RUNNING: once
         DEPENDENCIES:
             asim:
                 SPLITS_FROM:
-                    2,3:
-                        splits_to: 1,2*,3*
-        SPLITS: 2
+                    2,3: # [2:3] is also valid
+                        splits_to: 1,2*,3* # 1,[2:3]* is also valid, you can also specify the step with [2:3:step]
+        SPLITS: 3
 
 In this example:
 
@@ -400,10 +409,10 @@ Each part will depend on the 1st part of the asim job.
 The 2nd part of the post job will depend on the 2nd part of the asim job.
 The 3rd part of the post job will depend on the 3rd part of the asim job.
 
-The resulting workflow can be seen in Figure :numref:`split`
+The resulting workflow can be seen in Figure :numref:`split_1_to_1`
 
-.. figure:: fig/split_todo.png
-   :name: split
+.. figure:: fig/splits_1_to_1.png
+   :name: split_1_to_1
    :width: 100%
    :align: center
    :alt: TODO

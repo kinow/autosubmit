@@ -13,11 +13,10 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import textwrap
 import datetime
+import textwrap
 
 
 class Status:
@@ -41,6 +40,7 @@ class Status:
     # Note: any change on constants must be applied on the dict below!!!
     VALUE_TO_KEY = {-3: 'SUSPENDED', -2: 'UNKNOWN', -1: 'FAILED', 0: 'WAITING', 1: 'READY',
                     2: 'SUBMITTED', 3: 'QUEUING', 4: 'RUNNING', 5: 'COMPLETED', 6: 'HELD', 7: 'PREPARED', 8: 'SKIPPED', 9: 'DELAYED'}
+    LOGICAL_ORDER = ["WAITING", "DELAYED", "PREPARED", "READY", "SUBMITTED", "HELD", "QUEUING", "RUNNING", "SKIPPED", "FAILED", "UNKNOWN", "COMPLETED", "SUSPENDED"]
 
     def retval(self, value):
         return getattr(self, value)
@@ -131,7 +131,7 @@ class StatisticsSnippetBash:
             ################### 
             # AS CHECKPOINT FUNCTION
             ###################
-            # Creates a new checkpoint file upton call based on the current numbers of calls to the function
+            # Creates a new checkpoint file upon call based on the current numbers of calls to the function
             
             AS_CHECKPOINT_CALLS=0
             function as_checkpoint {
