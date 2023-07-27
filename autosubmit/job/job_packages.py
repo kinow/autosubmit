@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
+import json
 import os
 import random
 import time
@@ -417,6 +417,23 @@ class JobPackageThread(JobPackageBase):
             else:
                 self.exclusive = jobs[0].exclusive
             wr_custom_directives = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("CUSTOM_DIRECTIVES",[])
+            # parse custom_directives
+            if type(wr_custom_directives) is list:
+                wr_custom_directives = json.dumps(wr_custom_directives)
+            wr_custom_directives = wr_custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+            if wr_custom_directives == '':
+                if jobs[0].custom_directives is None:
+                    jobs[0].custom_directives = ''
+                wr_custom_directives = jobs[0].custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+            if wr_custom_directives != '':
+                if wr_custom_directives[0] != "\"":
+                    wr_custom_directives = "\""+wr_custom_directives
+                if wr_custom_directives[-1] != "\"":
+                    wr_custom_directives = wr_custom_directives+"\""
+                wr_custom_directives = "[" + wr_custom_directives + "]"
+                wr_custom_directives = json.loads(wr_custom_directives)
+            else:
+                wr_custom_directives = []
             if len(str(wr_custom_directives)) > 0:
                 self.custom_directives = wr_custom_directives
             else:
