@@ -397,7 +397,13 @@ class JobList(object):
         :return: boolean
         """
         filter_value = filter_value.strip("?")
-        filter_value = filter_value.strip("*")
+        if "*" in filter_value:
+            filter_value,split_info = filter_value.split("*")
+            split_info = int(split_info.split("\\")[-1])
+        else:
+            split_info = None
+        # strip substring from char "*"
+
         if "NONE".casefold() in str(parent_value).casefold():
             return True
         to_filter = JobList._parse_filters_to_check(filter_value,associative_list,level_to_check)
