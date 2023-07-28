@@ -17,9 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-import traceback
-import numpy as np
 import matplotlib as mtp
+import numpy as np
+import traceback
 
 mtp.use('Agg')
 import matplotlib.pyplot as plt
@@ -30,7 +30,7 @@ from autosubmit.statistics.statistics import Statistics
 from autosubmit.job.job import Job
 from log.log import Log, AutosubmitCritical
 from datetime import datetime
-from typing import Dict, List
+from typing import List
 
 Log.get_logger("Autosubmit")
 
@@ -98,7 +98,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     fig.suptitle('STATS - ' + experiment_id, fontsize=24, fontweight='bold')
     # Variables initialization
     ax, ax2 = [], []
-    rects = [None] * 5
+    rects = [] * 5
     # print("Normal plots: {}".format(normal_plots_count))
     # print("Failed jobs plots: {}".format(failed_jobs_plots_count))
     # print("Total plots: {}".format(total_plots_count))
@@ -129,6 +129,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
             rects[3] = ax[plot - 1].bar(ind + width * 4, exp_stats.fail_run[l1:l2], width, color='salmon')
             rects[4] = ax[plot - 1].plot([0., width * 6 * MAX_JOBS_PER_PLOT],
                                          [exp_stats.threshold, exp_stats.threshold], "k--", label='wallclock sim')
+            # Building legend
             i_plot = plot
         except Exception as exp:
             print((traceback.format_exc()))
@@ -197,7 +198,9 @@ def create_csv_stats(exp_stats, jobs_list, output_file):
 def build_legends(plot, rects, experiment_stats, general_stats):
     # type: (plt.figure, List[plt.bar], Statistics, List[str]) -> None
     # Main legend with colourful rectangles
+
     legend_rects = [[rect[0] for rect in rects]]
+
     legend_titles = [
         ['Queued (h)', 'Run (h)', 'Fail Queued (h)', 'Fail Run (h)', 'Max wallclock (h)']
     ]
