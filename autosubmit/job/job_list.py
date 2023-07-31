@@ -385,21 +385,83 @@ class JobList(object):
                     splits.append(int(str_split))
         return splits
 
+
     @staticmethod
-    def _apply_filter(parent_value, filter_value, associative_list, level_to_check="DATES_FROM"):
+    def _apply_filter(parent_value, filter_value, associative_list, level_to_check="DATES_FROM",child=None,parent=None):
         """
         Check if the current_job_value is included in the filter_value
         :param parent_value:
         :param filter_value: filter
-        :param associative_list: dates, members, chunks.
-        :param filter_type: dates, members, chunks.
-
-        :return: boolean
+        :param associative_list: dates, members, chunks, splits.
+        :param filter_type: dates, members, chunks, splits .
+        :param level_to_check: Can be dates,members, chunks, splits.
+        :return:
         """
-        filter_value = filter_value.strip("?")
-        filter_value = filter_value.strip("*")
         if "NONE".casefold() in str(parent_value).casefold():
             return True
+
+        if parent and child and level_to_check.casefold() == "splits".casefold():
+            if not parent.splits:
+                parent_splits = -1
+            else:
+                parent_splits = parent.splits
+            if not child.splits:
+                child_splits = -1
+            else:
+                child_splits = child.splits
+            if parent_splits == child_splits:
+                to_look_at_lesser = associative_list
+                lesser_group = -1
+            else:
+                if parent_splits > child_splits:
+                    lesser = str(child_splits)
+                    greater = str(parent_splits)
+                    lesser_value = "child"
+                else:
+                    lesser = str(parent_splits)
+                    greater = str(child_splits)
+                    lesser_value = "parent"
+                to_look_at_lesser = [associative_list[i:i + 1] for i in range(0, int(lesser), 1)]
+                for lesser_group in range(len(to_look_at_lesser)):
+                    if lesser_value == "parent":
+                        if str(parent_value) in to_look_at_lesser[lesser_group]:
+                            break
+                    else:
+                        if str(child.split) in to_look_at_lesser[lesser_group]:
+                            break
+        else:
+            to_look_at_lesser = associative_list
+            lesser_group = -1
+        if "?" in filter_value:
+            # replace all ? for ""
+            filter_value = filter_value.replace("?", "")
+        if "*" in filter_value:
+            aux_filter = filter_value
+            filter_value = ""
+            for filter_ in aux_filter.split(","):
+                if "*" in filter_:
+                    filter_,split_info = filter_.split("*")
+                    if "\\" in split_info:
+                        split_info = int(split_info.split("\\")[-1])
+                    else:
+                        split_info = 1
+                    # split_info: if a value is 1, it means that the filter is 1-to-1, if it is 2, it means that the filter is 1-to-2, etc.
+                    if (split_info == 1 or level_to_check.casefold() != "splits".casefold()) and str(parent_value).casefold() == str(filter_).casefold() :
+                        if child.split == parent_value:
+                            return True
+                    elif split_info > 1 and level_to_check.casefold() == "splits".casefold():
+                        # 1-to-X filter
+                        to_look_at_greater = [associative_list[i:i + split_info] for i in
+                                            range(0, int(greater), split_info)]
+                        if lesser_value == "parent":
+                            if str(child.split) in to_look_at_greater[lesser_group]:
+                                return True
+                        else:
+                            if str(parent_value) in to_look_at_greater[lesser_group]:
+                                return True
+                else:
+                    filter_value += filter_ + ","
+            filter_value = filter_value[:-1]
         to_filter = JobList._parse_filters_to_check(filter_value,associative_list,level_to_check)
         if to_filter is None:
             return False
@@ -412,7 +474,7 @@ class JobList(object):
                 return True
         elif "NONE".casefold() == str(to_filter[0]).casefold():
             return False
-        elif len( [ filter_ for filter_ in to_filter if str(parent_value).casefold() == str(filter_).strip("*").strip("?").casefold() ] )>0:
+        elif len( [ filter_ for filter_ in to_filter if str(parent_value).casefold() == str(filter_).casefold() ] )>0:
             return True
         else:
             return False
@@ -660,6 +722,8 @@ class JobList(object):
         :param filter_type: "DATES_TO", "MEMBERS_TO", "CHUNKS_TO", "SPLITS_TO"
         :return: unified_filter
         """
+        if len(unified_filter[filter_type]) > 0 and unified_filter[filter_type][-1] != ",":
+            unified_filter[filter_type] += ","
         if filter_type == "DATES_TO":
             value_list = self._date_list
             level_to_check = "DATES_FROM"
@@ -697,11 +761,12 @@ class JobList(object):
                         continue
                     else:
                         for ele in parsed_element:
-                            if str(ele) not in unified_filter[filter_type]:
-                                if len(unified_filter[filter_type]) > 0 and unified_filter[filter_type][-1] == ",":
-                                    unified_filter[filter_type] += str(ele) + extra_data
-                                else:
-                                    unified_filter[filter_type] += "," + str(ele) + extra_data + ","
+                            if extra_data:
+                                check_whole_string = str(ele)+extra_data+","
+                            else:
+                                check_whole_string = str(ele)+","
+                            if str(check_whole_string) not in unified_filter[filter_type]:
+                                unified_filter[filter_type] += check_whole_string
         return unified_filter
 
     @staticmethod
@@ -807,8 +872,17 @@ class JobList(object):
         associative_list["members"] = member_list
         associative_list["chunks"] = chunk_list
 
-        if parent.splits is not None:
-            associative_list["splits"] = [str(split) for split in range(1, int(parent.splits) + 1)]
+        if not child.splits:
+            child_splits = 0
+        else:
+            child_splits = int(child.splits)
+        if not parent.splits:
+            parent_splits = 0
+        else:
+            parent_splits = int(parent.splits)
+        splits = max(child_splits, parent_splits)
+        if splits > 0:
+            associative_list["splits"] = [str(split) for split in range(1, int(splits) + 1)]
         else:
             associative_list["splits"] = None
         dates_to = str(filter_.get("DATES_TO", "natural")).lower()
@@ -834,25 +908,10 @@ class JobList(object):
         if "natural" in splits_to:
             associative_list["splits"] = [parent.split] if parent.split is not None else parent.splits
         parsed_parent_date = date2str(parent.date) if parent.date is not None else None
-        # Check for each * char in the filters
-        # Get all the dates that match * in the filter in a list separated by ,
-        if "*" in dates_to:
-            dates_to = [ dat for dat in date_list.split(",") if dat is not None and "*" not in dat or ("*" in dat and date2str(child.date,"%Y%m%d") == dat.split("*")[0]) ]
-            dates_to = ",".join(dates_to)
-        if "*" in members_to:
-            members_to = [ mem for mem in member_list.split(",") if mem is not None and "*" not in mem or ("*" in mem and str(child.member) == mem.split("*")[0]) ]
-            members_to = ",".join(members_to)
-        if "*" in chunks_to:
-            chunks_to = [ chu for chu in chunk_list.split(",") if chu is not None and "*" not in chu or ("*" in chu and str(child.chunk) == chu.split("*")[0]) ]
-            chunks_to = ",".join(chunks_to)
-        if "*" in splits_to:
-            splits_to = [ spl for spl in splits_to.split(",") if child.split is None or spl is None or "*" not in spl or ("*" in spl and str(child.split) == spl.split("*")[0]) ]
-            splits_to = ",".join(splits_to)
-        # Apply all filters to look if this parent is an appropriated candidate for the current_job
         valid_dates = JobList._apply_filter(parsed_parent_date, dates_to, associative_list["dates"], "dates")
         valid_members = JobList._apply_filter(parent.member, members_to, associative_list["members"], "members")
         valid_chunks = JobList._apply_filter(parent.chunk, chunks_to, associative_list["chunks"], "chunks")
-        valid_splits = JobList._apply_filter(parent.split, splits_to, associative_list["splits"], "splits")
+        valid_splits = JobList._apply_filter(parent.split, splits_to, associative_list["splits"], "splits", child, parent)
         if valid_dates and valid_members and valid_chunks and valid_splits:
             return True
         return False
