@@ -47,7 +47,7 @@ class Statistics(object):
         for index, job in enumerate(self._jobs):
             retrials = job.get_last_retrials()
             for retrial in retrials:
-                # print(retrial)
+                print(retrial)
                 job_stat = self._name_to_jobstat_dict.setdefault(job.name, JobStat(job.name, parse_number_processors(
                     job.processors), job.total_wallclock, job.section, job.date, job.member, job.chunk))
                 job_stat.inc_retrial_count()

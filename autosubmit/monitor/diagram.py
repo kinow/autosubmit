@@ -98,7 +98,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     fig.suptitle('STATS - ' + experiment_id, fontsize=24, fontweight='bold')
     # Variables initialization
     ax, ax2 = [], []
-    rects = [] * 5
+    rects = [None] * 5
     # print("Normal plots: {}".format(normal_plots_count))
     # print("Failed jobs plots: {}".format(failed_jobs_plots_count))
     # print("Total plots: {}".format(total_plots_count))
@@ -190,7 +190,9 @@ def create_csv_stats(exp_stats, jobs_list, output_file):
     with open(output_file, 'w') as file:
         file.write(
             "Job,Started,Ended,Queuing time (hours),Running time (hours)\n")
-        for i in range(len(jobs_list)):
+        # In the other function, job_names,start_times... etc is only filled if the job has completed retrials
+        # So I'll change this one to do the same
+        for i in range(len([ job for job in jobs_list if job.get_last_retrials() ])):
             file.write("{0},{1},{2},{3},{4}\n".format(
                 job_names[i], start_times[i], end_times[i], queuing_times[i], running_times[i]))
 
