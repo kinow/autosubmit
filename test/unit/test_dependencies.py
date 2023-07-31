@@ -526,7 +526,7 @@ class TestJobList(unittest.TestCase):
                 "DATES_TO": "[20020201:20020202],20020203,20020204,20020205",
                 "MEMBERS_TO": "fc2",
                 "CHUNKS_TO": "1,2,3,4,5,6",
-                "SPLITS_TO": "1*\\2,2*\\2"
+                "SPLITS_TO": "1*\\2,2*\\2,3*\\2,4*\\2"
             }
         child.split = 1
         self.mock_job.split = 1
