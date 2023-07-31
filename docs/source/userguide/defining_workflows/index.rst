@@ -409,15 +409,59 @@ Each part will depend on the 1st part of the asim job.
 The 2nd part of the post job will depend on the 2nd part of the asim job.
 The 3rd part of the post job will depend on the 3rd part of the asim job.
 
-The resulting workflow can be seen in Figure :numref:`split_1_to_1`
-
 .. figure:: fig/splits_1_to_1.png
    :name: split_1_to_1
    :width: 100%
    :align: center
-   :alt: TODO
+   :alt: 1-to-1
 
-   Example showing the job ASIM divided into 3 parts for each chunk.
+Example2: N-to-1 dependency
+
+.. code-block:: yaml
+
+  TEST:
+    FILE: TEST.sh
+    RUNNING: once
+    SPLITS: '4'
+  TEST2:
+    FILE: TEST2.sh
+    DEPENDENCIES:
+      TEST:
+        SPLITS_FROM:
+          "[1:2]":
+            SPLITS_TO: "[1:4]*\\2"
+    RUNNING: once
+    SPLITS: '2'
+
+.. figure:: fig/splits_n_to_1.png
+   :name: N_to_1
+   :width: 100%
+   :align: center
+   :alt: N_to_1
+
+Example3: 1-to-N dependency
+
+.. code-block:: yaml
+
+  TEST:
+    FILE: TEST.sh
+    RUNNING: once
+    SPLITS: '2'
+  TEST2:
+    FILE: TEST2.sh
+    DEPENDENCIES:
+      TEST:
+        SPLITS_FROM:
+          "[1:4]":
+            SPLITS_TO: "[1:2]*\\2"
+    RUNNING: once
+    SPLITS: '4'
+
+.. figure:: fig/splits_1_to_n.png
+   :name: 1_to_N
+   :width: 100%
+   :align: center
+   :alt: 1_to_N
 
 Job delay
 ~~~~~~~~~
