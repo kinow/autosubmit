@@ -39,7 +39,9 @@ class TestPJM(TestCase):
     def setUp(self) -> None:
         self.exp_id = 'a000'
         self.as_conf = MagicMock()
-        self.as_conf = AutosubmitConfig(self.exp_id, FakeBasicConfig, YAMLParserFactory())
+        with patch.object(Path, 'exists') as mock_exists:
+            mock_exists.return_value = True
+            self.as_conf = AutosubmitConfig(self.exp_id, FakeBasicConfig, YAMLParserFactory())
         self.as_conf.experiment_data = dict()
         self.as_conf.experiment_data["DEFAULT"] = dict()
         self.as_conf.experiment_data["DEFAULT"]["HPCARCH"] = "ARM"
