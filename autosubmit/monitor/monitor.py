@@ -235,10 +235,10 @@ class Monitor:
 
     def _check_final_status(self, job, child):
         # order of self._table
-        # child.edge_info is a tuple, I want to get first element of each tuple with a lambda
+        # the dictionary is composed by:
         label = None
         if len(child.edge_info) > 0:
-            if job in child.edge_info.get("FAILED",{}):
+            if job.name in child.edge_info.get("FAILED",{}):
                 color = self._table.get(Status.FAILED,None)
                 label = child.edge_info["FAILED"].get(job.name,0)[1]
             elif job.name in child.edge_info.get("RUNNING",{}):
@@ -263,7 +263,7 @@ class Monitor:
             elif job.name in child.edge_info.get("SUBMITTED",{}):
                 color =  self._table.get(Status.SUBMITTED,None)
             else:
-                color =  self._table.get(Status.COMPLETED,None)
+                return None, None
             if label and label == 0:
                 label = None
             return color,label
