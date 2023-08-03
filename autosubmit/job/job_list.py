@@ -359,7 +359,6 @@ class JobList(object):
                 except Exception as e:
                     pass
             if parameters.get(section, None) is None:
-                Log.printlog("WARNING: SECTION {0} is not defined in jobs.conf".format(section))
                 continue
                 # raise AutosubmitCritical("Section:{0} doesn't exists.".format(section),7014)
             dependency_running_type = str(parameters[section].get('RUNNING', 'once')).lower()
@@ -387,7 +386,7 @@ class JobList(object):
 
 
     @staticmethod
-    def _apply_filter(parent_value, filter_value, associative_list, level_to_check="DATES_FROM",child=None,parent=None):
+    def _apply_filter(parent_value, filter_value, associative_list, level_to_check="DATES_FROM", child=None, parent=None):
         """
         Check if the current_job_value is included in the filter_value
         :param parent_value:
@@ -399,7 +398,6 @@ class JobList(object):
         """
         if "NONE".casefold() in str(parent_value).casefold():
             return True
-
         if parent and child and level_to_check.casefold() == "splits".casefold():
             if not parent.splits:
                 parent_splits = -1
@@ -412,6 +410,9 @@ class JobList(object):
             if parent_splits == child_splits:
                 to_look_at_lesser = associative_list
                 lesser_group = -1
+                lesser = str(parent_splits)
+                greater = str(child_splits)
+                lesser_value = "parent"
             else:
                 if parent_splits > child_splits:
                     lesser = str(child_splits)
@@ -446,19 +447,22 @@ class JobList(object):
                     else:
                         split_info = 1
                     # split_info: if a value is 1, it means that the filter is 1-to-1, if it is 2, it means that the filter is 1-to-2, etc.
-                    if (split_info == 1 or level_to_check.casefold() != "splits".casefold()) and str(parent_value).casefold() == str(filter_).casefold() :
-                        if child.split == parent_value:
-                            return True
-                    elif split_info > 1 and level_to_check.casefold() == "splits".casefold():
-                        # 1-to-X filter
-                        to_look_at_greater = [associative_list[i:i + split_info] for i in
-                                            range(0, int(greater), split_info)]
-                        if lesser_value == "parent":
-                            if str(child.split) in to_look_at_greater[lesser_group]:
+                    if child and parent:
+                        if (split_info == 1 or level_to_check.casefold() != "splits".casefold()) and str(parent_value).casefold() == str(filter_).casefold():
+                            if child.split == parent_value:
                                 return True
-                        else:
-                            if str(parent_value) in to_look_at_greater[lesser_group]:
-                                return True
+                        elif split_info > 1 and level_to_check.casefold() == "splits".casefold():
+                            # 1-to-X filter
+                            to_look_at_greater = [associative_list[i:i + split_info] for i in
+                                                range(0, int(greater), split_info)]
+                            if lesser_value == "parent":
+                                if str(child.split) in to_look_at_greater[lesser_group]:
+                                    return True
+                            else:
+                                if str(parent_value) in to_look_at_greater[lesser_group]:
+                                    return True
+                    else:
+                        filter_value += filter_ + ","
                 else:
                     filter_value += filter_ + ","
             filter_value = filter_value[:-1]
@@ -582,6 +586,9 @@ class JobList(object):
             if end is None:
                 end = value_list[-1]
             try:
+                if level_to_check == "CHUNKS_TO":
+                    start = int(start)
+                    end = int(end)
                 return value_list[slice(value_list.index(start), value_list.index(end)+1, int(step))]
             except ValueError:
                 return value_list[slice(0,len(value_list)-1,int(step))]
