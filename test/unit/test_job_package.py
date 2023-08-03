@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 import os
+from pathlib import Path
 import inspect
 from copy import deepcopy
 from mock import Mock,MagicMock, mock_open , call
@@ -56,8 +57,9 @@ class TestJobPackage(TestCase):
         self.config.read = MagicMock()
 
 
-
-        self.as_conf = AutosubmitConfig(self.experiment_id, self.config, YAMLParserFactory())
+        with patch.object(Path, 'exists') as mock_exists:
+            mock_exists.return_value = True
+            self.as_conf = AutosubmitConfig(self.experiment_id, self.config, YAMLParserFactory())
         self.as_conf.experiment_data = dict()
         self.as_conf.experiment_data["JOBS"] = dict()
         self.as_conf.experiment_data["PLATFORMS"] = dict()
