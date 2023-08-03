@@ -135,7 +135,7 @@ class JobList(object):
             processed_job_list = []
             for job in self._job_list:  # We are assuming that the jobs are sorted in topological order (which is the default)
                 if (
-                        job.member is None and found_member is False) or job.member in self._run_members or job.status not in [
+                        job.member is None and not found_member) or job.member in self._run_members or job.status not in [
                     Status.WAITING, Status.READY]:
                     processed_job_list.append(job)
                 if job.member is not None and len(str(job.member)) > 0:
