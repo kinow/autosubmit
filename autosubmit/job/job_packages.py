@@ -393,8 +393,13 @@ class JobPackageThread(JobPackageBase):
         self.current_wrapper_section = wrapper_section
         self.inner_retrials = 0
         if configuration is not None:
-            self.inner_retrials = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("INNER_RETRIALS",configuration.get_retrials())
-
+            self.inner_retrials = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,
+                                                                                {}).get("RETRIALS",
+                                                                                        configuration.get_retrials())
+            if self.inner_retrials == 0:
+                self.inner_retrials = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,
+                                                                                    {}).get("INNER_RETRIALS",
+                                                                                            configuration.get_retrials())
             self.export = configuration.get_wrapper_export(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
             if self.export.lower() != "none" and len(self.export) > 0:
                 for job in self.jobs:
@@ -452,6 +457,7 @@ class JobPackageThread(JobPackageBase):
         self._wrapper_data["TYPE"] = self.wrapper_type
         self._wrapper_data["WRAPPER_POLICY"] = self.wrapper_policy
         self._wrapper_data["INNER_RETRIALS"] = self.inner_retrials
+        self._wrapper_data["RETRIALS"] = self.inner_retrials
         self._wrapper_data["EXTEND_WALLCLOCK"] = self.extensible_wallclock
         self._wrapper_data["METHOD"] = self.wrapper_method
         self._wrapper_data["EXPORT"] = self.export
