@@ -200,13 +200,14 @@ class StatisticsSnippetPython:
             stat_file = open(job_name_ptrn + '_STAT', 'w')
             stat_file.write('{0:.0f}\\n'.format(time.time()))
             stat_file.close()
-            
             ###################
             # Autosubmit Checkpoint
             ###################
             # Creates a new checkpoint file upton call based on the current numbers of calls to the function
             AS_CHECKPOINT_CALLS = 0
             def as_checkpoint():
+                global AS_CHECKPOINT_CALLS
+                global job_name_ptrn
                 AS_CHECKPOINT_CALLS = AS_CHECKPOINT_CALLS + 1
                 open(job_name_ptrn + '_CHECKPOINT_' + str(AS_CHECKPOINT_CALLS), 'w').close()                
             ###################

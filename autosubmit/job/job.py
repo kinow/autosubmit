@@ -191,7 +191,6 @@ class Job(object):
         self.x11 = False
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
-        self._checkpoint = None
         self.script_name = self.name + ".cmd"
         self.status = status
         self.prev_status = status
@@ -259,18 +258,13 @@ class Job(object):
     @property
     @autosubmit_parameter(name='checkpoint')
     def checkpoint(self):
-        """Generates a checkpoint step for this job based on job.type"""
-        return self._checkpoint
-
-    @checkpoint.setter
-    def checkpoint(self):
-        """Generates a checkpoint step for this job based on job.type"""
+        '''Generates a checkpoint step for this job based on job.type.'''
         if self.type == Type.PYTHON:
-            self._checkpoint = "checkpoint()"
+            return "checkpoint()"
         elif self.type == Type.R:
-            self._checkpoint = "checkpoint()"
-        else: # bash
-            self._checkpoint = "as_checkpoint"
+            return "checkpoint()"
+        else:  # bash
+            return "as_checkpoint"
 
     def get_checkpoint_files(self):
         """
@@ -1456,7 +1450,7 @@ class Job(object):
         parameters['EXPORT'] = self.export
         parameters['PROJECT_TYPE'] = as_conf.get_project_type()
         self.wchunkinc = as_conf.get_wchunkinc(self.section)
-        for key,value in as_conf.jobs_data.get(self.section,{}).items():
+        for key,value in as_conf.jobs_data[self.section].items():
             parameters["CURRENT_"+key.upper()] = value
         return parameters
 
