@@ -231,7 +231,7 @@ The `STATUS` keyword can be used to select the status of the dependency that you
 The status are ordered, so if you select "RUNNING" status, the task will be run if the dependency is running or any status after it.
 
 The `FROM_STEP` keyword can be used to select the step of the dependency that you want to check. The possible value is an integer.
-Additionally, the target dependency, must call to %AS_CHECKPOINT% inside their scripts. This will create a checkpoint that will be used to check the amount of steps processed.
+Additionally, the target dependency, must call to `%AS_CHECKPOINT%` inside their scripts. This will create a checkpoint that will be used to check the amount of steps processed.
 
 .. code-block:: yaml
 
