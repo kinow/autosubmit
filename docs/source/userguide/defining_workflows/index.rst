@@ -228,9 +228,38 @@ The `STATUS` keyword can be used to select the status of the dependency that you
 * "COMPLETED": The task is completed. # Default
 * "SUSPENDED": The task is suspended.
 
-The status are ordered, so if you select "RUNNING" status, the task will be run if the dependency is running or any status after it.
+The status are ordered, so if you select "RUNNING" status, the task will be run if the parent is in any of the following statuses: "RUNNING", "QUEUING", "HELD", "SUBMITTED", "READY", "PREPARED", "DELAYED", "WAITING".
 
-The `FROM_STEP` keyword can be used to select the step of the dependency that you want to check. The possible value is an integer.
+The `FROM_STEP` keyword can be used to select the **internal** step of the dependency that you want to check. The possible value is an integer.
+
+To select an specific task, you have to combine the `STATUS` and `CHUNKS_TO` , `MEMBERS_TO` and `DATES_TO`, `SPLITS_TO` keywords.
+
+```yaml
+JOBS:
+  A:
+    FILE: a
+    RUNNING: once
+    SPLITS: 1
+  B:
+    FILE: b
+    RUNNING: once
+    SPLITS: 2
+    DEPENDENCIES: A
+  C:
+    FILE: c
+    RUNNING: once
+    SPLITS: 1
+    DEPENDENCIES: B
+  RECOVER_B_2:
+    FILE: fix_b
+    RUNNING: once
+    DEPENDENCIES:
+      B:
+        SPLIT_TO: "2"
+        STATUS: "RUNNING"
+        FROM_STEP: 1
+```
+
 Additionally, the target dependency, must call to `%AS_CHECKPOINT%` inside their scripts. This will create a checkpoint that will be used to check the amount of steps processed.
 
 .. code-block:: yaml
