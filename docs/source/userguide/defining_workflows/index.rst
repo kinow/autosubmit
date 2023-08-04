@@ -210,9 +210,9 @@ Start conditions
 Sometimes you want to run a job only when a certain condition is met. For example, you may want to run a job only when a certain task is running.
 This can be achieved using the START_CONDITIONS feature based on the dependencies rework.
 
-Start conditions are achieved by adding the keyword `STATUS` and optionally `FROM_STEP` keywords into any dependency that you want.
+Start conditions are achieved by adding the keyword ``STATUS`` and optionally ``FROM_STEP`` keywords into any dependency that you want.
 
-The `STATUS` keyword can be used to select the status of the dependency that you want to check. The possible values ( case-insensitive ) are:
+The ``STATUS`` keyword can be used to select the status of the dependency that you want to check. The possible values ( case-insensitive ) are:
 
 * "WAITING": The task is waiting for its dependencies to be completed.
 * "DELAYED": The task is delayed by a delay condition.
@@ -249,9 +249,53 @@ The status are ordered, so if you select "RUNNING" status, the task will be run 
         RUNNING: chunk
 
 
-The `FROM_STEP` keyword can be used to select the **internal** step of the dependency that you want to check. The possible value is an integer. Additionally, the target dependency, must call to `%AS_CHECKPOINT%` inside their scripts. This will create a checkpoint that will be used to check the amount of steps processed.
+The ``FROM_STEP`` keyword can be used to select the **internal** step of the dependency that you want to check. The possible value is an integer. Additionally, the target dependency, must call to `%AS_CHECKPOINT%` inside their scripts. This will create a checkpoint that will be used to check the amount of steps processed.
 
-To select an specific task, you have to combine the `STATUS` and `CHUNKS_TO` , `MEMBERS_TO` and `DATES_TO`, `SPLITS_TO` keywords.
+.. code-block:: yaml
+
+  A:
+    FILE: a.sh
+    RUNNING: once
+    SPLITS: 2
+  A_2:
+    FILE: a_2.sh
+    RUNNING: once
+    DEPENDENCIES:
+      A:
+        SPLIT_TO: "2"
+        STATUS: "RUNNING"
+        FROM_STEP: 2
+
+There is now a new function that is automatically added in your scripts which is called ``as_checkpoint``. This is the function that is generating the checkpoint file. You can see the function below:
+
+.. code-block:: bash
+
+    ###################
+    # AS CHECKPOINT FUNCTION
+    ###################
+    # Creates a new checkpoint file upon call based on the current numbers of calls to the function
+
+    AS_CHECKPOINT_CALLS=0
+    function as_checkpoint {
+        AS_CHECKPOINT_CALLS=$((AS_CHECKPOINT_CALLS+1))
+        touch ${job_name_ptrn}_CHECKPOINT_${AS_CHECKPOINT_CALLS}
+    }
+
+And what you would have to include in your target dependency or dependencies is the call to this function which in this example is a.sh.
+
+The amount of calls is strongly related to the ``FROM_STEP`` value.
+
+``$expid/proj/$projname/as.sh``
+
+.. code-block:: bash
+
+  ##compute somestuff
+  as_checkpoint
+  ## compute some more stuff
+  as_checkpoint
+
+
+To select an specific task, you have to combine the ``STATUS`` and ``CHUNKS_TO`` , ``MEMBERS_TO`` and ``DATES_TO``, ``SPLITS_TO`` keywords.
 
 .. code-block:: yaml
 
