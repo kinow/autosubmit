@@ -19,3 +19,7 @@ coverage/
 /.coverage
 test/coverage.xml
 
+# Docker
+dockerfiles/id_rsa*
+dockerfiles/authorized_keys
+
