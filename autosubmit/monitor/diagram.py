@@ -40,6 +40,7 @@ MAX_JOBS_PER_PLOT = 12.0
 MAX_NUM_PLOTS = 40
 
 
+
 def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, period_ini=None, period_fi=None,
                        queue_time_fixes=None):
     # type: (str, List[Job], List[str], str, datetime, datetime, Dict[str, int]) -> None
@@ -86,15 +87,13 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     # ind = np.arrange(int(MAX_JOBS_PER_PLOT))
     width = 0.16
     # Creating stats figure + sanity check
+    plot = True
+    err_message = "The results are too large to be shown, try narrowing your query.\nUse a filter like -ft where you supply a list of job types, e.g. INI, SIM or use the flag -fp where you supply an integer that represents the number of hours into the past that should be queried:\nSuppose it is noon, if you supply -fp 5 the query will consider changes starting from 7:00 am. If you really wish to query the whole experiment, refer to Autosubmit GUI."
     if total_plots_count > MAX_NUM_PLOTS:
-        message = "The results are too large to be shown, try narrowing your query. \n Use a filter like -ft where you supply a list of job types, e.g. INI, SIM; \
-        or -fp where you supply an integer that represents the number of hours into the past that should be queried: \
-        suppose it is noon, if you supply -fp 5 the query will consider changes starting from 7:00 am. If you really wish to query the whole experiment, refer to Autosubmit GUI."
-        Log.info(message)
-        #raise AutosubmitCritical("Stats query out of bounds", 7061, message)
+        Log.info(err_message)
+        plot = False
     else:
         fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * total_plots_count))
-
         fig.suptitle('STATS - ' + experiment_id, fontsize=24, fontweight='bold')
         # Variables initialization
         ax, ax2 = [], []
@@ -168,15 +167,17 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
             # Building legends
             # print("Legends")
             build_legends(legends_plot, rects, exp_stats, general_stats)
-
             # Saving output figure
             grid_spec.tight_layout(fig, rect=[0, 0.03, 1, 0.97])
             plt.savefig(output_file)
-
-            create_csv_stats(exp_stats, jobs_list, output_file)
         except Exception as exp:
             print(exp)
             print((traceback.format_exc()))
+    try:
+        create_csv_stats(exp_stats, jobs_list, output_file)
+    except Exception as exp:
+        Log.info(f'Error while creating csv stats:\n{err_message}')
+    return plot
 
 
 def create_csv_stats(exp_stats, jobs_list, output_file):
