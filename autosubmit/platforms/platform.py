@@ -523,12 +523,12 @@ class Platform(object):
         """
 
         if job.current_checkpoint_step < job.max_checkpoint_step:
-            remote_checkpoint_path = f"{self.get_files_path()}/CHECKPOINT_"
-            self.get_file(remote_checkpoint_path+str(job.current_checkpoint_step), False, ignore_log=True)
-            while self.check_file_exists(remote_checkpoint_path+str(job.current_checkpoint_step)) and job.current_checkpoint_step < job.max_checkpoint_step:
-                self.remove_checkpoint_file(remote_checkpoint_path+str(job.current_checkpoint_step))
+            remote_checkpoint_path = f'{self.get_files_path()}/CHECKPOINT_'
+            self.get_file(f'{remote_checkpoint_path}{str(job.current_checkpoint_step)}', False, ignore_log=True)
+            while self.check_file_exists(f'{remote_checkpoint_path}{str(job.current_checkpoint_step)}') and job.current_checkpoint_step < job.max_checkpoint_step:
+                self.remove_checkpoint_file(f'{remote_checkpoint_path}{str(job.current_checkpoint_step)}')
                 job.current_checkpoint_step += 1
-                self.get_file(remote_checkpoint_path+str(job.current_checkpoint_step), False, ignore_log=True)
+                self.get_file(f'{remote_checkpoint_path}{str(job.current_checkpoint_step)}', False, ignore_log=True)
     def get_completed_files(self, job_name, retries=0, recovery=False, wrapper_failed=False):
         """
         Get the COMPLETED file of the given job
