@@ -1,5 +1,6 @@
 import locale
 import os
+from pathlib import Path
 
 import traceback
 from autosubmit.job.job_common import Status
@@ -512,6 +513,22 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
+    def get_checkpoint_files(self, job):
+        """
+        Get all the checkpoint files of a job
+        :param job: Get the checkpoint files
+        :type job: Job
+        :param max_step: max step possible
+        :type max_step: int
+        """
+
+        if job.current_checkpoint_step < job.max_checkpoint_step:
+            remote_checkpoint_path = f'{self.get_files_path()}/CHECKPOINT_'
+            self.get_file(f'{remote_checkpoint_path}{str(job.current_checkpoint_step)}', False, ignore_log=True)
+            while self.check_file_exists(f'{remote_checkpoint_path}{str(job.current_checkpoint_step)}') and job.current_checkpoint_step < job.max_checkpoint_step:
+                self.remove_checkpoint_file(f'{remote_checkpoint_path}{str(job.current_checkpoint_step)}')
+                job.current_checkpoint_step += 1
+                self.get_file(f'{remote_checkpoint_path}{str(job.current_checkpoint_step)}', False, ignore_log=True)
     def get_completed_files(self, job_name, retries=0, recovery=False, wrapper_failed=False):
         """
         Get the COMPLETED file of the given job
@@ -582,6 +599,15 @@ class Platform(object):
             Log.debug('{0} been removed', filename)
             return True
         return False
+    def remove_checkpoint_file(self, filename):
+        """
+        Removes *CHECKPOINT* files from remote
+
+        :param job_name: name of job to check
+        :return: True if successful, False otherwise
+        """
+        if self.check_file_exists(filename):
+            self.delete_file(filename)
 
     def check_file_exists(self, src, wrapper_failed=False):
         return True

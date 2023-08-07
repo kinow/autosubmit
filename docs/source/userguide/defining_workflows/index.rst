@@ -204,6 +204,123 @@ For the new format, consider that the priority is hierarchy and goes like this D
 * You can define a MEMBERS_FROM inside the DEPENDENCY and DEPENDENCY.DATES_FROM.
 * You can define a CHUNKS_FROM inside the DEPENDENCY, DEPENDENCY.DATES_FROM, DEPENDENCY.MEMBERS_FROM, DEPENDENCY.DATES_FROM.MEMBERS_FROM
 
+Start conditions
+~~~~~~~~~~~~~~~~
+
+Sometimes you want to run a job only when a certain condition is met. For example, you may want to run a job only when a certain task is running.
+This can be achieved using the START_CONDITIONS feature based on the dependencies rework.
+
+Start conditions are achieved by adding the keyword ``STATUS`` and optionally ``FROM_STEP`` keywords into any dependency that you want.
+
+The ``STATUS`` keyword can be used to select the status of the dependency that you want to check. The possible values ( case-insensitive ) are:
+
+* "WAITING": The task is waiting for its dependencies to be completed.
+* "DELAYED": The task is delayed by a delay condition.
+* "PREPARED": The task is prepared to be submitted.
+* "READY": The task is ready to be submitted.
+* "SUBMITTED": The task is submitted.
+* "HELD": The task is held.
+* "QUEUING": The task is queuing.
+* "RUNNING": The task is running.
+* "SKIPPED": The task is skipped.
+* "FAILED": The task is failed.
+* "UNKNOWN": The task is unknown.
+* "COMPLETED": The task is completed. # Default
+* "SUSPENDED": The task is suspended.
+
+The status are ordered, so if you select "RUNNING" status, the task will be run if the parent is in any of the following statuses: "RUNNING", "QUEUING", "HELD", "SUBMITTED", "READY", "PREPARED", "DELAYED", "WAITING".
+
+.. code-block:: yaml
+
+    ini:
+        FILE: ini.sh
+        RUNNING: member
+
+    sim:
+        FILE: sim.sh
+        DEPENDENCIES: ini sim-1
+        RUNNING: chunk
+
+    postprocess:
+        FILE: postprocess.sh
+        DEPENDENCIES:
+            SIM:
+                STATUS: "RUNNING"
+        RUNNING: chunk
+
+
+The ``FROM_STEP`` keyword can be used to select the **internal** step of the dependency that you want to check. The possible value is an integer. Additionally, the target dependency, must call to `%AS_CHECKPOINT%` inside their scripts. This will create a checkpoint that will be used to check the amount of steps processed.
+
+.. code-block:: yaml
+
+  A:
+    FILE: a.sh
+    RUNNING: once
+    SPLITS: 2
+  A_2:
+    FILE: a_2.sh
+    RUNNING: once
+    DEPENDENCIES:
+      A:
+        SPLIT_TO: "2"
+        STATUS: "RUNNING"
+        FROM_STEP: 2
+
+There is now a new function that is automatically added in your scripts which is called ``as_checkpoint``. This is the function that is generating the checkpoint file. You can see the function below:
+
+.. code-block:: bash
+
+    ###################
+    # AS CHECKPOINT FUNCTION
+    ###################
+    # Creates a new checkpoint file upon call based on the current numbers of calls to the function
+
+    AS_CHECKPOINT_CALLS=0
+    function as_checkpoint {
+        AS_CHECKPOINT_CALLS=$((AS_CHECKPOINT_CALLS+1))
+        touch ${job_name_ptrn}_CHECKPOINT_${AS_CHECKPOINT_CALLS}
+    }
+
+And what you would have to include in your target dependency or dependencies is the call to this function which in this example is a.sh.
+
+The amount of calls is strongly related to the ``FROM_STEP`` value.
+
+``$expid/proj/$projname/as.sh``
+
+.. code-block:: bash
+
+  ##compute somestuff
+  as_checkpoint
+  ## compute some more stuff
+  as_checkpoint
+
+
+To select an specific task, you have to combine the ``STATUS`` and ``CHUNKS_TO`` , ``MEMBERS_TO`` and ``DATES_TO``, ``SPLITS_TO`` keywords.
+
+.. code-block:: yaml
+
+  A:
+    FILE: a
+    RUNNING: once
+    SPLITS: 1
+  B:
+    FILE: b
+    RUNNING: once
+    SPLITS: 2
+    DEPENDENCIES: A
+  C:
+    FILE: c
+    RUNNING: once
+    SPLITS: 1
+    DEPENDENCIES: B
+  RECOVER_B_2:
+    FILE: fix_b
+    RUNNING: once
+    DEPENDENCIES:
+      B:
+        SPLIT_TO: "2"
+        STATUS: "RUNNING"
+
 Job frequency
 ~~~~~~~~~~~~~
 
@@ -318,46 +435,100 @@ The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen in
 Job split
 ~~~~~~~~~
 
-For jobs running at chunk level, it may be useful to split each chunk into different parts.
+For jobs running at any level, it may be useful to split each task into different parts.
 This behaviour can be achieved using the SPLITS attribute to specify the number of parts.
-It is possible to define dependencies to specific splits within [], as well as to a list/range of splits,
-in the format [1:3,7,10] or [1,2,3]
 
+It is also possible to specify the splits for each task using the SPLITS_FROM and SPLITS_TO attributes.
 
-.. hint::
-   This job parameter works with jobs with RUNNING parameter equals to 'chunk'.
+There is also an special character '*' that can be used to specify that the split is 1-to-1 dependency. In order to use this character, you have to specify both SPLITS_FROM and SPLITS_TO attributes.
 
 .. code-block:: yaml
 
     ini:
         FILE: ini.sh
-        RUNNING: member
+        RUNNING: once
 
     sim:
         FILE: sim.sh
         DEPENDENCIES: ini sim-1
-        RUNNING: chunk
+        RUNNING: once
 
     asim:
         FILE: asim.sh
         DEPENDENCIES: sim
-        RUNNING: chunk
+        RUNNING: once
         SPLITS: 3
 
     post:
         FILE: post.sh
-        RUNNING: chunk
-        DEPENDENCIES: asim1: asim1:+1
+        RUNNING: once
+        DEPENDENCIES:
+            asim:
+                SPLITS_FROM:
+                    2,3: # [2:3] is also valid
+                        splits_to: 1,2*,3* # 1,[2:3]* is also valid, you can also specify the step with [2:3:step]
+        SPLITS: 3
 
-The resulting workflow can be seen in Figure :numref:`split`
+In this example:
 
-.. figure:: fig/split.png
-   :name: split
+Post job will be split into 2 parts.
+Each part will depend on the 1st part of the asim job.
+The 2nd part of the post job will depend on the 2nd part of the asim job.
+The 3rd part of the post job will depend on the 3rd part of the asim job.
+
+.. figure:: fig/splits_1_to_1.png
+   :name: split_1_to_1
    :width: 100%
    :align: center
-   :alt: simple workflow plot
+   :alt: 1-to-1
 
-   Example showing the job ASIM divided into 3 parts for each chunk.
+Example2: N-to-1 dependency
+
+.. code-block:: yaml
+
+  TEST:
+    FILE: TEST.sh
+    RUNNING: once
+    SPLITS: '4'
+  TEST2:
+    FILE: TEST2.sh
+    DEPENDENCIES:
+      TEST:
+        SPLITS_FROM:
+          "[1:2]":
+            SPLITS_TO: "[1:4]*\\2"
+    RUNNING: once
+    SPLITS: '2'
+
+.. figure:: fig/splits_n_to_1.png
+   :name: N_to_1
+   :width: 100%
+   :align: center
+   :alt: N_to_1
+
+Example3: 1-to-N dependency
+
+.. code-block:: yaml
+
+  TEST:
+    FILE: TEST.sh
+    RUNNING: once
+    SPLITS: '2'
+  TEST2:
+    FILE: TEST2.sh
+    DEPENDENCIES:
+      TEST:
+        SPLITS_FROM:
+          "[1:4]":
+            SPLITS_TO: "[1:2]*\\2"
+    RUNNING: once
+    SPLITS: '4'
+
+.. figure:: fig/splits_1_to_n.png
+   :name: 1_to_N
+   :width: 100%
+   :align: center
+   :alt: 1_to_N
 
 Job delay
 ~~~~~~~~~

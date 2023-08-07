@@ -21,33 +21,33 @@
 Main module for Autosubmit. Only contains an interface class to all functionality implemented on Autosubmit
 """
 
+from collections import OrderedDict
+
+import copy
+import datetime
+import json
+import locale
 import os
 import re
-import time
-import json
-import datetime
 import textwrap
-from collections import OrderedDict
-import copy
+import time
+from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
+from functools import reduce
+from threading import Thread
+from time import sleep
+from typing import List, Union
 
-import locale
-
-from autosubmitconfigparser.config.configcommon import AutosubmitConfig
-from autosubmit.job.job_common import Status, Type, increase_wallclock_by_chunk
+from autosubmit.helpers.parameters import autosubmit_parameter, autosubmit_parameters
+from autosubmit.history.experiment_history import ExperimentHistory
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
+from autosubmit.job.job_common import Status, Type, increase_wallclock_by_chunk
 from autosubmit.job.job_utils import get_job_package_code
-from autosubmitconfigparser.config.basicconfig import BasicConfig
-from autosubmit.history.experiment_history import ExperimentHistory
-from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
-from time import sleep
-from threading import Thread
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
-from log.log import Log, AutosubmitCritical, AutosubmitError
-from typing import List, Union
-from functools import reduce
+from autosubmitconfigparser.config.basicconfig import BasicConfig
+from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
-from autosubmit.helpers.parameters import autosubmit_parameter, autosubmit_parameters
+from log.log import Log, AutosubmitCritical, AutosubmitError
 
 Log.get_logger("Autosubmit")
 
@@ -221,6 +221,9 @@ class Job(object):
         self.total_jobs = None
         self.max_waiting_jobs = None
         self.exclusive = ""
+        # internal
+        self.current_checkpoint_step = 0
+        self.max_checkpoint_step = 0
 
     @property
     @autosubmit_parameter(name='tasktype')
@@ -251,6 +254,23 @@ class Job(object):
     @fail_count.setter
     def fail_count(self, value):
         self._fail_count = value
+
+    @property
+    @autosubmit_parameter(name='checkpoint')
+    def checkpoint(self):
+        '''Generates a checkpoint step for this job based on job.type.'''
+        if self.type == Type.PYTHON:
+            return "checkpoint()"
+        elif self.type == Type.R:
+            return "checkpoint()"
+        else:  # bash
+            return "as_checkpoint"
+
+    def get_checkpoint_files(self):
+        """
+        Check if there is a file on the remote host that contains the checkpoint
+        """
+        return self.platform.get_checkpoint_files(self)
 
     @property
     @autosubmit_parameter(name='sdate')
@@ -570,6 +590,7 @@ class Job(object):
         :type value: HPCPlatform
         """
         self._partition = value
+
     @property
     def children(self):
         """
@@ -690,20 +711,20 @@ class Job(object):
         """
         self.children.add(new_child)
 
-    def add_edge_info(self,parent_name, special_variables):
+    def add_edge_info(self, parent, special_variables):
         """
         Adds edge information to the job
 
-        :param parent_name: parent name
-        :type parent_name: str
+        :param parent: parent job
+        :type parent: Job
         :param special_variables: special variables
         :type special_variables: dict
         """
-        if parent_name not in self.edge_info:
-            self.edge_info[parent_name] = special_variables
-        else:
-            self.edge_info[parent_name].update(special_variables)
-        pass
+        if special_variables["STATUS"] not in self.edge_info:
+            self.edge_info[special_variables["STATUS"]] = {}
+
+        self.edge_info[special_variables["STATUS"]][parent.name] = (parent,special_variables.get("FROM_STEP", 0))
+
     def delete_parent(self, parent):
         """
         Remove a parent from the job
@@ -1346,6 +1367,8 @@ class Job(object):
         return parameters
 
     def update_job_parameters(self,as_conf, parameters):
+        if self.checkpoint: # To activate placeholder sustitution per <empty> in the template
+            parameters["AS_CHECKPOINT"] = self.checkpoint
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
         parameters['SDATE'] = self.sdate
@@ -1427,6 +1450,8 @@ class Job(object):
         parameters['EXPORT'] = self.export
         parameters['PROJECT_TYPE'] = as_conf.get_project_type()
         self.wchunkinc = as_conf.get_wchunkinc(self.section)
+        for key,value in as_conf.jobs_data[self.section].items():
+            parameters["CURRENT_"+key.upper()] = value
         return parameters
 
     def update_parameters(self, as_conf, parameters,
@@ -1613,8 +1638,10 @@ class Job(object):
             except:
                 pass
         for key, value in parameters.items():
+            # parameters[key] can have '\\' characters that are interpreted as escape characters
+            # by re.sub. To avoid this, we use re.escape
             template_content = re.sub(
-                '%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,flags=re.I)
+                '%(?<!%%)' + key + '%(?!%%)', re.escape(str(parameters[key])), template_content,flags=re.I)
         for variable in self.undefined_variables:
             template_content = re.sub(
                 '%(?<!%%)' + variable + '%(?!%%)', '', template_content,flags=re.I)

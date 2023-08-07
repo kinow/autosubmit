@@ -275,7 +275,6 @@ class TestJobList(TestCase):
         job.type = randrange(0, 2)
         return job
 
-import inspect
 class FakeBasicConfig:
     def __init__(self):
         pass

@@ -13,11 +13,10 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import textwrap
 import datetime
+import textwrap
 
 
 class Status:
@@ -41,6 +40,7 @@ class Status:
     # Note: any change on constants must be applied on the dict below!!!
     VALUE_TO_KEY = {-3: 'SUSPENDED', -2: 'UNKNOWN', -1: 'FAILED', 0: 'WAITING', 1: 'READY',
                     2: 'SUBMITTED', 3: 'QUEUING', 4: 'RUNNING', 5: 'COMPLETED', 6: 'HELD', 7: 'PREPARED', 8: 'SKIPPED', 9: 'DELAYED'}
+    LOGICAL_ORDER = ["WAITING", "DELAYED", "PREPARED", "READY", "SUBMITTED", "HELD", "QUEUING", "RUNNING", "SKIPPED", "FAILED", "UNKNOWN", "COMPLETED", "SUSPENDED"]
 
     def retval(self, value):
         return getattr(self, value)
@@ -128,6 +128,16 @@ class StatisticsSnippetBash:
             job_name_ptrn='%CURRENT_LOGDIR%/%JOBNAME%'
             echo $(date +%s) > ${job_name_ptrn}_STAT
 
+            ################### 
+            # AS CHECKPOINT FUNCTION
+            ###################
+            # Creates a new checkpoint file upon call based on the current numbers of calls to the function
+            
+            AS_CHECKPOINT_CALLS=0
+            function as_checkpoint {
+                AS_CHECKPOINT_CALLS=$((AS_CHECKPOINT_CALLS+1))
+                touch ${job_name_ptrn}_CHECKPOINT_${AS_CHECKPOINT_CALLS}
+            }
             ###################
             # Autosubmit job
             ###################
@@ -190,11 +200,20 @@ class StatisticsSnippetPython:
             stat_file = open(job_name_ptrn + '_STAT', 'w')
             stat_file.write('{0:.0f}\\n'.format(time.time()))
             stat_file.close()
-
-
+            ###################
+            # Autosubmit Checkpoint
+            ###################
+            # Creates a new checkpoint file upton call based on the current numbers of calls to the function
+            AS_CHECKPOINT_CALLS = 0
+            def as_checkpoint():
+                global AS_CHECKPOINT_CALLS
+                global job_name_ptrn
+                AS_CHECKPOINT_CALLS = AS_CHECKPOINT_CALLS + 1
+                open(job_name_ptrn + '_CHECKPOINT_' + str(AS_CHECKPOINT_CALLS), 'w').close()                
             ###################
             # Autosubmit job
             ###################
+            
 
             """)
 
@@ -254,7 +273,16 @@ class StatisticsSnippetR:
             fileConn<-file(paste(job_name_ptrn,"_STAT", sep = ''),"w")
             writeLines(toString(trunc(as.numeric(Sys.time()))), fileConn)
             close(fileConn)
-
+            ###################
+            # Autosubmit Checkpoint
+            ###################
+            # Creates a new checkpoint file upton call based on the current numbers of calls to the function
+            AS_CHECKPOINT_CALLS = 0
+            as_checkpoint <- function() {
+                AS_CHECKPOINT_CALLS <<- AS_CHECKPOINT_CALLS + 1
+                fileConn<-file(paste(job_name_ptrn,"_CHECKPOINT_",AS_CHECKPOINT_CALLS, sep = ''),"w")
+                close(fileConn)
+            }
             ###################
             # Autosubmit job
             ###################
