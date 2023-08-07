@@ -440,7 +440,7 @@ This behaviour can be achieved using the SPLITS attribute to specify the number 
 
 It is also possible to specify the splits for each task using the SPLITS_FROM and SPLITS_TO attributes.
 
-There is also an special character '*' that can be used to specify that the split is 1-to-1 dependency.
+There is also an special character '*' that can be used to specify that the split is 1-to-1 dependency. In order to use this character, you have to specify both SPLITS_FROM and SPLITS_TO attributes.
 
 .. code-block:: yaml
 
