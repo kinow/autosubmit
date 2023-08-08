@@ -123,6 +123,8 @@ Uncatalogued codes  - Critical Error codes [7060+]
 | 7073 | Private key is encrypted                      | Each Session: Add your key into the ssh agent. ex. ssh-add $HOME/.ssh/id_rsa, then launch autosubmit.                                                                            |
 |      |                                               | Alternative: You can use a non-encrypted key, just make sure that nobody except you has access to the file.                                                                      |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| 7074 | Profiling process failed                      | You can find descriptive explanations in the log, as well as hints to solve the problem.                                                                                         |
++------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 **Default Solution**
 

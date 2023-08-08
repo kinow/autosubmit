@@ -50,6 +50,7 @@ from .job.job_list_persistence import JobListPersistencePkl
 from .job.job_package_persistence import JobPackagePersistence
 from .job.job_packager import JobPackager
 from .job.job_utils import SubJob, SubJobManager
+from .profiler.profiler import Profiler
 from .monitor.monitor import Monitor
 from .notifications.mail_notifier import MailNotifier
 from .notifications.notifier import Notifier
@@ -190,6 +191,8 @@ class Autosubmit:
                                    help='Sets a experiment expid which completion will trigger the start of this experiment.')
             subparser.add_argument('-rom', '--run_only_members', required=False,
                                    help='Sets members allowed on this run.')
+            subparser.add_argument('-p', '--profile', action='store_true', default=False, required=False,
+                                   help='Prints performance parameters of the execution of this experiment.')
 
 
             # Expid
@@ -647,7 +650,7 @@ class Autosubmit:
             Autosubmit._init_logs(args, args.logconsole, args.logfile, expid)
 
         if args.command == 'run':
-            return Autosubmit.run_experiment(args.expid, args.notransitive,args.start_time,args.start_after, args.run_only_members)
+            return Autosubmit.run_experiment(args.expid, args.notransitive,args.start_time,args.start_after, args.run_only_members, args.profile)
         elif args.command == 'expid':
             return Autosubmit.expid(args.description,args.HPC,args.copy, args.dummy,args.minimal_configuration,args.git_repo,args.git_branch,args.git_as_conf,args.operational,args.testcase,args.use_local_minimal) != ''
         elif args.command == 'delete':
@@ -1999,8 +2002,9 @@ class Autosubmit:
         Log.debug("Sleep: {0}", safetysleeptime)
         Log.debug("Number of retrials: {0}", default_retrials)
         return total_jobs, safetysleeptime, default_retrials, check_wrapper_jobs_sleeptime
+    
     @staticmethod
-    def run_experiment(expid, notransitive=False, start_time=None, start_after=None,run_only_members=None):
+    def run_experiment(expid, notransitive=False, start_time=None, start_after=None, run_only_members=None, profile=False):
         """
         Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).
         :param expid: the experiment id
@@ -2008,6 +2012,7 @@ class Autosubmit:
         :param start_time: the time at which the experiment should start
         :param start_after: the expid after which the experiment should start
         :param run_only_members: the members to run
+        :param profile: if True, the whole experiment will be profiled
         :return: None
 
         """
@@ -2018,6 +2023,11 @@ class Autosubmit:
         except BaseException as e:
             raise AutosubmitCritical("Failure during the loading of the experiment configuration, check file paths",
                                      7014, str(e))
+        
+        # If the profile flag has been used, activate the profiler and start taking measures
+        if profile:
+            profiler = Profiler(expid)
+            profiler.start()
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
@@ -2250,6 +2260,9 @@ class Autosubmit:
             raise
         except BaseException as e:
             raise AutosubmitCritical("This seems like a bug in the code, please contact AS developers", 7070, str(e))
+        finally:
+            if profile:
+                profiler.stop()
 
     @staticmethod
     def restore_platforms(platform_to_test, mail_notify=False, as_conf=None, expid=None):
