@@ -402,11 +402,11 @@ class JobList(object):
             if not parent.splits:
                 parent_splits = -1
             else:
-                parent_splits = parent.splits
+                parent_splits = int(parent.splits)
             if not child.splits:
                 child_splits = -1
             else:
-                child_splits = child.splits
+                child_splits = int(child.splits)
             if parent_splits == child_splits:
                 to_look_at_lesser = associative_list
                 lesser_group = -1
