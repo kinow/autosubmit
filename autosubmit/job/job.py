@@ -1640,8 +1640,12 @@ class Job(object):
         for key, value in parameters.items():
             # parameters[key] can have '\\' characters that are interpreted as escape characters
             # by re.sub. To avoid this, we use re.escape
+            if "*\\" in str(parameters[key]):
+                final_sub = re.escape(str(parameters[key]))
+            else:
+                final_sub = str(parameters[key])
             template_content = re.sub(
-                '%(?<!%%)' + key + '%(?!%%)', re.escape(str(parameters[key])), template_content,flags=re.I)
+                '%(?<!%%)' + key + '%(?!%%)', final_sub, template_content,flags=re.I)
         for variable in self.undefined_variables:
             template_content = re.sub(
                 '%(?<!%%)' + variable + '%(?!%%)', '', template_content,flags=re.I)
