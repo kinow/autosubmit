@@ -30,3 +30,4 @@ Pygments
 packaging==20
 typing>=3.7
 wheel
+psutil
