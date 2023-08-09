@@ -1,0 +1,12 @@
+/* NOTE: This file customizes the current Sphinx theme for the Autosubmit docs. */
+
+/* For the error code page, where we have large tables. */
+td, th {
+    white-space: normal !important;
+    word-wrap: break-all !important;
+}
+
+/* For the profiler docs, that contain figures with paragraphs below. */
+figure {
+    margin-bottom: 2rem !important;
+}

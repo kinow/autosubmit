@@ -178,15 +178,15 @@ team in Git.
 +======+===============================================+==================================================================================================================================================================================+
 | 7060 | Display issues during monitoring              | Use a different output or use plain text (``txt``)                                                                                                                               |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 7061 | Stat command failed                           | Check the command output in ``ASLOGS`` for a possible bug, report it to the Autosubmit team in Git.                                                                              |
+| 7061 | Stat command failed                           | Check the command output in ``ASLOGS`` for a possible bug, report it to the Autosubmit team in Git                                                                               |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 7062 | Svn issues                                    | Check if URL was configured in the experiment configuration                                                                                                                      |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 7063 | cp/rsync issues                               | Check if destination path exists.                                                                                                                                                |
+| 7063 | cp/rsync issues                               | Check if destination path exists                                                                                                                                                 |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 7064 | Git issues                                    | Check ``GIT:`` experiment configuration. If issue persists, check if ``proj`` folder is a valid Git repository.                                                                  |
+| 7064 | Git issues                                    | Check ``GIT:`` experiment configuration. If issue persists, check if ``proj`` folder is a valid Git repository                                                                   |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 7065 | Wrong git configuration                       | Invalid Git url. Check ``GIT:`` experiment configuration. If issue persists, check if ``proj`` folder is a valid Git repository.                                                 |
+| 7065 | Wrong git configuration                       | Invalid Git url. Check ``GIT:`` experiment configuration. If issue persists, check if ``proj`` folder is a valid Git repository                                                  |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 7066 | Pre-submission feature issues                 | New feature, this message should not be issued, Please report it in Git                                                                                                          |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -204,8 +204,11 @@ team in Git.
 |      |                                               | User: run ``autosubmit configure`` or create a ``$HOME/.autosubmitrc`` (consult the installation documentation)                                                                  |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 7073 | Private key is encrypted                      | Add your key to your ssh agent, e.g. ``ssh-add $HOME/.ssh/id_rsa``, then try running Autosubmit again.                                                                           |
-|      |                                               | You can also use a non-encrypted key (make sure nobody else has access to the file).                                                                                             |
+|      |                                               | You can also use a non-encrypted key (make sure nobody else has access to the file)                                                                                              |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | 7074 | Profiling process failed                      | You can find more detailed information in the logs, as well as hints to solve the problem                                                                                        |
 +------+-----------------------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+.. note::
+  Please submit an issue to the Autosubmit team if you have not found your error
+  code listed here.
