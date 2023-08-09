@@ -478,7 +478,7 @@ class JobList(object):
                 return True
         elif "NONE".casefold() == str(to_filter[0]).casefold():
             return False
-        elif len( [ filter_ for filter_ in to_filter if str(parent_value).casefold() == str(filter_).casefold() ] )>0:
+        elif len( [ filter_ for filter_ in to_filter if str(parent_value).strip(" ").casefold() == str(filter_).strip(" ").casefold() ] )>0:
             return True
         else:
             return False
