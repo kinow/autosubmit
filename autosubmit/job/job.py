@@ -221,7 +221,7 @@ class Job(object):
         self.total_jobs = None
         self.max_waiting_jobs = None
         self.exclusive = ""
-        self.retrials = 0
+        self._retrials = 0
 
         # internal
         self.current_checkpoint_step = 0
