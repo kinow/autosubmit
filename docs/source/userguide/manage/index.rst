@@ -310,12 +310,12 @@ Examples:
     autosubmit setstatus cxxx -fc "[ 19601101 [ fc1 [1] ] ]" -t READY -s
     autosubmit setstatus cxxx -fs FAILED -t READY -s
     autosubmit setstatus cxxx -ft TRANSFER -t SUSPENDED -s
-    autosubmit setstatus cxxx -ftc "[ 19601101 [ fc1 [1] ], SIM" -t SUSPENDED -s
+    autosubmit setstatus cxxx -ftc "[ 19601101 [ fc1 [1] ] ], SIM" -t SUSPENDED -s
 
 Date (month) range example:
 ::
 
-    autosubmit setstatus cxxx -ftc "[ 1960(1101-1201) [ fc1 [1] ], SIM" -t SUSPENDED -s
+    autosubmit setstatus cxxx -ftc "[ 1960(1101-1201) [ fc1 [1] ] ], SIM" -t SUSPENDED -s
 
 This example will result changing the following jobs:
 ::
@@ -326,7 +326,7 @@ This example will result changing the following jobs:
 Date (day) range example:
 ::
 
-    autosubmit setstatus cxxx -ftc "[ 1960(1101-1105) [ fc1 [1] ], SIM" -t SUSPENDED -s
+    autosubmit setstatus cxxx -ftc "[ 1960(1101-1105) [ fc1 [1] ] ], SIM" -t SUSPENDED -s
 
 Result:
 ::
