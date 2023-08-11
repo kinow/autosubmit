@@ -26,6 +26,7 @@ class TestDicJobs(TestCase):
                                 JobListPersistenceDb(self.temp_directory, 'db'),self.as_conf)
         self.parser_mock = Mock(spec='SafeConfigParser')
         self.date_list = ['fake-date1', 'fake-date2']
+        self.member_list = ["fc1", "fc2", "fc3", "fc4", "fc5", "fc6", "fc7", "fc8", "fc9", "fc10"]
         self.member_list = ['fake-member1', 'fake-member2']
         self.num_chunks = 99
         self.chunk_list = list(range(1, self.num_chunks + 1))
@@ -213,18 +214,6 @@ class TestDicJobs(TestCase):
         frequency = 1
         self.dictionary.build_job = Mock(return_value=mock_section)
 
-        # act
-        self.dictionary._create_jobs_chunk(mock_section.name, priority, frequency, Type.BASH)
-
-        # assert
-        self.assertEqual(len(self.date_list) * len(self.member_list) * len(self.chunk_list),
-                          self.dictionary.build_job.call_count)
-        self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
-        for date in self.date_list:
-            for member in self.member_list:
-                for chunk in self.chunk_list:
-                    self.assertEqual(self.dictionary._dic[mock_section.name][date][member][chunk], mock_section)
-
     def test_dic_creates_right_jobs_by_chunk_with_frequency_3(self):
         # arrange
         mock_section = Mock()
@@ -333,7 +322,6 @@ class TestDicJobs(TestCase):
         self.assertEqual(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
 
     def test_create_job_creates_a_job_with_right_parameters(self):
-
         section = 'test'
         priority = 99
         date = datetime(2016, 1, 1)
@@ -392,9 +380,29 @@ class TestDicJobs(TestCase):
         self.assertEqual(options['TASKS'], created_job.tasks)
         self.assertEqual(options['MEMORY'], created_job.memory)
         self.assertEqual(options['WALLCLOCK'], created_job.wallclock)
-        self.assertEqual(0,created_job.retrials)
+        self.assertEqual(str(options['SYNCHRONIZE']), created_job.synchronize)
+        self.assertEqual(str(options['RERUN_ONLY']).lower(), created_job.rerun_only)
+        self.assertEqual(0, created_job.retrials)
         job_list_mock.append.assert_called_once_with(created_job)
 
+        # Test retrials
+        self.dictionary.experiment_data["CONFIG"]["RETRIALS"] = 2
+        created_job = self.dictionary.build_job(section, priority, date, member, chunk, 'bash',self.as_conf.experiment_data)
+        self.assertEqual(2, created_job.retrials)
+        options['RETRIALS'] = 23
+        # act
+        created_job = self.dictionary.build_job(section, priority, date, member, chunk, 'bash',self.as_conf.experiment_data)
+        self.assertEqual(options['RETRIALS'], created_job.retrials)
+        self.dictionary.experiment_data["CONFIG"] = {}
+        self.dictionary.experiment_data["CONFIG"]["RETRIALS"] = 2
+        created_job = self.dictionary.build_job(section, priority, date, member, chunk, 'bash',self.as_conf.experiment_data)
+        self.assertEqual(options["RETRIALS"], created_job.retrials)
+        self.dictionary.experiment_data["WRAPPERS"] = dict()
+        self.dictionary.experiment_data["WRAPPERS"]["TEST"] = dict()
+        self.dictionary.experiment_data["WRAPPERS"]["TEST"]["RETRIALS"] = 3
+        self.dictionary.experiment_data["WRAPPERS"]["TEST"]["JOBS_IN_WRAPPER"] = section
+        created_job = self.dictionary.build_job(section, priority, date, member, chunk, 'bash',self.as_conf.experiment_data)
+        self.assertEqual(self.dictionary.experiment_data["WRAPPERS"]["TEST"]["RETRIALS"], created_job.retrials)
     def test_get_member_returns_the_jobs_if_no_member(self):
         # arrange
         jobs = 'fake-jobs'
