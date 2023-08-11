@@ -931,6 +931,7 @@ class Job(object):
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0,job_id=""):
         as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
         as_conf.reload(force_load=True)
+        max_retrials = self.retrials
         max_logs = 0
         last_log = 0
         sleep(5)
