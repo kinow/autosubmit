@@ -260,7 +260,7 @@ class Job(object):
     @property
     @autosubmit_parameter(name='retrials')
     def retrials(self):
-        """Number of failed attempts to run this job."""
+        """Max amount of retrials to run this job."""
         return self._retrials
 
     @retrials.setter
