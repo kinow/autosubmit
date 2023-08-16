@@ -186,3 +186,17 @@ Example:
 ::
 
     autosubmit test -c 1 -s 19801101 -m fc0 -H ithaca -b develop cxxx
+
+.. _create_profiling:
+
+How to profile Autosubmit while creating an experiment
+------------------------------------------------------
+
+Autosubmit offers the possibility to profile the experiment creation process. To enable the profiler, just 
+add the ``--profile`` (or ``-p``) flag to your ``autosubmit create`` command, as in the following example:
+
+.. code-block:: bash
+
+    autosubmit create --profile EXPID
+
+.. include:: ../../_include/profiler_common.rst

@@ -187,8 +187,7 @@ This functionality can be used together with other options supplied by the `run`
 
 The `-sa` command has a long version `--start_after`.
 
-.. _basic_profiling:
-
+.. _run_profiling:
 
 How to profile Autosubmit while running an experiment
 -----------------------------------------------------
@@ -200,28 +199,7 @@ add the ``--profile`` (or ``-p``) flag to your ``autosubmit run`` command, as in
 
     autosubmit run --profile EXPID
 
-.. note:: Remember that the purpose of this profiler is to measure the performance of Autosubmit, 
-  not the jobs it runs.
-
-This profiler uses Python's ``cProfile`` and ``psutil`` modules to generate a report with simple CPU and 
-memory metrics for the experiment execution. These metrics will be displayed in your console after 
-the experiment finishes, as in the example below:
-
-.. figure:: profiler_output.png
-   :name: profiler_head_output
-   :align: center
-   :alt: Screenshot of the header of the profiler's output
-
-The profiler output is also saved in ``<EXPID>/tmp/profile``. There you will find two files, the 
-report in plain text format and a ``.prof`` binary which contains the CPU metrics. We highly recommend 
-using `SnakeViz <https://jiffyclub.github.io/snakeviz/>`_ to visualize this file, as follows:
-
-.. figure:: profiler_snakeviz.png
-   :name: profiler_snakeviz
-   :align: center
-   :alt: The .prof file represented by the graphical library SnakeViz
-
-For more detailed documentation about the profiler, please visit this :ref:`page<advanced_profiling>`.
+.. include:: ../../_include/profiler_common.rst
 
 .. _run_modes:
 
