@@ -8,12 +8,12 @@
 autosubmit.profiler
 ===================
 
-.. important:: If you are interested in measuring only the performance of the execution of an 
-      experiment in Autosubmit, a simpler user-oriented guide is available at this 
-      :ref:`link<basic_profiling>`.
+.. important:: If you only want to use the profiler built into the Autosubmit commands, simpler 
+      user-oriented guides are available for :ref:`run<run_profiling>`, 
+      :ref:`create<create_profiling>` and :ref:`monitor<monitor_profiling>`.
 
 ######################################
-The autosubmit's profiler
+The Autosubmit's profiler
 ######################################
 
 Autosubmit integrates a profiler that allows developers to easily measure the performance of entire 
@@ -28,7 +28,8 @@ please, do not use it on concurrent code. For memory profiling, it uses ``psutil
 
 .. caution::
       This profiler was originally designed to be used in the ``autosubmit run`` command, so using 
-      it in other functions may produce unexpected results or errors.
+      it in other functions may produce unexpected results or errors. Now, its usage have been 
+      extended to ``autosubmit create`` and ``monitor``.
       
       The profiler instantiation requires an ``EXPID``, and not all the functions in Autosubmit use it. 
       This can be bypassed using another string, but keep in mind that there is no error handling in 
@@ -38,9 +39,10 @@ How to profile a function or a specific code fragment?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Depending on the Autosubmit function you want to profile, you must add a ``--profile`` argument to the 
-parser. The ``autosubmit run`` subcommand supports it. It is recommended that the default value of 
-this flag always be ``False``, to ensure that the profiler does not interfere with the normal execution 
-in an unwanted way. You will need to add something like this to your parser:
+parser. The ``autosubmit run``, ``create`` and ``monitor`` subcommands already support it. It is 
+recommended that the default value of this flag always be ``False``, to ensure that the profiler does 
+not interfere with the normal execution in an unwanted way. You will need to add something like this to 
+your parser:
 
 .. code-block:: python
 
