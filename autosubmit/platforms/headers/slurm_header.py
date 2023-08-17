@@ -159,6 +159,13 @@ class SlurmHeader(object):
             return "SBATCH --cpus-per-task={0}".format(job.parameters['NUMTHREADS'])
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
+
+    def get_reservation_directive(self, job):
+        if job.parameters['RESERVATION'] == '':
+            return ""
+        else:
+            return "SBATCH --reservation={0}".format(job.parameters['RESERVATION'])
+
     def get_custom_directives(self, job):
         """
         Returns custom directives for the specified job
@@ -201,6 +208,7 @@ class SlurmHeader(object):
 #%TASKS_PER_NODE_DIRECTIVE%
 #%NODES_DIRECTIVE%
 #%NUMPROC_DIRECTIVE%
+#%RESERVATION_DIRECTIVE%
 #SBATCH -t %WALLCLOCK%:00
 #SBATCH -J %JOBNAME%
 #SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
@@ -224,6 +232,7 @@ class SlurmHeader(object):
 #%THREADS_PER_TASK_DIRECTIVE%
 #%NODES_DIRECTIVE%
 #%NUMPROC_DIRECTIVE%
+#%RESERVATION_DIRECTIVE%
 #%TASKS_PER_NODE_DIRECTIVE%
 #SBATCH -t %WALLCLOCK%:00
 #SBATCH -J %JOBNAME%
