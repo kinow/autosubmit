@@ -224,6 +224,7 @@ class Job(object):
         # internal
         self.current_checkpoint_step = 0
         self.max_checkpoint_step = 0
+        self.reservation= ""
 
     @property
     @autosubmit_parameter(name='tasktype')
@@ -1286,6 +1287,7 @@ class Job(object):
         self.exclusive = str(as_conf.jobs_data[self.section].get("EXCLUSIVE",as_conf.platforms_data.get(job_platform.name,{}).get("EXCLUSIVE",False)))
         self.threads = str(as_conf.jobs_data[self.section].get("THREADS",as_conf.platforms_data.get(job_platform.name,{}).get("THREADS","1")))
         self.tasks = str(as_conf.jobs_data[self.section].get("TASKS",as_conf.platforms_data.get(job_platform.name,{}).get("TASKS","1")))
+        self.reservation = str(as_conf.jobs_data[self.section].get("RESERVATION",as_conf.platforms_data.get(job_platform.name, {}).get("RESERVATION", "")))
         self.hyperthreading = str(as_conf.jobs_data[self.section].get("HYPERTHREADING",as_conf.platforms_data.get(job_platform.name,{}).get("HYPERTHREADING","none")))
         if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 and int(self.processors) > int(job_platform.processors_per_node):
             self.tasks = job_platform.processors_per_node
@@ -1340,6 +1342,7 @@ class Job(object):
         parameters['CUSTOM_DIRECTIVES'] = self.custom_directives
         parameters['HYPERTHREADING'] = self.hyperthreading
         parameters['CURRENT_QUEUE'] = self.queue
+        parameters['RESERVATION'] = self.reservation
         return parameters
 
     def update_wrapper_parameters(self,as_conf, parameters):
