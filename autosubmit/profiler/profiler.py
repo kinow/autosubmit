@@ -46,24 +46,26 @@ class Profiler:
 
         # Error handling flags
         self._started = False
+        self._finished = False
 
     def start(self) -> None:
         """Function to start the profiling process."""
         if self._started:
             raise AutosubmitCritical('The profiling process was already started.', 7074)
 
+        self._started = True
         self._profiler.enable()
         self._mem_init += _get_current_memory()
-        self._started = True
 
     def stop(self) -> None:
         """Function to finish the profiling process."""
-        if not self._started:
+        if not self._started or self._finished:
             raise AutosubmitCritical('Cannot stop the profiler because was not running.', 7074)
 
         self._profiler.disable()
         self._mem_final += _get_current_memory()
         self._report()
+        self._finished = True
 
     def _report(self) -> None:
         """Function to print the final report into the stdout, log and filesystem."""
