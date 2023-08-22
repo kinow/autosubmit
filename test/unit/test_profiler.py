@@ -1,7 +1,6 @@
 from unittest import TestCase, mock
 from autosubmit.profiler.profiler import Profiler
 from log.log import AutosubmitCritical
-from pathlib import Path
 
 
 class TestProfiler(TestCase):
@@ -14,11 +13,6 @@ class TestProfiler(TestCase):
     #                           |
     #                           |
     #                         stop ----> report --->0
-
-    # Status coverage
-    def test_status_machine(self):
-        self.profiler.start()
-        self.profiler.stop()
 
     # Transition coverage
     def test_transitions(self):
@@ -35,6 +29,10 @@ class TestProfiler(TestCase):
         # start -> start
         self.profiler.start()
         self.assertRaises(AutosubmitCritical, self.profiler.start)
+
+        # stop -> stop
+        self.profiler.stop()
+        self.assertRaises(AutosubmitCritical, self.profiler.stop)
 
     # White box tests
     @mock.patch("os.access")

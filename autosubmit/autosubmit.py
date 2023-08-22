@@ -2017,7 +2017,7 @@ class Autosubmit:
         :param start_time: the time at which the experiment should start
         :param start_after: the expid after which the experiment should start
         :param run_only_members: the members to run
-        :param profile: if True, the whole experiment will be profiled
+        :param profile: if True, the function will be profiled
         :return: None
 
         """
