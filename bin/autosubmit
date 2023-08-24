@@ -21,6 +21,7 @@
 import os
 import sys
 import traceback
+from io import StringIO  # for handling the traceback print
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 sys.path.append(scriptdir)
@@ -64,9 +65,9 @@ def main():
             Log.critical(
                 "{0}\nAnother instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock".format(str(e)), 7000)
         else:
-            Log.critical(
-                "{1}{0}\nUnhandled error: If you see this message, please report it in Autosubmit's GitLab project".format(str(e),str(traceback.print_exc())
-), 7000)
+            exception_stream = StringIO()
+            traceback.print_exc(file=exception_stream)
+            Log.critical("{1}{0}\nUnhandled error: If you see this message, please report it in Autosubmit's GitLab project".format(str(e),exception_stream.getvalue()), 7000)
         os._exit(1)
 
 
