@@ -500,7 +500,8 @@ class Job(object):
         found_hashbang = False
         script_name = script_path.rsplit("/")[-1]  # pick the name of the script for a more verbose error
         script = ''
-        if script_path == '':
+        # the value might be None string if the key has been set, but with no value
+        if script_path == '' or script_path == "None":
             return script
 
         # adjusts the error message to the type of the script
