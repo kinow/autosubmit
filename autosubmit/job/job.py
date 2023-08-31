@@ -221,6 +221,8 @@ class Job(object):
         self.total_jobs = None
         self.max_waiting_jobs = None
         self.exclusive = ""
+        self._retrials = 0
+
         # internal
         self.current_checkpoint_step = 0
         self.max_checkpoint_step = 0
@@ -255,6 +257,16 @@ class Job(object):
     @fail_count.setter
     def fail_count(self, value):
         self._fail_count = value
+
+    @property
+    @autosubmit_parameter(name='retrials')
+    def retrials(self):
+        """Max amount of retrials to run this job."""
+        return self._retrials
+
+    @retrials.setter
+    def retrials(self, value):
+        self._retrials = int(value)
 
     @property
     @autosubmit_parameter(name='checkpoint')
@@ -918,6 +930,9 @@ class Job(object):
 
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0,job_id=""):
+        as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
+        as_conf.reload(force_load=True)
+        max_retrials = self.retrials
         max_logs = 0
         last_log = 0
         sleep(5)
@@ -932,14 +947,13 @@ class Job(object):
         success = False
         error_message = ""
         platform = None
-        max_retrials = 0
         while (count < retries) or not success:
             try:
                 as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
                 as_conf.reload(force_load=True)
-                max_retrials = as_conf.get_retrials()
-                max_logs = int(as_conf.get_retrials()) - fail_count
-                last_log = int(as_conf.get_retrials()) - fail_count
+                max_retrials = self.retrials
+                max_logs = int(max_retrials) - fail_count
+                last_log = int(max_retrials) - fail_count
                 submitter = self._get_submitter(as_conf)
                 submitter.load_platforms(as_conf)
                 platform = submitter.platforms[platform_name]
@@ -954,34 +968,32 @@ class Job(object):
             raise AutosubmitError(
                 "Couldn't load the autosubmit platforms, seems that the local platform has some issue\n:{0}".format(
                     error_message), 6006)
-        else:
-            try:
-                if self.wrapper_type is not None and self.wrapper_type == "vertical":
-                    found = False
-                    retrials = 0
-                    while retrials < 3 and not found:
-                        if platform.check_stat_file_by_retrials(stat_file + str(max_logs)):
-                            found = True
-                        retrials = retrials + 1
-                    for i in range(max_logs-1,-1,-1):
-                        if platform.check_stat_file_by_retrials(stat_file + str(i)):
-                            last_log = i
-                        else:
-                            break
-                    remote_logs = (self.script_name + ".out." + str(last_log), self.script_name + ".err." + str(last_log))
+        try:
+            if self.wrapper_type is not None and self.wrapper_type == "vertical":
+                found = False
+                retrials = 0
+                while retrials < 3 and not found:
+                    if platform.check_stat_file_by_retrials(stat_file + str(max_logs)):
+                        found = True
+                    retrials = retrials + 1
+                for i in range(max_logs-1,-1,-1):
+                    if platform.check_stat_file_by_retrials(stat_file + str(i)):
+                        last_log = i
+                    else:
+                        break
+                remote_logs = (self.script_name + ".out." + str(last_log), self.script_name + ".err." + str(last_log))
 
-                else:
-                    remote_logs = (self.script_name + ".out."+str(fail_count), self.script_name + ".err." + str(fail_count))
+            else:
+                remote_logs = (self.script_name + ".out."+str(fail_count), self.script_name + ".err." + str(fail_count))
 
-            except BaseException as e:
-                Log.printlog(
-                    "{0} \n Couldn't connect to the remote platform for {1} job err/out files. ".format(str(e), self.name), 6001)
+        except BaseException as e:
+            Log.printlog(
+                "{0} \n Couldn't connect to the remote platform for {1} job err/out files. ".format(str(e), self.name), 6001)
         out_exist = False
         err_exist = False
         retries = 3
         sleeptime = 0
         i = 0
-        no_continue = False
         try:
             while (not out_exist and not err_exist) and i < retries:
                 try:
@@ -993,7 +1005,7 @@ class Job(object):
                     err_exist = platform.check_file_exists(
                         remote_logs[1], False)
                 except IOError as e:
-                    err_exists = False
+                    err_exist = False
                 if not out_exist or not err_exist:
                     sleeptime = sleeptime + 5
                     i = i + 1
@@ -1010,7 +1022,6 @@ class Job(object):
                     return
             if copy_remote_logs:
                 l_log = copy.deepcopy(local_logs)
-                r_log = copy.deepcopy(remote_logs)
                 # unifying names for log files
                 if remote_logs != local_logs:
                     if self.wrapper_type == "vertical": # internal_Retrial mechanism
@@ -1209,7 +1220,7 @@ class Job(object):
             else:
                 self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = copy.copy(self.fail_count),job_id=self.id)
             if self.wrapper_type == "vertical":
-                max_logs = int(as_conf.get_retrials())
+                max_logs = int(self.retrials)
                 for i in range(0,max_logs):
                     self.inc_fail_count()
             else:
