@@ -519,7 +519,7 @@ class Job(object):
                                                                                           error_message_type), 7014)
 
         for line in script_file:
-            if "#!" not in line:
+            if line[:2] != "#!":
                 script += line
             else:
                 found_hashbang = True
@@ -527,7 +527,7 @@ class Job(object):
                 if "bash" in line:
                     if self.type != Type.BASH:
                         raise AutosubmitCritical(
-                            "Extended {2} script: script {0} seems BASH but job {1} isn't\n".format(script_name,
+                            "Extended {2} script: script {0} seems Bash but job {1} isn't\n".format(script_name,
                                                                                                     self.script_name,
                                                                                                     error_message_type),
                             7011)
@@ -547,13 +547,13 @@ class Job(object):
                             7011)
                 else:
                     raise AutosubmitCritical(
-                        "Extended {2} script: couldn't figure out script {0} type ".format(script_name,
+                        "Extended {2} script: couldn't figure out script {0} type\n".format(script_name,
                                                                                            self.script_name,
                                                                                            error_message_type), 7011)
 
         if not found_hashbang:
             raise AutosubmitCritical(
-                "Extended {2} script: couldn't figure out script {0} type ".format(script_name,
+                "Extended {2} script: couldn't figure out script {0} type\n".format(script_name,
                                                                                    self.script_name,
                                                                                    error_message_type), 7011)
 
