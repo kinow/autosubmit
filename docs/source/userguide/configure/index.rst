@@ -147,6 +147,10 @@ There are also other, less used features that you can use:
 
 * QUEUE: queue to add the job to. If not specified, uses PLATFORM default.
 
+* EXTENDED_HEADER_PATH: specify the path relative to the project folder where the extension to the autosubmit's header is
+
+* EXTENDED_TAILER_PATH: specify the path relative to the project folder where the extension to the autosubmit's tailer is
+
 How to configure email notifications
 ------------------------------------
 
