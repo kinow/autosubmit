@@ -267,7 +267,7 @@ class TestJob(TestCase):
             # we will test the substitution on the header, tailer, and in both
             for extended_position in ["header", "tailer", "header tailer", "neither"]:
                 # we will test every type of the extended script. It should fail in all but the correct script type
-                for extended_type in ["Bash", "Python", "Rscript", "Bad"]:
+                for extended_type in ["Bash", "Python", "Rscript", "Bad1", "Bad2", "FileNotFound"]:
                     with tempfile.TemporaryDirectory() as temp_dir:
                         BasicConfig.LOCAL_ROOT_DIR = str(temp_dir)
                         Path(temp_dir, expid).mkdir()
@@ -305,17 +305,27 @@ class TestJob(TestCase):
                                                                 {header_content}
                                                                 ''')
                                 header_file_name = "header.R"
-                            else:  # a badly formed script
+                            elif extended_type == "Bad1":
                                 header_content = 'this is a script without #!'
                                 full_header_content = dedent(f'''\
                                                                 {header_content}
                                                                 ''')
-                                header_file_name = "header.bad"
+                                header_file_name = "header.bad1"
+                            elif extended_type == "Bad2":
+                                header_content = 'this is a header with a bath executable'
+                                full_header_content = dedent(f'''\
+                                                                #!/does/not/exist
+                                                                {header_content}
+                                                                ''')
+                                header_file_name = "header.bad2"
+                            else:  # file not found case
+                                header_file_name = "non_existent_header"
 
-                            # build the header script if we need to
-                            with open(Path(temp_dir, f'{expid}/proj/project_files/{header_file_name}'), 'w+') as header:
-                                header.write(full_header_content)
-                                header.flush()
+                            if extended_type != "FileNotFound":
+                                # build the header script if we need to
+                                with open(Path(temp_dir, f'{expid}/proj/project_files/{header_file_name}'), 'w+') as header:
+                                    header.write(full_header_content)
+                                    header.flush()
 
                         if "tailer" in extended_position:
                             if extended_type == "Bash":
@@ -339,17 +349,27 @@ class TestJob(TestCase):
                                                                 {tailer_content}
                                                                 ''')
                                 tailer_file_name = "tailer.R"
-                            else:  # a badly formed script
+                            elif extended_type == "Bad1":
                                 tailer_content = 'this is a script without #!'
                                 full_tailer_content = dedent(f'''\
                                                                 {tailer_content}
                                                                 ''')
-                                tailer_file_name = "tailer.bad"
+                                tailer_file_name = "tailer.bad1"
+                            elif extended_type == "Bad2":
+                                tailer_content = 'this is a tailer with a bath executable'
+                                full_tailer_content = dedent(f'''\
+                                                                #!/does/not/exist
+                                                                {tailer_content}
+                                                                ''')
+                                tailer_file_name = "tailer.bad2"
+                            else:  # file not found case
+                                tailer_file_name = "non_existent_tailer"
 
-                            # build the tailer script if we need to
-                            with open(Path(temp_dir, f'{expid}/proj/project_files/{tailer_file_name}'), 'w+') as tailer:
-                                tailer.write(full_tailer_content)
-                                tailer.flush()
+                            if extended_type != "FileNotFound":
+                                # build the tailer script if we need to
+                                with open(Path(temp_dir, f'{expid}/proj/project_files/{tailer_file_name}'), 'w+') as tailer:
+                                    tailer.write(full_tailer_content)
+                                    tailer.flush()
 
                         # configuration file
 
@@ -427,7 +447,6 @@ class TestJob(TestCase):
 
                         # assert
                         if extended_position != "neither":
-                            # we have either a tailer or header
                             if extended_type == script_type:
                                 # load the parameters
                                 job.check_script(config, parameters)
@@ -439,31 +458,41 @@ class TestJob(TestCase):
                                         self.assertTrue(header_content in full_script)
                                     if "tailer" in extended_position:
                                         self.assertTrue(tailer_content in full_script)
-                            else:  # the extended script is not the same as the host
-                                if extended_type == "Bad":  # we check if a script without hash bang fails
-                                    with self.assertRaises(AutosubmitCritical) as context:
-                                        job.check_script(config, parameters)
-                                    self.assertEqual(context.exception.code, 7011)
-                                    if extended_position == "header tailer" or extended_position == "header":
-                                        self.assertEqual(context.exception.message,
-                                                         f"Extended header script: couldn't figure out script {header_file_name} type\n")
-                                    else:
-                                        self.assertEqual(context.exception.message,
-                                                         f"Extended tailer script: couldn't figure out script {tailer_file_name} type\n")
-                                else:  # if the script is properly done
-                                    # Asserts that an exception is raised if there is a mismatch between job and extension types
-                                    with self.assertRaises(AutosubmitCritical) as context:
-                                        job.check_script(config, parameters)
-                                    self.assertEqual(context.exception.code, 7011)
-                                    # if we have both header and tailer, it will fail at the header first
-                                    if extended_position == "header tailer" or extended_position == "header":
-                                        self.assertEqual(context.exception.message,
-                                                         f"Extended header script: script {header_file_name} seems "
-                                                         f"{extended_type} but job zzyy_A.cmd isn't\n")
-                                    else:  # extended_position == "tailer"
-                                        self.assertEqual(context.exception.message,
-                                                         f"Extended tailer script: script {tailer_file_name} seems "
-                                                         f"{extended_type} but job zzyy_A.cmd isn't\n")
+                            elif extended_type == "FileNotFound":
+                                with self.assertRaises(AutosubmitCritical) as context:
+                                    job.check_script(config, parameters)
+                                self.assertEqual(context.exception.code, 7014)
+                                if extended_position == "header tailer" or extended_position == "header":
+                                    self.assertEqual(context.exception.message,
+                                                 f"Extended header script: failed to fetch [Errno 2] No such file or directory: '{temp_dir}/{expid}/proj/project_files/{header_file_name}' \n")
+                                else:  # extended_position == "tailer":
+                                    self.assertEqual(context.exception.message,
+                                                     f"Extended tailer script: failed to fetch [Errno 2] No such file or directory: '{temp_dir}/{expid}/proj/project_files/{tailer_file_name}' \n")
+                            elif extended_type == "Bad1" or extended_type == "Bad2":
+                                # we check if a script without hash bang fails or with a bad executable
+                                with self.assertRaises(AutosubmitCritical) as context:
+                                    job.check_script(config, parameters)
+                                self.assertEqual(context.exception.code, 7011)
+                                if extended_position == "header tailer" or extended_position == "header":
+                                    self.assertEqual(context.exception.message,
+                                                     f"Extended header script: couldn't figure out script {header_file_name} type\n")
+                                else:
+                                    self.assertEqual(context.exception.message,
+                                                     f"Extended tailer script: couldn't figure out script {tailer_file_name} type\n")
+                            else:  # extended_type != script_type
+                                # Asserts that an exception is raised if there is a mismatch between job and extension types
+                                with self.assertRaises(AutosubmitCritical) as context:
+                                    job.check_script(config, parameters)
+                                self.assertEqual(context.exception.code, 7011)
+                                # if we have both header and tailer, it will fail at the header first
+                                if extended_position == "header tailer" or extended_position == "header":
+                                    self.assertEqual(context.exception.message,
+                                                     f"Extended header script: script {header_file_name} seems "
+                                                     f"{extended_type} but job zzyy_A.cmd isn't\n")
+                                else:  # extended_position == "tailer"
+                                    self.assertEqual(context.exception.message,
+                                                     f"Extended tailer script: script {tailer_file_name} seems "
+                                                     f"{extended_type} but job zzyy_A.cmd isn't\n")
                         else:  # we don't have either a tailer or header
                             # load the parameters
                             job.check_script(config, parameters)
