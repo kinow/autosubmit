@@ -1150,6 +1150,7 @@ class ParamikoPlatform(Platform):
         """
         return 'nohup kill -0 {0} > /dev/null 2>&1; echo $?'.format(job_id)
 
+
     def get_submitted_job_id(self, output, x11 = False):
         """
         Parses submit command output to extract job id
@@ -1170,68 +1171,73 @@ class ParamikoPlatform(Platform):
         :return: header to use
         :rtype: str
         """
-        if str(job.processors) == '1':
-            header = self.header.SERIAL
-        else:
-            header = self.header.PARALLEL
-        str_datetime = date2str(datetime.datetime.now(), 'S')
         if str(job.wrapper_type).lower() != "vertical":
             out_filename = "{0}.cmd.out.{1}".format(job.name,job.fail_count)
             err_filename = "{0}.cmd.err.{1}".format(job.name,job.fail_count)
         else:
             out_filename = "{0}.cmd.out".format(job.name)
             err_filename = "{0}.cmd.err".format(job.name)
+
+        if len(job.het) > 0:
+            header = self.header.calculate_het_header(job.het)
+        elif str(job.processors) == '1':
+            header = self.header.SERIAL
+        else:
+            header = self.header.PARALLEL
+
+        str_datetime = date2str(datetime.datetime.now(), 'S')
+
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
-
-        if hasattr(self.header, 'get_queue_directive'):
-            header = header.replace(
-                '%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
-        if hasattr(self.header, 'get_proccesors_directive'):
-            header = header.replace(
-                '%NUMPROC_DIRECTIVE%', self.header.get_proccesors_directive(job))
-        if hasattr(self.header, 'get_partition_directive'):
-            header = header.replace(
-                '%PARTITION_DIRECTIVE%', self.header.get_partition_directive(job))
-        if hasattr(self.header, 'get_tasks_per_node'):
-            header = header.replace(
-                '%TASKS_PER_NODE_DIRECTIVE%', self.header.get_tasks_per_node(job))
-        if hasattr(self.header, 'get_threads_per_task'):
-            header = header.replace(
-                '%THREADS_PER_TASK_DIRECTIVE%', self.header.get_threads_per_task(job))
-        if job.x11 == "true":
-            header = header.replace(
-                '%X11%', "SBATCH --x11=batch")
-        else:
-            header = header.replace(
-                '%X11%', "")
-        if hasattr(self.header, 'get_scratch_free_space'):
-            header = header.replace(
-                '%SCRATCH_FREE_SPACE_DIRECTIVE%', self.header.get_scratch_free_space(job))
-        if hasattr(self.header, 'get_custom_directives'):
-            header = header.replace(
-                '%CUSTOM_DIRECTIVES%', self.header.get_custom_directives(job))
-        if hasattr(self.header, 'get_exclusivity'):
-            header = header.replace(
-                '%EXCLUSIVITY_DIRECTIVE%', self.header.get_exclusivity(job))
-        if hasattr(self.header, 'get_account_directive'):
-            header = header.replace(
-                '%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))
-        if hasattr(self.header, 'get_nodes_directive'):
-            header = header.replace(
-                '%NODES_DIRECTIVE%', self.header.get_nodes_directive(job))
-        if hasattr(self.header, 'get_reservation_directive'):
-            header = header.replace(
-                '%RESERVATION_DIRECTIVE%', self.header.get_reservation_directive(job))
-        if hasattr(self.header, 'get_memory_directive'):
-            header = header.replace(
-                '%MEMORY_DIRECTIVE%', self.header.get_memory_directive(job))
-        if hasattr(self.header, 'get_memory_per_task_directive'):
-            header = header.replace(
-                '%MEMORY_PER_TASK_DIRECTIVE%', self.header.get_memory_per_task_directive(job))
-        if hasattr(self.header, 'get_hyperthreading_directive'):
-            header = header.replace(
-                '%HYPERTHREADING_DIRECTIVE%', self.header.get_hyperthreading_directive(job))
+        if len(job.het) > 0:
+            if hasattr(self.header, 'get_queue_directive'):
+                header = header.replace(
+                    '%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
+            if hasattr(self.header, 'get_proccesors_directive'):
+                header = header.replace(
+                    '%NUMPROC_DIRECTIVE%', self.header.get_proccesors_directive(job))
+            if hasattr(self.header, 'get_partition_directive'):
+                header = header.replace(
+                    '%PARTITION_DIRECTIVE%', self.header.get_partition_directive(job))
+            if hasattr(self.header, 'get_tasks_per_node'):
+                header = header.replace(
+                    '%TASKS_PER_NODE_DIRECTIVE%', self.header.get_tasks_per_node(job))
+            if hasattr(self.header, 'get_threads_per_task'):
+                header = header.replace(
+                    '%THREADS_PER_TASK_DIRECTIVE%', self.header.get_threads_per_task(job))
+            if job.x11 == "true":
+                header = header.replace(
+                    '%X11%', "SBATCH --x11=batch")
+            else:
+                header = header.replace(
+                    '%X11%', "")
+            if hasattr(self.header, 'get_scratch_free_space'):
+                header = header.replace(
+                    '%SCRATCH_FREE_SPACE_DIRECTIVE%', self.header.get_scratch_free_space(job))
+            if hasattr(self.header, 'get_custom_directives'):
+                header = header.replace(
+                    '%CUSTOM_DIRECTIVES%', self.header.get_custom_directives(job))
+            if hasattr(self.header, 'get_exclusivity'):
+                header = header.replace(
+                    '%EXCLUSIVITY_DIRECTIVE%', self.header.get_exclusivity(job))
+            if hasattr(self.header, 'get_account_directive'):
+                header = header.replace(
+                    '%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))
+            if hasattr(self.header, 'get_nodes_directive'):
+                header = header.replace(
+                    '%NODES_DIRECTIVE%', self.header.get_nodes_directive(job))
+            if hasattr(self.header, 'get_reservation_directive'):
+                header = header.replace(
+                    '%RESERVATION_DIRECTIVE%', self.header.get_reservation_directive(job))
+            if hasattr(self.header, 'get_memory_directive'):
+                header = header.replace(
+                    '%MEMORY_DIRECTIVE%', self.header.get_memory_directive(job))
+            if hasattr(self.header, 'get_memory_per_task_directive'):
+                header = header.replace(
+                    '%MEMORY_PER_TASK_DIRECTIVE%', self.header.get_memory_per_task_directive(job))
+            if hasattr(self.header, 'get_hyperthreading_directive'):
+                header = header.replace(
+                    '%HYPERTHREADING_DIRECTIVE%', self.header.get_hyperthreading_directive(job))
         return header
     def parse_time(self,wallclock):
         # noinspection Annotator
