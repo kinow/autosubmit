@@ -3456,7 +3456,7 @@ class Autosubmit:
                 if os.path.exists(template_file_path):
                     Log.info(
                         "Gathering the selected parameters (all keys are on upper_case)")
-                    template_file = open(template_file_path, 'rb')
+                    template_file = open(template_file_path, 'r')
                     template_content = template_file.read()
                     for key, value in parameters.items():
                         template_content = re.sub(
@@ -3474,7 +3474,7 @@ class Autosubmit:
                     report = '{0}_report_{1}.txt'.format(
                         expid, datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
                     open(os.path.join(tmp_path, report),
-                         'wb').write(template_content)
+                         'w').write(template_content)
                     os.chmod(os.path.join(tmp_path, report), 0o755)
                     template_file.close()
                     Log.result("Report {0} has been created on {1}".format(
