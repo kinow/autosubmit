@@ -225,6 +225,9 @@ class Job(object):
         self.current_checkpoint_step = 0
         self.max_checkpoint_step = 0
         self.reservation= ""
+        # hetjobs
+        self.het = dict()
+
 
     @property
     @autosubmit_parameter(name='tasktype')
@@ -1278,55 +1281,22 @@ class Job(object):
         parameters['CURRENT_LOGDIR'] = job_platform.get_files_path()
         return parameters
 
-    def update_platform_associated_parameters(self,as_conf, parameters, job_platform, chunk):
-        self.executable = str(as_conf.jobs_data[self.section].get("EXECUTABLE", as_conf.platforms_data.get(job_platform.name,{}).get("EXECUTABLE","")))
-        self.total_jobs = int(as_conf.jobs_data[self.section].get("TOTALJOBS", job_platform.total_jobs))
-        self.max_waiting_jobs = int(as_conf.jobs_data[self.section].get("MAXWAITINGJOBS", job_platform.max_waiting_jobs))
-        self.processors = as_conf.jobs_data[self.section].get("PROCESSORS",as_conf.platforms_data.get(job_platform.name,{}).get("PROCESSORS","1"))
-        self.nodes = as_conf.jobs_data[self.section].get("NODES",as_conf.platforms_data.get(job_platform.name,{}).get("NODES",""))
-        self.exclusive = str(as_conf.jobs_data[self.section].get("EXCLUSIVE",as_conf.platforms_data.get(job_platform.name,{}).get("EXCLUSIVE",False)))
-        self.threads = as_conf.jobs_data[self.section].get("THREADS",as_conf.platforms_data.get(job_platform.name,{}).get("THREADS","1"))
-        self.tasks = as_conf.jobs_data[self.section].get("TASKS",as_conf.platforms_data.get(job_platform.name,{}).get("TASKS","1"))
-        self.reservation = str(as_conf.jobs_data[self.section].get("RESERVATION",as_conf.platforms_data.get(job_platform.name, {}).get("RESERVATION", "")))
-        self.hyperthreading = str(as_conf.jobs_data[self.section].get("HYPERTHREADING",as_conf.platforms_data.get(job_platform.name,{}).get("HYPERTHREADING","none")))
-        # Heapjobs, check if processors,nodes,threads or tasks are a list
-        if type(self.processors) is list:
-            # Sum processors, each element can be a str or int
-            self.processors = str(sum([int(x) for x in self.processors]))
-        else:
-            self.processors = str(self.processors)
-        if type(self.nodes) is list:
-            # Sum nodes, each element can be a str or int
-            self.nodes = str(sum([int(x) for x in self.nodes]))
-        else:
-            self.nodes = str(self.nodes)
-        if type(self.threads) is list:
-            # Get the max threads, each element can be a str or int
-            self.threads = str(max([int(x) for x in self.threads]))
-        else:
-            self.threads = str(self.threads)
-        if type(self.tasks) is list:
-            # Get the max tasks, each element can be a str or int
-            self.tasks = str(max([int(x) for x in self.tasks]))
-        else:
-            self.tasks = str(self.tasks)
+    def process_scheduler_parameters(self,as_conf,parameters,job_platform,chunk):
+        """
+        Parsers yaml data stored in the dictionary
+        and calculates the components of the heterogeneous job if any
+        :return:
+        """
 
-        if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 and int(self.processors) > int(job_platform.processors_per_node):
-            self.tasks = job_platform.processors_per_node
-        self.memory = str(as_conf.jobs_data[self.section].get("MEMORY",as_conf.platforms_data.get(job_platform.name,{}).get("MEMORY","")))
-        self.memory_per_task = str(as_conf.jobs_data[self.section].get("MEMORY_PER_TASK",as_conf.platforms_data.get(job_platform.name,{}).get("MEMORY_PER_TASK","")))
-        # These are to activate serial platform if neccesary
-        self.queue = self.queue
-        self.partition = self.partition
-        self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK",as_conf.platforms_data.get(self.platform_name,{}).get("MAX_WALLCLOCK",None))
-        if self.wallclock is None and job_platform.type not in ['ps',"local","PS","LOCAL"]:
+        if self.wallclock is None and job_platform.type not in ['ps', "local", "PS", "LOCAL"]:
             self.wallclock = "01:59"
-        elif self.wallclock is None and job_platform.type in ['ps','local',"PS","LOCAL"]:
+        elif self.wallclock is None and job_platform.type in ['ps', 'local', "PS", "LOCAL"]:
             self.wallclock = "00:00"
         # Increasing according to chunk
         self.wallclock = increase_wallclock_by_chunk(
             self.wallclock, self.wchunkinc, chunk)
-        self.scratch_free_space = int(as_conf.jobs_data[self.section].get("SCRATCH_FREE_SPACE",as_conf.platforms_data.get(job_platform.name,{}).get("SCRATCH_FREE_SPACE",0)))
+        if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 and int(self.processors) > int(job_platform.processors_per_node):
+            self.tasks = job_platform.processors_per_node
         try:
             self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","")
             if type(self.custom_directives) is list:
@@ -1347,6 +1317,86 @@ class Job(object):
                 self.custom_directives = []
         except BaseException as e:
             raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({self.custom_directives}) for job {self.section}",7014,str(e))
+        self.het = dict()
+        self.het['PROCESSORS'] = list()
+        self.het['NODES'] = list()
+        self.het['NUMTHREADS'] = list()
+        self.het['TASKS'] = list()
+        self.het['MEMORY'] = list()
+        self.het['MEMORY_PER_TASK'] = list()
+        self.het['RESERVATION'] = list()
+        self.het['EXCLUSIVE'] = list()
+        self.het['HYPERTHREADING'] = list()
+        self.het['EXECUTABLE'] = list()
+        self.het['CURRENT_QUEUE'] = list()
+        self.het['PARTITION'] = list()
+        self.het['CURRENT_PROJ'] = list()
+        self.het['CUSTOM_DIRECTIVES'] = list()
+        if type(self.processors) is list:
+            # Sum processors, each element can be a str or int
+            self.processors = str(sum([int(x) for x in self.processors]))
+            # add it to heap dict as it were originally
+            self.het['PROCESSORS'] = list()
+            for x in self.processors:
+                self.het['PROCESSORS'].append(str(x))
+        else:
+            self.processors = str(self.processors)
+        if type(self.nodes) is list:
+            # Sum nodes, each element can be a str or int
+            self.nodes = str(sum([int(x) for x in self.nodes]))
+            # add it to heap dict as it were originally
+            self.het['NODES'] = list()
+            for x in self.nodes:
+                self.het['NODES'].append(str(x))
+        else:
+            self.nodes = str(self.nodes)
+        self.het['HETSIZE'] = max(len(self.processors), len(self.nodes))
+        if type(self.threads) is list:
+            # Get the max threads, each element can be a str or int
+            self.threads = str(max([int(x) for x in self.threads]))
+            self.het['NUMTHREADS'] = list()
+            if len(self.threads) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['NUMTHREADS'].append(self.threads)
+            else:
+                for x in self.threads:
+                    self.het['NUMTHREADS'].append(str(x))
+        else:
+            self.threads = str(self.threads)
+        if type(self.tasks) is list:
+            # Get the max tasks, each element can be a str or int
+            self.tasks = str(max([int(x) for x in self.tasks]))
+            self.het['TASKS'] = list()
+            if len(self.tasks) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['TASKS'].append(self.tasks)
+            else:
+                for x in self.tasks:
+                    self.het['TASKS'].append(str(x))
+        else:
+            self.tasks = str(self.tasks)
+
+    def update_platform_associated_parameters(self,as_conf, parameters, job_platform, chunk):
+        self.executable = as_conf.jobs_data[self.section].get("EXECUTABLE", as_conf.platforms_data.get(job_platform.name,{}).get("EXECUTABLE",""))
+        self.total_jobs = as_conf.jobs_data[self.section].get("TOTALJOBS", job_platform.total_jobs)
+        self.max_waiting_jobs = as_conf.jobs_data[self.section].get("MAXWAITINGJOBS", job_platform.max_waiting_jobs)
+        self.processors = as_conf.jobs_data[self.section].get("PROCESSORS",as_conf.platforms_data.get(job_platform.name,{}).get("PROCESSORS","1"))
+        self.nodes = as_conf.jobs_data[self.section].get("NODES",as_conf.platforms_data.get(job_platform.name,{}).get("NODES",""))
+        self.exclusive = as_conf.jobs_data[self.section].get("EXCLUSIVE",as_conf.platforms_data.get(job_platform.name,{}).get("EXCLUSIVE",False))
+        self.threads = as_conf.jobs_data[self.section].get("THREADS",as_conf.platforms_data.get(job_platform.name,{}).get("THREADS","1"))
+        self.tasks = as_conf.jobs_data[self.section].get("TASKS",as_conf.platforms_data.get(job_platform.name,{}).get("TASKS","1"))
+        self.reservation = as_conf.jobs_data[self.section].get("RESERVATION",as_conf.platforms_data.get(job_platform.name, {}).get("RESERVATION", ""))
+        self.hyperthreading = as_conf.jobs_data[self.section].get("HYPERTHREADING",as_conf.platforms_data.get(job_platform.name,{}).get("HYPERTHREADING","none"))
+        self.queue = self.queue
+        self.partition = self.partition
+        self.scratch_free_space = int(as_conf.jobs_data[self.section].get("SCRATCH_FREE_SPACE",as_conf.platforms_data.get(job_platform.name,{}).get("SCRATCH_FREE_SPACE",0)))
+
+        self.memory = as_conf.jobs_data[self.section].get("MEMORY",as_conf.platforms_data.get(job_platform.name,{}).get("MEMORY",""))
+        self.memory_per_task = as_conf.jobs_data[self.section].get("MEMORY_PER_TASK",as_conf.platforms_data.get(job_platform.name,{}).get("MEMORY_PER_TASK",""))
+        self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK",
+                                                             as_conf.platforms_data.get(self.platform_name, {}).get(
+                                                                 "MAX_WALLCLOCK", None))
+        self.process_scheduler_parameters(as_conf,parameters,job_platform,chunk)
         parameters['NUMPROC'] = self.processors
         parameters['PROCESSORS'] = self.processors
         parameters['MEMORY'] = self.memory
