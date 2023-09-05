@@ -265,6 +265,8 @@ class TestJob(TestCase):
                     Path(temp_dir, path).mkdir()
                 with open(Path(temp_dir, f'{expid}/conf/minimal.yml'), 'w+') as minimal:
                     minimal.write(dedent(f'''\
+                    CONFIG:
+                      RETRIALS: 0 
                     DEFAULT:
                       EXPID: {expid}
                       HPCARCH: test
