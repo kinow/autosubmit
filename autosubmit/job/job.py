@@ -1301,7 +1301,7 @@ class Job(object):
         self.het['HETSIZE'] = max(len(self.processors), len(self.nodes))
         self.het['PROCESSORS'] = list()
         self.het['NODES'] = list()
-        self.het['NUMTHREADS'] = list()
+        self.het['NUMTHREADS'] = self.het['THREADS'] = list()
         self.het['TASKS'] = list()
         self.het['MEMORY'] = list()
         self.het['MEMORY_PER_TASK'] = list()
@@ -1314,26 +1314,24 @@ class Job(object):
         self.het['CURRENT_PROJ'] = list()
         self.het['CUSTOM_DIRECTIVES'] = list()
         if type(self.processors) is list:
-            # Sum processors, each element can be a str or int
-            self.processors = str(sum([int(x) for x in self.processors]))
-            # add it to heap dict as it were originally
             self.het['PROCESSORS'] = list()
             for x in self.processors:
                 self.het['PROCESSORS'].append(str(x))
+            # Sum processors, each element can be a str or int
+            self.processors = str(sum([int(x) for x in self.processors]))
         else:
             self.processors = str(self.processors)
         if type(self.nodes) is list:
-            # Sum nodes, each element can be a str or int
-            self.nodes = str(sum([int(x) for x in self.nodes]))
             # add it to heap dict as it were originally
             self.het['NODES'] = list()
             for x in self.nodes:
                 self.het['NODES'].append(str(x))
+            # Sum nodes, each element can be a str or int
+            self.nodes = str(sum([int(x) for x in self.nodes]))
         else:
             self.nodes = str(self.nodes)
         if type(self.threads) is list:
             # Get the max threads, each element can be a str or int
-            self.threads = str(max([int(x) for x in self.threads]))
             self.het['NUMTHREADS'] = list()
             if len(self.threads) == 1:
                 for x in range(self.het['HETSIZE']):
@@ -1341,19 +1339,25 @@ class Job(object):
             else:
                 for x in self.threads:
                     self.het['NUMTHREADS'].append(str(x))
+
+            self.threads = str(max([int(x) for x in self.threads]))
+
         else:
             self.threads = str(self.threads)
         if type(self.tasks) is list:
             # Get the max tasks, each element can be a str or int
-            self.tasks = str(max([int(x) for x in self.tasks]))
             self.het['TASKS'] = list()
             if len(self.tasks) == 1:
                 if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 and int(
                         self.processors) > int(job_platform.processors_per_node):
                     self.tasks = job_platform.processors_per_node
-                for x in range(self.het['HETSIZE']):
-                    self.het['TASKS'].append(self.tasks)
-
+                for task in range(self.het['HETSIZE']):
+                    if int(self.tasks) <= 1 < int(job_platform.processors_per_node) and int(
+                            self.processors) > int(job_platform.processors_per_node):
+                        self.het['TASKS'].append(str(job_platform.processors_per_node))
+                    else:
+                        self.het['TASKS'].append(str(self.tasks))
+                self.tasks = str(max([int(x) for x in self.tasks]))
             else:
                 for task in self.tasks:
                     if int(task) <= 1 < int(job_platform.processors_per_node) and int(
@@ -1368,7 +1372,6 @@ class Job(object):
 
         if type(self.memory) is list:
             # Get the max memory, each element can be a str or int
-            self.memory = str(max([int(x) for x in self.memory]))
             self.het['MEMORY'] = list()
             if len(self.memory) == 1:
                 for x in range(self.het['HETSIZE']):
@@ -1376,23 +1379,25 @@ class Job(object):
             else:
                 for x in self.memory:
                     self.het['MEMORY'].append(str(x))
+            self.memory = str(max([int(x) for x in self.memory]))
         else:
             self.memory = str(self.memory)
         if type(self.memory_per_task) is list:
             # Get the max memory per task, each element can be a str or int
-            self.memory_per_task = str(max([int(x) for x in self.memory_per_task]))
             self.het['MEMORY_PER_TASK'] = list()
             if len(self.memory_per_task) == 1:
                 for x in range(self.het['HETSIZE']):
                     self.het['MEMORY_PER_TASK'].append(self.memory_per_task)
+
             else:
                 for x in self.memory_per_task:
                     self.het['MEMORY_PER_TASK'].append(str(x))
+            self.memory_per_task = str(max([int(x) for x in self.memory_per_task]))
+
         else:
             self.memory_per_task = str(self.memory_per_task)
         if type(self.reservation) is list:
             # Get the reservation name, each element can be a str
-            self.reservation = str(max([int(x) for x in self.reservation]))
             self.het['RESERVATION'] = list()
             if len(self.reservation) == 1:
                 for x in range(self.het['HETSIZE']):
@@ -1400,11 +1405,11 @@ class Job(object):
             else:
                 for x in self.reservation:
                     self.het['RESERVATION'].append(str(x))
+            self.reservation = str(self.het['RESERVATION'][0])
         else:
             self.reservation = str(self.reservation)
         if type(self.exclusive) is list:
             # Get the exclusive, each element can be only be bool
-            self.exclusive = max([int(x) for x in self.exclusive])
             self.het['EXCLUSIVE'] = list()
             if len(self.exclusive) == 1:
                 for x in range(self.het['HETSIZE']):
@@ -1412,11 +1417,11 @@ class Job(object):
             else:
                 for x in self.exclusive:
                     self.het['EXCLUSIVE'].append(x)
+            self.exclusive = self.het['EXCLUSIVE'][0]
         else:
             self.exclusive = self.exclusive
         if type(self.hyperthreading) is list:
             # Get the hyperthreading, each element can be only be bool
-            self.hyperthreading = max([int(x) for x in self.hyperthreading])
             self.het['HYPERTHREADING'] = list()
             if len(self.hyperthreading) == 1:
                 for x in range(self.het['HETSIZE']):
@@ -1424,11 +1429,11 @@ class Job(object):
             else:
                 for x in self.hyperthreading:
                     self.het['HYPERTHREADING'].append(x)
+            self.exclusive = self.het['HYPERTHREADING'][0]
         else:
             self.hyperthreading = self.hyperthreading
         if type(self.executable) is list:
             # Get the executable, each element can be only be bool
-            self.executable = max([int(x) for x in self.executable])
             self.het['EXECUTABLE'] = list()
             if len(self.executable) == 1:
                 for x in range(self.het['HETSIZE']):
@@ -1436,11 +1441,11 @@ class Job(object):
             else:
                 for x in self.executable:
                     self.het['EXECUTABLE'].append(x)
+            self.executable = str(self.het['EXECUTABLE'][0])
         else:
             self.executable = self.executable
         if type(self.queue) is list:
             # Get the queue, each element can be only be bool
-            self.queue = max([int(x) for x in self.queue])
             self.het['CURRENT_QUEUE'] = list()
             if len(self.queue) == 1:
                 for x in range(self.het['HETSIZE']):
@@ -1448,11 +1453,11 @@ class Job(object):
             else:
                 for x in self.queue:
                     self.het['CURRENT_QUEUE'].append(x)
+            self.queue = self.het['CURRENT_QUEUE'][0]
         else:
             self.queue = self.queue
         if type(self.partition) is list:
             # Get the partition, each element can be only be bool
-            self.partition = max([int(x) for x in self.partition])
             self.het['PARTITION'] = list()
             if len(self.partition) == 1:
                 for x in range(self.het['HETSIZE']):
@@ -1460,36 +1465,43 @@ class Job(object):
             else:
                 for x in self.partition:
                     self.het['PARTITION'].append(x)
+            self.partition = self.het['PARTITION'][0]
         else:
             self.partition = self.partition
-        if type(self.project) is list:
-            # Get the project, each element can be only be bool
-            self.project = max([int(x) for x in self.project])
-            self.het['CURRENT_PROJ'] = list()
-            if len(self.project) == 1:
-                for x in range(self.het['HETSIZE']):
-                    self.het['CURRENT_PROJ'].append(self.project)
-            else:
-                for x in self.project:
-                    self.het['CURRENT_PROJ'].append(x)
-        else:
-            self.project = self.project
-        if type(self.custom_directives) is list:
+
+
 # Get the custom_directives, each element can be only be bool
-            self.custom_directives = max([int(x) for x in self.custom_directives])
-            self.het['CUSTOM_DIRECTIVES'] = list()
-            if len(self.custom_directives) == 1:
-                for x in range(self.het['HETSIZE']):
-                    self.het['CUSTOM_DIRECTIVES'].append(self.custom_directives)
-            else:
-                for x in self.custom_directives:
-                    self.het['CUSTOM_DIRECTIVES'].append(x)
-        else:
-            self.custom_directives = self.custom_directives
+#         self.het['CUSTOM_DIRECTIVES'] = list()
+#         if len(self.custom_directives) == 1:
+#             for x in range(self.het['HETSIZE']):
+#                 self.het['CUSTOM_DIRECTIVES'].append(self.custom_directives)
+#         else:
+#             for x in self.custom_directives:
+#                 self.het['CUSTOM_DIRECTIVES'].append(x)
+#         try:
+#             for custom_directives in self.het['CUSTOM_DIRECTIVES']:
+#                 if type(custom_directives) is list:
+#                     custom_directives = json.dumps(custom_directives)
+#                 custom_directives = custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+#                 if custom_directives == '':
+#                     if job_platform.custom_directives is None:
+#                         job_platform.custom_directives = ''
+#                     custom_directives = job_platform.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+#                 if custom_directives != '':
+#                     if custom_directives[0] != "\"":
+#                         custom_directives = "\""+custom_directives
+#                     if custom_directives[-1] != "\"":
+#                         custom_directives = custom_directives+"\""
+#                     custom_directives = "[" + custom_directives + "]"
+#                     custom_directives = json.loads(custom_directives)
+#                 else:
+#                     custom_directives = []
+#         except BaseException as e:
+#             raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({self.custom_directives}) for job {self.section}",7014,str(e))
+#         self.custom_directives = self.het['CUSTOM_DIRECTIVES'][0]
+        # Ignore the heterogeneous parameters if the cores or nodes are no specefied as a list
         if self.het['HETSIZE'] == 1:
             self.het = dict()
-
-
         if self.wallclock is None and job_platform.type not in ['ps', "local", "PS", "LOCAL"]:
             self.wallclock = "01:59"
         elif self.wallclock is None and job_platform.type in ['ps', 'local', "PS", "LOCAL"]:
@@ -1497,26 +1509,7 @@ class Job(object):
         # Increasing according to chunk
         self.wallclock = increase_wallclock_by_chunk(
             self.wallclock, self.wchunkinc, chunk)
-        try:
-            self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","")
-            if type(self.custom_directives) is list:
-                self.custom_directives = json.dumps(self.custom_directives)
-            self.custom_directives = self.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
-            if self.custom_directives == '':
-                if job_platform.custom_directives is None:
-                    job_platform.custom_directives = ''
-                self.custom_directives = job_platform.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
-            if self.custom_directives != '':
-                if self.custom_directives[0] != "\"":
-                    self.custom_directives = "\""+self.custom_directives
-                if self.custom_directives[-1] != "\"":
-                    self.custom_directives = self.custom_directives+"\""
-                self.custom_directives = "[" + self.custom_directives + "]"
-                self.custom_directives = json.loads(self.custom_directives)
-            else:
-                self.custom_directives = []
-        except BaseException as e:
-            raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({self.custom_directives}) for job {self.section}",7014,str(e))
+
     def update_platform_associated_parameters(self,as_conf, parameters, job_platform, chunk):
         self.ec_queue = str(as_conf.jobs_data[self.section].get("EC_QUEUE", as_conf.platforms_data.get(job_platform.name,{}).get("EC_QUEUE","")))
 
@@ -1542,30 +1535,31 @@ class Job(object):
         self.process_scheduler_parameters(as_conf,parameters,job_platform,chunk)
         if self.het['HETSIZE'] > 1:
             for name, components_value in self.het.items():
-                for indx,component in enumerate(components_value):
-                    if indx == 0:
-                        parameters[name.upper()] = component
-                    parameters[f'{name.upper()}_{indx}'] = component
-        else:
-            parameters['NUMPROC'] = self.processors
-            parameters['PROCESSORS'] = self.processors
-            parameters['MEMORY'] = self.memory
-            parameters['MEMORY_PER_TASK'] = self.memory_per_task
-            parameters['NUMTHREADS'] = self.threads
-            parameters['THREADS'] = self.threads
-            parameters['CPUS_PER_TASK'] = self.threads
-            parameters['NUMTASK'] = self._tasks
-            parameters['TASKS'] = self._tasks
-            parameters['NODES'] = self.nodes
-            parameters['TASKS_PER_NODE'] = self._tasks
-            parameters['WALLCLOCK'] = self.wallclock
-            parameters['TASKTYPE'] = self.section
-            parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
-            parameters['CUSTOM_DIRECTIVES'] = self.custom_directives
-            parameters['HYPERTHREADING'] = self.hyperthreading
-            parameters['CURRENT_QUEUE'] = self.queue
-            parameters['RESERVATION'] = self.reservation
-            parameters['CURRENT_EC_QUEUE'] = self.ec_queue
+                if name != "HETSIZE":
+                    for indx,component in enumerate(components_value):
+                        if indx == 0:
+                            parameters[name.upper()] = component
+                        parameters[f'{name.upper()}_{indx}'] = component
+
+        parameters['NUMPROC'] = self.processors
+        parameters['PROCESSORS'] = self.processors
+        parameters['MEMORY'] = self.memory
+        parameters['MEMORY_PER_TASK'] = self.memory_per_task
+        parameters['NUMTHREADS'] = self.threads
+        parameters['THREADS'] = self.threads
+        parameters['CPUS_PER_TASK'] = self.threads
+        parameters['NUMTASK'] = self._tasks
+        parameters['TASKS'] = self._tasks
+        parameters['NODES'] = self.nodes
+        parameters['TASKS_PER_NODE'] = self._tasks
+        parameters['WALLCLOCK'] = self.wallclock
+        parameters['TASKTYPE'] = self.section
+        parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
+        parameters['CUSTOM_DIRECTIVES'] = self.custom_directives
+        parameters['HYPERTHREADING'] = self.hyperthreading
+        parameters['CURRENT_QUEUE'] = self.queue
+        parameters['RESERVATION'] = self.reservation
+        parameters['CURRENT_EC_QUEUE'] = self.ec_queue
 
         return parameters
 
