@@ -484,7 +484,7 @@ class SlurmPlatform(ParamikoPlatform):
         status = ""
         try:
             status = [x.split()[1] for x in output.splitlines()
-                      if x.split()[0] == str(job_id)]
+                      if x.split()[0][:len(job_id)] == str(job_id)]
         except BaseException as e:
             pass
         if len(status) == 0:
@@ -545,7 +545,7 @@ class SlurmPlatform(ParamikoPlatform):
         return 'sacct -n -X --jobs {1} -o "State"'.format(self.host, job_id)
 
     def get_checkAlljobs_cmd(self, jobs_id):
-        return "sacct -n -X --jobs  {1} -o jobid,State".format(self.host, jobs_id)
+        return "sacct -n -X --jobs {1} -o jobid,State".format(self.host, jobs_id)
     def get_estimated_queue_time_cmd(self, job_id):
         return f"scontrol -o show JobId {job_id} | grep -Po '(?<=EligibleTime=)[0-9-:T]*'"
 
