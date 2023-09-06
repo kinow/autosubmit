@@ -1287,37 +1287,7 @@ class Job(object):
         and calculates the components of the heterogeneous job if any
         :return:
         """
-
-        if self.wallclock is None and job_platform.type not in ['ps', "local", "PS", "LOCAL"]:
-            self.wallclock = "01:59"
-        elif self.wallclock is None and job_platform.type in ['ps', 'local', "PS", "LOCAL"]:
-            self.wallclock = "00:00"
-        # Increasing according to chunk
-        self.wallclock = increase_wallclock_by_chunk(
-            self.wallclock, self.wchunkinc, chunk)
-        if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 and int(self.processors) > int(job_platform.processors_per_node):
-            self.tasks = job_platform.processors_per_node
-        try:
-            self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","")
-            if type(self.custom_directives) is list:
-                self.custom_directives = json.dumps(self.custom_directives)
-            self.custom_directives = self.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
-            if self.custom_directives == '':
-                if job_platform.custom_directives is None:
-                    job_platform.custom_directives = ''
-                self.custom_directives = job_platform.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
-            if self.custom_directives != '':
-                if self.custom_directives[0] != "\"":
-                    self.custom_directives = "\""+self.custom_directives
-                if self.custom_directives[-1] != "\"":
-                    self.custom_directives = self.custom_directives+"\""
-                self.custom_directives = "[" + self.custom_directives + "]"
-                self.custom_directives = json.loads(self.custom_directives)
-            else:
-                self.custom_directives = []
-        except BaseException as e:
-            raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({self.custom_directives}) for job {self.section}",7014,str(e))
-        self.het = dict()
+        self.het['HETSIZE'] = max(len(self.processors), len(self.nodes))
         self.het['PROCESSORS'] = list()
         self.het['NODES'] = list()
         self.het['NUMTHREADS'] = list()
@@ -1350,7 +1320,6 @@ class Job(object):
                 self.het['NODES'].append(str(x))
         else:
             self.nodes = str(self.nodes)
-        self.het['HETSIZE'] = max(len(self.processors), len(self.nodes))
         if type(self.threads) is list:
             # Get the max threads, each element can be a str or int
             self.threads = str(max([int(x) for x in self.threads]))
@@ -1368,14 +1337,175 @@ class Job(object):
             self.tasks = str(max([int(x) for x in self.tasks]))
             self.het['TASKS'] = list()
             if len(self.tasks) == 1:
+                if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 and int(
+                        self.processors) > int(job_platform.processors_per_node):
+                    self.tasks = job_platform.processors_per_node
                 for x in range(self.het['HETSIZE']):
                     self.het['TASKS'].append(self.tasks)
+
             else:
-                for x in self.tasks:
-                    self.het['TASKS'].append(str(x))
+                for task in self.tasks:
+                    if int(task) <= 1 < int(job_platform.processors_per_node) and int(
+                            self.processors) > int(job_platform.processors_per_node):
+                        task = job_platform.processors_per_node
+                    self.het['TASKS'].append(str(task))
         else:
+            if int(self.tasks) <= 1 < int(job_platform.processors_per_node) and int(
+                    self.processors) > int(job_platform.processors_per_node):
+                self.tasks = job_platform.processors_per_node
             self.tasks = str(self.tasks)
 
+        if type(self.memory) is list:
+            # Get the max memory, each element can be a str or int
+            self.memory = str(max([int(x) for x in self.memory]))
+            self.het['MEMORY'] = list()
+            if len(self.memory) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['MEMORY'].append(self.memory)
+            else:
+                for x in self.memory:
+                    self.het['MEMORY'].append(str(x))
+        else:
+            self.memory = str(self.memory)
+        if type(self.memory_per_task) is list:
+            # Get the max memory per task, each element can be a str or int
+            self.memory_per_task = str(max([int(x) for x in self.memory_per_task]))
+            self.het['MEMORY_PER_TASK'] = list()
+            if len(self.memory_per_task) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['MEMORY_PER_TASK'].append(self.memory_per_task)
+            else:
+                for x in self.memory_per_task:
+                    self.het['MEMORY_PER_TASK'].append(str(x))
+        else:
+            self.memory_per_task = str(self.memory_per_task)
+        if type(self.reservation) is list:
+            # Get the reservation name, each element can be a str
+            self.reservation = str(max([int(x) for x in self.reservation]))
+            self.het['RESERVATION'] = list()
+            if len(self.reservation) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['RESERVATION'].append(self.reservation)
+            else:
+                for x in self.reservation:
+                    self.het['RESERVATION'].append(str(x))
+        else:
+            self.reservation = str(self.reservation)
+        if type(self.exclusive) is list:
+            # Get the exclusive, each element can be only be bool
+            self.exclusive = max([int(x) for x in self.exclusive])
+            self.het['EXCLUSIVE'] = list()
+            if len(self.exclusive) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['EXCLUSIVE'].append(self.exclusive)
+            else:
+                for x in self.exclusive:
+                    self.het['EXCLUSIVE'].append(x)
+        else:
+            self.exclusive = self.exclusive
+        if type(self.hyperthreading) is list:
+            # Get the hyperthreading, each element can be only be bool
+            self.hyperthreading = max([int(x) for x in self.hyperthreading])
+            self.het['HYPERTHREADING'] = list()
+            if len(self.hyperthreading) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['HYPERTHREADING'].append(self.hyperthreading)
+            else:
+                for x in self.hyperthreading:
+                    self.het['HYPERTHREADING'].append(x)
+        else:
+            self.hyperthreading = self.hyperthreading
+        if type(self.executable) is list:
+            # Get the executable, each element can be only be bool
+            self.executable = max([int(x) for x in self.executable])
+            self.het['EXECUTABLE'] = list()
+            if len(self.executable) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['EXECUTABLE'].append(self.executable)
+            else:
+                for x in self.executable:
+                    self.het['EXECUTABLE'].append(x)
+        else:
+            self.executable = self.executable
+        if type(self.queue) is list:
+            # Get the queue, each element can be only be bool
+            self.queue = max([int(x) for x in self.queue])
+            self.het['CURRENT_QUEUE'] = list()
+            if len(self.queue) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['CURRENT_QUEUE'].append(self.queue)
+            else:
+                for x in self.queue:
+                    self.het['CURRENT_QUEUE'].append(x)
+        else:
+            self.queue = self.queue
+        if type(self.partition) is list:
+            # Get the partition, each element can be only be bool
+            self.partition = max([int(x) for x in self.partition])
+            self.het['PARTITION'] = list()
+            if len(self.partition) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['PARTITION'].append(self.partition)
+            else:
+                for x in self.partition:
+                    self.het['PARTITION'].append(x)
+        else:
+            self.partition = self.partition
+        if type(self.project) is list:
+            # Get the project, each element can be only be bool
+            self.project = max([int(x) for x in self.project])
+            self.het['CURRENT_PROJ'] = list()
+            if len(self.project) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['CURRENT_PROJ'].append(self.project)
+            else:
+                for x in self.project:
+                    self.het['CURRENT_PROJ'].append(x)
+        else:
+            self.project = self.project
+        if type(self.custom_directives) is list:
+# Get the custom_directives, each element can be only be bool
+            self.custom_directives = max([int(x) for x in self.custom_directives])
+            self.het['CUSTOM_DIRECTIVES'] = list()
+            if len(self.custom_directives) == 1:
+                for x in range(self.het['HETSIZE']):
+                    self.het['CUSTOM_DIRECTIVES'].append(self.custom_directives)
+            else:
+                for x in self.custom_directives:
+                    self.het['CUSTOM_DIRECTIVES'].append(x)
+        else:
+            self.custom_directives = self.custom_directives
+        if self.het['HETSIZE'] == 1:
+            self.het = dict()
+
+
+        if self.wallclock is None and job_platform.type not in ['ps', "local", "PS", "LOCAL"]:
+            self.wallclock = "01:59"
+        elif self.wallclock is None and job_platform.type in ['ps', 'local', "PS", "LOCAL"]:
+            self.wallclock = "00:00"
+        # Increasing according to chunk
+        self.wallclock = increase_wallclock_by_chunk(
+            self.wallclock, self.wchunkinc, chunk)
+        try:
+            self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES","")
+            if type(self.custom_directives) is list:
+                self.custom_directives = json.dumps(self.custom_directives)
+            self.custom_directives = self.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+            if self.custom_directives == '':
+                if job_platform.custom_directives is None:
+                    job_platform.custom_directives = ''
+                self.custom_directives = job_platform.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+            if self.custom_directives != '':
+                if self.custom_directives[0] != "\"":
+                    self.custom_directives = "\""+self.custom_directives
+                if self.custom_directives[-1] != "\"":
+                    self.custom_directives = self.custom_directives+"\""
+                self.custom_directives = "[" + self.custom_directives + "]"
+                self.custom_directives = json.loads(self.custom_directives)
+            else:
+                self.custom_directives = []
+        except BaseException as e:
+            raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({self.custom_directives}) for job {self.section}",7014,str(e))
     def update_platform_associated_parameters(self,as_conf, parameters, job_platform, chunk):
         self.executable = as_conf.jobs_data[self.section].get("EXECUTABLE", as_conf.platforms_data.get(job_platform.name,{}).get("EXECUTABLE",""))
         self.total_jobs = as_conf.jobs_data[self.section].get("TOTALJOBS", job_platform.total_jobs)
@@ -1397,24 +1527,31 @@ class Job(object):
                                                              as_conf.platforms_data.get(self.platform_name, {}).get(
                                                                  "MAX_WALLCLOCK", None))
         self.process_scheduler_parameters(as_conf,parameters,job_platform,chunk)
-        parameters['NUMPROC'] = self.processors
-        parameters['PROCESSORS'] = self.processors
-        parameters['MEMORY'] = self.memory
-        parameters['MEMORY_PER_TASK'] = self.memory_per_task
-        parameters['NUMTHREADS'] = self.threads
-        parameters['THREADS'] = self.threads
-        parameters['CPUS_PER_TASK'] = self.threads
-        parameters['NUMTASK'] = self._tasks
-        parameters['TASKS'] = self._tasks
-        parameters['NODES'] = self.nodes
-        parameters['TASKS_PER_NODE'] = self._tasks
-        parameters['WALLCLOCK'] = self.wallclock
-        parameters['TASKTYPE'] = self.section
-        parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
-        parameters['CUSTOM_DIRECTIVES'] = self.custom_directives
-        parameters['HYPERTHREADING'] = self.hyperthreading
-        parameters['CURRENT_QUEUE'] = self.queue
-        parameters['RESERVATION'] = self.reservation
+        if self.het['HETSIZE'] > 1:
+            for name, components_value in self.het.items():
+                for indx,component in enumerate(components_value):
+                    if indx == 0:
+                        parameters[name.upper()] = component
+                    parameters[f'{name.upper()}_{indx}'] = component
+        else:
+            parameters['NUMPROC'] = self.processors
+            parameters['PROCESSORS'] = self.processors
+            parameters['MEMORY'] = self.memory
+            parameters['MEMORY_PER_TASK'] = self.memory_per_task
+            parameters['NUMTHREADS'] = self.threads
+            parameters['THREADS'] = self.threads
+            parameters['CPUS_PER_TASK'] = self.threads
+            parameters['NUMTASK'] = self._tasks
+            parameters['TASKS'] = self._tasks
+            parameters['NODES'] = self.nodes
+            parameters['TASKS_PER_NODE'] = self._tasks
+            parameters['WALLCLOCK'] = self.wallclock
+            parameters['TASKTYPE'] = self.section
+            parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
+            parameters['CUSTOM_DIRECTIVES'] = self.custom_directives
+            parameters['HYPERTHREADING'] = self.hyperthreading
+            parameters['CURRENT_QUEUE'] = self.queue
+            parameters['RESERVATION'] = self.reservation
         return parameters
 
     def update_wrapper_parameters(self,as_conf, parameters):
