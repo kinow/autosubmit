@@ -315,7 +315,7 @@ class SlurmHeader(object):
                 f'%TASKS_PER_NODE_DIRECTIVE_{components}%', self.get_tasks_per_node(job, components))
             header = header.replace(
                 f'%CUSTOM_DIRECTIVES_{components}%', self.get_custom_directives(job, components))
-
+        header = header.strip("#SBATCH hetjob")
         return header
 
 
