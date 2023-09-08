@@ -628,8 +628,17 @@ class JobList(object):
         status = relationship.pop("STATUS", relationships.get("STATUS", None))
         from_step = relationship.pop("FROM_STEP", relationships.get("FROM_STEP", None))
         for filter_range, filter_data in relationship.items():
-            if filter_range.casefold() in ["ALL".casefold(),"NATURAL".casefold()] or ( not value_to_check or str(value_to_check).upper() in str(
-                    JobList._parse_filters_to_check(filter_range,values_list,level_to_check)).upper()):
+            selected_filter = JobList._parse_filters_to_check(filter_range,values_list,level_to_check)
+            # check each value individually as 1 != 13 so in keyword is not enough
+            if value_to_check:
+                included = False
+                for value in selected_filter:
+                    if str(value_to_check).casefold() == str(value).casefold():
+                        included = True
+                        break
+            else:
+                inclued = True
+            if filter_range.casefold() in ["ALL".casefold(),"NATURAL".casefold()] or included:
                 if not filter_data.get("STATUS", None):
                     filter_data["STATUS"] = status
                 if not filter_data.get("FROM_STEP", None):
