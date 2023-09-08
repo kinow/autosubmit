@@ -269,7 +269,6 @@ class SlurmHeader(object):
         #SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
         #%X11%
         #
-        ###############################################################################
             """)
         if job.x11 == "true":
             header = header.replace(
@@ -277,7 +276,7 @@ class SlurmHeader(object):
         for components in range(job.het['HETSIZE']):
             header += textwrap.dedent(f"""\
             ###############################################################################
-            #                 Component {components} 
+            #                 HET_GROUP:{components} 
             ###############################################################################
             #%QUEUE_DIRECTIVE_{components}%
             #%PARTITION_DIRECTIVE_{components}%
@@ -315,7 +314,8 @@ class SlurmHeader(object):
                 f'%TASKS_PER_NODE_DIRECTIVE_{components}%', self.get_tasks_per_node(job, components))
             header = header.replace(
                 f'%CUSTOM_DIRECTIVES_{components}%', self.get_custom_directives(job, components))
-        header = header.strip("#SBATCH hetjob")
+        header = header[:-len("#SBATCH hetjob\n")]  # last element
+
         return header
 
 
