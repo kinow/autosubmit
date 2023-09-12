@@ -89,7 +89,7 @@ class EcPlatform(ParamikoPlatform):
         """
         Updates commands for platforms
         """
-        self.root_dir = os.path.join(self.scratch, self.project_dir, self.user, self.expid)
+        self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
         self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
         self.cancel_cmd = "ecaccess-job-delete"
         self._checkjob_cmd = "ecaccess-job-list "
@@ -101,11 +101,11 @@ class EcPlatform(ParamikoPlatform):
         self.put_cmd = "ecaccess-file-put"
         self.get_cmd = "ecaccess-file-get"
         self.del_cmd = "ecaccess-file-delete"
-        self.mkdir_cmd = ("ecaccess-file-mkdir " + self.host + ":" + self.scratch + "/" + self.project_dir + "/" +
+        self.mkdir_cmd = ("ecaccess-file-mkdir " + self.host + ":" + self.scratch + "/" + self.project + "/" +
                           self.user + "/" + self.expid + "; " + "ecaccess-file-mkdir " + self.host + ":" +
                           self.remote_log_dir)
-        self.check_remote_permissions_cmd = "ecaccess-file-mkdir " + self.host+":"+os.path.join(self.scratch,self.project_dir,self.user,"_permission_checker_azxbyc")
-        self.check_remote_permissions_remove_cmd = "ecaccess-file-rmdir " + self.host+":"+os.path.join(self.scratch,self.project_dir,self.user,"_permission_checker_azxbyc")
+        self.check_remote_permissions_cmd = "ecaccess-file-mkdir " + self.host+":"+os.path.join(self.scratch,self.project,self.user,"_permission_checker_azxbyc")
+        self.check_remote_permissions_remove_cmd = "ecaccess-file-rmdir " + self.host+":"+os.path.join(self.scratch,self.project,self.user,"_permission_checker_azxbyc")
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -148,7 +148,7 @@ class EcPlatform(ParamikoPlatform):
 
     def get_submit_cmd(self, job_script, job, hold=False, export=""):
         self.set_submit_cmd(job.ec_queue)
-        if (export is None or export == "none") or len(export) == 0:
+        if export == "none" or export == "None" or export is None or export == "":
             export = ""
         else:
             export += " ; "
@@ -217,7 +217,6 @@ class EcPlatform(ParamikoPlatform):
             except Exception as e:
                 pass
             subprocess.check_output(self.check_remote_permissions_cmd, shell=True)
-            pass
             subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=True)
             return True
         except Exception as e:
@@ -324,7 +323,8 @@ class EcPlatform(ParamikoPlatform):
         return self._ssh_output
     def get_ssh_output_err(self):
         return self._ssh_output_err
-    def wrapper_header(self,**kwargs):
+    @staticmethod
+    def wrapper_header(filename, queue, project, wallclock, num_procs, expid, dependency, rootdir, directives):
         return """\
         #!/bin/bash
         ###############################################################################

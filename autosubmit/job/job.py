@@ -1290,6 +1290,7 @@ class Job(object):
         return parameters
 
     def update_platform_associated_parameters(self,as_conf, parameters, job_platform, chunk):
+        self.ec_queue = str(as_conf.jobs_data[self.section].get("EC_QUEUE", as_conf.platforms_data.get(job_platform.name,{}).get("EC_QUEUE","")))
         self.executable = str(as_conf.jobs_data[self.section].get("EXECUTABLE", as_conf.platforms_data.get(job_platform.name,{}).get("EXECUTABLE","")))
         self.total_jobs = int(as_conf.jobs_data[self.section].get("TOTALJOBS", job_platform.total_jobs))
         self.max_waiting_jobs = int(as_conf.jobs_data[self.section].get("MAXWAITINGJOBS", job_platform.max_waiting_jobs))
@@ -1354,6 +1355,7 @@ class Job(object):
         parameters['HYPERTHREADING'] = self.hyperthreading
         parameters['CURRENT_QUEUE'] = self.queue
         parameters['RESERVATION'] = self.reservation
+        parameters['CURRENT_EC_QUEUE'] = self.ec_queue
         return parameters
 
     def update_wrapper_parameters(self,as_conf, parameters):
@@ -1381,8 +1383,6 @@ class Job(object):
         return parameters
 
     def update_job_parameters(self,as_conf, parameters):
-        #todo
-        self.ec_queue = as_conf.get_ec_queue(self)
 
         if self.checkpoint: # To activate placeholder sustitution per <empty> in the template
             parameters["AS_CHECKPOINT"] = self.checkpoint
@@ -1485,9 +1485,6 @@ class Job(object):
         :type parameters: dict
         """
         as_conf.reload()
-        #TODO
-        parameters['CURRENT_EC_QUEUE'] = self.ec_queue
-
         parameters = parameters.copy()
         parameters.update(as_conf.parameters)
         parameters.update(default_parameters)
@@ -1641,7 +1638,6 @@ class Job(object):
         template_content,additional_templates = self.update_content(as_conf)
         #enumerate and get value
 
-        #todo revise pipeline that check this, additional templates value is not Mocked well
         for additional_file, additional_template_content in zip(self.additional_files, additional_templates):
             for key, value in parameters.items():
                 additional_template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), additional_template_content,flags=re.I)

@@ -179,7 +179,7 @@ class ParamikoSubmitter(Submitter):
             else:
                 host = platform_data[section].get('HOST', "")
 
-            remote_platform.host = host
+            remote_platform.host = host.strip(" ")
             # Retrieve more configurations settings and save them in the object
             remote_platform.max_wallclock = platform_data[section].get('MAX_WALLCLOCK',"2:00")
             remote_platform.max_processors = platform_data[section].get('MAX_PROCESSORS',asconf.get_max_processors())
