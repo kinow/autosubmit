@@ -32,6 +32,7 @@ class WrapperFactory(object):
 
     def get_wrapper(self, wrapper_builder, **kwargs):
         wrapper_data = kwargs['wrapper_data']
+        #todo here hetjobs
         kwargs['allocated_nodes'] = self.allocated_nodes()
         kwargs['dependency'] = self.dependency(kwargs['dependency'])
         kwargs['queue'] = self.queue(kwargs['queue'])

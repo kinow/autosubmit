@@ -1458,36 +1458,35 @@ class Job(object):
         else:
             self.partition = self.partition
 
+        self.het['CUSTOM_DIRECTIVES'] = list()
+        if type(self.custom_directives) is list:
+            self.custom_directives = json.dumps(self.custom_directives)
+        self.custom_directives = self.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+        if self.custom_directives == '':
+            if job_platform.custom_directives is None:
+                job_platform.custom_directives = ''
+            self.custom_directives = job_platform.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+        if self.custom_directives != '':
+            if self.custom_directives[0] != "\"":
+                self.custom_directives = "\"" + self.custom_directives
+            if self.custom_directives[-1] != "\"":
+                self.custom_directives = self.custom_directives + "\""
+            self.custom_directives = "[" + self.custom_directives + "]"
+            custom_directives = self.custom_directives.split("],")
+            if len(custom_directives) > 1:
+                for custom_directive in custom_directives:
+                    if custom_directive[-1] != "]":
+                        custom_directive = custom_directive + "]"
+                    self.het['CUSTOM_DIRECTIVES'].append(json.loads(custom_directive))
+            self.custom_directives = json.loads(self.custom_directives)
+            if len(self.het['CUSTOM_DIRECTIVES']) < self.het['HETSIZE']:
+                for x in range(self.het['HETSIZE'] - len(self.het['CUSTOM_DIRECTIVES'])):
+                    self.het['CUSTOM_DIRECTIVES'].append(self.custom_directives )
+        else:
+            self.custom_directives = []
 
-# Get the custom_directives, each element can be only be bool
-#         self.het['CUSTOM_DIRECTIVES'] = list()
-#         if len(self.custom_directives) == 1:
-#             for x in range(self.het['HETSIZE']):
-#                 self.het['CUSTOM_DIRECTIVES'].append(self.custom_directives)
-#         else:
-#             for x in self.custom_directives:
-#                 self.het['CUSTOM_DIRECTIVES'].append(x)
-#         try:
-#             for custom_directives in self.het['CUSTOM_DIRECTIVES']:
-#                 if type(custom_directives) is list:
-#                     custom_directives = json.dumps(custom_directives)
-#                 custom_directives = custom_directives.replace("\'", "\"").strip("[]").strip(", ")
-#                 if custom_directives == '':
-#                     if job_platform.custom_directives is None:
-#                         job_platform.custom_directives = ''
-#                     custom_directives = job_platform.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
-#                 if custom_directives != '':
-#                     if custom_directives[0] != "\"":
-#                         custom_directives = "\""+custom_directives
-#                     if custom_directives[-1] != "\"":
-#                         custom_directives = custom_directives+"\""
-#                     custom_directives = "[" + custom_directives + "]"
-#                     custom_directives = json.loads(custom_directives)
-#                 else:
-#                     custom_directives = []
-#         except BaseException as e:
-#             raise AutosubmitCritical(f"Error in CUSTOM_DIRECTIVES({self.custom_directives}) for job {self.section}",7014,str(e))
-#         self.custom_directives = self.het['CUSTOM_DIRECTIVES'][0]
+            for x in range(self.het['HETSIZE']):
+                self.het['CUSTOM_DIRECTIVES'].append(self.custom_directives)
         # Ignore the heterogeneous parameters if the cores or nodes are no specefied as a list
         if self.het['HETSIZE'] == 1:
             self.het = dict()
@@ -1519,6 +1518,8 @@ class Job(object):
         self.wallclock = as_conf.jobs_data[self.section].get("WALLCLOCK",
                                                              as_conf.platforms_data.get(self.platform_name, {}).get(
                                                                  "MAX_WALLCLOCK", None))
+        self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES", "")
+
         self.process_scheduler_parameters(as_conf,parameters,job_platform,chunk)
         if self.het['HETSIZE'] > 1:
             for name, components_value in self.het.items():
@@ -1731,7 +1732,7 @@ class Job(object):
                 template_file.close()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 5; echo printenv'
+                    template = 'sleep 5;printenv'
                 elif self.type == Type.PYTHON2:
                     template = 'time.sleep(5)' + "\n"
                 elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
