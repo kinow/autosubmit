@@ -364,6 +364,7 @@ class JobPackageThread(JobPackageBase):
         :type configuration: Autosubmitconfigparser instance
             
         """
+        # todo hetjobs
         # This function is called from the JobPackageThread constructor
         # and from the JobPackageThread.create_scripts function
         # It is in charge of merging ( switch ) the wrapper info by checking if the value is defined by the user in the wrapper section, current wrapper section, job or platform in that order.

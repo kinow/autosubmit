@@ -255,6 +255,41 @@ class SlurmHeader(object):
                 return "SBATCH --tasks-per-node={0}".format(job.parameters['TASKS'])
         return ""
 
+    def wrapper_header(self, **kwargs):
+
+        wr_header = f"""
+###############################################################################
+#              {kwargs["name"].split("_")[0] + "_Wrapper"}
+###############################################################################
+#
+#SBATCH -J {kwargs["name"]}
+{kwargs["queue"]}
+{kwargs["partition"]}
+{kwargs["dependency"]}
+#SBATCH -A {kwargs["project"]}
+#SBATCH --output={kwargs["name"]}.out
+#SBATCH --error={kwargs["name"]}.err
+#SBATCH -t {kwargs["wallclock"]}:00
+{kwargs["threads"]}
+{kwargs["nodes"]}
+{kwargs["num_processors"]}
+{kwargs["tasks"]}
+{kwargs["exclusive"]}
+{kwargs["custom_directives"]}
+
+#
+###############################################################################
+"""
+        if kwargs["method"] == 'srun':
+            language = kwargs["executable"]
+            if language is None or len(language) == 0:
+                language = "#!/bin/bash"
+            return language + wr_header
+        else:
+            language = kwargs["executable"]
+            if language is None or len(language) == 0 or "bash" in language:
+                language = "#!/usr/bin/env python3"
+            return language + wr_header
     def calculate_het_header(self, job):
         header = textwrap.dedent("""\
         ###############################################################################

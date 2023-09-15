@@ -31,7 +31,6 @@ from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
 from log.log import AutosubmitCritical, AutosubmitError, Log
 
-
 class SlurmPlatform(ParamikoPlatform):
     """
     Class to manage jobs to host using SLURM scheduler
@@ -599,40 +598,9 @@ class SlurmPlatform(ParamikoPlatform):
                     job.new_status = Status.QUEUING  # If it was HELD and was released, it should be QUEUING next.
                 else:
                     job.new_status = Status.HELD
-    def wrapper_header(self,**kwargs):
-        wr_header = f"""
-###############################################################################
-#              {kwargs["name"].split("_")[0]+"_Wrapper"}
-###############################################################################
-#
-#SBATCH -J {kwargs["name"]}
-{kwargs["queue"]}
-{kwargs["partition"]}
-{kwargs["dependency"]}
-#SBATCH -A {kwargs["project"]}
-#SBATCH --output={kwargs["name"]}.out
-#SBATCH --error={kwargs["name"]}.err
-#SBATCH -t {kwargs["wallclock"]}:00
-{kwargs["threads"]}
-{kwargs["nodes"]}
-{kwargs["num_processors"]}
-{kwargs["tasks"]}
-{kwargs["exclusive"]}
-{kwargs["custom_directives"]}
 
-#
-###############################################################################
-"""
-        if kwargs["method"] == 'srun':
-            language = kwargs["executable"]
-            if language is None or len(language) == 0:
-                language = "#!/bin/bash"
-            return language + wr_header
-        else:
-            language = kwargs["executable"]
-            if language is None or len(language) == 0 or "bash" in language:
-                language = "#!/usr/bin/env python3"
-            return language + wr_header
+    def wrapper_header(self,**kwargs):
+        return self._header.wrapper_header(**kwargs)
 
     @staticmethod
     def allocated_nodes():
