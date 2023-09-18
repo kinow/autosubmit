@@ -33,6 +33,8 @@ class SlurmHeader(object):
         :return: queue directive
         :rtype: str
         """
+
+
         # There is no queue, so directive is empty
         if het > -1 and len(job.het['CURRENT_QUEUE']) > 0:
             if job.het['CURRENT_QUEUE'][het] != '':
@@ -261,7 +263,9 @@ class SlurmHeader(object):
 ###############################################################################
 #              {kwargs["name"].split("_")[0] + "_Wrapper"}
 ###############################################################################
-#
+"""
+        if kwargs["wrapper_data"].het.get("HETSIZE",1) <= 1:
+            wr_header += f"""
 #SBATCH -J {kwargs["name"]}
 {kwargs["queue"]}
 {kwargs["partition"]}
@@ -278,8 +282,9 @@ class SlurmHeader(object):
 {kwargs["custom_directives"]}
 
 #
-###############################################################################
-"""
+    """
+        else:
+            wr_header = self.calculate_wrapper_het_header(kwargs["wrapper_data"])
         if kwargs["method"] == 'srun':
             language = kwargs["executable"]
             if language is None or len(language) == 0:
@@ -290,25 +295,36 @@ class SlurmHeader(object):
             if language is None or len(language) == 0 or "bash" in language:
                 language = "#!/usr/bin/env python3"
             return language + wr_header
-    def calculate_het_header(self, job):
-        header = textwrap.dedent("""\
-        ###############################################################################
-        #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
-        ###############################################################################
-        #                   Common directives
-        ###############################################################################
-        #
-        #SBATCH -t %WALLCLOCK%:00
-        #SBATCH -J %JOBNAME%
-        #SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
-        #SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
-        #%X11%
-        #
-            """)
-        if job.x11 == "true":
-            header = header.replace(
-                '%X11%', "SBATCH --x11=batch")
-        for components in range(job.het['HETSIZE']):
+    def hetjob_common_header(self,hetsize,wrapper=None):
+        if not wrapper:
+            header = textwrap.dedent("""\
+                    
+                    ###############################################################################
+                    #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
+                    ###############################################################################
+                    #                   Common directives
+                    ###############################################################################
+                    #
+                    #SBATCH -t %WALLCLOCK%:00
+                    #SBATCH -J %JOBNAME%
+                    #SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
+                    #SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
+                    #%X11%
+                    #
+                        """)
+        else:
+            header = f"""
+###############################################################################
+#              {wrapper.name.split("_")[0] + "_Wrapper"}
+###############################################################################
+#SBATCH -J {wrapper.name}
+#SBATCH --output={wrapper._platform.remote_log_dir}/{wrapper.name}.out
+#SBATCH --error={wrapper._platform.remote_log_dir}/{wrapper.name}.err
+#SBATCH -t {wrapper.wallclock}:00
+#
+###########################################################################################
+"""
+        for components in range(hetsize):
             header += textwrap.dedent(f"""\
             ###############################################################################
             #                 HET_GROUP:{components} 
@@ -326,7 +342,45 @@ class SlurmHeader(object):
             %CUSTOM_DIRECTIVES_{components}%
             #SBATCH hetjob
             """)
+        return header
 
+    def calculate_wrapper_het_header(self, wr_job):
+        hetsize = wr_job.het["HETSIZE"]
+        header = self.hetjob_common_header(hetsize,wr_job)
+        for components in range(hetsize):
+            header = header.replace(
+                f'%QUEUE_DIRECTIVE_{components}%', self.get_queue_directive(wr_job, components))
+            header = header.replace(
+                f'%PARTITION_DIRECTIVE_{components}%', self.get_partition_directive(wr_job, components))
+            header = header.replace(
+                f'%ACCOUNT_DIRECTIVE_{components}%', self.get_account_directive(wr_job, components))
+            header = header.replace(
+                f'%MEMORY_DIRECTIVE_{components}%', self.get_memory_directive(wr_job, components))
+            header = header.replace(
+                f'%MEMORY_PER_TASK_DIRECTIVE_{components}%', self.get_memory_per_task_directive(wr_job, components))
+            header = header.replace(
+                f'%THREADS_PER_TASK_DIRECTIVE_{components}%', self.get_threads_per_task(wr_job, components))
+            header = header.replace(
+                f'%NODES_DIRECTIVE_{components}%', self.get_nodes_directive(wr_job, components))
+            header = header.replace(
+                f'%NUMPROC_DIRECTIVE_{components}%', self.get_proccesors_directive(wr_job, components))
+            header = header.replace(
+                f'%RESERVATION_DIRECTIVE_{components}%', self.get_reservation_directive(wr_job, components))
+            header = header.replace(
+                f'%TASKS_PER_NODE_DIRECTIVE_{components}%', self.get_tasks_per_node(wr_job, components))
+            header = header.replace(
+                f'%CUSTOM_DIRECTIVES_{components}%', self.get_custom_directives(wr_job, components))
+        header = header[:-len("#SBATCH hetjob\n")]  # last element
+
+        return header
+
+    def calculate_het_header(self, job):
+        header = self.hetjob_common_header(hetsize=job.het["HETSIZE"])
+        if job.x11 == "true":
+            header = header.replace(
+                '%X11%', "SBATCH --x11=batch")
+
+        for components in range(job.het['HETSIZE']):
             header = header.replace(
                 f'%QUEUE_DIRECTIVE_{components}%', self.get_queue_directive(job, components))
             header = header.replace(
