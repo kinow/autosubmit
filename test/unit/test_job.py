@@ -285,7 +285,7 @@ class TestJob(TestCase):
                         USER: me
                         SCRATCH_DIR: /anything/
                         ADD_PROJECT_TO_HOST: False
-                        MAX_WALLCLOCK: '000:55'
+                        MAX_WALLCLOCK: '00:55'
                         TEMP_DIR: ''
                     '''))
                     minimal.flush()

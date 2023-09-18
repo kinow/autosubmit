@@ -1755,7 +1755,7 @@ class Job(object):
                 template_file.close()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 5;printenv'
+                    template = 'sleep 5'
                 elif self.type == Type.PYTHON2:
                     template = 'time.sleep(5)' + "\n"
                 elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
@@ -1931,7 +1931,6 @@ class Job(object):
                 variables_tmp = [variable for variable in variables_tmp if variable not in self.default_parameters]
                 variables.extend(variables_tmp)
             out = set(parameters).issuperset(set(variables))
-
             # Check if the variables in the templates are defined in the configurations
             if not out:
                 self.undefined_variables = set(variables) - set(parameters)
