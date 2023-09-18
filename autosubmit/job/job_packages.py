@@ -484,7 +484,6 @@ class JobPackageThread(JobPackageBase):
                 self.nodes = jobs[0].nodes
                 self.tasks = jobs[0].tasks
                 self.threads = jobs[0].threads
-                self.het = jobs[0].het
                 self.exclusive = jobs[0].exclusive
                 self.custom_directives = jobs[0].custom_directives
         else:
@@ -496,8 +495,10 @@ class JobPackageThread(JobPackageBase):
             self.threads = jobs[0].threads
             self.exclusive = jobs[0].exclusive
             self.custom_directives = jobs[0].custom_directives
-            self.het = dict()
         self.parameters["CURRENT_PROJ"] = self._project
+        self.parameters["NUMTHREADS"] = self.threads
+        self.het = jobs[0].het
+
         # Memory needs more work outside this branch
         self.parameters["MEMORY"] = jobs[0].memory
         self.memory = jobs[0].memory

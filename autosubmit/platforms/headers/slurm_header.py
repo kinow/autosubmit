@@ -251,10 +251,10 @@ class SlurmHeader(object):
         """
         if het > -1 and len(job.het['TASKS']) > 0:
             if int(job.het['TASKS'][het]):
-                return "SBATCH --tasks-per-node={0}".format(job.het['TASKS'][het])
+                return "SBATCH --ntasks-per-node={0}".format(job.het['TASKS'][het])
         else:
             if int(job.parameters['TASKS']) > 1:
-                return "SBATCH --tasks-per-node={0}".format(job.parameters['TASKS'])
+                return "SBATCH --ntasks-per-node={0}".format(job.parameters['TASKS'])
         return ""
 
     def wrapper_header(self, **kwargs):

@@ -297,6 +297,9 @@ class TestJob(TestCase):
                                     TASKS:
                                         - 32
                                         - 32 
+                                    THREADS:
+                                        - 4
+                                        - 4
                                     CUSTOM_DIRECTIVES: 
                                         - ['#SBATCH --export=ALL', '#SBATCH --distribution=block:cyclic', '#SBATCH --exclusive']
                                         - ['#SBATCH --export=ALL', '#SBATCH --distribution=block:cyclic:fcyclic', '#SBATCH --exclusive']
