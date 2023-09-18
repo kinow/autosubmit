@@ -119,18 +119,18 @@ class TestJobPackage(TestCase):
         }
 
         self.setUpWrappers(options)
-        self.assertEqual(self.job_package_wrapper._wrapper_data["TYPE"], "vertical")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["JOBS_IN_WRAPPER"], "None")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["METHOD"], "ASThread")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["POLICY"], "flexible")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["EXTEND_WALLCLOCK"], 0)
+        self.assertEqual(self.job_package_wrapper.wrapper_type, "vertical")
+        self.assertEqual(self.job_package_wrapper.jobs_in_wrapper, "None")
+        self.assertEqual(self.job_package_wrapper.wrapper_method, "ASThread")
+        self.assertEqual(self.job_package_wrapper.wrapper_policy, "flexible")
+        self.assertEqual(self.job_package_wrapper.extensible_wallclock, 0)
 
-        self.assertEqual(self.job_package_wrapper._wrapper_data["EXCLUSIVE"], True)
-        self.assertEqual(self.job_package_wrapper._wrapper_data["INNER_RETRIALS"], 0)
-        self.assertEqual(self.job_package_wrapper._wrapper_data["QUEUE"], "debug")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["PARTITION"], "debug")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["THREADS"], "1")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["TASKS"], "1")
+        self.assertEqual(self.job_package_wrapper.exclusive, True)
+        self.assertEqual(self.job_package_wrapper.inner_retrials, 0)
+        self.assertEqual(self.job_package_wrapper.queue, "debug")
+        self.assertEqual(self.job_package_wrapper.partition, "debug")
+        self.assertEqual(self.job_package_wrapper.threads, "1")
+        self.assertEqual(self.job_package_wrapper.tasks, "1")
 
         options_slurm = {
             'EXCLUSIVE': False,
@@ -142,13 +142,13 @@ class TestJobPackage(TestCase):
             'CUSTOM_DIRECTIVES': "['#SBATCH --mem=1000']"
         }
         self.setUpWrappers(options_slurm)
-        self.assertEqual(self.job_package_wrapper._wrapper_data["EXCLUSIVE"], False)
-        self.assertEqual(self.job_package_wrapper._wrapper_data["INNER_RETRIALS"], 30)
-        self.assertEqual(self.job_package_wrapper._wrapper_data["QUEUE"], "bsc32")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["PARTITION"], "bsc32")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["THREADS"], "30")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["TASKS"], "40")
-        self.assertEqual(self.job_package_wrapper._wrapper_data["CUSTOM_DIRECTIVES"], ['#SBATCH --mem=1000'])
+        self.assertEqual(self.job_package_wrapper.exclusive, False)
+        self.assertEqual(self.job_package_wrapper.inner_retrials, 30)
+        self.assertEqual(self.job_package_wrapper.queue, "bsc32")
+        self.assertEqual(self.job_package_wrapper.partition, "bsc32")
+        self.assertEqual(self.job_package_wrapper.threads, "30")
+        self.assertEqual(self.job_package_wrapper.tasks, "40")
+        self.assertEqual(self.job_package_wrapper.custom_directives, ['#SBATCH --mem=1000'])
 
 
 

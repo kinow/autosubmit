@@ -58,6 +58,7 @@ class JobPackageBase(object):
         self.hold = False # type: bool
         self.export = jobs[0].export 
         self.x11 = jobs[0].x11
+        self.het = dict()
         try:
             self._tmp_path = jobs[0]._tmp_path
             self._platform = jobs[0]._platform
@@ -368,6 +369,9 @@ class JobPackageThread(JobPackageBase):
         # and from the JobPackageThread.create_scripts function
         # It is in charge of merging ( switch ) the wrapper info by checking if the value is defined by the user in the wrapper section, current wrapper section, job or platform in that order.
         # Some variables are calculated in futher functions, like num_processors and wallclock.
+        # These variables can only be present in the wrapper itself
+        self.parameters = dict()
+        self.wallclock = '00:00'
         if len(wrapper_info) > 0 :
             self.wrapper_type = wrapper_info[0]
             self.wrapper_policy = wrapper_info[1]
@@ -392,6 +396,7 @@ class JobPackageThread(JobPackageBase):
         self._wrapper_factory = self.platform.wrapper
         self.current_wrapper_section = wrapper_section
         self.inner_retrials = 0
+        # temporal hetjob code , to be upgraded in the future
         if configuration is not None:
             self.inner_retrials = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,
                                                                                 {}).get("RETRIALS",
@@ -403,93 +408,128 @@ class JobPackageThread(JobPackageBase):
             self.export = configuration.get_wrapper_export(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
             if self.export.lower() != "none" and len(self.export) > 0:
                 for job in self.jobs:
-                    if job.export.lower() != "none" and len(job.export) > 0:
+                    if job.export.lower() not in "none" and len(job.export) > 0:
                         self.export = job.export
                         break
-            wr_queue = configuration.get_wrapper_queue(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
-            if wr_queue is not None and len(str(wr_queue)) > 0:
-                self.queue = wr_queue
-            else:
-                self.queue = jobs[0].queue
-            wr_partition = configuration.get_wrapper_partition(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
-            if wr_partition and len(str(wr_partition)) > 0:
-                self.partition = wr_partition
-            else:
-                self.partition = jobs[0].partition
-            wr_exclusive = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXCLUSIVE",None)
-            if wr_exclusive is not None:
-                self.exclusive = wr_exclusive
-            else:
-                self.exclusive = jobs[0].exclusive
-            wr_custom_directives = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("CUSTOM_DIRECTIVES",[])
-            # parse custom_directives
-            if type(wr_custom_directives) is list:
-                wr_custom_directives = json.dumps(wr_custom_directives)
-            wr_custom_directives = wr_custom_directives.replace("\'", "\"").strip("[]").strip(", ")
-            if wr_custom_directives == '':
-                if jobs[0].custom_directives is None:
-                    jobs[0].custom_directives = ''
-                wr_custom_directives = jobs[0].custom_directives
-                if type(wr_custom_directives) is list:
-                    wr_custom_directives = json.dumps(wr_custom_directives)
-                wr_custom_directives = wr_custom_directives.replace("\'", "\"").strip("[]").strip(", ")
-            if wr_custom_directives != '':
-                if wr_custom_directives[0] != "\"":
-                    wr_custom_directives = "\""+wr_custom_directives
-                if wr_custom_directives[-1] != "\"":
-                    wr_custom_directives = wr_custom_directives+"\""
-                wr_custom_directives = "[" + wr_custom_directives + "]"
-                wr_custom_directives = json.loads(wr_custom_directives)
-            else:
-                wr_custom_directives = []
-            if len(str(wr_custom_directives)) > 0:
-                self.custom_directives = wr_custom_directives
-            else:
-                self.custom_directives = jobs[0].custom_directives
-            wr_executable = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXECUTABLE",None)
+            wr_executable = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section, {}).get(
+                "EXECUTABLE", None)
             if wr_executable:
                 self.executable = wr_executable
             else:
                 self.executable = jobs[0].executable
-            wr_tasks = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("TASKS",None)
-            if wr_tasks:
-                self.tasks = wr_tasks
+            if jobs[0].het.get("HETSIZE", 1) <= 1:
+                wr_queue = configuration.get_wrapper_queue(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
+                if wr_queue is not None and len(str(wr_queue)) > 0:
+                    self.queue = wr_queue
+                    self.parameters["CURRENT_QUEUE"] = wr_queue
+                else:
+                    self.queue = jobs[0].queue
+                    self.parameters["CURRENT_QUEUE"] = jobs[0].queue
+
+                wr_partition = configuration.get_wrapper_partition(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
+                if wr_partition and len(str(wr_partition)) > 0:
+                    self.partition = wr_partition
+                else:
+                    self.partition = jobs[0].partition
+                wr_exclusive = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXCLUSIVE",None)
+                if wr_exclusive is not None:
+                    self.exclusive = wr_exclusive
+                else:
+                    self.exclusive = jobs[0].exclusive
+                wr_custom_directives = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("CUSTOM_DIRECTIVES",[])
+                # parse custom_directives
+                if type(wr_custom_directives) is list:
+                    wr_custom_directives = json.dumps(wr_custom_directives)
+                wr_custom_directives = wr_custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+                if wr_custom_directives == '':
+                    if jobs[0].custom_directives is None:
+                        jobs[0].custom_directives = ''
+                    wr_custom_directives = jobs[0].custom_directives
+                    if type(wr_custom_directives) is list:
+                        wr_custom_directives = json.dumps(wr_custom_directives)
+                    wr_custom_directives = wr_custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+                if wr_custom_directives != '':
+                    if wr_custom_directives[0] != "\"":
+                        wr_custom_directives = "\""+wr_custom_directives
+                    if wr_custom_directives[-1] != "\"":
+                        wr_custom_directives = wr_custom_directives+"\""
+                    wr_custom_directives = "[" + wr_custom_directives + "]"
+                    wr_custom_directives = json.loads(wr_custom_directives)
+                else:
+                    wr_custom_directives = []
+                if len(str(wr_custom_directives)) > 0:
+                    self.custom_directives = wr_custom_directives
+                else:
+                    self.custom_directives = jobs[0].custom_directives
+
+                wr_tasks = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("TASKS",None)
+                if wr_tasks:
+                    self.tasks = wr_tasks
+                else:
+                    self.tasks = jobs[0].tasks
+                wr_nodes = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("NODES",None)
+                if wr_nodes:
+                    self.nodes = wr_nodes
+                else:
+                    self.nodes = jobs[0].nodes
+                wr_threads = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("THREADS",None)
+                if wr_threads:
+                    self.threads = wr_threads
+                else:
+                    self.threads = jobs[0].threads
             else:
-                self.tasks = jobs[0].tasks
-            wr_nodes = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("NODES",None)
-            if wr_nodes:
-                self.nodes = wr_nodes
-            else:
+                self.queue = jobs[0].queue
+                self.parameters["CURRENT_QUEUE"] = jobs[0].queue
+                self.partition = jobs[0].partition
                 self.nodes = jobs[0].nodes
-            wr_threads = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("THREADS",None)
-            if wr_threads:
-                self.threads = wr_threads
-            else:
+                self.tasks = jobs[0].tasks
                 self.threads = jobs[0].threads
+                self.exclusive = jobs[0].exclusive
+                self.custom_directives = jobs[0].custom_directives
         else:
             self.queue = jobs[0].queue
+            self.parameters["CURRENT_QUEUE"] = jobs[0].queue
             self.partition = jobs[0].partition
             self.nodes = jobs[0].nodes
             self.tasks = jobs[0].tasks
             self.threads = jobs[0].threads
+            self.exclusive = jobs[0].exclusive
+            self.custom_directives = jobs[0].custom_directives
+        self.parameters["CURRENT_PROJ"] = self._project
+        self.parameters["NUMTHREADS"] = self.threads
+        self.het = jobs[0].het
+
+        # Memory needs more work outside this branch
+        self.parameters["MEMORY"] = jobs[0].memory
+        self.memory = jobs[0].memory
+        self.parameters["MEMORY_PER_TASK"] = jobs[0].memory_per_task
+        self.memory_per_task = jobs[0].memory_per_task
+        self.parameters["NODES"] = self.nodes
+        self.processors = self._num_processors
+        self.parameters["RESERVATION"] = jobs[0].reservation # have to look
+        self.parameters['TASKS'] = self.tasks
+        self.parameters["EXECUTABLE"] = self.executable # have to look
         self.method = method
         self._wrapper_data = configuration.experiment_data["WRAPPERS"][self.current_wrapper_section]
-        self._wrapper_data["TYPE"] = self.wrapper_type
-        self._wrapper_data["WRAPPER_POLICY"] = self.wrapper_policy
-        self._wrapper_data["INNER_RETRIALS"] = self.inner_retrials
-        self._wrapper_data["RETRIALS"] = self.inner_retrials
-        self._wrapper_data["EXTEND_WALLCLOCK"] = self.extensible_wallclock
-        self._wrapper_data["METHOD"] = self.wrapper_method
-        self._wrapper_data["EXPORT"] = self.export
-        self._wrapper_data["QUEUE"] = self.queue
-        self._wrapper_data["NODES"] = self.nodes
-        self._wrapper_data["TASKS"] = self.tasks
-        self._wrapper_data["THREADS"] = self.threads
-        self._wrapper_data["PROCESSORS"] = self._num_processors
-        self._wrapper_data["PARTITION"] = self.partition
-        self._wrapper_data["EXCLUSIVE"] = self.exclusive
-        self._wrapper_data["EXECUTABLE"] = self.executable
-        self._wrapper_data["CUSTOM_DIRECTIVES"] = self.custom_directives
+        self._wrapper_data["WRAPPER"] = self
+
+        # self._wrapper_data["TYPE"] = self.wrapper_type
+        # self._wrapper_data["WRAPPER_POLICY"] = self.wrapper_policy
+        # self._wrapper_data["INNER_RETRIALS"] = self.inner_retrials
+        # self._wrapper_data["RETRIALS"] = self.inner_retrials
+        # self._wrapper_data["EXTEND_WALLCLOCK"] = self.extensible_wallclock
+        # self._wrapper_data["METHOD"] = self.wrapper_method
+        # self._wrapper_data["EXPORT"] = self.export
+        # self._wrapper_data["QUEUE"] = self.queue
+        # self._wrapper_data["NODES"] = self.nodes
+        # self._wrapper_data["TASKS"] = self.tasks
+        # self._wrapper_data["THREADS"] = self.threads
+        # self._wrapper_data["PROCESSORS"] = self._num_processors
+        # self._wrapper_data["PARTITION"] = self.partition
+        # self._wrapper_data["EXCLUSIVE"] = self.exclusive
+        # self._wrapper_data["EXECUTABLE"] = self.executable
+        # self._wrapper_data["CUSTOM_DIRECTIVES"] = self.custom_directives
+        # self._wrapper_data["HET"] = self.het
     @property
     def name(self):
         return self._name
@@ -752,7 +792,7 @@ class JobPackageVertical(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level,partition=self.partition,wrapper_data=self._wrapper_data,num_processors_value=self._num_processors)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level,partition=self.partition,wrapper_data=self,num_processors_value=self._num_processors)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -782,7 +822,7 @@ class JobPackageHorizontal(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data,num_processors_value=self._num_processors)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self,num_processors_value=self._num_processors)
 
 class JobPackageHybrid(JobPackageThread):
     """
@@ -827,7 +867,7 @@ class JobPackageVerticalHorizontal(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data,num_processors_value=self._num_processors)
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self,num_processors_value=self._num_processors)
 
 
 class JobPackageHorizontalVertical(JobPackageHybrid):
@@ -838,5 +878,5 @@ class JobPackageHorizontalVertical(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self._wrapper_data,num_processors_value=self._num_processors)
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads,method=self.method.lower(),partition=self.partition,wrapper_data=self,num_processors_value=self._num_processors)
 
