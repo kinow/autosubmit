@@ -1287,7 +1287,14 @@ class Job(object):
         and calculates the components of the heterogeneous job if any
         :return:
         """
-        self.het['HETSIZE'] = max(len(self.processors), len(self.nodes))
+        hetsize = 0
+        if type(self.processors) is list:
+            hetsize = (len(self.processors))
+        else:
+            hetsize = 1
+        if type(self.nodes) is list:
+            hetsize = max(hetsize,len(self.nodes))
+        self.het['HETSIZE'] = hetsize
         self.het['PROCESSORS'] = list()
         self.het['NODES'] = list()
         self.het['NUMTHREADS'] = self.het['THREADS'] = list()
@@ -1521,7 +1528,7 @@ class Job(object):
         self.custom_directives = as_conf.jobs_data[self.section].get("CUSTOM_DIRECTIVES", "")
 
         self.process_scheduler_parameters(as_conf,parameters,job_platform,chunk)
-        if self.het['HETSIZE'] > 1:
+        if self.het.get('HETSIZE',1) > 1:
             for name, components_value in self.het.items():
                 if name != "HETSIZE":
                     for indx,component in enumerate(components_value):
