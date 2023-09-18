@@ -1496,7 +1496,9 @@ class Job(object):
                     if custom_directive[-1] != "]":
                         custom_directive = custom_directive + "]"
                     self.het['CUSTOM_DIRECTIVES'].append(json.loads(custom_directive))
-            self.custom_directives = json.loads(self.custom_directives)
+                self.custom_directives = self.het['CUSTOM_DIRECTIVES'][0]
+            else:
+                self.custom_directives = json.loads(self.custom_directives)
             if len(self.het['CUSTOM_DIRECTIVES']) < self.het['HETSIZE']:
                 for x in range(self.het['HETSIZE'] - len(self.het['CUSTOM_DIRECTIVES'])):
                     self.het['CUSTOM_DIRECTIVES'].append(self.custom_directives )

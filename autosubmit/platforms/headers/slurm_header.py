@@ -56,7 +56,7 @@ class SlurmHeader(object):
                 job_nodes = 0
             else:
                 job_nodes = job.het['NODES'][het]
-            if job.het['PROCESSORS'][het] == '' or job.het['PROCESSORS'][het] == '1' and int(job_nodes) > 1:
+            if len(job.het['PROCESSORS']) == 0 or job.het['PROCESSORS'][het] == '' or job.het['PROCESSORS'][het] == '1' and int(job_nodes) > 1:
                 return ""
             else:
                 return "SBATCH -n {0}".format(job.het['PROCESSORS'][het])
@@ -376,9 +376,16 @@ class SlurmHeader(object):
 
     def calculate_het_header(self, job):
         header = self.hetjob_common_header(hetsize=job.het["HETSIZE"])
+        header = header.replace("%TASKTYPE%", job.section)
+        header = header.replace("%DEFAULT.EXPID%", job.expid)
+        header = header.replace("%WALLCLOCK%", job.wallclock)
+        header = header.replace("%JOBNAME%", job.name)
+
         if job.x11 == "true":
             header = header.replace(
                 '%X11%', "SBATCH --x11=batch")
+        else:
+            header = header.replace('%X11%', "#")
 
         for components in range(job.het['HETSIZE']):
             header = header.replace(
