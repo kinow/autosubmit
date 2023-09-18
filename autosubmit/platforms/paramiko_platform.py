@@ -1190,7 +1190,7 @@ class ParamikoPlatform(Platform):
 
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
-        if len(job.het) > 0:
+        if job.het.get("HETSIZE",0) <= 1:
             if hasattr(self.header, 'get_queue_directive'):
                 header = header.replace(
                     '%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))

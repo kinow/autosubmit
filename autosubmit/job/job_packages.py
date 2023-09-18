@@ -490,7 +490,6 @@ class JobPackageThread(JobPackageBase):
         else:
             self.queue = jobs[0].queue
             self.parameters["CURRENT_QUEUE"] = jobs[0].queue
-
             self.partition = jobs[0].partition
             self.nodes = jobs[0].nodes
             self.tasks = jobs[0].tasks
@@ -498,7 +497,6 @@ class JobPackageThread(JobPackageBase):
             self.exclusive = jobs[0].exclusive
             self.custom_directives = jobs[0].custom_directives
             self.het = dict()
-
         self.parameters["CURRENT_PROJ"] = self._project
         # Memory needs more work outside this branch
         self.parameters["MEMORY"] = jobs[0].memory
