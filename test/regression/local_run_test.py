@@ -4,7 +4,7 @@ It is a regression test, so it is not run by default.
 It only run within my home desktop computer. It is not run in the CI. Eventually it will be included TODO
 Just to be sure that the autosubmitconfigparser work as expected if there are changes.
 """
-
+import os
 import subprocess
 from pathlib import Path
 BIN_PATH = '../../bin'
@@ -31,6 +31,8 @@ def perform_test(expids):
         if "still retrieving outputs" in output.decode("UTF-8"):
             print(f"OK: autosubmit run command works as expected for {expid}")
         if error:
+            for i in range(0,10):
+                os.system('say ERROR ERROR ERROR PLEASE ERROR CHECK ERROR')
             print("ERR: autosubmit run command failed")
             print(output.decode("UTF-8"))
 #Disabled one "t001","t002",
