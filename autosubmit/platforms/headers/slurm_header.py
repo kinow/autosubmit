@@ -33,8 +33,6 @@ class SlurmHeader(object):
         :return: queue directive
         :rtype: str
         """
-
-
         # There is no queue, so directive is empty
         if het > -1 and len(job.het['CURRENT_QUEUE']) > 0:
             if job.het['CURRENT_QUEUE'][het] != '':
@@ -42,6 +40,7 @@ class SlurmHeader(object):
         else:
             if job.parameters['CURRENT_QUEUE'] != '':
                 return "SBATCH --qos={0}".format(job.parameters['CURRENT_QUEUE'])
+        return ""
     def get_proccesors_directive(self, job, het=-1):
         """
         Returns processors directive for the specified job

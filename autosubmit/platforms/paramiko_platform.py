@@ -1179,14 +1179,11 @@ class ParamikoPlatform(Platform):
             err_filename = "{0}.cmd.err".format(job.name)
 
         if len(job.het) > 0:
-
             header = self.header.calculate_het_header(job)
         elif str(job.processors) == '1':
             header = self.header.SERIAL
         else:
             header = self.header.PARALLEL
-
-        str_datetime = date2str(datetime.datetime.now(), 'S')
 
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)

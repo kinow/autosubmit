@@ -1484,7 +1484,11 @@ class Job(object):
         if self.custom_directives == '':
             if job_platform.custom_directives is None:
                 job_platform.custom_directives = ''
-            self.custom_directives = job_platform.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+            if type(job_platform.custom_directives) is list:
+                self.custom_directives = json.dumps(job_platform.custom_directives)
+                self.custom_directives = self.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
+            else:
+                self.custom_directives = job_platform.custom_directives.replace("\'", "\"").strip("[]").strip(", ")
         if self.custom_directives != '':
             if self.custom_directives[0] != "\"":
                 self.custom_directives = "\"" + self.custom_directives
@@ -1758,7 +1762,7 @@ class Job(object):
                 template_file.close()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 10'
+                    template = 'sleep 5'
                 elif self.type == Type.PYTHON2:
                     template = 'time.sleep(5)' + "\n"
                 elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
