@@ -191,6 +191,14 @@ class ParamikoPlatform(Platform):
             Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
             return False
         return True
+    @staticmethod
+    def interactive_auth_handler(title, instructions, prompt_list):
+        answers = []
+        for prompt, is_echo in prompt_list:
+            answer = input(prompt)
+            answers.append(answer)
+        return answers
+
     def connect(self, reconnect=False):
         """
         Creates ssh connection to host
@@ -198,6 +206,7 @@ class ParamikoPlatform(Platform):
         :return: True if connection is created, False otherwise
         :rtype: bool
         """
+        two_factor_auth = self.config.get("PLATFORMS", {}).get(self.name.upper()).get("2FA", False)
         try:
             display = os.getenv('DISPLAY')
             if display is None:
@@ -220,27 +229,37 @@ class ParamikoPlatform(Platform):
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
             port = int(self._host_config.get('port',22))
-            # Agent Auth
-            if not self.agent_auth(port):
-                # Public Key Auth
+            if not two_factor_auth:
+                # Agent Auth
+                if not self.agent_auth(port):
+                    # Public Key Auth
+                    if 'proxycommand' in self._host_config:
+                        self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
+                        try:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, sock=self._proxy, timeout=60 , banner_timeout=60)
+                        except Exception as e:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, sock=self._proxy, timeout=60,
+                                              banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+                    else:
+                        try:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, timeout=60 , banner_timeout=60)
+                        except Exception as e:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, timeout=60 , banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+                self.transport = self._ssh.get_transport()
+                self.transport.banner_timeout = 60
+            else:
                 if 'proxycommand' in self._host_config:
                     self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
-                    try:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, sock=self._proxy, timeout=60 , banner_timeout=60)
-                    except Exception as e:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, sock=self._proxy, timeout=60,
-                                          banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+                    self._ssh.connect(self._host_config['hostname'], port, username=self.user, sock=self._proxy, timeout=60, banner_timeout=60)
                 else:
-                    try:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, timeout=60 , banner_timeout=60)
-                    except Exception as e:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, timeout=60 , banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
-            self.transport = self._ssh.get_transport()
-            self.transport.banner_timeout = 60
+                    self._ssh.connect(self._host_config['hostname'], port, username=self.user, timeout=60, banner_timeout=60)
+                self.transport = self._ssh.get_transport()
+                self.transport.banner_timeout = 60
+                self.transport.auth_interactive(self.user, self.interactive_auth_handler)
 
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=pow(4, 12) ,max_packet_size=pow(4, 12) )
             self._ftpChannel.get_channel().settimeout(120)
