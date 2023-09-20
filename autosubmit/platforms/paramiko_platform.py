@@ -252,15 +252,15 @@ class ParamikoPlatform(Platform):
                 self.transport = self._ssh.get_transport()
                 self.transport.banner_timeout = 60
             else:
-                if 'proxycommand' in self._host_config:
-                    self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
-                    self._ssh.connect(self._host_config['hostname'], port, username=self.user, sock=self._proxy, timeout=60, banner_timeout=60)
-                else:
-                    self._ssh.connect(self._host_config['hostname'], port, username=self.user, timeout=60, banner_timeout=60)
-                self.transport = self._ssh.get_transport()
-                self.transport.banner_timeout = 60
+                self.transport = paramiko.Transport((self._host_config['hostname'], port))
+                self.transport.start_client()
                 self.transport.auth_interactive(self.user, self.interactive_auth_handler)
-
+                if self.transport.is_authenticated():
+                    self._ssh._transport = self.transport
+                    self.transport.banner_timeout = 60
+                else:
+                    self.transport.close()
+                    raise SSHException
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=pow(4, 12) ,max_packet_size=pow(4, 12) )
             self._ftpChannel.get_channel().settimeout(120)
             self.connected = True
