@@ -148,7 +148,7 @@ There are also other, less used features that you can use:
 * QUEUE: queue to add the job to. If not specified, uses PLATFORM default.
 
 How to add a new heterogeneous job (hetjob)
-----------------------------------
+-------------------------------------------
 
 A hetjob, is a job in which each component has virtually all job options available including partition, account and QOS (Quality Of Service).For example, part of a job might require four cores and 4 GB for each of 128 tasks while another part of the job would require 16 GB of memory and one CPU.
 
