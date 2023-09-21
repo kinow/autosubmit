@@ -272,6 +272,7 @@ class ParamikoPlatform(Platform):
                     self.transport.auth_interactive(self.user, self.interactive_auth_handler)
                 except Exception as e:
                     Log.printlog("2FA authentication failed",7000)
+                    raise
                 if self.transport.is_authenticated():
                     self._ssh._transport = self.transport
                     self.transport.banner_timeout = 60

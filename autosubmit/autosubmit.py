@@ -2295,8 +2295,6 @@ class Autosubmit:
                     else:
                         ssh_config_issues += message + " this is an PARAMIKO SSHEXCEPTION: indicates that there is something incompatible in the ssh_config for host:{0}\n maybe you need to contact your sysadmin".format(
                             platform.host)
-            except AutosubmitCritical as e:
-                raise
             except BaseException as e:
                 try:
                     if mail_notify:
