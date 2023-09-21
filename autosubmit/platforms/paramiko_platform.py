@@ -204,8 +204,10 @@ class ParamikoPlatform(Platform):
                 answers.append(self.pw)
             elif str(pr[0]).lower() in ["token","2fa:","otp"]:
                 answers.append(self.mfa)
-        inputimeout(prompt='Press enter to continue', timeout=self.otp_timeout)
-
+        try:
+            inputimeout(prompt='Press enter to continue', timeout=self.otp_timeout)
+        except:
+            pass
         return tuple(answers)
 
     def connect(self, reconnect=False):
