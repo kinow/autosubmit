@@ -21,6 +21,7 @@ from paramiko.ssh_exception import (SSHException)
 import Xlib.support.connect as xlib_connect
 from threading import Thread
 import getpass
+from inputimeout import inputimeout
 
 
 def threaded(fn):
@@ -201,9 +202,10 @@ class ParamikoPlatform(Platform):
             # strip() used to get rid of any padding spaces sent by the server
             if "Password" in str(pr[0]).strip():
                 answers.append(self.pw)
-            elif str(pr[0]).lower() in ["token","2fa","otp"]:
+            elif str(pr[0]).lower() in ["token","2fa:","otp"]:
                 answers.append(self.mfa)
-        input("Press Enter to continue...")
+        inputimeout(prompt='Press enter to continue', timeout=self.otp_timeout)
+
         return tuple(answers)
 
     def connect(self, reconnect=False):
@@ -213,6 +215,7 @@ class ParamikoPlatform(Platform):
         :return: True if connection is created, False otherwise
         :rtype: bool
         """
+        self.otp_timeout = self.config.get("PLATFORMS", {}).get(self.name.upper()).get("2FA_TIMEOUT", 60*5)
         two_factor_auth = self.config.get("PLATFORMS", {}).get(self.name.upper()).get("2FA", False)
         try:
             display = os.getenv('DISPLAY')
@@ -270,8 +273,6 @@ class ParamikoPlatform(Platform):
                     self.pw = getpass.getpass("Password for {0}@{1}: ".format(self.user, self._host_config['hostname']))
                     self.mfa = getpass.getpass("OTP for {0}@{1}: ".format(self.user, self._host_config['hostname']))
                 self.transport.auth_interactive(self.user, self.interactive_auth_handler)
-                del self.pw
-                del self.mfa
                 if self.transport.is_authenticated():
                     self._ssh._transport = self.transport
                     self.transport.banner_timeout = 60
