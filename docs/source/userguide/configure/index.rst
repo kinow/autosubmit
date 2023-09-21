@@ -160,18 +160,18 @@ To add a new hetjob, open the <experiments_directory>/cxxx/conf/jobs_cxxx.yml fi
     JOBS:
         new_hetjob:
             FILE: <new_job_template>
-            PROCESSORS:
+            PROCESSORS: # Determines the amount of components that will be created
                 - 4
                 - 1
-            MEMORY:
+            MEMORY: # Determines the amount of memory that will be used by each component
                 - 4096
                 - 16384
             WALLCLOCK: 00:30
-            PLATFORM: <platform_name>
-            PARTITION:
+            PLATFORM: <platform_name> # Determines the platform where the job will be executed
+            PARTITION: # Determines the partition where the job will be executed
                 - <partition_name>
                 - <partition_name>
-            TASKS: 128
+            TASKS: 128 # Determines the amount of tasks that will be used by each component
 
 This will create a new job named "new_hetjob" with two components that will be executed once.
 
