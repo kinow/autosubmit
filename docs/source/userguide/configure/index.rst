@@ -213,11 +213,27 @@ identifier and add this text:
 
     PLATFORMS:
         new_platform:
+            # MANDATORY
             TYPE: <platform_type>
             HOST: <host_name>
             PROJECT: <project>
             USER: <user>
             SCRATCH: <scratch_dir>
+            MAX_WALLCLOCK: <HH:MM>
+            QUEUE: <hpc_queue>
+            # OPTIONAL
+            ADD_PROJECT_TO_HOST: False
+            MAX_PROCESSORS: <N>
+            EC_QUEUE : <ec_queue> # only when type == ecaccess
+            VERSION: <version>
+            2FA: False
+            SERIAL_PLATFORM: <platform_name>
+            SERIAL_QUEUE: <queue_name>
+            BUDGET: <budget>
+            TEST_SUITE: False
+            MAX_WAITING_JOBS: <N>
+            TOTAL_JOBS: <N>
+            CUSTOM_DIRECTIVES: "[ 'my_directive' ]"
 
 
 This will create a platform named "new_platform". The options specified are all mandatory:
@@ -232,10 +248,21 @@ This will create a platform named "new_platform". The options specified are all 
 
 * SCRATCH_DIR: path to the scratch directory of the machine
 
-* VERSION: determines de version of the platform type
+* MAX_WALLCLOCK: maximum wallclock time allowed for a job in the platform
+
+* MAX_PROCESSORS: maximum number of processors allowed for a job in the platform
+
+* EC_QUEUE: queue for the ecaccess platform. ( hpc, ecs )
 
 .. warning:: With some platform types, Autosubmit may also need the version, forcing you to add the parameter
-    VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler).
+    VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler, slurm).
+
+* VERSION: determines de version of the platform type
+
+.. warning:: With some platforms, 2FA authentication is required. If this is the case, you have to add the parameter
+    2FA. These platforms are ecaccess (options: True, False). There may be some autosubmit functions that are not avaliable when using an interactive auth method.
+
+* 2FA: determines if the platform requires 2FA authentication
 
 
 Some platforms may require to run serial jobs in a different queue or platform. To avoid changing the job
@@ -262,20 +289,6 @@ There are some other parameters that you may need to specify:
 
 * CUSTOM_DIRECTIVES: Custom directives for the resource manager of this platform.
 
-Example:
-
-.. code-block:: yaml
-
-    platforms:
-        platform:
-        TYPE: SGE
-        HOST: hostname
-        PROJECT: my_project
-        ADD_PROJECT_TO_HOST: true
-        USER: my_user
-        SCRATCH_DIR: /scratch
-        TEST_SUITE: True
-        CUSTOM_DIRECTIVES: "[ 'my_directive' ]"
 
 How to request exclusivity or reservation
 -----------------------------------------
