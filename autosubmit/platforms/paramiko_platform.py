@@ -20,6 +20,7 @@ from log.log import AutosubmitError, AutosubmitCritical, Log
 from paramiko.ssh_exception import (SSHException)
 import Xlib.support.connect as xlib_connect
 from threading import Thread
+import getpass
 
 
 def threaded(fn):
@@ -195,7 +196,7 @@ class ParamikoPlatform(Platform):
     def interactive_auth_handler(title, instructions, prompt_list):
         answers = []
         for prompt, is_echo in prompt_list:
-            answer = input(prompt)
+            answer = getpass.getpass(prompt)
             answers.append(answer)
         return answers
 
@@ -252,6 +253,10 @@ class ParamikoPlatform(Platform):
                 self.transport = self._ssh.get_transport()
                 self.transport.banner_timeout = 60
             else:
+                Log.warning("2FA is enabled, this is an experimental feature and it may not work as expected")
+                Log.warning("The typing of the password will be visible")
+                Log.warning("nohup can't be used as the password will be asked")
+                Log.warning("Autorecovery mechanism may not work as expected since it will reconnect and ask again for a password")
                 self.transport = paramiko.Transport((self._host_config['hostname'], port))
                 self.transport.start_client()
                 self.transport.auth_interactive(self.user, self.interactive_auth_handler)
