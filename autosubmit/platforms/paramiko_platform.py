@@ -192,13 +192,19 @@ class ParamikoPlatform(Platform):
             Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
             return False
         return True
-    @staticmethod
-    def interactive_auth_handler(title, instructions, prompt_list):
+
+    def interactive_auth_handler(self,title, instructions, prompt_list):
         answers = []
-        for prompt, is_echo in prompt_list:
-            answer = getpass.getpass(prompt)
-            answers.append(answer)
-        return answers
+        # Walk the list of prompts that the server sent that we need to answer
+        for pr in prompt_list:
+            # str() used to to make sure that we're dealing with a string rather than a unicode string
+            # strip() used to get rid of any padding spaces sent by the server
+            if "Password" in str(pr[0]).strip():
+                answers.append(self.pw)
+            elif str(pr[0]).lower() in ["token","2fa","otp"]:
+                answers.append(self.mfa)
+        input("Press Enter to continue...")
+        return tuple(answers)
 
     def connect(self, reconnect=False):
         """
@@ -254,12 +260,18 @@ class ParamikoPlatform(Platform):
                 self.transport.banner_timeout = 60
             else:
                 Log.warning("2FA is enabled, this is an experimental feature and it may not work as expected")
-                Log.warning("The typing of the password will be visible")
+                Log.warning("The typing of the password could be visible")
                 Log.warning("nohup can't be used as the password will be asked")
                 Log.warning("Autorecovery mechanism may not work as expected since it will reconnect and ask again for a password")
                 self.transport = paramiko.Transport((self._host_config['hostname'], port))
+                self.transport.auth_timeout = 60
                 self.transport.start_client()
+                if not reconnect:
+                    self.pw = getpass.getpass("Password for {0}@{1}: ".format(self.user, self._host_config['hostname']))
+                    self.mfa = getpass.getpass("OTP for {0}@{1}: ".format(self.user, self._host_config['hostname']))
                 self.transport.auth_interactive(self.user, self.interactive_auth_handler)
+                del self.pw
+                del self.mfa
                 if self.transport.is_authenticated():
                     self._ssh._transport = self.transport
                     self.transport.banner_timeout = 60
