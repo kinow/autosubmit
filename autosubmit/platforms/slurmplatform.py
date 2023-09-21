@@ -40,8 +40,8 @@ class SlurmPlatform(ParamikoPlatform):
     """
 
 
-    def __init__(self, expid, name, config):
-        ParamikoPlatform.__init__(self, expid, name, config)
+    def __init__(self, expid, name, config, auth_password=None):
+        ParamikoPlatform.__init__(self, expid, name, config, auth_password = auth_password)
         self.mkdir_cmd = None
         self.get_cmd = None
         self.put_cmd = None

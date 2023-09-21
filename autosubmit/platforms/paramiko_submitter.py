@@ -68,7 +68,7 @@ class ParamikoSubmitter(Submitter):
         self.platforms = platforms
 
 
-    def load_platforms(self, asconf, retries=5):
+    def load_platforms(self, asconf, retries=5, auth_password = None):
         """
         Create all the platforms object that will be used by the experiment
 
@@ -148,7 +148,7 @@ class ParamikoSubmitter(Submitter):
                         asconf.expid, section, config, platform_version)
                 elif platform_type == 'slurm':
                     remote_platform = SlurmPlatform(
-                        asconf.expid, section, config)
+                        asconf.expid, section, config, auth_password = auth_password)
                 elif platform_type == 'pjm':
                     remote_platform = PJMPlatform(
                         asconf.expid, section, config)

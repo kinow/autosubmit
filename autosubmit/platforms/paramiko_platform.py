@@ -38,7 +38,7 @@ class ParamikoPlatform(Platform):
     Class to manage the connections to the different platforms with the Paramiko library.
     """
 
-    def __init__(self, expid, name, config):
+    def __init__(self, expid, name, config, auth_password = None):
         """
 
         :param config:
@@ -46,7 +46,7 @@ class ParamikoPlatform(Platform):
         :param name:
         """
 
-        Platform.__init__(self, expid, name, config)
+        Platform.__init__(self, expid, name, config, auth_password=auth_password)
         self._proxy = None
         self._ssh_output_err = ""
         self.connected = False
@@ -202,10 +202,10 @@ class ParamikoPlatform(Platform):
             # strip() used to get rid of any padding spaces sent by the server
             if "Password" in str(pr[0]).strip():
                 answers.append(self.pw)
-            elif str(pr[0]).lower() in ["token","2fa:","otp"]:
+            elif str(pr[0]).lower() in ["token","2fa","otp"]:
                 answers.append(self.mfa)
         try:
-            inputimeout(prompt='Press enter to continue', timeout=self.otp_timeout)
+            inputimeout(prompt='Press enter to complete the 2FA authentication', timeout=self.otp_timeout)
         except:
             pass
         return tuple(answers)
@@ -217,8 +217,7 @@ class ParamikoPlatform(Platform):
         :return: True if connection is created, False otherwise
         :rtype: bool
         """
-        self.otp_timeout = self.config.get("PLATFORMS", {}).get(self.name.upper()).get("2FA_TIMEOUT", 60*5)
-        two_factor_auth = self.config.get("PLATFORMS", {}).get(self.name.upper()).get("2FA", False)
+
         try:
             display = os.getenv('DISPLAY')
             if display is None:
@@ -241,7 +240,7 @@ class ParamikoPlatform(Platform):
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
             port = int(self._host_config.get('port',22))
-            if not two_factor_auth:
+            if not self.two_factor_auth:
                 # Agent Auth
                 if not self.agent_auth(port):
                     # Public Key Auth
@@ -267,14 +266,12 @@ class ParamikoPlatform(Platform):
                 Log.warning("2FA is enabled, this is an experimental feature and it may not work as expected")
                 Log.warning("The typing of the password could be visible")
                 Log.warning("nohup can't be used as the password will be asked")
-                Log.warning("Autorecovery mechanism may not work as expected since it will reconnect and ask again for a password")
                 self.transport = paramiko.Transport((self._host_config['hostname'], port))
-                self.transport.auth_timeout = 60
                 self.transport.start_client()
-                if not reconnect:
-                    self.pw = getpass.getpass("Password for {0}@{1}: ".format(self.user, self._host_config['hostname']))
-                    self.mfa = getpass.getpass("OTP for {0}@{1}: ".format(self.user, self._host_config['hostname']))
-                self.transport.auth_interactive(self.user, self.interactive_auth_handler)
+                try:
+                    self.transport.auth_interactive(self.user, self.interactive_auth_handler)
+                except Exception as e:
+                    Log.printlog("2FA authentication failed",7000)
                 if self.transport.is_authenticated():
                     self._ssh._transport = self.transport
                     self.transport.banner_timeout = 60

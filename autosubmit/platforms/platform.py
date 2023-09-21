@@ -8,13 +8,13 @@ from typing import List, Union
 
 from autosubmit.helpers.parameters import autosubmit_parameter
 from log.log import AutosubmitCritical, AutosubmitError, Log
-
+import getpass
 class Platform(object):
     """
     Class to manage the connections to the different platforms.
     """
 
-    def __init__(self, expid, name, config):
+    def __init__(self, expid, name, config, auth_password = None):
         """
         :param config:
         :param expid:
@@ -64,6 +64,30 @@ class Platform(object):
         self._submit_cmd = None
         self._checkhost_cmd = None
         self.cancel_cmd = None
+        self.otp_timeout = None
+        self.two_factor_auth = None
+        self.otp_timeout = self.config.get("PLATFORMS", {}).get(self.name.upper(),{}).get("2FA_TIMEOUT", 60*5)
+        self.two_factor_auth = self.config.get("PLATFORMS", {}).get(self.name.upper(),{}).get("2FA", False)
+        if not self.two_factor_auth:
+            self.pw = None
+            self.mfa = None
+        elif auth_password is not None and self.two_factor_auth:
+            if type(auth_password) == list:
+                self.pw = auth_password[0]
+                if len(auth_password) > 1:
+                    self.mfa = auth_password[1]
+                else:
+                    self.mfa = None
+            else:
+                self.pw = auth_password
+                self.mfa = None
+        elif auth_password is None and self.two_factor_auth:
+            self.pw = getpass.getpass("Password for {0}: ".format(self.name))
+            self.mfa = getpass.getpass("2FA token for {0}: ".format(self.name))
+        else:
+            self.pw = None
+            self.mfa = None
+
 
     @property
     @autosubmit_parameter(name='current_arch')
