@@ -202,7 +202,7 @@ class ParamikoPlatform(Platform):
             # strip() used to get rid of any padding spaces sent by the server
             if "Password" in str(pr[0]).strip():
                 answers.append(self.pw)
-            elif str(pr[0]).lower() in ["token","2fa","otp"]:
+            elif str(pr[0]).lower() in ["token","2fa:","otp"]:
                 answers.append(self.mfa)
         try:
             inputimeout(prompt='Press enter to complete the 2FA authentication', timeout=self.otp_timeout)
