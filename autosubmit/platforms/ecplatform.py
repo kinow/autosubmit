@@ -242,8 +242,7 @@ class EcPlatform(ParamikoPlatform):
     def send_file(self, filename, check=True):
         self.check_remote_log_dir()
         self.delete_file(filename)
-        command = '{0} {1} {3}:{2}'.format(self.put_cmd, os.path.join(self.tmp_path, filename),
-                                           os.path.join(self.get_files_path(), filename), self.host)
+        command = f'{self.put_cmd} {os.path.join(self.tmp_path, filename)} {self.host}:{os.path.join(self.get_files_path(), os.path.basename(filename))}'
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError as e:
