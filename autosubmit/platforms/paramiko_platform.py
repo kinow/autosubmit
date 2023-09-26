@@ -196,18 +196,26 @@ class ParamikoPlatform(Platform):
 
     def interactive_auth_handler(self,title, instructions, prompt_list):
         answers = []
+        twofactor_nonpush = ""
         # Walk the list of prompts that the server sent that we need to answer
-        for pr in prompt_list:
+        for prompt_, _ in prompt_list:
+            prompt = str(prompt_).strip().lower()
             # str() used to to make sure that we're dealing with a string rather than a unicode string
             # strip() used to get rid of any padding spaces sent by the server
-            if "Password" in str(pr[0]).strip():
+            if "password" in prompt:
                 answers.append(self.pw)
-            elif str(pr[0]).lower() in ["token","2fa:","otp"]:
-                answers.append(self.mfa)
-        try:
-            inputimeout(prompt='Press enter to complete the 2FA authentication', timeout=self.otp_timeout)
-        except:
-            pass
+            elif prompt in "token" or prompt in "2fa" or prompt in "otp":
+                if self.two_factor_method == "push":
+                    answers.append("")
+                else:
+                    if twofactor_nonpush != "":
+                        twofactor_nonpush = input("Please type the 2FA/OTP/token code: ")
+                    answers.append(twofactor_nonpush)
+        if twofactor_nonpush == "":
+            try:
+                inputimeout(prompt='Press enter to complete the 2FA PUSH authentication', timeout=self.otp_timeout)
+            except:
+                pass
         return tuple(answers)
 
     def connect(self, reconnect=False):
@@ -264,8 +272,8 @@ class ParamikoPlatform(Platform):
                 self.transport.banner_timeout = 60
             else:
                 Log.warning("2FA is enabled, this is an experimental feature and it may not work as expected")
-                Log.warning("The typing of the password could be visible")
                 Log.warning("nohup can't be used as the password will be asked")
+                Log.warning("If you are using a token, please type the token code when asked")
                 self.transport = paramiko.Transport((self._host_config['hostname'], port))
                 self.transport.start_client()
                 try:
