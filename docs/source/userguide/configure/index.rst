@@ -227,6 +227,8 @@ identifier and add this text:
             EC_QUEUE : <ec_queue> # only when type == ecaccess
             VERSION: <version>
             2FA: False
+            2FA_TIMEOUT: <timeout> # default 300
+            2FA_METHOD: <method>
             SERIAL_PLATFORM: <platform_name>
             SERIAL_QUEUE: <queue_name>
             BUDGET: <budget>
@@ -262,8 +264,11 @@ This will create a platform named "new_platform". The options specified are all 
 .. warning:: With some platforms, 2FA authentication is required. If this is the case, you have to add the parameter
     2FA. These platforms are ecaccess (options: True, False). There may be some autosubmit functions that are not avaliable when using an interactive auth method.
 
-* 2FA: determines if the platform requires 2FA authentication
+* 2FA: determines if the platform requires 2FA authentication ( default: False)
 
+* 2FA_TIMEOUT: determines the timeout for the 2FA authentication ( default: 300 )
+
+* 2FA_METHOD: determines the method for the 2FA authentication( default: token)
 
 Some platforms may require to run serial jobs in a different queue or platform. To avoid changing the job
 configuration, you can specify what platform or queue to use to run serial jobs assigned to this platform:
