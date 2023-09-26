@@ -2044,7 +2044,7 @@ class Autosubmit:
                     # If there are issues while running, this function will be called again to reinitialize the experiment.
                     job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence, _ = Autosubmit.prepare_run(expid, notransitive,start_time, start_after, run_only_members)
                 except AutosubmitCritical as e:
-                    e.message += " HINT: check the CUSTOM_DIRECTIVE syntax in your jobs configuration files."
+                    #e.message += " HINT: check the CUSTOM_DIRECTIVE syntax in your jobs configuration files."
                     raise AutosubmitCritical(e.message, 7014, e.trace)
                 except Exception as e:
                     raise AutosubmitCritical("Error in run initialization", 7014, str(e))  # Changing default to 7014
@@ -4771,7 +4771,7 @@ class Autosubmit:
                     hpcarch = submitter.platforms[as_conf.get_platform()]
                 except Exception as e:
                     hpcarch = "local"
-                Log.warning("Remote clone may be disabled due to: " + error)
+                #Log.warning("Remote clone may be disabled due to: " + error)
             return AutosubmitGit.clone_repository(as_conf, force, hpcarch)
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()

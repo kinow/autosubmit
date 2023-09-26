@@ -20,6 +20,8 @@ from log.log import AutosubmitError, AutosubmitCritical, Log
 from paramiko.ssh_exception import (SSHException)
 import Xlib.support.connect as xlib_connect
 from threading import Thread
+import getpass
+from inputimeout import inputimeout
 
 
 def threaded(fn):
@@ -36,7 +38,7 @@ class ParamikoPlatform(Platform):
     Class to manage the connections to the different platforms with the Paramiko library.
     """
 
-    def __init__(self, expid, name, config):
+    def __init__(self, expid, name, config, auth_password = None):
         """
 
         :param config:
@@ -44,7 +46,7 @@ class ParamikoPlatform(Platform):
         :param name:
         """
 
-        Platform.__init__(self, expid, name, config)
+        Platform.__init__(self, expid, name, config, auth_password=auth_password)
         self._proxy = None
         self._ssh_output_err = ""
         self.connected = False
@@ -191,6 +193,31 @@ class ParamikoPlatform(Platform):
             Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
             return False
         return True
+
+    def interactive_auth_handler(self,title, instructions, prompt_list):
+        answers = []
+        twofactor_nonpush = ""
+        # Walk the list of prompts that the server sent that we need to answer
+        for prompt_, _ in prompt_list:
+            prompt = str(prompt_).strip().lower()
+            # str() used to to make sure that we're dealing with a string rather than a unicode string
+            # strip() used to get rid of any padding spaces sent by the server
+            if "password" in prompt:
+                answers.append(self.pw)
+            elif prompt in "token" or prompt in "2fa" or prompt in "otp":
+                if self.two_factor_method == "push":
+                    answers.append("")
+                else:
+                    if twofactor_nonpush != "":
+                        twofactor_nonpush = input("Please type the 2FA/OTP/token code: ")
+                    answers.append(twofactor_nonpush)
+        if twofactor_nonpush == "":
+            try:
+                inputimeout(prompt='Press enter to complete the 2FA PUSH authentication', timeout=self.otp_timeout)
+            except:
+                pass
+        return tuple(answers)
+
     def connect(self, reconnect=False):
         """
         Creates ssh connection to host
@@ -198,6 +225,7 @@ class ParamikoPlatform(Platform):
         :return: True if connection is created, False otherwise
         :rtype: bool
         """
+
         try:
             display = os.getenv('DISPLAY')
             if display is None:
@@ -220,28 +248,45 @@ class ParamikoPlatform(Platform):
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
             port = int(self._host_config.get('port',22))
-            # Agent Auth
-            if not self.agent_auth(port):
-                # Public Key Auth
-                if 'proxycommand' in self._host_config:
-                    self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
-                    try:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, sock=self._proxy, timeout=60 , banner_timeout=60)
-                    except Exception as e:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, sock=self._proxy, timeout=60,
-                                          banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+            if not self.two_factor_auth:
+                # Agent Auth
+                if not self.agent_auth(port):
+                    # Public Key Auth
+                    if 'proxycommand' in self._host_config:
+                        self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
+                        try:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, sock=self._proxy, timeout=60 , banner_timeout=60)
+                        except Exception as e:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, sock=self._proxy, timeout=60,
+                                              banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+                    else:
+                        try:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, timeout=60 , banner_timeout=60)
+                        except Exception as e:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, timeout=60 , banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+                self.transport = self._ssh.get_transport()
+                self.transport.banner_timeout = 60
+            else:
+                Log.warning("2FA is enabled, this is an experimental feature and it may not work as expected")
+                Log.warning("nohup can't be used as the password will be asked")
+                Log.warning("If you are using a token, please type the token code when asked")
+                self.transport = paramiko.Transport((self._host_config['hostname'], port))
+                self.transport.start_client()
+                try:
+                    self.transport.auth_interactive(self.user, self.interactive_auth_handler)
+                except Exception as e:
+                    Log.printlog("2FA authentication failed",7000)
+                    raise
+                if self.transport.is_authenticated():
+                    self._ssh._transport = self.transport
+                    self.transport.banner_timeout = 60
                 else:
-                    try:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, timeout=60 , banner_timeout=60)
-                    except Exception as e:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, timeout=60 , banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
-            self.transport = self._ssh.get_transport()
-            self.transport.banner_timeout = 60
-
+                    self.transport.close()
+                    raise SSHException
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=pow(4, 12) ,max_packet_size=pow(4, 12) )
             self._ftpChannel.get_channel().settimeout(120)
             self.connected = True

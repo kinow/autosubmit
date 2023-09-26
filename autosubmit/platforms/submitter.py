@@ -25,13 +25,15 @@ class Submitter:
     """
     Class to manage the experiments platform
     """
-    def load_platforms(self, asconf, retries=5):
+    def load_platforms(self, asconf, retries=5, auth_password=None):
         """
         Create all the platforms object that will be used by the experiment
 
         :param retries: retries in case creation of service fails
         :param asconf: autosubmit config to use
         :type asconf: AutosubmitConfig
+        :param auth_password: password to use for authentication
+        :type auth_password: str
         :return: platforms used by the experiment
         :rtype: dict
         """
