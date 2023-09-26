@@ -157,6 +157,7 @@ This feature is only available for SLURM platforms. And it is automatically enab
 To add a new hetjob, open the <experiments_directory>/cxxx/conf/jobs_cxxx.yml file where cxxx is the experiment
 
 .. code-block:: yaml
+
     JOBS:
         new_hetjob:
             FILE: <new_job_template>
