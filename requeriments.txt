@@ -1,3 +1,4 @@
+inputimeout
 psutil
 setuptools>=60.8.2
 cython
