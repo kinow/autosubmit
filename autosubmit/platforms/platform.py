@@ -80,7 +80,6 @@ class Platform(object):
             self.pw = None
 
 
-
     @property
     @autosubmit_parameter(name='current_arch')
     def name(self):

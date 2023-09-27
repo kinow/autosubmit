@@ -68,7 +68,7 @@ class ParamikoSubmitter(Submitter):
         self.platforms = platforms
 
 
-    def load_platforms(self, asconf, retries=5, auth_password = None):
+    def load_platforms(self, asconf, retries=5, auth_password = None, local_auth_password = None):
         """
         Create all the platforms object that will be used by the experiment
 
@@ -105,7 +105,7 @@ class ParamikoSubmitter(Submitter):
         platforms = dict()
 
         # Build Local Platform Object
-        local_platform = LocalPlatform(asconf.expid, 'local', config)
+        local_platform = LocalPlatform(asconf.expid, 'local', config, auth_password = local_auth_password)
         local_platform.max_wallclock = asconf.get_max_wallclock()
         local_platform.max_processors = asconf.get_max_processors()
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()

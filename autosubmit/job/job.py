@@ -933,7 +933,7 @@ class Job(object):
         return
 
     @threaded
-    def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0,job_id="",auth_password=None):
+    def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0,job_id="",auth_password=None, local_auth_password = None):
         as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
         as_conf.reload(force_load=True)
         max_retrials = self.retrials
@@ -959,7 +959,7 @@ class Job(object):
                 max_logs = int(max_retrials) - fail_count
                 last_log = int(max_retrials) - fail_count
                 submitter = self._get_submitter(as_conf)
-                submitter.load_platforms(as_conf, auth_password=auth_password)
+                submitter.load_platforms(as_conf, auth_password=auth_password, local_auth_password=local_auth_password)
                 platform = submitter.platforms[platform_name]
                 platform.test_connection()
                 success = True
@@ -1222,7 +1222,7 @@ class Job(object):
             if as_conf.get_disable_recovery_threads(self.platform.name) == "true":
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
             else:
-                self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = copy.copy(self.fail_count),job_id=self.id,auth_password=self._platform.pw)
+                self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = copy.copy(self.fail_count),job_id=self.id,auth_password=self._platform.pw, local_auth_password=self._platform.pw)
             if self.wrapper_type == "vertical":
                 max_logs = int(self.retrials)
                 for i in range(0,max_logs):
