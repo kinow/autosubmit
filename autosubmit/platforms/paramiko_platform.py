@@ -194,24 +194,26 @@ class ParamikoPlatform(Platform):
             return False
         return True
 
-    def interactive_auth_handler(self,title, instructions, prompt_list):
+    def interactive_auth_handler(self, title, instructions, prompt_list):
         answers = []
-        twofactor_nonpush = ""
         # Walk the list of prompts that the server sent that we need to answer
+        twofactor_nonpush = None
         for prompt_, _ in prompt_list:
             prompt = str(prompt_).strip().lower()
             # str() used to to make sure that we're dealing with a string rather than a unicode string
             # strip() used to get rid of any padding spaces sent by the server
             if "password" in prompt:
                 answers.append(self.pw)
-            elif prompt in "token" or prompt in "2fa" or prompt in "otp":
+            elif "token" in prompt or "2fa" in prompt or "otp" in prompt:
                 if self.two_factor_method == "push":
                     answers.append("")
-                else:
-                    if twofactor_nonpush != "":
+                elif self.two_factor_method == "token":
+                    # Sometimes the server may ask for the 2FA code more than once this is to avoid asking the user again
+                    # If it is wrong, just run again autosubmit run because the issue could be in the password step
+                    if twofactor_nonpush is None:
                         twofactor_nonpush = input("Please type the 2FA/OTP/token code: ")
                     answers.append(twofactor_nonpush)
-        if twofactor_nonpush == "":
+        if self.two_factor_method == "push":
             try:
                 inputimeout(prompt='Press enter to complete the 2FA PUSH authentication', timeout=self.otp_timeout)
             except:
@@ -274,6 +276,8 @@ class ParamikoPlatform(Platform):
                 Log.warning("2FA is enabled, this is an experimental feature and it may not work as expected")
                 Log.warning("nohup can't be used as the password will be asked")
                 Log.warning("If you are using a token, please type the token code when asked")
+                if self.pw is None:
+                    self.pw = getpass.getpass("Password for {0}: ".format(self.name))
                 self.transport = paramiko.Transport((self._host_config['hostname'], port))
                 self.transport.start_client()
                 try:

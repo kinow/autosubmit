@@ -69,7 +69,6 @@ class Platform(object):
         self.otp_timeout = self.config.get("PLATFORMS", {}).get(self.name.upper(),{}).get("2FA_TIMEOUT", 60*5)
         self.two_factor_auth = self.config.get("PLATFORMS", {}).get(self.name.upper(),{}).get("2FA", False)
         self.two_factor_method = self.config.get("PLATFORMS", {}).get(self.name.upper(),{}).get("2FA_METHOD", "token")
-
         if not self.two_factor_auth:
             self.pw = None
         elif auth_password is not None and self.two_factor_auth:
@@ -77,10 +76,9 @@ class Platform(object):
                 self.pw = auth_password[0]
             else:
                 self.pw = auth_password
-        elif auth_password is None and self.two_factor_auth:
-            self.pw = getpass.getpass("Password for {0}: ".format(self.name))
         else:
             self.pw = None
+
 
 
     @property
