@@ -213,11 +213,12 @@ class ParamikoPlatform(Platform):
                     if twofactor_nonpush is None:
                         twofactor_nonpush = input("Please type the 2FA/OTP/token code: ")
                     answers.append(twofactor_nonpush)
-        if self.two_factor_method == "push":
-            try:
-                inputimeout(prompt='Press enter to complete the 2FA PUSH authentication', timeout=self.otp_timeout)
-            except:
-                pass
+        # This is done from the server
+        # if self.two_factor_method == "push":
+        #     try:
+        #         inputimeout(prompt='Press enter to complete the 2FA PUSH authentication', timeout=self.otp_timeout)
+        #     except:
+        #         pass
         return tuple(answers)
 
     def connect(self, reconnect=False):
