@@ -21,7 +21,6 @@ from paramiko.ssh_exception import (SSHException)
 import Xlib.support.connect as xlib_connect
 from threading import Thread
 import getpass
-from inputimeout import inputimeout
 
 
 def threaded(fn):
