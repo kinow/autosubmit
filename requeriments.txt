@@ -1,5 +1,3 @@
-inputimeout
-psutil
 setuptools>=60.8.2
 cython
 autosubmitconfigparser==1.0.48
