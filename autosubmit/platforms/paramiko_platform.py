@@ -278,6 +278,8 @@ class ParamikoPlatform(Platform):
                 Log.warning("If you are using a token, please type the token code when asked")
                 if self.pw is None:
                     self.pw = getpass.getpass("Password for {0}: ".format(self.name))
+                if self.two_factor_method == "push":
+                    Log.warning("Please check your phone to complete the 2FA PUSH authentication")
                 self.transport = paramiko.Transport((self._host_config['hostname'], port))
                 self.transport.start_client()
                 try:
