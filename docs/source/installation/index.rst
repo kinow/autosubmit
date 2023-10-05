@@ -109,21 +109,21 @@ The sequence of instructions to install Autosubmit and its dependencies with con
 
 .. warning:: This procedure is still WIP. You can follow the process at `issue #864 <https://earth.bsc.es/gitlab/es/autosubmit/-/issues/886>`_. We strongly recommend using the pip procedure.
 
+If you don't have conda installed yet, we recommend following `Installing Miniconda <https://docs.conda.io/projects/miniconda/en/latest/index.html>`_.
+
 .. code-block:: bash
 
-    # Download conda
-    wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh
-    # Launch it
-    chmod +x ./Miniconda3-py39_4.12.0-Linux-x86_64.sh ; ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
     # Download git
     apt install git -y -q
     # Download autosubmit
     git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v4.0.0b
     cd autosubmit
-    # Create a Conda environment
-    conda env update -f environment.yml -n autosubmit python=3.7
+    # Create a Conda environment from YAML with autosubmit dependencies
+    conda env create -f environment.yml -n autosubmitenv
     # Activate env
-    conda activate autosubmit
+    conda activate autosubmitenv
+    # Install autosubmit
+    pip install autosubmit
     # Test autosubmit
     autosubmit -v
 
