@@ -73,7 +73,7 @@ import re
 import random
 import signal
 import datetime
-
+import log.fd_show as fd_show
 import portalocker
 from pkg_resources import require, resource_listdir, resource_string, resource_filename
 from collections import defaultdict
@@ -2107,6 +2107,7 @@ class Autosubmit:
                         job_list.update_list(as_conf, submitter=submitter)
                         job_list.save()
                         # Submit jobs that are ready to run
+                        Log.debug(f"FD submit: {fd_show.fd_table_status_str()}")
                         if len(job_list.get_ready()) > 0:
                             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
                             job_list.update_list(as_conf, submitter=submitter)
@@ -2136,6 +2137,8 @@ class Autosubmit:
                         if Autosubmit.exit:
                             job_list.save()
                         time.sleep(safetysleeptime)
+                        Log.debug(f"FD endsubmit: {fd_show.fd_table_status_str()}")
+
 
                     except AutosubmitError as e:  # If an error is detected, restore all connections and job_list
                         Log.error("Trace: {0}", e.trace)
