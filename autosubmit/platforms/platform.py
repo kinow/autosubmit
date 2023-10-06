@@ -820,3 +820,4 @@ class Platform(object):
         Sends a Submit file Script, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
         """
         raise NotImplementedError
+

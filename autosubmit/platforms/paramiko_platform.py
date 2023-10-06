@@ -1302,18 +1302,44 @@ class ParamikoPlatform(Platform):
         return timedelta(**time_params)
 
     def closeConnection(self):
-        if self._ftpChannel is not None and len(str(self._ftpChannel)) > 0:
-            self._ftpChannel.close()
-        if self._ssh is not None and len(str(self._ssh)) > 0:
-            self._ssh.close()
-            self.transport.close()
-            self.transport.stop_thread()
-            try:
-                del self._ssh
-                del self._ftpChannel
-                del self.transport
-            except Exception as e:
-                pass
+        try:
+            if self._ftpChannel:
+                self._ftpChannel.close()
+        except:
+            pass
+        try:
+            if self._ssh._agent:
+                self._ssh._agent.close()
+
+        except:
+            pass
+        try:
+            if self._ssh:
+                self._ssh.close()
+        except:
+            pass
+        try:
+            if self.transport:
+                self.transport.close()
+                self.transport.stop_thread()
+        except:
+            pass
+        try:
+            del self._ssh._agent
+        except:
+            pass
+        try:
+            del self._ssh
+        except Exception as e:
+            pass
+        try:
+            del self._ftpChannel
+        except:
+            pass
+        try:
+            del self.transport
+        except:
+            pass
 
     def check_tmp_exists(self):
         try:

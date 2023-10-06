@@ -939,7 +939,6 @@ class Job(object):
         max_retrials = self.retrials
         max_logs = 0
         last_log = 0
-        sleep(5)
         stat_file = self.script_name[:-4] + "_STAT_"
         lang = locale.getlocale()[1]
         if lang is None:
@@ -965,7 +964,7 @@ class Job(object):
                 success = True
             except BaseException as e:
                 error_message = str(e)
-                sleep(60 * 5)
+                sleep(10)
                 pass
             count = count + 1
         if not success:
@@ -1084,6 +1083,10 @@ class Job(object):
                         except BaseException as e:
                             Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
                                 str(e), self.name))
+            try:
+                platform.closeConnection()
+            except:
+                pass
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {1}".format(
                 e.message, self.name), 6001)
@@ -1091,7 +1094,6 @@ class Job(object):
                 platform.closeConnection()
             except BaseException as e:
                 pass
-            return
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
                 e.message, self.name), 6001)
@@ -1099,12 +1101,7 @@ class Job(object):
                 platform.closeConnection()
             except Exception as e:
                 pass
-            return
-        try:
-            platform.closeConnection()
-        except BaseException as e:
-            pass
-        return
+
     def parse_time(self,wallclock):
         regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
         parts = regex.match(wallclock)
