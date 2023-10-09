@@ -1302,6 +1302,7 @@ class ParamikoPlatform(Platform):
         return timedelta(**time_params)
 
     def closeConnection(self):
+        # Ensure to delete all references to the ssh connection, so that it frees all the file descriptors
         with suppress(Exception):
             if self._ftpChannel:
                 self._ftpChannel.close()
