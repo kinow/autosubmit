@@ -950,7 +950,7 @@ class Job(object):
         success = False
         error_message = ""
         platform = None
-        while (count < retries) or not success:
+        while (count < retries) and not success:
             try:
                 as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
                 as_conf.reload(force_load=True)
@@ -964,7 +964,7 @@ class Job(object):
                 success = True
             except BaseException as e:
                 error_message = str(e)
-                sleep(10)
+                sleep(5)
                 pass
             count = count + 1
         if not success:
@@ -995,24 +995,22 @@ class Job(object):
         out_exist = False
         err_exist = False
         retries = 3
-        sleeptime = 0
         i = 0
         try:
             while (not out_exist and not err_exist) and i < retries:
                 try:
                     out_exist = platform.check_file_exists(
-                        remote_logs[0], False)
+                        remote_logs[0], False, sleeptime=0, max_retries=1)
                 except IOError as e:
                     out_exist = False
                 try:
                     err_exist = platform.check_file_exists(
-                        remote_logs[1], False)
+                        remote_logs[1], False,sleeptime=0,max_retries=1)
                 except IOError as e:
                     err_exist = False
                 if not out_exist or not err_exist:
-                    sleeptime = sleeptime + 5
                     i = i + 1
-                    sleep(sleeptime)
+                    sleep(5)
                     try:
                         platform.restore_connection()
                     except BaseException as e:
@@ -1101,6 +1099,7 @@ class Job(object):
                 platform.closeConnection()
             except Exception as e:
                 pass
+        return
 
     def parse_time(self,wallclock):
         regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')

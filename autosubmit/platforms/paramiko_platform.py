@@ -1308,9 +1308,14 @@ class ParamikoPlatform(Platform):
         except:
             pass
         try:
-            if self._ssh._agent:
+            if self._ssh._agent: # May not be in all runs
                 self._ssh._agent.close()
-
+        except:
+            pass
+        try:
+            if self._ssh._transport:
+                self._ssh._transport.close()
+                self._ssh._transport.stop_thread()
         except:
             pass
         try:
@@ -1324,12 +1329,13 @@ class ParamikoPlatform(Platform):
                 self.transport.stop_thread()
         except:
             pass
+
         try:
-            del self._ssh._agent
+            del self._ssh._agent # May not be in all runs
         except:
             pass
         try:
-            del self._ssh
+            del self._ssh._transport
         except Exception as e:
             pass
         try:
@@ -1340,7 +1346,10 @@ class ParamikoPlatform(Platform):
             del self.transport
         except:
             pass
-
+        try:
+            del self._ssh
+        except:
+            pass
     def check_tmp_exists(self):
         try:
             if self.send_command("ls {0}".format(self.temp_dir)):
