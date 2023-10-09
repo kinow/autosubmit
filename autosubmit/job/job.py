@@ -22,7 +22,7 @@ Main module for Autosubmit. Only contains an interface class to all functionalit
 """
 
 from collections import OrderedDict
-
+from contextlib import suppress
 import copy
 import datetime
 import json
@@ -1081,24 +1081,18 @@ class Job(object):
                         except BaseException as e:
                             Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
                                 str(e), self.name))
-            try:
+            with suppress(Exception):
                 platform.closeConnection()
-            except:
-                pass
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {1}".format(
                 e.message, self.name), 6001)
-            try:
+            with suppress(Exception):
                 platform.closeConnection()
-            except BaseException as e:
-                pass
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
                 e.message, self.name), 6001)
-            try:
+            with suppress(Exception):
                 platform.closeConnection()
-            except Exception as e:
-                pass
         return
 
     def parse_time(self,wallclock):
