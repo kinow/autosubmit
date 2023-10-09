@@ -175,7 +175,7 @@ class LocalPlatform(ParamikoPlatform):
         return True
 
     # Moves .err .out
-    def check_file_exists(self, src,wrapper_failed=False,sleeptime=5, max_retries = 3):
+    def check_file_exists(self, src, wrapper_failed=False, sleeptime=5, max_retries=3):
         """
         Moves a file on the platform
         :param src: source name

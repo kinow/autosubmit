@@ -1005,7 +1005,7 @@ class Job(object):
                     out_exist = False
                 try:
                     err_exist = platform.check_file_exists(
-                        remote_logs[1], False,sleeptime=0,max_retries=1)
+                        remote_logs[1], False, sleeptime=0, max_retries=1)
                 except IOError as e:
                     err_exist = False
                 if not out_exist or not err_exist:

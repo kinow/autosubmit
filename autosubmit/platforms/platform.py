@@ -624,7 +624,7 @@ class Platform(object):
         if self.check_file_exists(filename):
             self.delete_file(filename)
 
-    def check_file_exists(self, src, wrapper_failed=False,sleeptime=5, max_retries = 3):
+    def check_file_exists(self, src, wrapper_failed=False, sleeptime=5, max_retries=3):
         return True
 
     def get_stat_file(self, job_name, retries=0):
