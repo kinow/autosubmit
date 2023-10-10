@@ -7,7 +7,7 @@ development of the templates. These variables can be used on templates
 with the syntax ``%VARIABLE_NAME%``.
 
 All configuration variables that are not related to the current job
-or platform are accessible by accessing first their parents, e.g.
+or platform are available by accessing first their parents, e.g.
 ``%PROJECT.PROJECT_TYPE% or %DEFAULT.EXPID%``.
 
 You can review all variables at any given time by using the
@@ -20,7 +20,7 @@ You can review all variables at any given time by using the
     $ autosubmit report $expid -all
 
 The command will save the list of variables available to a file
-in the experiment area. Each group of variables of Autosubmit are
+in the experiment area. The groups of variables of Autosubmit are
 detailed in the next sections on this page.
 
 .. note:: All the variable tables are displayed in alphabetical order.
@@ -28,8 +28,8 @@ detailed in the next sections on this page.
 
 .. note::
 
-    Configuration files such as ``myapp.yml`` may contain some
-    configuration like:
+    Custom configuration files (e.g. ``my-file.yml``) may contain
+    configuration like this example:
 
     .. code-block:: yaml
 
@@ -37,10 +37,10 @@ detailed in the next sections on this page.
           MYPARAMETER: 42
           ANOTHER_PARAMETER: 1984
 
-    If you configured Autosubmit to include this file with the
+    If you configure Autosubmit to include this file with the
     rest of your configuration, then those variables will be
-    available to each job, and can be accessed with:
-    ``%MYAPP.MYPARAMETER%`` and ``%MYAPP.ANOTHER_PARAMETER%``.
+    available to each job as ``%MYAPP.MYPARAMETER%`` and
+    ``%MYAPP.ANOTHER_PARAMETER%``.
 
 
 Job variables
@@ -59,6 +59,19 @@ The following variables are present only in jobs that contain a date
 
 
 .. autosubmit-variables:: chunk
+
+Custom directives
+-----------------
+
+There are job variables that Autosubmit automatically converts into
+directives for your batch server. For example, ``NUMTHREADS`` will
+be set in a Slurm platform as ``--SBATCH --cpus-per-task=$NUMTHREADS``.
+
+However, the variables in Autosubmit do not contain all the directives
+available in each platform like Slurm. For values that do not have a
+direct variable, you can use ``CUSTOM_DIRECTIVES`` to define them in
+your target platform. For instance, to set the number of GPU's in a Slurm
+job, you can use ``CUSTOM_DIRECTIVES=--gpus-per-node=10``.
 
 
 Platform variables
@@ -138,9 +151,6 @@ Other variables
     be available. For example, if you choose Git, then
     you should have ``%PROJECT_ORIGIN%``. If you choose
     Subversion, then you will have ``%PROJECT_URL%``.
-    The same variables from the project template (created
-    with the ``expid`` subcommand) are available in your
-    job template scripts.
 
 
 Performance Metrics variables
