@@ -180,7 +180,7 @@ Manually generate an ``autosubmitrc`` file in one of these locations, which is t
 
 * Set the environment variable ``AUTOSUBMIT_CONFIGURATION`` to the path of the ``autosubmitrc`` file. This will override all other configuration files.
 
-.. important::  `.autosubmitrc` user level and user level precedes system configuration. `AUTOSUBMIT_CONFIGURATION` > `$HOME/.autosubmitrc > /etc/autosubmitrc`
+.. important::  `.autosubmitrc` user level precedes system configuration unless the environment variable is set. `AUTOSUBMIT_CONFIGURATION` > `$HOME/.autosubmitrc > /etc/autosubmitrc`
 
 Quick Installation - Non-shared database (user level)
 ------------------------------------------------------
