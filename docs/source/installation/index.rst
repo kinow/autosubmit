@@ -176,7 +176,7 @@ There are two methods of configuring the Autosubmit main paths.
 
 * Manually generate an ``autosubmitrc`` file in  ``/etc/autosubmitrc``, suited for a workgroup or production environment that wants to use Autosubmit in a shared database in a manner that multiple users can share and view others' experiments.
 
-.. important::  `.autosubmitrc` user level and user level precedes system configuration. `$HOME/.autosubmitrc > /etc/autosubmitrc`
+.. important::  `.autosubmitrc` user level precedes system configuration. `$HOME/.autosubmitrc > /etc/autosubmitrc`
 
 Quick Installation - Non-shared database (user level)
 ------------------------------------------------------
