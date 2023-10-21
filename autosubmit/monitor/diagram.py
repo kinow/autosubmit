@@ -17,20 +17,21 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-import matplotlib as mtp
-import numpy as np
+import itertools
+import math
 import traceback
+
+import matplotlib as mtp
 
 mtp.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
-# from autosubmit.experiment.statistics import ExperimentStats
 from autosubmit.statistics.statistics import Statistics
 from autosubmit.job.job import Job
-from log.log import Log, AutosubmitCritical
+from log.log import Log
 from datetime import datetime
-from typing import List
+from typing import List, Dict
 
 Log.get_logger("Autosubmit")
 
@@ -40,6 +41,11 @@ MAX_JOBS_PER_PLOT = 12.0
 MAX_NUM_PLOTS = 40
 
 
+
+def _seq(start, end, step):
+    """From: https://pynative.com/python-range-for-float-numbers/"""
+    sample_count = int(abs(end - start) / step)
+    return itertools.islice(itertools.count(start, step), sample_count)
 
 def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, period_ini=None, period_fi=None,
                        queue_time_fixes=None):
@@ -75,15 +81,15 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
 
         failed_jobs_dict = exp_stats.build_failed_jobs_only_list()
         # Stats variables definition
-        normal_plots_count = int(np.ceil(len(exp_stats.jobs_stat) / MAX_JOBS_PER_PLOT))
-        failed_jobs_plots_count = int(np.ceil(len(failed_jobs_dict) / MAX_JOBS_PER_PLOT))
+        normal_plots_count = int(math.ceil(len(exp_stats.jobs_stat) / MAX_JOBS_PER_PLOT))
+        failed_jobs_plots_count = int(math.ceil(len(failed_jobs_dict) / MAX_JOBS_PER_PLOT))
     except Exception as exp:
         print(exp)
         print((traceback.format_exc()))
 
     # Plotting
     total_plots_count = normal_plots_count + failed_jobs_plots_count
-    # num_plots = norma 
+    # num_plots = norma
     # ind = np.arrange(int(MAX_JOBS_PER_PLOT))
     width = 0.16
     # Creating stats figure + sanity check
@@ -110,22 +116,30 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
                 l2 = min(int(plot * MAX_JOBS_PER_PLOT), len(exp_stats.jobs_stat))
                 if l2 - l1 <= 0:
                     continue
-                ind = np.arange(l2 - l1)
+                ind = range(l2 - l1)
+                ind_width = [x + width for x in ind]
+                ind_width_3 = [x + width * 3 for x in ind]
+                ind_width_4 = [x + width * 4 for x in ind]
                 # Building plot axis
                 ax.append(fig.add_subplot(grid_spec[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
                 ax[plot - 1].set_ylabel('hours')
-                ax[plot - 1].set_xticks(ind + width)
+                ax[plot - 1].set_xticks(ind_width)
                 ax[plot - 1].set_xticklabels(
                     [job.name for job in jobs_list[l1:l2]], rotation='vertical')
                 ax[plot - 1].set_title(experiment_id, fontsize=20)
                 upper_limit = round(1.10 * exp_stats.max_time, 4)
-                ax[plot - 1].set_yticks(np.arange(0, upper_limit, round(upper_limit / 10, 4)))
+                step = round(upper_limit / 10, 4)
+                # Here we use ``upper_limit + step`` as np.arange is inclusive at the end,
+                # ``islice`` is not.
+                y_ticks = [round(x, 4) for x in _seq(0, upper_limit + step, step)]
+                # ax[plot - 1].set_yticks(np.arange(0, upper_limit, round(upper_limit / 10, 4)))
+                ax[plot - 1].set_yticks(y_ticks)
                 ax[plot - 1].set_ylim(0, float(1.10 * exp_stats.max_time))
                 # Building reacts
                 rects[0] = ax[plot - 1].bar(ind, exp_stats.queued[l1:l2], width, color='lightpink')
-                rects[1] = ax[plot - 1].bar(ind + width, exp_stats.run[l1:l2], width, color='green')
-                rects[2] = ax[plot - 1].bar(ind + width * 3, exp_stats.fail_queued[l1:l2], width, color='lightsalmon')
-                rects[3] = ax[plot - 1].bar(ind + width * 4, exp_stats.fail_run[l1:l2], width, color='salmon')
+                rects[1] = ax[plot - 1].bar(ind_width, exp_stats.run[l1:l2], width, color='green')
+                rects[2] = ax[plot - 1].bar(ind_width_3, exp_stats.fail_queued[l1:l2], width, color='lightsalmon')
+                rects[3] = ax[plot - 1].bar(ind_width_4, exp_stats.fail_run[l1:l2], width, color='salmon')
                 rects[4] = ax[plot - 1].plot([0., width * 6 * MAX_JOBS_PER_PLOT],
                                              [exp_stats.threshold, exp_stats.threshold], "k--", label='wallclock sim')
                 # Building legend
@@ -142,16 +156,18 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
                 l2 = min(int(j_plot * MAX_JOBS_PER_PLOT), len(job_names_in_failed))
                 if l2 - l1 <= 0:
                     continue
-                ind = np.arange(l2 - l1)
+                ind = range(l2 - l1)
+                ind_width = [x + width for x in ind]
+                ind_width_2 = [x + width * 2 for x in ind]
                 plot = i_plot + j_plot
                 ax.append(fig.add_subplot(grid_spec[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
                 ax[plot - 1].set_ylabel('# failed attempts')
-                ax[plot - 1].set_xticks(ind + width)
+                ax[plot - 1].set_xticks(ind_width)
                 ax[plot - 1].set_xticklabels([name for name in job_names_in_failed[l1:l2]], rotation='vertical')
                 ax[plot - 1].set_title(experiment_id, fontsize=20)
                 ax[plot - 1].set_ylim(0, float(1.10 * exp_stats.max_fail))
                 ax[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
-                failed_jobs_rects[0] = ax[plot - 1].bar(ind + width * 2, [exp_stats.failed_jobs_dict[name] for name in
+                failed_jobs_rects[0] = ax[plot - 1].bar(ind_width_2, [exp_stats.failed_jobs_dict[name] for name in
                                                                           job_names_in_failed[l1:l2]], width, color='red')
             except Exception as exp:
                 print((traceback.format_exc()))
