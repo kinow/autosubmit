@@ -562,5 +562,29 @@ class TestJobList(unittest.TestCase):
         result = self.JobList._valid_parent(self.mock_job, member_list, date_list, chunk_list, is_a_natural_relation, filter_,child)
         self.assertEqual(result, True)
 
+    def test_check_relationship(self):
+        relationships = {'MEMBERS_FROM': {'TestMember,   TestMember2,TestMember3   ': {'CHUNKS_TO': 'None', 'DATES_TO': 'None', 'FROM_STEP': None, 'MEMBERS_TO': 'None', 'STATUS': None}}}
+        level_to_check = "MEMBERS_FROM"
+        value_to_check = "TestMember"
+        result = self.JobList._check_relationship(relationships,level_to_check,value_to_check )
+        expected_output = [{'CHUNKS_TO': 'None', 'DATES_TO': 'None', 'FROM_STEP': None, 'MEMBERS_TO': 'None', 'STATUS': None}]
+        self.assertEqual(result, expected_output)
+        value_to_check = "TestMember2"
+        result = self.JobList._check_relationship(relationships,level_to_check,value_to_check )
+        expected_output = [{'CHUNKS_TO': 'None', 'DATES_TO': 'None', 'FROM_STEP': None, 'MEMBERS_TO': 'None', 'STATUS': None}]
+        self.assertEqual(result, expected_output)
+        value_to_check = "TestMember3"
+        result = self.JobList._check_relationship(relationships,level_to_check,value_to_check )
+        expected_output = [{'CHUNKS_TO': 'None', 'DATES_TO': 'None', 'FROM_STEP': None, 'MEMBERS_TO': 'None', 'STATUS': None}]
+        self.assertEqual(result, expected_output)
+        value_to_check = "TestMember   "
+        result = self.JobList._check_relationship(relationships,level_to_check,value_to_check )
+        expected_output = [{'CHUNKS_TO': 'None', 'DATES_TO': 'None', 'FROM_STEP': None, 'MEMBERS_TO': 'None', 'STATUS': None}]
+        self.assertEqual(result, expected_output)
+        value_to_check = "   TestMember"
+        result = self.JobList._check_relationship(relationships,level_to_check,value_to_check )
+        expected_output = [{'CHUNKS_TO': 'None', 'DATES_TO': 'None', 'FROM_STEP': None, 'MEMBERS_TO': 'None', 'STATUS': None}]
+        self.assertEqual(result, expected_output)
+
 if __name__ == '__main__':
     unittest.main()
