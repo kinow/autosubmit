@@ -48,7 +48,7 @@ def _seq(start, end, step):
     return itertools.islice(itertools.count(start, step), sample_count)
 
 def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, period_ini=None, period_fi=None,
-                       queue_time_fixes=None):
+                       queue_time_fixes=None) -> bool:
     # type: (str, List[Job], List[str], str, datetime, datetime, Dict[str, int]) -> None
     """
     Creates a bar diagram of the statistics.
