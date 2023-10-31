@@ -262,247 +262,255 @@ class TestJob(TestCase):
 
         expid = 'zzyy'
 
-        # this is the actual job's type
-        for script_type in ["Bash", "Python", "Rscript"]:
-            # we will test the substitution on the header, tailer, and in both
-            for extended_position in ["header", "tailer", "header tailer", "neither"]:
-                # we will test every type of the extended script. It should fail in all but the correct script type
-                for extended_type in ["Bash", "Python", "Rscript", "Bad1", "Bad2", "FileNotFound"]:
-                    with tempfile.TemporaryDirectory() as temp_dir:
-                        BasicConfig.LOCAL_ROOT_DIR = str(temp_dir)
-                        Path(temp_dir, expid).mkdir()
-                        # FIXME: (Copied from Bruno) Not sure why but the submitted and Slurm were using the $expid/tmp/ASLOGS folder?
-                        for path in [f'{expid}/tmp', f'{expid}/tmp/ASLOGS', f'{expid}/tmp/ASLOGS_{expid}', f'{expid}/proj',
-                                     f'{expid}/conf', f'{expid}/proj/project_files']:
-                            Path(temp_dir, path).mkdir()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            Path(temp_dir, expid).mkdir()
+            # FIXME: (Copied from Bruno) Not sure why but the submitted and Slurm were using the $expid/tmp/ASLOGS folder?
+            for path in [f'{expid}/tmp', f'{expid}/tmp/ASLOGS', f'{expid}/tmp/ASLOGS_{expid}', f'{expid}/proj',
+                         f'{expid}/conf', f'{expid}/proj/project_files']:
+                Path(temp_dir, path).mkdir()
+            # loop over the host script's type
+            for script_type in ["Bash", "Python", "Rscript"]:
+                # loop over the position of the extension
+                for extended_position in ["header", "tailer", "header tailer", "neither"]:
+                    # loop over the extended type
+                    for extended_type in ["Bash", "Python", "Rscript", "Bad1", "Bad2", "FileNotFound"]:
+                            BasicConfig.LOCAL_ROOT_DIR = str(temp_dir)
 
-                        header_file_name = ""
-                        # this is the part of the script that executes
-                        header_content = ""
-                        tailer_file_name = ""
-                        tailer_content = ""
+                            header_file_name = ""
+                            # this is the part of the script that executes
+                            header_content = ""
+                            tailer_file_name = ""
+                            tailer_content = ""
 
-                        # create the extended header and tailer scripts
-                        if "header" in extended_position:
-                            if extended_type == "Bash":
-                                header_content = 'echo "header bash"'
-                                full_header_content = dedent(f'''\
-                                                                #!/usr/bin/bash
-                                                                {header_content}
-                                                                ''')
-                                header_file_name = "header.sh"
-                            elif extended_type == "Python":
-                                header_content = 'print("header python")'
-                                full_header_content = dedent(f'''\
-                                                                #!/usr/bin/python
-                                                                {header_content}
-                                                                ''')
-                                header_file_name = "header.py"
-                            elif extended_type == "Rscript":
-                                header_content = 'print("header R")'
-                                full_header_content = dedent(f'''\
-                                                                #!/usr/bin/env Rscript
-                                                                {header_content}
-                                                                ''')
-                                header_file_name = "header.R"
-                            elif extended_type == "Bad1":
-                                header_content = 'this is a script without #!'
-                                full_header_content = dedent(f'''\
-                                                                {header_content}
-                                                                ''')
-                                header_file_name = "header.bad1"
-                            elif extended_type == "Bad2":
-                                header_content = 'this is a header with a bath executable'
-                                full_header_content = dedent(f'''\
-                                                                #!/does/not/exist
-                                                                {header_content}
-                                                                ''')
-                                header_file_name = "header.bad2"
-                            else:  # file not found case
-                                header_file_name = "non_existent_header"
+                            # create the extended header and tailer scripts
+                            if "header" in extended_position:
+                                if extended_type == "Bash":
+                                    header_content = 'echo "header bash"'
+                                    full_header_content = dedent(f'''\
+                                                                    #!/usr/bin/bash
+                                                                    {header_content}
+                                                                    ''')
+                                    header_file_name = "header.sh"
+                                elif extended_type == "Python":
+                                    header_content = 'print("header python")'
+                                    full_header_content = dedent(f'''\
+                                                                    #!/usr/bin/python
+                                                                    {header_content}
+                                                                    ''')
+                                    header_file_name = "header.py"
+                                elif extended_type == "Rscript":
+                                    header_content = 'print("header R")'
+                                    full_header_content = dedent(f'''\
+                                                                    #!/usr/bin/env Rscript
+                                                                    {header_content}
+                                                                    ''')
+                                    header_file_name = "header.R"
+                                elif extended_type == "Bad1":
+                                    header_content = 'this is a script without #!'
+                                    full_header_content = dedent(f'''\
+                                                                    {header_content}
+                                                                    ''')
+                                    header_file_name = "header.bad1"
+                                elif extended_type == "Bad2":
+                                    header_content = 'this is a header with a bath executable'
+                                    full_header_content = dedent(f'''\
+                                                                    #!/does/not/exist
+                                                                    {header_content}
+                                                                    ''')
+                                    header_file_name = "header.bad2"
+                                else:  # file not found case
+                                    header_file_name = "non_existent_header"
 
-                            if extended_type != "FileNotFound":
-                                # build the header script if we need to
-                                with open(Path(temp_dir, f'{expid}/proj/project_files/{header_file_name}'), 'w+') as header:
-                                    header.write(full_header_content)
-                                    header.flush()
+                                if extended_type != "FileNotFound":
+                                    # build the header script if we need to
+                                    with open(Path(temp_dir, f'{expid}/proj/project_files/{header_file_name}'), 'w+') as header:
+                                        header.write(full_header_content)
+                                        header.flush()
+                                else:
+                                    # make sure that the file does not exist
+                                    for file in os.listdir(Path(temp_dir, f'{expid}/proj/project_files/')):
+                                        os.remove(Path(temp_dir, f'{expid}/proj/project_files/{file}'))
 
-                        if "tailer" in extended_position:
-                            if extended_type == "Bash":
-                                tailer_content = 'echo "tailer bash"'
-                                full_tailer_content = dedent(f'''\
-                                                                #!/usr/bin/bash
-                                                                {tailer_content}
-                                                                ''')
-                                tailer_file_name = "tailer.sh"
-                            elif extended_type == "Python":
-                                tailer_content = 'print("tailer python")'
-                                full_tailer_content = dedent(f'''\
-                                                                #!/usr/bin/python
-                                                                {tailer_content}
-                                                                ''')
-                                tailer_file_name = "tailer.py"
-                            elif extended_type == "Rscript":
-                                tailer_content = 'print("header R")'
-                                full_tailer_content = dedent(f'''\
-                                                                #!/usr/bin/env Rscript
-                                                                {tailer_content}
-                                                                ''')
-                                tailer_file_name = "tailer.R"
-                            elif extended_type == "Bad1":
-                                tailer_content = 'this is a script without #!'
-                                full_tailer_content = dedent(f'''\
-                                                                {tailer_content}
-                                                                ''')
-                                tailer_file_name = "tailer.bad1"
-                            elif extended_type == "Bad2":
-                                tailer_content = 'this is a tailer with a bath executable'
-                                full_tailer_content = dedent(f'''\
-                                                                #!/does/not/exist
-                                                                {tailer_content}
-                                                                ''')
-                                tailer_file_name = "tailer.bad2"
-                            else:  # file not found case
-                                tailer_file_name = "non_existent_tailer"
+                            if "tailer" in extended_position:
+                                if extended_type == "Bash":
+                                    tailer_content = 'echo "tailer bash"'
+                                    full_tailer_content = dedent(f'''\
+                                                                    #!/usr/bin/bash
+                                                                    {tailer_content}
+                                                                    ''')
+                                    tailer_file_name = "tailer.sh"
+                                elif extended_type == "Python":
+                                    tailer_content = 'print("tailer python")'
+                                    full_tailer_content = dedent(f'''\
+                                                                    #!/usr/bin/python
+                                                                    {tailer_content}
+                                                                    ''')
+                                    tailer_file_name = "tailer.py"
+                                elif extended_type == "Rscript":
+                                    tailer_content = 'print("header R")'
+                                    full_tailer_content = dedent(f'''\
+                                                                    #!/usr/bin/env Rscript
+                                                                    {tailer_content}
+                                                                    ''')
+                                    tailer_file_name = "tailer.R"
+                                elif extended_type == "Bad1":
+                                    tailer_content = 'this is a script without #!'
+                                    full_tailer_content = dedent(f'''\
+                                                                    {tailer_content}
+                                                                    ''')
+                                    tailer_file_name = "tailer.bad1"
+                                elif extended_type == "Bad2":
+                                    tailer_content = 'this is a tailer with a bath executable'
+                                    full_tailer_content = dedent(f'''\
+                                                                    #!/does/not/exist
+                                                                    {tailer_content}
+                                                                    ''')
+                                    tailer_file_name = "tailer.bad2"
+                                else:  # file not found case
+                                    tailer_file_name = "non_existent_tailer"
 
-                            if extended_type != "FileNotFound":
-                                # build the tailer script if we need to
-                                with open(Path(temp_dir, f'{expid}/proj/project_files/{tailer_file_name}'), 'w+') as tailer:
-                                    tailer.write(full_tailer_content)
-                                    tailer.flush()
+                                if extended_type != "FileNotFound":
+                                    # build the tailer script if we need to
+                                    with open(Path(temp_dir, f'{expid}/proj/project_files/{tailer_file_name}'), 'w+') as tailer:
+                                        tailer.write(full_tailer_content)
+                                        tailer.flush()
+                                else:
+                                    # clear the content of the project file
+                                    for file in os.listdir(Path(temp_dir, f'{expid}/proj/project_files/')):
+                                        os.remove(Path(temp_dir, f'{expid}/proj/project_files/{file}'))
 
-                        # configuration file
+                            # configuration file
 
-                        with open(Path(temp_dir, f'{expid}/conf/minimal.yml'), 'w+') as minimal:
-                            minimal.write(dedent(f'''\
-                            DEFAULT:
-                              EXPID: {expid}
-                              HPCARCH: local
-                            JOBS:
-                              A:
-                                FILE: a
-                                TYPE: {script_type if script_type != "Rscript" else "R"}
-                                PLATFORM: local
-                                RUNNING: once
-                                EXTENDED_HEADER_PATH: {header_file_name}
-                                EXTENDED_TAILER_PATH: {tailer_file_name}
-                            PLATFORMS:
-                              test:
-                                TYPE: slurm
-                                HOST: localhost
-                                PROJECT: abc
-                                QUEUE: debug
-                                USER: me
-                                SCRATCH_DIR: /anything/
-                                ADD_PROJECT_TO_HOST: False
-                                MAX_WALLCLOCK: '000:55'
-                                TEMP_DIR: ''
-                            '''))
-                            minimal.flush()
+                            with open(Path(temp_dir, f'{expid}/conf/configuration.yml'), 'w+') as configuration:
+                                configuration.write(dedent(f'''\
+                                DEFAULT:
+                                  EXPID: {expid}
+                                  HPCARCH: local
+                                JOBS:
+                                  A:
+                                    FILE: a
+                                    TYPE: {script_type if script_type != "Rscript" else "R"}
+                                    PLATFORM: local
+                                    RUNNING: once
+                                    EXTENDED_HEADER_PATH: {header_file_name}
+                                    EXTENDED_TAILER_PATH: {tailer_file_name}
+                                PLATFORMS:
+                                  test:
+                                    TYPE: slurm
+                                    HOST: localhost
+                                    PROJECT: abc
+                                    QUEUE: debug
+                                    USER: me
+                                    SCRATCH_DIR: /anything/
+                                    ADD_PROJECT_TO_HOST: False
+                                    MAX_WALLCLOCK: '00:55'
+                                    TEMP_DIR: ''
+                                '''))
+                                configuration.flush()
 
-                        mocked_basic_config = Mock(spec=BasicConfig)
-                        mocked_basic_config.LOCAL_ROOT_DIR = str(temp_dir)
-                        mocked_global_basic_config.LOCAL_ROOT_DIR.return_value = str(temp_dir)
+                            mocked_basic_config = Mock(spec=BasicConfig)
+                            mocked_basic_config.LOCAL_ROOT_DIR = str(temp_dir)
+                            mocked_global_basic_config.LOCAL_ROOT_DIR.return_value = str(temp_dir)
 
-                        config = AutosubmitConfig(expid, basic_config=mocked_basic_config, parser_factory=YAMLParserFactory())
-                        config.reload(True)
+                            config = AutosubmitConfig(expid, basic_config=mocked_basic_config, parser_factory=YAMLParserFactory())
+                            config.reload(True)
 
-                        # act
+                            # act
 
-                        parameters = config.load_parameters()
+                            parameters = config.load_parameters()
 
-                        job_list_obj = JobList(expid, mocked_basic_config, YAMLParserFactory(),
-                                               Autosubmit._get_job_list_persistence(expid, config), config)
-                        job_list_obj.generate(
-                            date_list=[],
-                            member_list=[],
-                            num_chunks=1,
-                            chunk_ini=1,
-                            parameters=parameters,
-                            date_format='M',
-                            default_retrials=config.get_retrials(),
-                            default_job_type=config.get_default_job_type(),
-                            wrapper_type=config.get_wrapper_type(),
-                            wrapper_jobs={},
-                            notransitive=True,
-                            update_structure=True,
-                            run_only_members=config.get_member_list(run_only=True),
-                            jobs_data=config.experiment_data,
-                            as_conf=config
-                        )
+                            job_list_obj = JobList(expid, mocked_basic_config, YAMLParserFactory(),
+                                                   Autosubmit._get_job_list_persistence(expid, config), config)
+                            job_list_obj.generate(
+                                date_list=[],
+                                member_list=[],
+                                num_chunks=1,
+                                chunk_ini=1,
+                                parameters=parameters,
+                                date_format='M',
+                                default_retrials=config.get_retrials(),
+                                default_job_type=config.get_default_job_type(),
+                                wrapper_type=config.get_wrapper_type(),
+                                wrapper_jobs={},
+                                notransitive=True,
+                                update_structure=True,
+                                run_only_members=config.get_member_list(run_only=True),
+                                jobs_data=config.experiment_data,
+                                as_conf=config
+                            )
 
-                        job_list = job_list_obj.get_job_list()
+                            job_list = job_list_obj.get_job_list()
 
-                        submitter = Autosubmit._get_submitter(config)
-                        submitter.load_platforms(config)
+                            submitter = Autosubmit._get_submitter(config)
+                            submitter.load_platforms(config)
 
-                        hpcarch = config.get_platform()
-                        for job in job_list:
-                            if job.platform_name == "" or job.platform_name is None:
-                                job.platform_name = hpcarch
-                            job.platform = submitter.platforms[job.platform_name]
+                            hpcarch = config.get_platform()
+                            for job in job_list:
+                                if job.platform_name == "" or job.platform_name is None:
+                                    job.platform_name = hpcarch
+                                job.platform = submitter.platforms[job.platform_name]
 
-                        # pick ur single job
-                        job = job_list[0]
+                            # pick ur single job
+                            job = job_list[0]
 
-                        # assert
-                        if extended_position != "neither":
-                            if extended_type == script_type:
+                            if extended_position == "header" or extended_position == "tailer" or extended_position == "header tailer":
+                                if extended_type == script_type:
+                                    # load the parameters
+                                    job.check_script(config, parameters)
+                                    # create the script
+                                    job.create_script(config)
+                                    with open(Path(temp_dir, f'{expid}/tmp/zzyy_A.cmd'), 'r') as file:
+                                        full_script = file.read()
+                                        if "header" in extended_position:
+                                            self.assertTrue(header_content in full_script)
+                                        if "tailer" in extended_position:
+                                            self.assertTrue(tailer_content in full_script)
+                                else:  # extended_type != script_type
+                                    if extended_type == "FileNotFound":
+                                        with self.assertRaises(AutosubmitCritical) as context:
+                                            job.check_script(config, parameters)
+                                        self.assertEqual(context.exception.code, 7014)
+                                        if extended_position == "header tailer" or extended_position == "header":
+                                            self.assertEqual(context.exception.message,
+                                                             f"Extended header script: failed to fetch [Errno 2] No such file or directory: '{temp_dir}/{expid}/proj/project_files/{header_file_name}' \n")
+                                        else:  # extended_position == "tailer":
+                                            self.assertEqual(context.exception.message,
+                                                             f"Extended tailer script: failed to fetch [Errno 2] No such file or directory: '{temp_dir}/{expid}/proj/project_files/{tailer_file_name}' \n")
+                                    elif extended_type == "Bad1" or extended_type == "Bad2":
+                                        # we check if a script without hash bang fails or with a bad executable
+                                        with self.assertRaises(AutosubmitCritical) as context:
+                                            job.check_script(config, parameters)
+                                        self.assertEqual(context.exception.code, 7011)
+                                        if extended_position == "header tailer" or extended_position == "header":
+                                            self.assertEqual(context.exception.message,
+                                                             f"Extended header script: couldn't figure out script {header_file_name} type\n")
+                                        else:
+                                            self.assertEqual(context.exception.message,
+                                                             f"Extended tailer script: couldn't figure out script {tailer_file_name} type\n")
+                                    else:  # if extended type is any but the script_type and the malformed scripts
+                                        with self.assertRaises(AutosubmitCritical) as context:
+                                            job.check_script(config, parameters)
+                                        self.assertEqual(context.exception.code, 7011)
+                                        # if we have both header and tailer, it will fail at the header first
+                                        if extended_position == "header tailer" or extended_position == "header":
+                                            self.assertEqual(context.exception.message,
+                                                             f"Extended header script: script {header_file_name} seems "
+                                                             f"{extended_type} but job zzyy_A.cmd isn't\n")
+                                        else:  # extended_position == "tailer"
+                                            self.assertEqual(context.exception.message,
+                                                             f"Extended tailer script: script {tailer_file_name} seems "
+                                                             f"{extended_type} but job zzyy_A.cmd isn't\n")
+                            else: # extended_position == "neither"
+                                # assert it doesn't exist
                                 # load the parameters
                                 job.check_script(config, parameters)
                                 # create the script
                                 job.create_script(config)
+                                # finally, if we don't have scripts, check if the placeholders have been removed
                                 with open(Path(temp_dir, f'{expid}/tmp/zzyy_A.cmd'), 'r') as file:
-                                    full_script = file.read()
-                                    if "header" in extended_position:
-                                        self.assertTrue(header_content in full_script)
-                                    if "tailer" in extended_position:
-                                        self.assertTrue(tailer_content in full_script)
-                            elif extended_type == "FileNotFound":
-                                with self.assertRaises(AutosubmitCritical) as context:
-                                    job.check_script(config, parameters)
-                                self.assertEqual(context.exception.code, 7014)
-                                if extended_position == "header tailer" or extended_position == "header":
-                                    self.assertEqual(context.exception.message,
-                                                 f"Extended header script: failed to fetch [Errno 2] No such file or directory: '{temp_dir}/{expid}/proj/project_files/{header_file_name}' \n")
-                                else:  # extended_position == "tailer":
-                                    self.assertEqual(context.exception.message,
-                                                     f"Extended tailer script: failed to fetch [Errno 2] No such file or directory: '{temp_dir}/{expid}/proj/project_files/{tailer_file_name}' \n")
-                            elif extended_type == "Bad1" or extended_type == "Bad2":
-                                # we check if a script without hash bang fails or with a bad executable
-                                with self.assertRaises(AutosubmitCritical) as context:
-                                    job.check_script(config, parameters)
-                                self.assertEqual(context.exception.code, 7011)
-                                if extended_position == "header tailer" or extended_position == "header":
-                                    self.assertEqual(context.exception.message,
-                                                     f"Extended header script: couldn't figure out script {header_file_name} type\n")
-                                else:
-                                    self.assertEqual(context.exception.message,
-                                                     f"Extended tailer script: couldn't figure out script {tailer_file_name} type\n")
-                            else:  # extended_type != script_type
-                                # Asserts that an exception is raised if there is a mismatch between job and extension types
-                                with self.assertRaises(AutosubmitCritical) as context:
-                                    job.check_script(config, parameters)
-                                self.assertEqual(context.exception.code, 7011)
-                                # if we have both header and tailer, it will fail at the header first
-                                if extended_position == "header tailer" or extended_position == "header":
-                                    self.assertEqual(context.exception.message,
-                                                     f"Extended header script: script {header_file_name} seems "
-                                                     f"{extended_type} but job zzyy_A.cmd isn't\n")
-                                else:  # extended_position == "tailer"
-                                    self.assertEqual(context.exception.message,
-                                                     f"Extended tailer script: script {tailer_file_name} seems "
-                                                     f"{extended_type} but job zzyy_A.cmd isn't\n")
-                        else:  # we don't have either a tailer or header
-                            # load the parameters
-                            job.check_script(config, parameters)
-                            # create the script
-                            job.create_script(config)
-                            # finally, if we don't have scripts, check if the placeholders have been removed
-                            with open(Path(temp_dir, f'{expid}/tmp/zzyy_A.cmd'), 'r') as file:
-                                final_script = file.read()
-                                self.assertFalse("%EXTENDED_HEADER%" in final_script)
-                                self.assertFalse("%EXTENDED_TAILER%" in final_script)
+                                    final_script = file.read()
+                                    self.assertFalse("%EXTENDED_HEADER%" in final_script)
+                                    self.assertFalse("%EXTENDED_TAILER%" in final_script)
 
     @patch('autosubmitconfigparser.config.basicconfig.BasicConfig')
     def test_job_parameters(self, mocked_global_basic_config: Mock):
