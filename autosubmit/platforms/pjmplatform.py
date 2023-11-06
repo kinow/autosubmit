@@ -405,7 +405,7 @@ class PJMPlatform(ParamikoPlatform):
         # split(" ") is not enough
         reason = [x.split()[2] for x in output.splitlines()
                   if x.split()[0] == str(job_id)]
-        # In case of duplicates.. we take the first one
+        # In case of duplicates we take the first one
         if len(reason) > 0:
             return reason[0]
         return reason

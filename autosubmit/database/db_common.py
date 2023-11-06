@@ -407,7 +407,6 @@ def _update_experiment_descrip_version(name, description=None, version=None):
     if row == 0:
         raise AutosubmitCritical(
             "Update on experiment {} failed.".format(name), 7005)
-        return False
     return True
 
 
@@ -521,7 +520,6 @@ def _delete_experiment(experiment_id):
     except DbException as e:
         raise AutosubmitCritical(
             "Could not establish a connection to database", 7001, str(e))
-        return False
     cursor.execute('DELETE FROM experiment '
                    'WHERE name=:name', {'name': experiment_id})
     row = cursor.fetchone()

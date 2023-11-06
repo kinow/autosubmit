@@ -1785,7 +1785,7 @@ class Autosubmit:
         :param expid: a string with the experiment id
         :param job_list: a JobList object
         :param as_conf: a AutosubmitConfig object
-        :return: a experiment history object
+        :return: an experiment history object
         """
         exp_history = None
         try:
@@ -1875,7 +1875,7 @@ class Autosubmit:
         # Paramiko is the only way to communicate with the remote machines. Previously we had also Saga.
         submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
-        # Tries to loads the job_list from disk, discarding any changes in running time ( if recovery ).
+        # Tries to load the job_list from disk, discarding any changes in running time ( if recovery ).
         # Could also load a backup from previous iteration.
         # The submit ready functions will cancel all job submitted if one submitted in that iteration had issues, so it should be safe to recover from a backup without losing job ids
         if recover:
@@ -1932,7 +1932,7 @@ class Autosubmit:
         except IOError as e:
             raise AutosubmitError(
                 "job_packages not found", 6016, str(e))
-        # Check if the user wants to continuing using wrappers and loads the appropiate info.
+        # Check if the user wants to continue using wrappers and loads the appropiate info.
         if as_conf.experiment_data.get("WRAPPERS",None) is not None:
             os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                   expid, "pkl", "job_packages_" + expid + ".db"), 0o644)
@@ -2113,8 +2113,8 @@ class Autosubmit:
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
                         # Submit jobs that are prepared to hold (if remote dependencies parameter are enabled)
-                        # This currently is not used as SLURM not longer allow to jobs to adquire priority while in hold state.
-                        # This only works for SLURM. ( Prepare status can not be achieve in other platforms )
+                        # This currently is not used as SLURM no longer allows to jobs to adquire priority while in hold state.
+                        # This only works for SLURM. ( Prepare status can not be achieved in other platforms )
                         if as_conf.get_remote_dependencies() == "true" and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
