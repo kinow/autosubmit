@@ -383,29 +383,32 @@ class TestJob(TestCase):
 
                             with open(Path(temp_dir, f'{expid}/conf/configuration.yml'), 'w+') as configuration:
                                 configuration.write(dedent(f'''\
-                                DEFAULT:
-                                  EXPID: {expid}
-                                  HPCARCH: local
-                                JOBS:
-                                  A:
-                                    FILE: a
-                                    TYPE: {script_type if script_type != "Rscript" else "R"}
-                                    PLATFORM: local
-                                    RUNNING: once
-                                    EXTENDED_HEADER_PATH: {header_file_name}
-                                    EXTENDED_TAILER_PATH: {tailer_file_name}
-                                PLATFORMS:
-                                  test:
-                                    TYPE: slurm
-                                    HOST: localhost
-                                    PROJECT: abc
-                                    QUEUE: debug
-                                    USER: me
-                                    SCRATCH_DIR: /anything/
-                                    ADD_PROJECT_TO_HOST: False
-                                    MAX_WALLCLOCK: '00:55'
-                                    TEMP_DIR: ''
+DEFAULT:
+    EXPID: {expid}
+    HPCARCH: local
+JOBS:
+    A:
+        FILE: a
+        TYPE: {script_type if script_type != "Rscript" else "R"}
+        PLATFORM: local
+        RUNNING: once
+        EXTENDED_HEADER_PATH: {header_file_name}
+        EXTENDED_TAILER_PATH: {tailer_file_name}
+PLATFORMS:
+    test:
+        TYPE: slurm
+        HOST: localhost
+        PROJECT: abc
+        QUEUE: debug
+        USER: me
+        SCRATCH_DIR: /anything/
+        ADD_PROJECT_TO_HOST: False
+        MAX_WALLCLOCK: '00:55'
+        TEMP_DIR: ''
+CONFIG:
+    RETRIALS: 0
                                 '''))
+
                                 configuration.flush()
 
                             mocked_basic_config = Mock(spec=BasicConfig)
