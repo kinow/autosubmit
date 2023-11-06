@@ -73,7 +73,7 @@ import re
 import random
 import signal
 import datetime
-
+import log.fd_show as fd_show
 import portalocker
 from pkg_resources import require, resource_listdir, resource_string, resource_filename
 from collections import defaultdict
@@ -1785,7 +1785,7 @@ class Autosubmit:
         :param expid: a string with the experiment id
         :param job_list: a JobList object
         :param as_conf: a AutosubmitConfig object
-        :return: a experiment history object
+        :return: an experiment history object
         """
         exp_history = None
         try:
@@ -1875,7 +1875,7 @@ class Autosubmit:
         # Paramiko is the only way to communicate with the remote machines. Previously we had also Saga.
         submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
-        # Tries to loads the job_list from disk, discarding any changes in running time ( if recovery ).
+        # Tries to load the job_list from disk, discarding any changes in running time ( if recovery ).
         # Could also load a backup from previous iteration.
         # The submit ready functions will cancel all job submitted if one submitted in that iteration had issues, so it should be safe to recover from a backup without losing job ids
         if recover:
@@ -1932,7 +1932,7 @@ class Autosubmit:
         except IOError as e:
             raise AutosubmitError(
                 "job_packages not found", 6016, str(e))
-        # Check if the user wants to continuing using wrappers and loads the appropiate info.
+        # Check if the user wants to continue using wrappers and loads the appropiate info.
         if as_conf.experiment_data.get("WRAPPERS",None) is not None:
             os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                   expid, "pkl", "job_packages_" + expid + ".db"), 0o644)
@@ -2044,7 +2044,7 @@ class Autosubmit:
                     # If there are issues while running, this function will be called again to reinitialize the experiment.
                     job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence, _ = Autosubmit.prepare_run(expid, notransitive,start_time, start_after, run_only_members)
                 except AutosubmitCritical as e:
-                    e.message += " HINT: check the CUSTOM_DIRECTIVE syntax in your jobs configuration files."
+                    #e.message += " HINT: check the CUSTOM_DIRECTIVE syntax in your jobs configuration files."
                     raise AutosubmitCritical(e.message, 7014, e.trace)
                 except Exception as e:
                     raise AutosubmitCritical("Error in run initialization", 7014, str(e))  # Changing default to 7014
@@ -2107,13 +2107,14 @@ class Autosubmit:
                         job_list.update_list(as_conf, submitter=submitter)
                         job_list.save()
                         # Submit jobs that are ready to run
+                        #Log.debug(f"FD submit: {fd_show.fd_table_status_str()}")
                         if len(job_list.get_ready()) > 0:
                             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
                         # Submit jobs that are prepared to hold (if remote dependencies parameter are enabled)
-                        # This currently is not used as SLURM not longer allow to jobs to adquire priority while in hold state.
-                        # This only works for SLURM. ( Prepare status can not be achieve in other platforms )
+                        # This currently is not used as SLURM no longer allows to jobs to adquire priority while in hold state.
+                        # This only works for SLURM. ( Prepare status can not be achieved in other platforms )
                         if as_conf.get_remote_dependencies() == "true" and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
@@ -2136,6 +2137,8 @@ class Autosubmit:
                         if Autosubmit.exit:
                             job_list.save()
                         time.sleep(safetysleeptime)
+                        #Log.debug(f"FD endsubmit: {fd_show.fd_table_status_str()}")
+
 
                     except AutosubmitError as e:  # If an error is detected, restore all connections and job_list
                         Log.error("Trace: {0}", e.trace)
@@ -3456,7 +3459,7 @@ class Autosubmit:
                 if os.path.exists(template_file_path):
                     Log.info(
                         "Gathering the selected parameters (all keys are on upper_case)")
-                    template_file = open(template_file_path, 'rb')
+                    template_file = open(template_file_path, 'r')
                     template_content = template_file.read()
                     for key, value in parameters.items():
                         template_content = re.sub(
@@ -3474,7 +3477,7 @@ class Autosubmit:
                     report = '{0}_report_{1}.txt'.format(
                         expid, datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
                     open(os.path.join(tmp_path, report),
-                         'wb').write(template_content)
+                         'w').write(template_content)
                     os.chmod(os.path.join(tmp_path, report), 0o755)
                     template_file.close()
                     Log.result("Report {0} has been created on {1}".format(
@@ -4771,7 +4774,7 @@ class Autosubmit:
                     hpcarch = submitter.platforms[as_conf.get_platform()]
                 except Exception as e:
                     hpcarch = "local"
-                Log.warning("Remote clone may be disabled due to: " + error)
+                #Log.warning("Remote clone may be disabled due to: " + error)
             return AutosubmitGit.clone_repository(as_conf, force, hpcarch)
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()

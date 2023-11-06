@@ -119,7 +119,7 @@ To do this use:
 
 * DELAY_RETRY_TIME: Allows to put a delay between retries. Triggered when a job fails. If not specified, Autosubmit will retry the job as soon as possible. Accepted formats are: plain number (there will be a constant delay between retrials, of as many seconds as specified), plus (+) sign followed by a number (the delay will steadily increase by the addition of these number of seconds), or multiplication (*) sign follows by a number (the delay after n retries will be the number multiplied by 10*n). Having this in mind, the ideal scenario is to use +(number) or plain(number) in case that the HPC has little issues or the experiment will run for a little time. Otherwise, is better to use the \*(number) approach.
 
-.. code-block:: ini
+.. code-block:: yaml
 
     #DELAY_RETRY_TIME: 11
     #DELAY_RETRY_TIME: +11 # will wait 11 + number specified
@@ -150,6 +150,37 @@ There are also other, less used features that you can use:
 * EXTENDED_HEADER_PATH: specify the path relative to the project folder where the extension to the autosubmit's header is
 
 * EXTENDED_TAILER_PATH: specify the path relative to the project folder where the extension to the autosubmit's tailer is
+
+How to add a new heterogeneous job (hetjob)
+-------------------------------------------
+
+A hetjob, is a job in which each component has virtually all job options available including partition, account and QOS (Quality Of Service).For example, part of a job might require four cores and 4 GB for each of 128 tasks while another part of the job would require 16 GB of memory and one CPU.
+
+This feature is only available for SLURM platforms. And it is automatically enabled when the processors or nodes paramater is a yaml list
+
+To add a new hetjob, open the <experiments_directory>/cxxx/conf/jobs_cxxx.yml file where cxxx is the experiment
+
+.. code-block:: yaml
+
+    JOBS:
+        new_hetjob:
+            FILE: <new_job_template>
+            PROCESSORS: # Determines the amount of components that will be created
+                - 4
+                - 1
+            MEMORY: # Determines the amount of memory that will be used by each component
+                - 4096
+                - 16384
+            WALLCLOCK: 00:30
+            PLATFORM: <platform_name> # Determines the platform where the job will be executed
+            PARTITION: # Determines the partition where the job will be executed
+                - <partition_name>
+                - <partition_name>
+            TASKS: 128 # Determines the amount of tasks that will be used by each component
+
+This will create a new job named "new_hetjob" with two components that will be executed once.
+
+
 
 How to configure email notifications
 ------------------------------------
@@ -217,11 +248,29 @@ identifier and add this text:
 
     PLATFORMS:
         new_platform:
+            # MANDATORY
             TYPE: <platform_type>
             HOST: <host_name>
             PROJECT: <project>
             USER: <user>
             SCRATCH: <scratch_dir>
+            MAX_WALLCLOCK: <HH:MM>
+            QUEUE: <hpc_queue>
+            # OPTIONAL
+            ADD_PROJECT_TO_HOST: False
+            MAX_PROCESSORS: <N>
+            EC_QUEUE : <ec_queue> # only when type == ecaccess
+            VERSION: <version>
+            2FA: False
+            2FA_TIMEOUT: <timeout> # default 300
+            2FA_METHOD: <method>
+            SERIAL_PLATFORM: <platform_name>
+            SERIAL_QUEUE: <queue_name>
+            BUDGET: <budget>
+            TEST_SUITE: False
+            MAX_WAITING_JOBS: <N>
+            TOTAL_JOBS: <N>
+            CUSTOM_DIRECTIVES: "[ 'my_directive' ]"
 
 
 This will create a platform named "new_platform". The options specified are all mandatory:
@@ -236,11 +285,25 @@ This will create a platform named "new_platform". The options specified are all 
 
 * SCRATCH_DIR: path to the scratch directory of the machine
 
-* VERSION: determines de version of the platform type
+* MAX_WALLCLOCK: maximum wallclock time allowed for a job in the platform
+
+* MAX_PROCESSORS: maximum number of processors allowed for a job in the platform
+
+* EC_QUEUE: queue for the ecaccess platform. ( hpc, ecs )
 
 .. warning:: With some platform types, Autosubmit may also need the version, forcing you to add the parameter
-    VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler).
+    VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler, slurm).
 
+* VERSION: determines de version of the platform type
+
+.. warning:: With some platforms, 2FA authentication is required. If this is the case, you have to add the parameter
+    2FA. These platforms are ecaccess (options: True, False). There may be some autosubmit functions that are not avaliable when using an interactive auth method.
+
+* 2FA: determines if the platform requires 2FA authentication. ( default: False)
+
+* 2FA_TIMEOUT: determines the timeout for the 2FA authentication. ( default: 300 )
+
+* 2FA_METHOD: determines the method for the 2FA authentication. ( default: token )
 
 Some platforms may require to run serial jobs in a different queue or platform. To avoid changing the job
 configuration, you can specify what platform or queue to use to run serial jobs assigned to this platform:
@@ -266,20 +329,6 @@ There are some other parameters that you may need to specify:
 
 * CUSTOM_DIRECTIVES: Custom directives for the resource manager of this platform.
 
-Example:
-
-.. code-block:: yaml
-
-    platforms:
-        platform:
-        TYPE: SGE
-        HOST: hostname
-        PROJECT: my_project
-        ADD_PROJECT_TO_HOST: true
-        USER: my_user
-        SCRATCH_DIR: /scratch
-        TEST_SUITE: True
-        CUSTOM_DIRECTIVES: "[ 'my_directive' ]"
 
 How to request exclusivity or reservation
 -----------------------------------------

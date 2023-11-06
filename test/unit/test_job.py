@@ -513,6 +513,115 @@ class TestJob(TestCase):
                                     self.assertFalse("%EXTENDED_TAILER%" in final_script)
 
     @patch('autosubmitconfigparser.config.basicconfig.BasicConfig')
+    def test_hetjob(self, mocked_global_basic_config: Mock):
+        """
+        Test job platforms with a platform. Builds job and platform using YAML data, without mocks.
+        :param mocked_global_basic_config:
+        :return:
+        """
+        expid = "zzyy"
+        with tempfile.TemporaryDirectory() as temp_dir:
+            BasicConfig.LOCAL_ROOT_DIR = str(temp_dir)
+            Path(temp_dir, expid).mkdir()
+            for path in [f'{expid}/tmp', f'{expid}/tmp/ASLOGS', f'{expid}/tmp/ASLOGS_{expid}', f'{expid}/proj',
+                         f'{expid}/conf']:
+                Path(temp_dir, path).mkdir()
+            with open(Path(temp_dir, f'{expid}/conf/experiment_data.yml'), 'w+') as experiment_data:
+                experiment_data.write(dedent(f'''\
+                            CONFIG:
+                              RETRIALS: 0 
+                            DEFAULT:
+                              EXPID: {expid}
+                              HPCARCH: test
+                            PLATFORMS:
+                              test:
+                                TYPE: slurm
+                                HOST: localhost
+                                PROJECT: abc
+                                QUEUE: debug
+                                USER: me
+                                SCRATCH_DIR: /anything/
+                                ADD_PROJECT_TO_HOST: False
+                                MAX_WALLCLOCK: '00:55'
+                                TEMP_DIR: ''
+                                
+                            '''))
+                experiment_data.flush()
+            # For could be added here to cover more configurations options
+            with open(Path(temp_dir, f'{expid}/conf/hetjob.yml'), 'w+') as hetjob:
+                hetjob.write(dedent(f'''\
+                            JOBS:
+                                HETJOB_A:
+                                    FILE: a
+                                    PLATFORM: test
+                                    RUNNING: once
+                                    WALLCLOCK: '00:30'
+                                    MEMORY: 
+                                        - 0
+                                        - 0
+                                    NODES:
+                                        - 3
+                                        - 1
+                                    TASKS:
+                                        - 32
+                                        - 32 
+                                    THREADS:
+                                        - 4
+                                        - 4
+                                    CUSTOM_DIRECTIVES: 
+                                        - ['#SBATCH --export=ALL', '#SBATCH --distribution=block:cyclic', '#SBATCH --exclusive']
+                                        - ['#SBATCH --export=ALL', '#SBATCH --distribution=block:cyclic:fcyclic', '#SBATCH --exclusive']
+                '''))
+
+            mocked_basic_config = Mock(spec=BasicConfig)
+            mocked_basic_config.LOCAL_ROOT_DIR = str(temp_dir)
+            mocked_global_basic_config.LOCAL_ROOT_DIR.return_value = str(temp_dir)
+
+            config = AutosubmitConfig(expid, basic_config=mocked_basic_config, parser_factory=YAMLParserFactory())
+            config.reload(True)
+            parameters = config.load_parameters()
+            job_list_obj = JobList(expid, mocked_basic_config, YAMLParserFactory(),
+                                   Autosubmit._get_job_list_persistence(expid, config), config)
+            job_list_obj.generate(
+                date_list=[],
+                member_list=[],
+                num_chunks=1,
+                chunk_ini=1,
+                parameters=parameters,
+                date_format='M',
+                default_retrials=config.get_retrials(),
+                default_job_type=config.get_default_job_type(),
+                wrapper_type=config.get_wrapper_type(),
+                wrapper_jobs={},
+                notransitive=True,
+                update_structure=True,
+                run_only_members=config.get_member_list(run_only=True),
+                jobs_data=config.experiment_data,
+                as_conf=config
+            )
+            job_list = job_list_obj.get_job_list()
+            self.assertEqual(1, len(job_list))
+
+            submitter = Autosubmit._get_submitter(config)
+            submitter.load_platforms(config)
+
+            hpcarch = config.get_platform()
+            for job in job_list:
+                if job.platform_name == "" or job.platform_name is None:
+                    job.platform_name = hpcarch
+                job.platform = submitter.platforms[job.platform_name]
+
+            job = job_list[0]
+
+            # This is the final header
+            parameters = job.update_parameters(config, parameters)
+            template_content, additional_templates = job.update_content(config)
+
+            # Asserts the script is valid. There shouldn't be variables in the script that aren't in the parameters.
+            checked = job.check_script(config, parameters)
+            self.assertTrue(checked)
+
+    @patch('autosubmitconfigparser.config.basicconfig.BasicConfig')
     def test_job_parameters(self, mocked_global_basic_config: Mock):
         """Test job platforms with a platform. Builds job and platform using YAML data, without mocks.
 
@@ -533,6 +642,8 @@ class TestJob(TestCase):
                     Path(temp_dir, path).mkdir()
                 with open(Path(temp_dir, f'{expid}/conf/minimal.yml'), 'w+') as minimal:
                     minimal.write(dedent(f'''\
+                    CONFIG:
+                      RETRIALS: 0 
                     DEFAULT:
                       EXPID: {expid}
                       HPCARCH: test
@@ -551,7 +662,7 @@ class TestJob(TestCase):
                         USER: me
                         SCRATCH_DIR: /anything/
                         ADD_PROJECT_TO_HOST: False
-                        MAX_WALLCLOCK: '000:55'
+                        MAX_WALLCLOCK: '00:55'
                         TEMP_DIR: ''
                     '''))
                     minimal.flush()

@@ -32,27 +32,30 @@ class WrapperFactory(object):
 
     def get_wrapper(self, wrapper_builder, **kwargs):
         wrapper_data = kwargs['wrapper_data']
-        kwargs['allocated_nodes'] = self.allocated_nodes()
-        kwargs['dependency'] = self.dependency(kwargs['dependency'])
-        kwargs['queue'] = self.queue(kwargs['queue'])
-        kwargs['partition'] = self.partition(wrapper_data['PARTITION'])
-        kwargs["exclusive"] = self.exclusive(wrapper_data['EXCLUSIVE'])
-        kwargs["custom_directives"] = self.custom_directives(wrapper_data["CUSTOM_DIRECTIVES"])
-        kwargs["executable"] = wrapper_data["EXECUTABLE"]
-        kwargs['nodes'] = self.nodes(wrapper_data['NODES'])
-        kwargs['tasks'] = self.tasks(wrapper_data['TASKS'])
-        kwargs['threads'] = self.threads(kwargs['threads'])
-        if str(kwargs['num_processors']).isdigit():
-            kwargs['num_processors_value'] = int(kwargs['num_processors'])
-        else:
-            kwargs['num_processors_value'] = 1
-        if str(wrapper_data['NODES']).isdigit() and int(wrapper_data['NODES']) > 1 and kwargs['num_processors'] == '1':
-            kwargs['num_processors'] = "#"
-        else:
-            kwargs['num_processors'] = self.processors(kwargs['num_processors'])
+        wrapper_data.wallclock = kwargs['wallclock']
+        #todo here hetjobs
+        if wrapper_data.het["HETSIZE"] <= 1:
+            kwargs['allocated_nodes'] = self.allocated_nodes()
+            kwargs['dependency'] = self.dependency(kwargs['dependency'])
+            kwargs['partition'] = self.partition(wrapper_data.partition)
+            kwargs["exclusive"] = self.exclusive(wrapper_data.exclusive)
+            kwargs['nodes'] = self.nodes(wrapper_data.nodes)
+            kwargs['tasks'] = self.tasks(wrapper_data.tasks)
+            kwargs["custom_directives"] = self.custom_directives(wrapper_data.custom_directives)
+            kwargs['queue'] = self.queue(wrapper_data.queue)
+            kwargs['threads'] = self.threads(wrapper_data.threads)
+            if str(kwargs['num_processors']).isdigit():
+                kwargs['num_processors_value'] = int(wrapper_data.processors)
+            else:
+                kwargs['num_processors_value'] = 1
+            if str(wrapper_data.nodes).isdigit() and int(wrapper_data.nodes) > 1 and kwargs['num_processors'] == '1':
+                kwargs['num_processors'] = "#"
+            else:
+                kwargs['num_processors'] = self.processors(wrapper_data.processors)
+        kwargs["executable"] = wrapper_data.executable
+
         kwargs['header_directive'] = self.header_directives(**kwargs)
-        builder = wrapper_builder(**kwargs)
-        return self.wrapper_director.construct(builder)
+        return self.wrapper_director.construct(wrapper_builder(**kwargs))
 
     def vertical_wrapper(self, **kwargs):
         raise NotImplemented(self.exception)
@@ -147,7 +150,6 @@ class SlurmWrapperFactory(WrapperFactory):
 
     def dependency_directive(self, dependency):
         return '#SBATCH --dependency=afterok:{0}'.format(dependency)
-
     def queue_directive(self, queue):
         return '#SBATCH --qos={0}'.format(queue)
     def partition_directive(self, partition):

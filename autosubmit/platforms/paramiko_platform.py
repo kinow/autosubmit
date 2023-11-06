@@ -20,6 +20,7 @@ from log.log import AutosubmitError, AutosubmitCritical, Log
 from paramiko.ssh_exception import (SSHException)
 import Xlib.support.connect as xlib_connect
 from threading import Thread
+import getpass
 
 
 def threaded(fn):
@@ -36,7 +37,7 @@ class ParamikoPlatform(Platform):
     Class to manage the connections to the different platforms with the Paramiko library.
     """
 
-    def __init__(self, expid, name, config):
+    def __init__(self, expid, name, config, auth_password = None):
         """
 
         :param config:
@@ -44,7 +45,7 @@ class ParamikoPlatform(Platform):
         :param name:
         """
 
-        Platform.__init__(self, expid, name, config)
+        Platform.__init__(self, expid, name, config, auth_password=auth_password)
         self._proxy = None
         self._ssh_output_err = ""
         self.connected = False
@@ -191,6 +192,34 @@ class ParamikoPlatform(Platform):
             Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
             return False
         return True
+
+    def interactive_auth_handler(self, title, instructions, prompt_list):
+        answers = []
+        # Walk the list of prompts that the server sent that we need to answer
+        twofactor_nonpush = None
+        for prompt_, _ in prompt_list:
+            prompt = str(prompt_).strip().lower()
+            # str() used to make sure that we're dealing with a string rather than a unicode string
+            # strip() used to get rid of any padding spaces sent by the server
+            if "password" in prompt:
+                answers.append(self.pw)
+            elif "token" in prompt or "2fa" in prompt or "otp" in prompt:
+                if self.two_factor_method == "push":
+                    answers.append("")
+                elif self.two_factor_method == "token":
+                    # Sometimes the server may ask for the 2FA code more than once this is to avoid asking the user again
+                    # If it is wrong, just run again autosubmit run because the issue could be in the password step
+                    if twofactor_nonpush is None:
+                        twofactor_nonpush = input("Please type the 2FA/OTP/token code: ")
+                    answers.append(twofactor_nonpush)
+        # This is done from the server
+        # if self.two_factor_method == "push":
+        #     try:
+        #         inputimeout(prompt='Press enter to complete the 2FA PUSH authentication', timeout=self.otp_timeout)
+        #     except:
+        #         pass
+        return tuple(answers)
+
     def connect(self, reconnect=False):
         """
         Creates ssh connection to host
@@ -198,6 +227,7 @@ class ParamikoPlatform(Platform):
         :return: True if connection is created, False otherwise
         :rtype: bool
         """
+
         try:
             display = os.getenv('DISPLAY')
             if display is None:
@@ -220,28 +250,49 @@ class ParamikoPlatform(Platform):
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
             port = int(self._host_config.get('port',22))
-            # Agent Auth
-            if not self.agent_auth(port):
-                # Public Key Auth
-                if 'proxycommand' in self._host_config:
-                    self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
-                    try:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, sock=self._proxy, timeout=60 , banner_timeout=60)
-                    except Exception as e:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, sock=self._proxy, timeout=60,
-                                          banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+            if not self.two_factor_auth:
+                # Agent Auth
+                if not self.agent_auth(port):
+                    # Public Key Auth
+                    if 'proxycommand' in self._host_config:
+                        self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
+                        try:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, sock=self._proxy, timeout=60 , banner_timeout=60)
+                        except Exception as e:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, sock=self._proxy, timeout=60,
+                                              banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+                    else:
+                        try:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, timeout=60 , banner_timeout=60)
+                        except Exception as e:
+                            self._ssh.connect(self._host_config['hostname'], port, username=self.user,
+                                              key_filename=self._host_config_id, timeout=60 , banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
+                self.transport = self._ssh.get_transport()
+                self.transport.banner_timeout = 60
+            else:
+                Log.warning("2FA is enabled, this is an experimental feature and it may not work as expected")
+                Log.warning("nohup can't be used as the password will be asked")
+                Log.warning("If you are using a token, please type the token code when asked")
+                if self.pw is None:
+                    self.pw = getpass.getpass("Password for {0}: ".format(self.name))
+                if self.two_factor_method == "push":
+                    Log.warning("Please check your phone to complete the 2FA PUSH authentication")
+                self.transport = paramiko.Transport((self._host_config['hostname'], port))
+                self.transport.start_client()
+                try:
+                    self.transport.auth_interactive(self.user, self.interactive_auth_handler)
+                except Exception as e:
+                    Log.printlog("2FA authentication failed",7000)
+                    raise
+                if self.transport.is_authenticated():
+                    self._ssh._transport = self.transport
+                    self.transport.banner_timeout = 60
                 else:
-                    try:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, timeout=60 , banner_timeout=60)
-                    except Exception as e:
-                        self._ssh.connect(self._host_config['hostname'], port, username=self.user,
-                                          key_filename=self._host_config_id, timeout=60 , banner_timeout=60,disabled_algorithms={'pubkeys': ['rsa-sha2-256', 'rsa-sha2-512']})
-            self.transport = self._ssh.get_transport()
-            self.transport.banner_timeout = 60
-
+                    self.transport.close()
+                    raise SSHException
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=pow(4, 12) ,max_packet_size=pow(4, 12) )
             self._ftpChannel.get_channel().settimeout(120)
             self.connected = True
@@ -689,7 +740,7 @@ class ParamikoPlatform(Platform):
                 if job.start_time is not None and str(job.wrapper_type).lower() == "none":
                     wallclock = job.wallclock
                     if job.wallclock == "00:00":
-                        wallclock == job.platform.max_wallclock
+                        wallclock = job.platform.max_wallclock
                     if wallclock != "00:00" and wallclock != "00:00:00" and wallclock != "":
                         if job.is_over_wallclock(job.start_time,wallclock):
                             try:
@@ -1150,6 +1201,7 @@ class ParamikoPlatform(Platform):
         """
         return 'nohup kill -0 {0} > /dev/null 2>&1; echo $?'.format(job_id)
 
+
     def get_submitted_job_id(self, output, x11 = False):
         """
         Parses submit command output to extract job id
@@ -1170,68 +1222,71 @@ class ParamikoPlatform(Platform):
         :return: header to use
         :rtype: str
         """
-        if str(job.processors) == '1':
-            header = self.header.SERIAL
-        else:
-            header = self.header.PARALLEL
-        str_datetime = date2str(datetime.datetime.now(), 'S')
         if str(job.wrapper_type).lower() != "vertical":
             out_filename = "{0}.cmd.out.{1}".format(job.name,job.fail_count)
             err_filename = "{0}.cmd.err.{1}".format(job.name,job.fail_count)
         else:
             out_filename = "{0}.cmd.out".format(job.name)
             err_filename = "{0}.cmd.err".format(job.name)
+
+        if len(job.het) > 0:
+            header = self.header.calculate_het_header(job)
+        elif str(job.processors) == '1':
+            header = self.header.SERIAL
+        else:
+            header = self.header.PARALLEL
+
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
-
-        if hasattr(self.header, 'get_queue_directive'):
-            header = header.replace(
-                '%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
-        if hasattr(self.header, 'get_proccesors_directive'):
-            header = header.replace(
-                '%NUMPROC_DIRECTIVE%', self.header.get_proccesors_directive(job))
-        if hasattr(self.header, 'get_partition_directive'):
-            header = header.replace(
-                '%PARTITION_DIRECTIVE%', self.header.get_partition_directive(job))
-        if hasattr(self.header, 'get_tasks_per_node'):
-            header = header.replace(
-                '%TASKS_PER_NODE_DIRECTIVE%', self.header.get_tasks_per_node(job))
-        if hasattr(self.header, 'get_threads_per_task'):
-            header = header.replace(
-                '%THREADS_PER_TASK_DIRECTIVE%', self.header.get_threads_per_task(job))
-        if job.x11 == "true":
-            header = header.replace(
-                '%X11%', "SBATCH --x11=batch")
-        else:
-            header = header.replace(
-                '%X11%', "")
-        if hasattr(self.header, 'get_scratch_free_space'):
-            header = header.replace(
-                '%SCRATCH_FREE_SPACE_DIRECTIVE%', self.header.get_scratch_free_space(job))
-        if hasattr(self.header, 'get_custom_directives'):
-            header = header.replace(
-                '%CUSTOM_DIRECTIVES%', self.header.get_custom_directives(job))
-        if hasattr(self.header, 'get_exclusivity'):
-            header = header.replace(
-                '%EXCLUSIVITY_DIRECTIVE%', self.header.get_exclusivity(job))
-        if hasattr(self.header, 'get_account_directive'):
-            header = header.replace(
-                '%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))
-        if hasattr(self.header, 'get_nodes_directive'):
-            header = header.replace(
-                '%NODES_DIRECTIVE%', self.header.get_nodes_directive(job))
-        if hasattr(self.header, 'get_reservation_directive'):
-            header = header.replace(
-                '%RESERVATION_DIRECTIVE%', self.header.get_reservation_directive(job))
-        if hasattr(self.header, 'get_memory_directive'):
-            header = header.replace(
-                '%MEMORY_DIRECTIVE%', self.header.get_memory_directive(job))
-        if hasattr(self.header, 'get_memory_per_task_directive'):
-            header = header.replace(
-                '%MEMORY_PER_TASK_DIRECTIVE%', self.header.get_memory_per_task_directive(job))
-        if hasattr(self.header, 'get_hyperthreading_directive'):
-            header = header.replace(
-                '%HYPERTHREADING_DIRECTIVE%', self.header.get_hyperthreading_directive(job))
+        if job.het.get("HETSIZE",0) <= 1:
+            if hasattr(self.header, 'get_queue_directive'):
+                header = header.replace(
+                    '%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
+            if hasattr(self.header, 'get_proccesors_directive'):
+                header = header.replace(
+                    '%NUMPROC_DIRECTIVE%', self.header.get_proccesors_directive(job))
+            if hasattr(self.header, 'get_partition_directive'):
+                header = header.replace(
+                    '%PARTITION_DIRECTIVE%', self.header.get_partition_directive(job))
+            if hasattr(self.header, 'get_tasks_per_node'):
+                header = header.replace(
+                    '%TASKS_PER_NODE_DIRECTIVE%', self.header.get_tasks_per_node(job))
+            if hasattr(self.header, 'get_threads_per_task'):
+                header = header.replace(
+                    '%THREADS_PER_TASK_DIRECTIVE%', self.header.get_threads_per_task(job))
+            if job.x11 == "true":
+                header = header.replace(
+                    '%X11%', "SBATCH --x11=batch")
+            else:
+                header = header.replace(
+                    '%X11%', "")
+            if hasattr(self.header, 'get_scratch_free_space'):
+                header = header.replace(
+                    '%SCRATCH_FREE_SPACE_DIRECTIVE%', self.header.get_scratch_free_space(job))
+            if hasattr(self.header, 'get_custom_directives'):
+                header = header.replace(
+                    '%CUSTOM_DIRECTIVES%', self.header.get_custom_directives(job))
+            if hasattr(self.header, 'get_exclusivity'):
+                header = header.replace(
+                    '%EXCLUSIVITY_DIRECTIVE%', self.header.get_exclusivity(job))
+            if hasattr(self.header, 'get_account_directive'):
+                header = header.replace(
+                    '%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))
+            if hasattr(self.header, 'get_nodes_directive'):
+                header = header.replace(
+                    '%NODES_DIRECTIVE%', self.header.get_nodes_directive(job))
+            if hasattr(self.header, 'get_reservation_directive'):
+                header = header.replace(
+                    '%RESERVATION_DIRECTIVE%', self.header.get_reservation_directive(job))
+            if hasattr(self.header, 'get_memory_directive'):
+                header = header.replace(
+                    '%MEMORY_DIRECTIVE%', self.header.get_memory_directive(job))
+            if hasattr(self.header, 'get_memory_per_task_directive'):
+                header = header.replace(
+                    '%MEMORY_PER_TASK_DIRECTIVE%', self.header.get_memory_per_task_directive(job))
+            if hasattr(self.header, 'get_hyperthreading_directive'):
+                header = header.replace(
+                    '%HYPERTHREADING_DIRECTIVE%', self.header.get_hyperthreading_directive(job))
         return header
     def parse_time(self,wallclock):
         # noinspection Annotator
@@ -1247,23 +1302,39 @@ class ParamikoPlatform(Platform):
         return timedelta(**time_params)
 
     def closeConnection(self):
-        if self._ftpChannel is not None and len(str(self._ftpChannel)) > 0:
-            self._ftpChannel.close()
-        if self._ssh is not None and len(str(self._ssh)) > 0:
-            self._ssh.close()
-            self.transport.close()
-            self.transport.stop_thread()
-            try:
-                del self._ssh
-                del self._ftpChannel
-                del self.transport
-            except Exception as e:
-                pass
+        # Ensure to delete all references to the ssh connection, so that it frees all the file descriptors
+        with suppress(Exception):
+            if self._ftpChannel:
+                self._ftpChannel.close()
+        with suppress(Exception):
+            if self._ssh._agent: # May not be in all runs
+                self._ssh._agent.close()
+        with suppress(Exception):
+            if self._ssh._transport:
+                self._ssh._transport.close()
+                self._ssh._transport.stop_thread()
+        with suppress(Exception):
+            if self._ssh:
+                self._ssh.close()
+        with suppress(Exception):
+            if self.transport:
+                self.transport.close()
+                self.transport.stop_thread()
+        with suppress(Exception):
+            del self._ssh._agent # May not be in all runs
+        with suppress(Exception):
+            del self._ssh._transport
+        with suppress(Exception):
+            del self._ftpChannel
+        with suppress(Exception):
+            del self.transport
+        with suppress(Exception):
+            del self._ssh
 
     def check_tmp_exists(self):
         try:
             if self.send_command("ls {0}".format(self.temp_dir)):
-                if "no such file or directory" in self.get_ssh_output_err().lower():
+                if "no such file or directory" in str(self.get_ssh_output_err()).lower():
                     return False
                 else:
                     return True

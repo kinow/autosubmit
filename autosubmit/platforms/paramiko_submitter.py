@@ -68,7 +68,7 @@ class ParamikoSubmitter(Submitter):
         self.platforms = platforms
 
 
-    def load_platforms(self, asconf, retries=5):
+    def load_platforms(self, asconf, retries=5, auth_password = None, local_auth_password = None):
         """
         Create all the platforms object that will be used by the experiment
 
@@ -105,7 +105,7 @@ class ParamikoSubmitter(Submitter):
         platforms = dict()
 
         # Build Local Platform Object
-        local_platform = LocalPlatform(asconf.expid, 'local', config)
+        local_platform = LocalPlatform(asconf.expid, 'local', config, auth_password = local_auth_password)
         local_platform.max_wallclock = asconf.get_max_wallclock()
         local_platform.max_processors = asconf.get_max_processors()
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
@@ -148,7 +148,7 @@ class ParamikoSubmitter(Submitter):
                         asconf.expid, section, config, platform_version)
                 elif platform_type == 'slurm':
                     remote_platform = SlurmPlatform(
-                        asconf.expid, section, config)
+                        asconf.expid, section, config, auth_password = auth_password)
                 elif platform_type == 'pjm':
                     remote_platform = PJMPlatform(
                         asconf.expid, section, config)
@@ -179,7 +179,7 @@ class ParamikoSubmitter(Submitter):
             else:
                 host = platform_data[section].get('HOST', "")
 
-            remote_platform.host = host
+            remote_platform.host = host.strip(" ")
             # Retrieve more configurations settings and save them in the object
             remote_platform.max_wallclock = platform_data[section].get('MAX_WALLCLOCK',"2:00")
             remote_platform.max_processors = platform_data[section].get('MAX_PROCESSORS',asconf.get_max_processors())
@@ -206,8 +206,7 @@ class ParamikoSubmitter(Submitter):
             remote_platform.processors_per_node = platform_data[section].get('PROCESSORS_PER_NODE',"1")
             remote_platform.custom_directives = platform_data[section].get('CUSTOM_DIRECTIVES',"")
             if len(remote_platform.custom_directives) > 0:
-                Log.debug("Custom directives from platform.conf: {0}".format(
-                    remote_platform.custom_directives))
+                Log.debug(f'Custom directives for {section}: {remote_platform.custom_directives}')
             remote_platform.scratch_free_space = str(platform_data[section].get('SCRATCH_FREE_SPACE', False)).lower()
             try:
                 remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,remote_platform.user, remote_platform.expid)

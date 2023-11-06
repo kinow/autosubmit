@@ -109,21 +109,21 @@ The sequence of instructions to install Autosubmit and its dependencies with con
 
 .. warning:: This procedure is still WIP. You can follow the process at `issue #864 <https://earth.bsc.es/gitlab/es/autosubmit/-/issues/886>`_. We strongly recommend using the pip procedure.
 
+If you don't have conda installed yet, we recommend following `Installing Miniconda <https://docs.conda.io/projects/miniconda/en/latest/index.html>`_.
+
 .. code-block:: bash
 
-    # Download conda
-    wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh
-    # Launch it
-    chmod +x ./Miniconda3-py39_4.12.0-Linux-x86_64.sh ; ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
     # Download git
     apt install git -y -q
     # Download autosubmit
     git clone https://earth.bsc.es/gitlab/es/autosubmit.git -b v4.0.0b
     cd autosubmit
-    # Create a Conda environment
-    conda env update -f environment.yml -n autosubmit python=3.7
+    # Create a Conda environment from YAML with autosubmit dependencies
+    conda env create -f environment.yml -n autosubmitenv
     # Activate env
-    conda activate autosubmit
+    conda activate autosubmitenv
+    # Install autosubmit
+    pip install autosubmit
     # Test autosubmit
     autosubmit -v
 
@@ -174,9 +174,13 @@ There are two methods of configuring the Autosubmit main paths.
 
 * ``autosubmit configure`` is suited for a personal/single user who wants to test Autosubmit in the scope of ``$HOME``. It will generate an ``$HOME/.autosubmitrc`` file that overrides the machine configuration.
 
-* Manually generate an ``autosubmitrc`` file in  ``/etc/autosubmitrc``, suited for a workgroup or production environment that wants to use Autosubmit in a shared database in a manner that multiple users can share and view others' experiments.
+Manually generate an ``autosubmitrc`` file in one of these locations, which is the recommended method for a production environment with a shared database in a manner that multiple users can share and view others' experiments.
 
-.. important::  `.autosubmitrc` user level and user level precedes system configuration. `$HOME/.autosubmitrc > /etc/autosubmitrc`
+* ``/etc/autosubmitrc``, System level configuration.
+
+* Set the environment variable ``AUTOSUBMIT_CONFIGURATION`` to the path of the ``autosubmitrc`` file. This will override all other configuration files.
+
+.. important::  `.autosubmitrc` user level precedes system configuration unless the environment variable is set. `AUTOSUBMIT_CONFIGURATION` > `$HOME/.autosubmitrc > /etc/autosubmitrc`
 
 Quick Installation - Non-shared database (user level)
 ------------------------------------------------------

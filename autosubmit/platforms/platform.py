@@ -8,13 +8,13 @@ from typing import List, Union
 
 from autosubmit.helpers.parameters import autosubmit_parameter
 from log.log import AutosubmitCritical, AutosubmitError, Log
-
+import getpass
 class Platform(object):
     """
     Class to manage the connections to the different platforms.
     """
 
-    def __init__(self, expid, name, config):
+    def __init__(self, expid, name, config, auth_password = None):
         """
         :param config:
         :param expid:
@@ -64,6 +64,21 @@ class Platform(object):
         self._submit_cmd = None
         self._checkhost_cmd = None
         self.cancel_cmd = None
+        self.otp_timeout = None
+        self.two_factor_auth = None
+        self.otp_timeout = self.config.get("PLATFORMS", {}).get(self.name.upper(),{}).get("2FA_TIMEOUT", 60*5)
+        self.two_factor_auth = self.config.get("PLATFORMS", {}).get(self.name.upper(),{}).get("2FA", False)
+        self.two_factor_method = self.config.get("PLATFORMS", {}).get(self.name.upper(),{}).get("2FA_METHOD", "token")
+        if not self.two_factor_auth:
+            self.pw = None
+        elif auth_password is not None and self.two_factor_auth:
+            if type(auth_password) == list:
+                self.pw = auth_password[0]
+            else:
+                self.pw = auth_password
+        else:
+            self.pw = None
+
 
     @property
     @autosubmit_parameter(name='current_arch')
@@ -609,7 +624,7 @@ class Platform(object):
         if self.check_file_exists(filename):
             self.delete_file(filename)
 
-    def check_file_exists(self, src, wrapper_failed=False):
+    def check_file_exists(self, src, wrapper_failed=False, sleeptime=5, max_retries=3):
         return True
 
     def get_stat_file(self, job_name, retries=0):
@@ -805,3 +820,4 @@ class Platform(object):
         Sends a Submit file Script, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
         """
         raise NotImplementedError
+

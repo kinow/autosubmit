@@ -49,8 +49,8 @@ class LocalPlatform(ParamikoPlatform):
     def get_checkAlljobs_cmd(self, jobs_id):
         pass
 
-    def __init__(self, expid, name, config):
-        ParamikoPlatform.__init__(self, expid, name, config)
+    def __init__(self, expid, name, config, auth_password = None):
+        ParamikoPlatform.__init__(self, expid, name, config, auth_password= auth_password)
         self.cancel_cmd = None
         self.mkdir_cmd = None
         self.del_cmd = None
@@ -175,7 +175,7 @@ class LocalPlatform(ParamikoPlatform):
         return True
 
     # Moves .err .out
-    def check_file_exists(self, src,wrapper_failed=False):
+    def check_file_exists(self, src, wrapper_failed=False, sleeptime=5, max_retries=3):
         """
         Moves a file on the platform
         :param src: source name
@@ -185,10 +185,8 @@ class LocalPlatform(ParamikoPlatform):
 
         """
         file_exist = False
-        sleeptime = 5
         remote_path = os.path.join(self.get_files_path(), src)
         retries = 0
-        max_retries = 3
         while not file_exist and retries < max_retries:
             try:
                 file_exist = os.path.isfile(os.path.join(self.get_files_path(),src))
