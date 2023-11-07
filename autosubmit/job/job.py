@@ -1850,7 +1850,13 @@ class Job(object):
 
         for additional_file, additional_template_content in zip(self.additional_files, additional_templates):
             for key, value in parameters.items():
-                additional_template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), additional_template_content,flags=re.I)
+                if "\\" in str(parameters[key]):
+                    final_sub = re.escape(str(parameters[key]))
+                else:
+                    final_sub = str(parameters[key])
+                # Check if key is in the additional template
+                if "%(?<!%%)" + key + "%(?!%%)" in additional_template_content:
+                    additional_template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', final_sub, additional_template_content,flags=re.I)
             for variable in self.undefined_variables:
                 additional_template_content = re.sub('%(?<!%%)' + variable + '%(?!%%)', '', additional_template_content,flags=re.I)
 
