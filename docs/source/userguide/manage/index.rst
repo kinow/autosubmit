@@ -1,6 +1,8 @@
 Manage Experiments
 ===================
 
+.. _clean:
+
 How to clean the experiment
 ---------------------------
 
@@ -51,62 +53,38 @@ A bare copy (which occupies less space on disk) will be automatically made.
 How to archive an experiment
 ----------------------------
 
-To archive the experiment, use the command:
-::
+When you archive an experiment in Autosubmit, it automatically :ref:`cleans <clean>`
+the experiment as well. This means the experiment will not be available for
+use, unless it is unarchived.
 
-    autosubmit archive EXPID
+.. code-block::
 
-*EXPID* is the experiment identifier.
-
-.. warning:: this command calls implicitly the clean command. Check clean command documentation.
-
-.. warning:: experiment will be unusable after archiving. If you want to use it, you will need to call first the
-    unarchive command
-
+    autosubmit archive <EXPID>
 
 Options:
-::
 
-    usage: autosubmit archive [-h] expid
+.. runcmd:: autosubmit archive -h
+  :caption: ``autosubmit archive`` options
 
-      expid                 experiment identifier
-
-      -h, --help            show this help message and exit
-
-
-Example:
-::
-
-    autosubmit archive cxxx
-
-.. hint:: Archived experiment will be stored as a tar.gz file on a folder named after the year of the last
-    COMPLETED file date. If not COMPLETED file is present, it will be stored in the folder matching the
-    date at the time the archive command was run.
+The archived experiment will be stored as a ``tar.gz` file, under
+a directory named after the year of the last ``_COMPLETED`` file
+date or, if no ``_COMPLETED`` job is present, it will use the year of
+the date the ``autosubmit archive`` was run (e.g. for the selected
+year ``2023``, the location will be ``$HOME/autosubmit/2023/<EXPID>.tar.gz``).
 
 How to unarchive an experiment
 ------------------------------
 
 To unarchive an experiment, use the command:
-::
 
-    autosubmit unarchive EXPID
+.. code-block::
 
-*EXPID* is the experiment identifier.
+    autosubmit unarchive <EXPID>
 
 Options:
-::
 
-    usage: autosubmit unarchive [-h] expid
-
-      expid                 experiment identifier
-
-      -h, --help            show this help message and exit
-
-
-Example:
-::
-
-    autosubmit unarchive cxxx
+.. runcmd:: autosubmit unarchive -h
+  :caption: ``autosubmit unarchive`` options
 
 How to delete the experiment
 ----------------------------

@@ -75,7 +75,7 @@ import signal
 import datetime
 import log.fd_show as fd_show
 import portalocker
-from pkg_resources import require, resource_listdir, resource_string, resource_filename
+from pkg_resources import require, resource_listdir, resource_exists, resource_string, resource_filename
 from collections import defaultdict
 from pyparsing import nestedExpr
 from .history.experiment_status import ExperimentStatus
@@ -602,6 +602,8 @@ class Autosubmit:
                                    help='Only does a container without compress')
             subparser.add_argument('-v', '--update_version', action='store_true',
                                    default=False, help='Update experiment version')
+            subparser.add_argument('--rocrate', action='store_true', default=False,
+                                   help='Produce an RO-Crate file')
             # Unarchive
             subparser = subparsers.add_parser(
                 'unarchive', description='unarchives an experiment')
@@ -612,6 +614,8 @@ class Autosubmit:
                                    help='Untar an uncompressed tar')
             subparser.add_argument('-v', '--update_version', action='store_true',
                                    default=False, help='Update experiment version')
+            subparser.add_argument('--rocrate', action='store_true', default=False,
+                                   help='Unarchive an RO-Crate file')
             # update proj files
             subparser = subparsers.add_parser('upgrade', description='Updates autosubmit 3 proj files to autosubmit 4')
             subparser.add_argument('expid', help='experiment identifier')
@@ -715,9 +719,9 @@ class Autosubmit:
         elif args.command == 'upgrade':
             return Autosubmit.upgrade_scripts(args.expid,files=args.files)
         elif args.command == 'archive':
-            return Autosubmit.archive(args.expid, noclean=args.noclean, uncompress=args.uncompress)
+                return Autosubmit.archive(args.expid, noclean=args.noclean, uncompress=args.uncompress, rocrate=args.rocrate)
         elif args.command == 'unarchive':
-            return Autosubmit.unarchive(args.expid, uncompressed=args.uncompressed)
+            return Autosubmit.unarchive(args.expid, uncompressed=args.uncompressed, rocrate=args.rocrate)
 
         elif args.command == 'readme':
             if os.path.isfile(Autosubmit.readme_path):
@@ -4316,7 +4320,91 @@ class Autosubmit:
             Log.critical(str(exp))
 
     @staticmethod
-    def archive(expid, noclean=True, uncompress=True):
+    def rocrate(expid, path: Path):
+        """
+        Produces an RO-Crate archive for an Autosubmit experiment.
+
+        :param expid: experiment ID
+        :type expid: str
+        :param path: path to save the RO-Crate in
+        :type path: Path
+        :return: ``True`` if successful, ``False`` otherwise
+        :rtype: bool
+        """
+        from autosubmit.statistics.statistics import Statistics
+        from textwrap import dedent
+
+        as_conf = AutosubmitConfig(expid)
+        # ``.reload`` will call the function to unify the YAML configuration.
+        as_conf.reload(True)
+
+        workflow_configuration = as_conf.experiment_data
+
+        # Load the rocrate prepopulated file, or raise an error and write the template.
+        # Similar to what COMPSs does.
+        # See: https://github.com/bsc-wdc/compss/blob/9e79542eef60afa9e288e7246e697bd7ac42db08/compss/runtime/scripts/system/provenance/generate_COMPSs_RO-Crate.py
+        rocrate_json = workflow_configuration.get('ROCRATE', None)
+        if not rocrate_json:
+            Log.error(dedent('''\
+                No ROCRATE configuration value provided! Use it to create your
+                JSON-LD schema, using @id, @type, and other schema.org attributes,
+                and it will be merged with the values retrieved from the workflow
+                configuration. Some values are not present in Autosubmit, such as
+                license, so you must provide it if you want to include in your
+                RO-Crate data, e.g. create a file $expid/conf/rocrate.yml (or use
+                an existing one) with a top level ROCRATE key, containing your
+                JSON-LD data:
+
+                ROCRATE:
+                  INPUTS:
+                    # Add the extra keys to be exported.
+                    - "MHM"
+                  OUTPUTS:
+                    # Relative to the Autosubmit project folder.
+                    - "*/*.gif"
+                  PATCH: |
+                    {
+                      "@graph": [
+                        {
+                          "@id": "./",
+                          "license": "Apache-2.0",
+                          "creator": {
+                            "@id": "https://orcid.org/0000-0001-8250-4074"
+                          }
+                        },
+                        {
+                          "@id": "https://orcid.org/0000-0001-8250-4074",
+                          "@type": "Person",
+                          "affiliation": {
+                              "@id": "https://ror.org/05sd8tv96"
+                          }
+                        },
+                        ...
+                      ]
+                    }
+                ''').replace('{', '{{').replace('}', '}}'))
+            raise AutosubmitCritical("You must provide an ROCRATE configuration key when using RO-Crate...", 7014)
+
+        # Read job list (from pickles) to retrieve start and end time.
+        # Code adapted from ``autosubmit stats``.
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=False)
+        jobs = job_list.get_job_list()
+        exp_stats = Statistics(jobs=jobs, start=None, end=None, queue_time_fix={})
+        exp_stats.calculate_statistics()
+        start_time = None
+        end_time = None
+        # N.B.: ``exp_stats.jobs_stat`` is sorted in reverse order.
+        number_of_jobs = len(exp_stats.jobs_stat)
+        if number_of_jobs > 0:
+            start_time = exp_stats.jobs_stat[-1].start_time.replace(microsecond=0).isoformat()
+        if number_of_jobs > 1:
+            end_time = exp_stats.jobs_stat[0].finish_time.replace(microsecond=0).isoformat()
+
+        from autosubmit.provenance.rocrate import create_rocrate_archive
+        return create_rocrate_archive(as_conf, rocrate_json, jobs, start_time, end_time, path)
+
+    @staticmethod
+    def archive(expid, noclean=True, uncompress=True, rocrate=False):
         """
         Archives an experiment: call clean (if experiment is of version 3 or later), compress folder
         to tar.gz and moves to year's folder
@@ -4327,9 +4415,10 @@ class Autosubmit:
         :type noclean: bool
         :param uncompress: flag telling it whether to decompress or not.
         :type uncompress: bool
+        :param rocrate: flag to enable RO-Crate
+        :type rocrate: bool
         :return: ``True`` if the experiment has been successfully archived. ``False`` otherwise.
         :rtype: bool
-
         """
 
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
@@ -4356,29 +4445,36 @@ class Autosubmit:
 
         if year is None:
             year = time.localtime(os.path.getmtime(exp_folder)).tm_year
-        Log.info("Archiving in year {0}", year)
-
-        # Creating tar file
-        Log.info("Creating tar file ... ")
         try:
             year_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year))
             if not os.path.exists(year_path):
                 os.mkdir(year_path)
                 os.chmod(year_path, 0o775)
-            if not uncompress:
-                compress_type = "w:gz"
-                output_filepath = '{0}.tar.gz'.format(expid)
-            else:
-                compress_type = "w"
-                output_filepath = '{0}.tar'.format(expid)
-            with tarfile.open(os.path.join(year_path, output_filepath), compress_type) as tar:
-                tar.add(exp_folder, arcname='')
-                tar.close()
-                os.chmod(os.path.join(year_path, output_filepath), 0o775)
         except Exception as e:
-            raise AutosubmitCritical("Can not write tar file", 7012, str(e))
+            raise AutosubmitCritical(f"Failed to create year-directory {str(year)} for experiment {expid}", 7012, str(e))
+        Log.info(f"Archiving in year {str(year)}")
 
-        Log.info("Tar file created!")
+        if rocrate:
+            Autosubmit.rocrate(expid, Path(year_path))
+            Log.info('RO-Crate ZIP file created!')
+        else:
+            # Creating tar file
+            Log.info("Creating tar file ... ")
+            try:
+                if not uncompress:
+                    compress_type = "w:gz"
+                    output_filepath = '{0}.tar.gz'.format(expid)
+                else:
+                    compress_type = "w"
+                    output_filepath = '{0}.tar'.format(expid)
+                with tarfile.open(os.path.join(year_path, output_filepath), compress_type) as tar:
+                    tar.add(exp_folder, arcname='')
+                    tar.close()
+                    os.chmod(os.path.join(year_path, output_filepath), 0o775)
+            except Exception as e:
+                raise AutosubmitCritical("Can not write tar file", 7012, str(e))
+
+            Log.info("Tar file created!")
 
         try:
             shutil.rmtree(exp_folder)
@@ -4394,7 +4490,7 @@ class Autosubmit:
                     Log.warning("Experiment folder renamed to: {0}".format(
                         exp_folder + "_to_delete "))
                 except Exception as e:
-                    Autosubmit.unarchive(expid, uncompressed=False)
+                    Autosubmit.unarchive(expid, uncompressed=False, rocrate=rocrate)
                     raise AutosubmitCritical(
                         "Can not remove or rename experiments folder", 7012, str(e))
 
@@ -4402,7 +4498,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def unarchive(experiment_id, uncompressed=True):
+    def unarchive(experiment_id, uncompressed=True, rocrate=False):
         """
         Unarchives an experiment: uncompress folder from tar.gz and moves to experiment root folder
 
@@ -4410,14 +4506,18 @@ class Autosubmit:
         :type experiment_id: str
         :param uncompressed: if True, the tar file is uncompressed
         :type uncompressed: bool
-
+        :param rocrate: flag to enable RO-Crate
+        :type rocrate: bool
         """
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
         # Searching by year. We will store it on database
         year = datetime.datetime.today().year
         archive_path = None
-        if not uncompressed:
+        if rocrate:
+            compress_type = None
+            output_pathfile = f'{experiment_id}.zip'
+        elif not uncompressed:
             compress_type = "r:gz"
             output_pathfile = '{0}.tar.gz'.format(experiment_id)
         else:
@@ -4440,12 +4540,17 @@ class Autosubmit:
         if not os.path.isdir(exp_folder):
             os.mkdir(exp_folder)
         try:
-            with tarfile.open(os.path.join(archive_path), compress_type) as tar:
-                tar.extractall(exp_folder)
-                tar.close()
+            if rocrate:
+                import zipfile
+                with zipfile.ZipFile(archive_path, 'r') as zip:
+                    zip.extractall(exp_folder)
+            else:
+                with tarfile.open(os.path.join(archive_path), compress_type) as tar:
+                    tar.extractall(exp_folder)
+                    tar.close()
         except Exception as e:
             shutil.rmtree(exp_folder, ignore_errors=True)
-            Log.printlog("Can not extract tar file: {0}".format(str(e)), 6012)
+            Log.printlog("Can not extract file: {0}".format(str(e)), 6012)
             return False
 
         Log.info("Unpacking finished")
