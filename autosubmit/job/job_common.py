@@ -138,6 +138,7 @@ class StatisticsSnippetBash:
                 AS_CHECKPOINT_CALLS=$((AS_CHECKPOINT_CALLS+1))
                 touch ${job_name_ptrn}_CHECKPOINT_${AS_CHECKPOINT_CALLS}
             }
+            %EXTENDED_HEADER%
             ###################
             # Autosubmit job
             ###################
@@ -147,7 +148,7 @@ class StatisticsSnippetBash:
     @staticmethod
     def as_tailer():
         return textwrap.dedent("""\
-
+                %EXTENDED_TAILER%
                 ###################
                 # Autosubmit tailer
                 ###################
@@ -209,7 +210,8 @@ class StatisticsSnippetPython:
                 global AS_CHECKPOINT_CALLS
                 global job_name_ptrn
                 AS_CHECKPOINT_CALLS = AS_CHECKPOINT_CALLS + 1
-                open(job_name_ptrn + '_CHECKPOINT_' + str(AS_CHECKPOINT_CALLS), 'w').close()                
+                open(job_name_ptrn + '_CHECKPOINT_' + str(AS_CHECKPOINT_CALLS), 'w').close()      
+            %EXTENDED_HEADER%          
             ###################
             # Autosubmit job
             ###################
@@ -220,7 +222,7 @@ class StatisticsSnippetPython:
     # expand tailer to use python3
     def as_tailer(self):
         return textwrap.dedent("""\
-
+                %EXTENDED_TAILER%
                 ###################
                 # Autosubmit tailer
                 ###################
@@ -283,6 +285,7 @@ class StatisticsSnippetR:
                 fileConn<-file(paste(job_name_ptrn,"_CHECKPOINT_",AS_CHECKPOINT_CALLS, sep = ''),"w")
                 close(fileConn)
             }
+            %EXTENDED_HEADER% 
             ###################
             # Autosubmit job
             ###################
@@ -292,7 +295,7 @@ class StatisticsSnippetR:
     @staticmethod
     def as_tailer():
         return textwrap.dedent("""\
-
+            %EXTENDED_TAILER%
             ###################
             # Autosubmit tailer
             ###################

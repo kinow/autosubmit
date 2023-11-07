@@ -217,6 +217,8 @@ class Job(object):
         self._dependencies = []
         self.running = "once"
         self.start_time = None
+        self.ext_header_path = ''
+        self.ext_tailer_path = ''
         self.edge_info = dict()
         self.total_jobs = None
         self.max_waiting_jobs = None
@@ -499,6 +501,84 @@ class Job(object):
             odict = odict.copy()  # copy the dict since we change it
             del odict['_platform']  # remove filehandle entry
         return odict
+
+    def read_header_tailer_script(self, script_path: str, as_conf: AutosubmitConfig, is_header: bool):
+        """
+        Opens and reads a script. If it is not a BASH script it will fail :(
+
+        Will strip away the line with the hash bang (#!)
+
+        :param script_path: relative to the experiment directory path to the script
+        :param as_conf: Autosubmit configuration file
+        :param is_header: boolean indicating if it is header extended script
+        """
+
+        found_hashbang = False
+        script_name = script_path.rsplit("/")[-1]  # pick the name of the script for a more verbose error
+        script = ''
+        # the value might be None string if the key has been set, but with no value
+        if script_path == '' or script_path == "None":
+            return script
+
+        # adjusts the error message to the type of the script
+        if is_header:
+            error_message_type = "header"
+        else:
+            error_message_type = "tailer"
+
+        try:
+            # find the absolute path
+            script_file = open(os.path.join(as_conf.get_project_dir(), script_path), 'r')
+        except Exception as e:  # log
+            # We stop Autosubmit if we don't find the script
+            raise AutosubmitCritical("Extended {1} script: failed to fetch {0} \n".format(str(e),
+                                                                                          error_message_type), 7014)
+
+        for line in script_file:
+            if line[:2] != "#!":
+                script += line
+            else:
+                found_hashbang = True
+                # check if the type of the script matches the one in the extended
+                if "bash" in line:
+                    if self.type != Type.BASH:
+                        raise AutosubmitCritical(
+                            "Extended {2} script: script {0} seems Bash but job {1} isn't\n".format(script_name,
+                                                                                                    self.script_name,
+                                                                                                    error_message_type),
+                            7011)
+                elif "Rscript" in line:
+                    if self.type != Type.R:
+                        raise AutosubmitCritical(
+                            "Extended {2} script: script {0} seems Rscript but job {1} isn't\n".format(script_name,
+                                                                                                       self.script_name,
+                                                                                                       error_message_type),
+                            7011)
+                elif "python" in line:
+                    if self.type not in (Type.PYTHON, Type.PYTHON2, Type.PYTHON3):
+                        raise AutosubmitCritical(
+                            "Extended {2} script: script {0} seems Python but job {1} isn't\n".format(script_name,
+                                                                                                      self.script_name,
+                                                                                                      error_message_type),
+                            7011)
+                else:
+                    raise AutosubmitCritical(
+                        "Extended {2} script: couldn't figure out script {0} type\n".format(script_name,
+                                                                                           self.script_name,
+                                                                                           error_message_type), 7011)
+
+        if not found_hashbang:
+            raise AutosubmitCritical(
+                "Extended {2} script: couldn't figure out script {0} type\n".format(script_name,
+                                                                                   self.script_name,
+                                                                                   error_message_type), 7011)
+
+        if is_header:
+            script = "\n###############\n# Header script\n###############\n" + script
+        else:
+            script = "\n###############\n# Tailer script\n###############\n" + script
+
+        return script
 
     @property
     def parents(self):
@@ -1562,6 +1642,11 @@ class Job(object):
         parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
         parameters['CUSTOM_DIRECTIVES'] = self.custom_directives
         parameters['HYPERTHREADING'] = self.hyperthreading
+        # we open the files and offload the whole script as a string
+        # memory issues if the script is too long? Add a check to avoid problems...
+        if as_conf.get_project_type() != "none":
+            parameters['EXTENDED_HEADER'] = self.read_header_tailer_script(self.ext_header_path, as_conf, True)
+            parameters['EXTENDED_TAILER'] = self.read_header_tailer_script(self.ext_tailer_path, as_conf, False)
         parameters['CURRENT_QUEUE'] = self.queue
         parameters['RESERVATION'] = self.reservation
         parameters['CURRENT_EC_QUEUE'] = self.ec_queue
