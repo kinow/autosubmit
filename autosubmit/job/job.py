@@ -1932,10 +1932,15 @@ class Job(object):
         parameters = self.parameters
         template_content,additional_templates = self.update_content(as_conf)
         #enumerate and get value
-
+        #TODO regresion test
         for additional_file, additional_template_content in zip(self.additional_files, additional_templates):
             for key, value in parameters.items():
-                additional_template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), additional_template_content,flags=re.I)
+                final_sub = str(value)
+                if "\\" in final_sub:
+                    final_sub = re.escape(final_sub)
+                # Check if key is in the additional template
+                if "%(?<!%%)" + key + "%(?!%%)" in additional_template_content:
+                    additional_template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', final_sub, additional_template_content,flags=re.I)
             for variable in self.undefined_variables:
                 additional_template_content = re.sub('%(?<!%%)' + variable + '%(?!%%)', '', additional_template_content,flags=re.I)
 
