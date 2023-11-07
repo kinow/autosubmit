@@ -310,7 +310,7 @@ class Platform(object):
                         raise
                     except Exception as e:
                         self.connected = False
-                        message = f'Error In platform {self.name} for section {package.jobs[0].section}: {str(e)}'
+                        message = f'Error in platform {self.name} for section {package.jobs[0].section}: {str(e)}'
                         raise AutosubmitError(message, 6015)
             except AutosubmitCritical as e:
                 raise AutosubmitCritical(e.message, e.code, e.trace)
