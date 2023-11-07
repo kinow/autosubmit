@@ -2075,6 +2075,8 @@ class Autosubmit:
                     try:
                         if Autosubmit.exit:
                             Autosubmit.terminate(threading.enumerate())
+                            if job_list.get_failed():
+                                return 1
                             return 0
                         # reload parameters changes
                         Log.debug("Reloading parameters...")
@@ -2275,6 +2277,12 @@ class Autosubmit:
         finally:
             if profile:
                 profiler.stop()
+
+        # Suppress in case ``job_list`` was not defined yet...
+        with suppress(NameError):
+            if job_list.get_failed():
+                return 1
+            return 0
 
     @staticmethod
     def restore_platforms(platform_to_test, mail_notify=False, as_conf=None, expid=None):

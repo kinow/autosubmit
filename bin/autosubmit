@@ -34,9 +34,11 @@ from autosubmit.autosubmit import Autosubmit
 # noinspection PyProtectedMember
 def main():
     try:
-        Autosubmit.parse_args()
+        return_value = Autosubmit.parse_args()
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
             os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
+        if type(return_value) is int:
+            os._exit(return_value)
         os._exit(0)
     except AutosubmitError as e:
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
