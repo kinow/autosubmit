@@ -12,7 +12,9 @@ Launch Autosubmit with the command:
     ssh-add ~/.ssh/id_rsa
     autosubmit run EXPID
 
-*EXPID* is the experiment identifier.
+In the previous command output ``EXPID`` is the experiment identifier. The command
+exits with ``0`` when the workflow finishes with no failed jobs, and with ``1``
+otherwise.
 
 Options:
 ::
@@ -40,7 +42,7 @@ Example:
     ssh-add ~/.ssh/id_rsa
     autosubmit run cxxx
 
-.. important:: If the autosubmit version is set on autosubmit.yml it must match the actual autosubmit version
+.. important:: If the autosubmit version is set on ``autosubmit.yml`` it must match the actual autosubmit version
 .. hint:: It is recommended to launch it in background and with ``nohup`` (continue running although the user who launched the process logs out).
 
 .. code-block:: bash
