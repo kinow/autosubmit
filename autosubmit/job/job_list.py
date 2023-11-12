@@ -2828,8 +2828,8 @@ class JobList(object):
                                if job.name in statusChange else "")
                     result += (bcolors.ENDC +
                                bcolors.ENDC if nocolor is False else "")
-
-                for child in children:
+                # order by name, this is for compare 4.0 with 4.1 as the children orden is different
+                for child in sorted(children, key=lambda x: x.name):
                     # Continues recursion
                     result += self._recursion_print(
                         child, level, visited, statusChange=statusChange, nocolor=nocolor)
