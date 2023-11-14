@@ -5,8 +5,6 @@ Introduction
 What is Autosubmit ?
 ====================
 
-
-
 Autosubmit is a lightweight workflow manager designed to meet climate research necessities. Unlike other workflow solutions in the domain, it integrates the capabilities of an experiment manager, workflow orchestrator and monitor in a self-contained application. The experiment manager allows for defining and configuring experiments, supported by a hierarchical database that ensures reproducibility and traceability. The orchestrator is designed to run complex workflows in research and operational mode by managing their dependencies and interfacing with local and remote hosts. These multi-scale workflows can involve from a few to thousands of steps and from one to multiple platforms.
 
 Autosubmit facilitates easy and fast integration and relocation on new platforms. On the one hand, users can rapidly execute general scripts and progressively parametrize them by reading Autosubmit variables. On the other hand, it is a self-contained desktop application capable of submitting jobs to remote platforms without any external deployment.
@@ -32,13 +30,20 @@ Why is Autosubmit needed ?
 
 Autosubmit is the only existing tool that satisfies the following requirements from the weather and climate community:
 
-- **Automatization** Job submission to machines and dependencies between jobs are managed by Autosubmit. No user intervention is needed.
-- **Data provenance** Assigns unique identifiers for each experiment and stores information about model version, experiment configuration and computing facilities used in the whole process.
-- **Failure tolerance** Automatic retrials and ability to rerun chunks in case of corrupted or missing data.
-- **Resource management** Autosubmit manages supercomputer particularities, allowing users to run their experiments in the available machine without having to adapt the code. Autosubmit also allows to submit tasks from the same experiment to different platforms.
+- **Automatization** Job submission to machines and dependencies between
+  jobs are managed by Autosubmit. No user intervention is needed.
+- **Data provenance** Assigns unique identifiers for each experiment
+  and stores information about model version, experiment configuration
+  and computing facilities used in the whole process. Read more in
+  the user guide section about :doc:`/userguide/provenance`.
+- **Failure tolerance** Automatic retrials and ability to rerun chunks
+  in case of corrupted or missing data.
+- **Resource management** Autosubmit manages supercomputer particularities,
+  allowing users to run their experiments in the available machine without
+  having to adapt the code. Autosubmit also allows to submit tasks from
+  the same experiment to different platforms.
 
-
-
+.. _RO-Crate: https://w3id.org/ro/crate
 
 How does Autosubmit work ?
 ==========================

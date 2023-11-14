@@ -10,3 +10,8 @@ td, th {
 figure {
     margin-bottom: 2rem !important;
 }
+
+/* For code block caption */
+.code-block-caption {
+    padding: 0 0 1rem 0 !important;
+}

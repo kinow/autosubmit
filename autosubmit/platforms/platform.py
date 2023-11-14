@@ -310,9 +310,8 @@ class Platform(object):
                         raise
                     except Exception as e:
                         self.connected = False
-                        raise AutosubmitError(
-                            "{0} submission failed. May be related to running a job with check=on_submission and another that affect this job template".format(
-                                self.name), 6015, str(e))
+                        message = f'Error in platform {self.name} for section {package.jobs[0].section}: {str(e)}'
+                        raise AutosubmitError(message, 6015)
             except AutosubmitCritical as e:
                 raise AutosubmitCritical(e.message, e.code, e.trace)
             except AutosubmitError as e:
