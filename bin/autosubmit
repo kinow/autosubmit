@@ -22,6 +22,7 @@ import os
 import sys
 import traceback
 from io import StringIO  # for handling the traceback print
+from contextlib import suppress
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 sys.path.append(scriptdir)
@@ -31,45 +32,33 @@ from log.log import Log, AutosubmitCritical , AutosubmitError
 from autosubmit.autosubmit import Autosubmit
 
 
+def exit_from_error(e):
+    with suppress(FileNotFoundError, PermissionError):
+        os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
+    try:
+        if not e.trace:
+            Log.debug("Trace: {0}", str(e.trace))
+        Log.critical("{1} [eCode={0}]", e.code, e.message)
+    except:
+        Log.critical("An Unknown error occurred: {0}.\n Please report it to Autosubmit Developers through Git", str(e))
+    Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")
+    os._exit(1)
+
 # noinspection PyProtectedMember
 def main():
     try:
-        Autosubmit.parse_args()
+        return_value = Autosubmit.parse_args()
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
             os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
+        if type(return_value) is int:
+            os._exit(return_value)
         os._exit(0)
     except AutosubmitError as e:
-        if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
-            os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
-        if e.trace is not None:
-            if e.trace != "": # trace might be int.
-                Log.error("Trace: {0}", e.trace)
-        Log.critical("{1} [eCode={0}]", e.code, e.message)
-        Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")
-        os._exit(1)
+        exit_from_error(e)
     except AutosubmitCritical as e:
-        if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
-            os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
-        str(traceback.print_exc())
-        if e.trace is not None or e.trace == "":
-            Log.error("Trace: {0}", e.trace)
-        Log.critical("{1} [eCode={0}]", e.code, e.message)
-
-        Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")
-        os._exit(1)
-    except Exception as e:
-        if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
-            os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
-        Log.error("Trace: {0}", str(e))
-        if "temporarily unavailable" in str(e):
-            Log.critical(
-                "{0}\nAnother instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock".format(str(e)), 7000)
-        else:
-            exception_stream = StringIO()
-            traceback.print_exc(file=exception_stream)
-            Log.critical("{1}{0}\nUnhandled error: If you see this message, please report it in Autosubmit's GitLab project".format(str(e),exception_stream.getvalue()), 7000)
-        os._exit(1)
-
+        exit_from_error(e)
+    except BaseException as e:
+        exit_from_error(e)
 
 if __name__ == "__main__":
     main()

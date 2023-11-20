@@ -33,8 +33,8 @@ class WrapperFactory(object):
     def get_wrapper(self, wrapper_builder, **kwargs):
         wrapper_data = kwargs['wrapper_data']
         wrapper_data.wallclock = kwargs['wallclock']
-        #todo here hetjobs
-        if wrapper_data.het["HETSIZE"] <= 1:
+        # This was crashing in horizontal, non related to this issue
+        if wrapper_data.het.get("HETSIZE",0) <= 1:
             kwargs['allocated_nodes'] = self.allocated_nodes()
             kwargs['dependency'] = self.dependency(kwargs['dependency'])
             kwargs['partition'] = self.partition(wrapper_data.partition)

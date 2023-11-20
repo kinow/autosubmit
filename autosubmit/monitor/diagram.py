@@ -90,7 +90,6 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     # Plotting
     total_plots_count = normal_plots_count + failed_jobs_plots_count
     # num_plots = norma
-    # ind = np.arrange(int(MAX_JOBS_PER_PLOT))
     width = 0.16
     # Creating stats figure + sanity check
     plot = True

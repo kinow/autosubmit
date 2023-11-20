@@ -237,7 +237,9 @@ class TestJobGrouping(TestCase):
 
         with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):'''
         job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        grouped = job_grouping.group_jobs()
+        self.assertDictEqual(grouped["status"], groups_dict["status"])
+        self.assertDictEqual(grouped["jobs"], groups_dict["jobs"])
 
     def test_automatic_grouping_not_ini(self):
         self.job_list.get_job_by_name('expid_19000101_m1_INI').status = Status.READY

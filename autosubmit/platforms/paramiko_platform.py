@@ -513,6 +513,7 @@ class ParamikoPlatform(Platform):
             x11 = job.x11
 
         cmd = self.get_submit_cmd(script_name, job, hold=hold, export=export)
+        Log.debug(f"Submitting job with the command: {cmd}")
         if cmd is None:
             return None
         if self.send_command(cmd,x11=x11):

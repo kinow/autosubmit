@@ -733,40 +733,108 @@ To generate the following jobs:
 
 .. code-block:: yaml
 
-    POST_20:
-          FILE: POST.sh
-          RUNNING: chunk
-          WALLCLOCK: '00:05'
-          PROCESSORS: 20
-          THREADS: 1
-          DEPENDENCIES: SIM_20 POST_20-1
-    POST_40:
-          FILE: POST.sh
-          RUNNING: chunk
-          WALLCLOCK: '00:05'
-          PROCESSORS: 40
-          THREADS: 1
-          DEPENDENCIES: SIM_40 POST_40-1
-    POST_80:
-          FILE: POST.sh
-          RUNNING: chunk
-          WALLCLOCK: '00:05'
-          PROCESSORS: 80
-          THREADS: 1
-          DEPENDENCIES: SIM_80 POST_80-1
+    experiment:
+      DATELIST: 19600101
+      MEMBERS: "00"
+      CHUNKSIZEUNIT: day
+      CHUNKSIZE: '1'
+      NUMCHUNKS: '2'
+      CALENDAR: standard
+    JOBS:
+      POST_20:
 
-One can now use the following configuration:
+        DEPENDENCIES:
+          POST_20:
+          SIM_20:
+        FILE: POST.sh
+        PROCESSORS: '20'
+        RUNNING: chunk
+        THREADS: '1'
+        WALLCLOCK: 00:05
+      POST_40:
+
+        DEPENDENCIES:
+          POST_40:
+          SIM_40:
+        FILE: POST.sh
+        PROCESSORS: '40'
+        RUNNING: chunk
+        THREADS: '1'
+        WALLCLOCK: 00:05
+      POST_80:
+
+        DEPENDENCIES:
+          POST_80:
+          SIM_80:
+        FILE: POST.sh
+        PROCESSORS: '80'
+        RUNNING: chunk
+        THREADS: '1'
+        WALLCLOCK: 00:05
+      SIM_20:
+
+        DEPENDENCIES:
+          SIM_20-1:
+        FILE: POST.sh
+        PROCESSORS: '20'
+        RUNNING: chunk
+        THREADS: '1'
+        WALLCLOCK: 00:05
+      SIM_40:
+
+        DEPENDENCIES:
+          SIM_40-1:
+        FILE: POST.sh
+        PROCESSORS: '40'
+        RUNNING: chunk
+        THREADS: '1'
+        WALLCLOCK: 00:05
+      SIM_80:
+
+        DEPENDENCIES:
+          SIM_80-1:
+        FILE: POST.sh
+        PROCESSORS: '80'
+        RUNNING: chunk
+        THREADS: '1'
+        WALLCLOCK: 00:05
+
+One can use now the following configuration:
 
 .. code-block:: yaml
 
-    POST:
+    experiment:
+      DATELIST: 19600101
+      MEMBERS: "00"
+      CHUNKSIZEUNIT: day
+      CHUNKSIZE: '1'
+      NUMCHUNKS: '2'
+      CALENDAR: standard
+    JOBS:
+      SIM:
         FOR:
           NAME: [ 20,40,80 ]
           PROCESSORS: [ 20,40,80 ]
           THREADS: [ 1,1,1 ]
-          DEPENDENCIES: [ SIM_20 POST_20-1,SIM_40 POST_40-1,SIM_80 POST_80-1 ]
+          DEPENDENCIES: [ SIM_20-1,SIM_40-1,SIM_80-1 ]
         FILE: POST.sh
         RUNNING: chunk
         WALLCLOCK: '00:05'
+      POST:
+          FOR:
+            NAME: [ 20,40,80 ]
+            PROCESSORS: [ 20,40,80 ]
+            THREADS: [ 1,1,1 ]
+            DEPENDENCIES: [ SIM_20 POST_20,SIM_40 POST_40,SIM_80 POST_80 ]
+          FILE: POST.sh
+          RUNNING: chunk
+          WALLCLOCK: '00:05'
+
 
 .. warning:: The mutable parameters must be inside the `FOR` key.
+
+.. figure:: fig/for.png
+   :name: for
+   :width: 100%
+   :align: center
+   :alt: for

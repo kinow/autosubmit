@@ -169,7 +169,7 @@ class JobGrouping(object):
             groups = []
             if not self._check_synchronized_job(job, groups):
                 if self.group_by == 'split':
-                    if job.split is not None and len(str(job.split)) > 0:
+                    if job.split is not None and job.split > 0:
                         idx = job.name.rfind("_")
                         groups.append(job.name[:idx - 1] + job.name[idx + 1:])
                 elif self.group_by == 'chunk':
