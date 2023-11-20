@@ -5,11 +5,13 @@ import sys
 import tempfile
 from pathlib import Path
 from autosubmit.job.job_list_persistence import JobListPersistencePkl
+import datetime
 
 # compatibility with both versions (2 & 3)
 from sys import version_info
 from textwrap import dedent
 from unittest import TestCase
+from autosubmit.job.job_utils import calendar_chunk_section
 
 from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from autosubmitconfigparser.config.configcommon import BasicConfig, YAMLParserFactory
@@ -1184,6 +1186,222 @@ CONFIG:
         self.job.add_children([child])
         self.assertEqual(1, len(self.job.children))
         self.assertEqual(child, list(self.job.children)[0])
+
+    def test_auto_calendar_split(self):
+        self.experiment_data = {
+            'EXPERIMENT': {
+                'DATELIST': '20000101',
+                'MEMBERS': 'fc0',
+                'CHUNKSIZEUNIT': 'day',
+                'CHUNKSIZE': '1',
+                'NUMCHUNKS': '2',
+                'CALENDAR': 'standard'
+            },
+            'JOBS': {
+                'A': {
+                    'FILE': 'a',
+                    'PLATFORM': 'test',
+                    'RUNNING': 'chunk',
+                    'SPLITS': 'auto',
+                    'SPLITSIZE': 1
+                },
+                'B': {
+                    'FILE': 'b',
+                    'PLATFORM': 'test',
+                    'RUNNING': 'chunk',
+                    'SPLITS': 'auto',
+                    'SPLITSIZE': 2
+                }
+            }
+            }
+        section = "A"
+        date = datetime.datetime.strptime("20000101", "%Y%m%d")
+        chunk = 1
+        splits = calendar_chunk_section(self.experiment_data, section, date, chunk)
+        self.assertEqual(splits, 24)
+        splits = calendar_chunk_section(self.experiment_data, "B", date, chunk)
+        self.assertEqual(splits, 12)
+        self.experiment_data['EXPERIMENT']['CHUNKSIZEUNIT'] = 'hour'
+        with self.assertRaises(AutosubmitCritical):
+            calendar_chunk_section(self.experiment_data, "A", date, chunk)
+
+        self.experiment_data['EXPERIMENT']['CHUNKSIZEUNIT'] = 'month'
+        splits = calendar_chunk_section(self.experiment_data, "A", date, chunk)
+        self.assertEqual(splits, 31)
+        splits = calendar_chunk_section(self.experiment_data, "B", date, chunk)
+        self.assertEqual(splits, 16)
+
+        self.experiment_data['EXPERIMENT']['CHUNKSIZEUNIT'] = 'year'
+        splits = calendar_chunk_section(self.experiment_data, "A", date, chunk)
+        self.assertEqual(splits, 31)
+        splits = calendar_chunk_section(self.experiment_data, "B", date, chunk)
+        self.assertEqual(splits, 16)
+
+
+
+
+
+    def test_calendar(self):
+        split = 12
+        splitsize = 2
+        expid = 'zzyy'
+        with tempfile.TemporaryDirectory() as temp_dir:
+            BasicConfig.LOCAL_ROOT_DIR = str(temp_dir)
+            Path(temp_dir, expid).mkdir()
+            for path in [f'{expid}/tmp', f'{expid}/tmp/ASLOGS', f'{expid}/tmp/ASLOGS_{expid}', f'{expid}/proj',
+                         f'{expid}/conf']:
+                Path(temp_dir, path).mkdir()
+            with open(Path(temp_dir, f'{expid}/conf/minimal.yml'), 'w+') as minimal:
+                minimal.write(dedent(f'''\
+                CONFIG:
+                  RETRIALS: 0 
+                DEFAULT:
+                  EXPID: {expid}
+                  HPCARCH: test
+                EXPERIMENT:
+                  # List of start dates
+                  DATELIST: '20000101'
+                  # List of members.
+                  MEMBERS: fc0
+                  # Unit of the chunk size. Can be hour, day, month, or year.
+                  CHUNKSIZEUNIT: day
+                  # Size of each chunk.
+                  CHUNKSIZE: '4'
+                  # Size of each split
+                  SPLITSIZE: {splitsize}
+                  # Number of chunks of the experiment.
+                  NUMCHUNKS: '2'
+                  CHUNKINI: ''
+                  # Calendar used for the experiment. Can be standard or noleap.
+                  CALENDAR: standard
+                    
+                JOBS:
+                  A:
+                    FILE: a
+                    PLATFORM: test
+                    RUNNING: chunk
+                    SPLITS: {split}
+                    SPLITSIZE: {splitsize}
+                PLATFORMS:
+                  test:
+                    TYPE: slurm
+                    HOST: localhost
+                    PROJECT: abc
+                    QUEUE: debug
+                    USER: me
+                    SCRATCH_DIR: /anything/
+                    ADD_PROJECT_TO_HOST: False
+                    MAX_WALLCLOCK: '00:55'
+                    TEMP_DIR: ''
+                '''))
+                minimal.flush()
+
+            basic_config = FakeBasicConfig()
+            basic_config.read()
+            basic_config.LOCAL_ROOT_DIR = str(temp_dir)
+
+            config = AutosubmitConfig(expid, basic_config=basic_config, parser_factory=YAMLParserFactory())
+            config.reload(True)
+            parameters = config.load_parameters()
+
+            job_list = JobList(expid, basic_config, YAMLParserFactory(),
+                                   Autosubmit._get_job_list_persistence(expid, config), config)
+            job_list.generate(
+                as_conf=config,
+                date_list=[datetime.datetime.strptime("20000101", "%Y%m%d")],
+                member_list=["fc0"],
+                num_chunks=2,
+                chunk_ini=1,
+                parameters=parameters,
+                date_format='',
+                default_retrials=config.get_retrials(),
+                default_job_type=config.get_default_job_type(),
+                wrapper_jobs={},
+                new=True,
+                run_only_members=config.get_member_list(run_only=True),
+                show_log=True,
+            )
+            job_list = job_list.get_job_list()
+            self.assertEqual(24, len(job_list))
+
+            submitter = Autosubmit._get_submitter(config)
+            submitter.load_platforms(config)
+
+            hpcarch = config.get_platform()
+            for job in job_list:
+                job.date_format = ""
+                if job.platform_name == "" or job.platform_name is None:
+                    job.platform_name = hpcarch
+                job.platform = submitter.platforms[job.platform_name]
+
+            # Check splits
+            # Assert general
+            job = job_list[0]
+            parameters = job.update_parameters(config, parameters)
+            self.assertEqual(job.splits, 12)
+            self.assertEqual(job.running, 'chunk')
+
+            self.assertEqual(parameters['SPLIT'], 1)
+            self.assertEqual(parameters['SPLITSIZE'], splitsize)
+            self.assertEqual(parameters['SPLITSIZEUNIT'], 'hour')
+            self.assertEqual(parameters['SPLITSCALENDAR'], 'standard')
+            # assert parameters
+            next_start = "00"
+            for i,job in enumerate(job_list[0:12]):
+                parameters = job.update_parameters(config, parameters)
+                end_hour = str(parameters['SPLIT'] * splitsize ).zfill(2)
+                if end_hour == "24":
+                    end_hour = "00"
+                self.assertEqual(parameters['SPLIT'], i+1)
+                self.assertEqual(parameters['SPLITSIZE'], splitsize)
+                self.assertEqual(parameters['SPLITSIZEUNIT'], 'hour')
+                self.assertEqual(parameters['SPLIT_START_DATE'], '20000101')
+                self.assertEqual(parameters['SPLIT_START_YEAR'], '2000')
+                self.assertEqual(parameters['SPLIT_START_MONTH'], '01')
+                self.assertEqual(parameters['SPLIT_START_DAY'], '01')
+                self.assertEqual(parameters['SPLIT_START_HOUR'], next_start)
+                if parameters['SPLIT'] == 12:
+                    self.assertEqual(parameters['SPLIT_END_DATE'], '20000102')
+                    self.assertEqual(parameters['SPLIT_END_DAY'], '02')
+                    self.assertEqual(parameters['SPLIT_END_DATE'], '20000102')
+                    self.assertEqual(parameters['SPLIT_END_DAY'], '02')
+                    self.assertEqual(parameters['SPLIT_END_YEAR'], '2000')
+                    self.assertEqual(parameters['SPLIT_END_MONTH'], '01')
+                    self.assertEqual(parameters['SPLIT_END_HOUR'], end_hour)
+                else:
+                    self.assertEqual(parameters['SPLIT_END_DATE'], '20000101')
+                    self.assertEqual(parameters['SPLIT_END_DAY'], '01')
+                    self.assertEqual(parameters['SPLIT_END_YEAR'], '2000')
+                    self.assertEqual(parameters['SPLIT_END_MONTH'], '01')
+                    self.assertEqual(parameters['SPLIT_END_HOUR'], end_hour)
+                next_start = parameters['SPLIT_END_HOUR']
+            next_start = "00"
+            for i,job in enumerate(job_list[12:24]):
+                parameters = job.update_parameters(config, parameters)
+                end_hour = str(parameters['SPLIT'] * splitsize ).zfill(2)
+                if end_hour == "24":
+                    end_hour = "00"
+                self.assertEqual(parameters['SPLIT'], i+1)
+                self.assertEqual(parameters['SPLITSIZE'], splitsize)
+                self.assertEqual(parameters['SPLITSIZEUNIT'], 'hour')
+                self.assertEqual(parameters['SPLIT_START_DATE'], '20000105')
+                self.assertEqual(parameters['SPLIT_START_YEAR'], '2000')
+                self.assertEqual(parameters['SPLIT_START_MONTH'], '01')
+                self.assertEqual(parameters['SPLIT_START_DAY'], '05')
+                self.assertEqual(parameters['SPLIT_START_HOUR'], next_start)
+                if parameters['SPLIT'] == 12:
+                    self.assertEqual(parameters['SPLIT_END_DATE'], '20000106')
+                    self.assertEqual(parameters['SPLIT_END_DAY'], '06')
+                    self.assertEqual(parameters['SPLIT_END_YEAR'], '2000')
+                    self.assertEqual(parameters['SPLIT_END_MONTH'], '01')
+                    self.assertEqual(parameters['SPLIT_END_HOUR'], end_hour)
+                else:
+                    self.assertEqual(parameters['SPLIT_END_DATE'], '20000105')
+                    self.assertEqual(parameters['SPLIT_END_DAY'], '05')
+                    self.assertEqual(parameters['SPLIT_END_YEAR'], '2000')
+                    self.assertEqual(parameters['SPLIT_END_MONTH'], '01')
+                    self.assertEqual(parameters['SPLIT_END_HOUR'], end_hour)
+                next_start = parameters['SPLIT_END_HOUR']
 
 
 

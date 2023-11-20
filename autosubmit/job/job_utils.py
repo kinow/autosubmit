@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+import math
+from log.log import Log, AutosubmitCritical
+import os
+from autosubmit.job.job_package_persistence import JobPackagePersistence
+from autosubmitconfigparser.config.basicconfig import BasicConfig
+from typing import Dict
+from bscearth.utils.date import date2str, previous_day, chunk_end_date, chunk_start_date, subs_dates
 
 # Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
@@ -22,6 +29,76 @@ from autosubmit.job.job_package_persistence import JobPackagePersistence
 from autosubmitconfigparser.config.basicconfig import BasicConfig
 from typing import Dict
 
+def is_leap_year(year):
+    """Determine whether a year is a leap year."""
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+def calendar_chunk_section(exp_data, section, date, chunk):
+    """
+    Calendar for chunks
+    :param section:
+    :param parameters:
+    :return:
+    """
+    date_str = date2str(date)
+    splits = 0
+    jobs_data = exp_data.get('JOBS', {})
+    split_unit = str(exp_data.get("EXPERIMENT", {}).get('SPLITSIZEUNIT', jobs_data.get(section,{}).get("SPLITSIZEUNIT", None))).lower()
+    chunk_unit = str(exp_data.get("EXPERIMENT", {}).get('CHUNKSIZEUNIT', "day")).lower()
+    if chunk_unit == "hour":
+        raise AutosubmitCritical("Chunk unit is hour, Autosubmit doesn't support lower than hour splits. Please change the chunk unit to day or higher. Or don't use calendar splits.")
+    if jobs_data.get(section,{}).get("RUNNING","once") != "once":
+        chunk_length = int(exp_data.get("EXPERIMENT", {}).get('CHUNKSIZE', 1))
+        cal = str(exp_data.get('CALENDAR', "standard")).lower()
+        chunk_start = chunk_start_date(
+            date, chunk, chunk_length, chunk_unit, cal)
+        chunk_end = chunk_end_date(
+            chunk_start, chunk_length, chunk_unit, cal)
+        run_days = subs_dates(chunk_start, chunk_end, cal)
+        if split_unit == "none":
+            if chunk_unit == "day":
+                split_unit = "hour"
+            elif chunk_unit == "month":
+                split_unit = "day"
+            elif chunk_unit == "year":
+                split_unit = "month"
+        if split_unit == "hour":
+            num_max_splits = run_days * 24
+        elif split_unit == "month":
+            num_max_splits = run_days / 12
+        elif split_unit == "year":
+            if not is_leap_year(chunk_start.year) or cal == "noleap":
+                num_max_splits = run_days / 365
+            else:
+                num_max_splits = run_days / 366
+        else:
+            num_max_splits = run_days
+        split_size = get_split_size(exp_data, section)
+        splits = num_max_splits / split_size
+        if not splits.is_integer():
+            Log.warning(f"The number of splits is not exact. This lead to one extra split.\nJOB_DATE:{date_str},JOB_CHUNK:{chunk}:n_splits:{num_max_splits}\{split_size}={splits}")
+        splits = math.ceil(splits)
+    return splits
+
+def get_split_size_unit(data, section):
+    split_unit = str(data.get('JOBS',{}).get(section,{}).get('SPLITSIZEUNIT', "none")).lower()
+    if split_unit == "none":
+        split_unit = str(data.get('EXPERIMENT',{}).get("CHUNKSIZEUNIT", "day")).lower()
+        if split_unit == "year":
+            return "month"
+        elif split_unit == "month":
+            return "day"
+        elif split_unit == "day":
+            return "hour"
+        else:
+            return "day"
+    return split_unit
+
+
+def get_split_size(as_conf, section):
+    job_data = as_conf.get('JOBS',{}).get(section,{})
+    exp_data = as_conf.get('EXPERIMENT',{})
+    return int(job_data.get("SPLITSIZE", exp_data.get("SPLITSIZE", exp_data.get('CHUNKSIZE', 1))))
 
 def transitive_reduction(graph):
     """
