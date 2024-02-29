@@ -752,7 +752,7 @@ class Autosubmit:
                 raise AutosubmitCritical('No configuration file(autosubmitrc) found in this filesystem. Please run "autosubmit configure" first.',7006)
             if args.command != "install":
                 if not os.path.exists(BasicConfig.DB_PATH):
-                    raise AutosubmitCritical('Experiments database not found in this filesystem. Please run "autosubmit installation" first.',7072)
+                    raise AutosubmitCritical('Experiments database not found in this filesystem. Please run "autosubmit install" first.',7072)
                 else:
                     permissions = os.access(BasicConfig.DB_PATH, os.R_OK)  # Check for read access
                     if not permissions:
