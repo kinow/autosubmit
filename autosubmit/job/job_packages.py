@@ -96,22 +96,16 @@ class JobPackageBase(object):
     @threaded
     def check_scripts(self,jobs,configuration, parameters,only_generate,hold):
         for job in jobs:
-            if str(job.check).lower() == str(Job.CHECK_ON_SUBMISSION).lower():
-                if only_generate:
-                    exit_ = True
-                    break
-                if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                    lock.acquire()
-                    if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
-                        raise AutosubmitCritical(
-                            "Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(
-                                job.name), 7014)
-                    lock.release()
-                if not job.check_script(configuration, parameters, show_logs=job.check_warnings):
-                    Log.warning("Script {0} check failed", job.name)
-                    Log.warning("On submission script has  some empty variables")
-                else:
-                    Log.result("Script {0} OK", job.name)
+            if only_generate and not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
+                break
+            else:
+                if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
+                    raise AutosubmitCritical(f"Job script:{job.file} does not exists",7014)
+            if not job.check_script(configuration, parameters, show_logs=job.check_warnings):
+                Log.warning("Script {0} check failed", job.name)
+                Log.warning("On submission script has  some empty variables")
+            else:
+                Log.result("Script {0} OK", job.name)
             # looking for directives on jobs
             self._custom_directives = self._custom_directives | set(job.custom_directives)
     @threaded
@@ -121,6 +115,7 @@ class JobPackageBase(object):
 
     def _create_common_script(self,filename=""):
         pass
+
 
 
     def submit(self, configuration, parameters,only_generate=False,hold=False):
@@ -148,21 +143,17 @@ class JobPackageBase(object):
         try:
             if len(self.jobs) < thread_number:
                 for job in self.jobs:
-                    if job.check == Job.CHECK_ON_SUBMISSION.lower():
-                        if only_generate:
-                            exit_=True
-                            break
-                        if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                            if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
-                                raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
-                        if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
-                            Log.warning("Script {0} check failed",job.name)
-                            Log.warning("On submission script has some empty variables")
-                        else:
-                            Log.result("Script {0} OK",job.name)
-                    job.update_parameters(configuration, parameters)
-                    # Looking for special variables
-
+                    if only_generate and not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
+                        exit_=True
+                        break
+                    if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
+                        if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
+                            raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
+                    if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
+                        Log.warning("Script {0} check failed",job.name)
+                        Log.warning("On submission script has some empty variables")
+                    else:
+                        Log.result("Script {0} OK",job.name)
                     # looking for directives on jobs
                     self._custom_directives = self._custom_directives | set(job.custom_directives)
             else:
