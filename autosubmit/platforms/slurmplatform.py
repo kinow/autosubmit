@@ -79,19 +79,30 @@ class SlurmPlatform(ParamikoPlatform):
         :return:
         """
         try:
+
             valid_packages_to_submit = [ package for package in valid_packages_to_submit if package.x11 != True]
             if len(valid_packages_to_submit) > 0:
-                package = valid_packages_to_submit[0]
+                duplicated_jobs_already_checked = False
+                platform = valid_packages_to_submit[0].jobs[0].platform
                 try:
                     jobs_id = self.submit_Script(hold=hold)
                 except AutosubmitError as e:
-                    jobnames = [job.name for job in valid_packages_to_submit[0].jobs]
-                    Log.error(f'TRACE:{e.trace}\n{e.message} JOBS:{jobnames}')
-                    for jobname in jobnames:
-                        jobid = self.get_jobid_by_jobname(jobname)
-                        #cancel bad submitted job if jobid is encountered
-                        for id_ in jobid:
-                            self.cancel_job(id_)
+                    jobnames = []
+                    duplicated_jobs_already_checked = True
+                    try:
+                        for package_ in valid_packages_to_submit:
+                            if hasattr(package_,"name"):
+                                jobnames.append(package_.name) # wrapper_name
+                            else:
+                                jobnames.append(package_.jobs[0].name) # job_name
+                        Log.error(f'TRACE:{e.trace}\n{e.message} JOBS:{jobnames}')
+                        for jobname in jobnames:
+                            jobid = self.get_jobid_by_jobname(jobname)
+                            #cancel bad submitted job if jobid is encountered
+                            for id_ in jobid:
+                                self.send_command(self.cancel_job(id_))
+                    except:
+                        pass
                     jobs_id = None
                     self.connected = False
                     if e.trace is not None:
@@ -160,11 +171,19 @@ class SlurmPlatform(ParamikoPlatform):
                         job.id = str(jobs_id[i])
                         job.status = Status.SUBMITTED
                         job.write_submit_time(hold=hold)
+                    # Check if there are duplicated jobnames
+                    if not duplicated_jobs_already_checked:
+                        job_name = package.name if hasattr(package, "name") else package.jobs[0].name
+                        jobid = self.get_jobid_by_jobname(job_name)
+                        if len(jobid) > 1: # Cancel each job that is not the associated
+                            for id_ in [ jobid for jobid in jobid if jobid != package.jobs[0].id ]:
+                                self.send_command(self.cancel_job(id_)) # This can be faster if we cancel all jobs at once but there is no cancel_all_jobs call right now so todo in future
+                                Log.debug(f'Job {id_} with the assigned name: {job_name} has been cancelled')
+                            Log.debug(f'Job {package.jobs[0].id} with the assigned name: {job_name} has been submitted')
                     i += 1
                 if len(failed_packages) > 0:
                     for job_id in failed_packages:
-                        package.jobs[0].platform.send_command(
-                            package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
+                        platform.send_command(platform.cancel_cmd + " {0}".format(job_id))
                     raise AutosubmitError("{0} submission failed, some hold jobs failed to be held".format(self.name), 6015)
             save = True
         except AutosubmitError as e:
@@ -277,7 +296,7 @@ class SlurmPlatform(ParamikoPlatform):
         self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
         self.cancel_cmd = "scancel"
         self._checkhost_cmd = "echo 1"
-        self._submit_cmd = 'sbatch -D {1} {1}/'.format(
+        self._submit_cmd = 'sbatch --no-requeue -D {1} {1}/'.format(
             self.host, self.remote_log_dir)
         self._submit_command_name = "sbatch"
         self._submit_hold_cmd = 'sbatch -H -D {1} {1}/'.format(

@@ -270,11 +270,6 @@ class Monitor:
         else:
             return None, None
 
-
-
-
-
-
     def _add_children(self, job, exp, node_job, groups, hide_groups):
         if job in self.nodes_plotted:
             return

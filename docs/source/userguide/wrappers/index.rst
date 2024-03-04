@@ -23,9 +23,9 @@ To configure a new wrapper, the user has to define a `WRAPPERS` section in any c
 
 .. code-block:: YAML
 
-  WRAPPERS:
-   WRAPPER_0:
-    TYPE: "horizontal"
+    WRAPPERS:
+        WRAPPER_0:
+            TYPE: "horizontal"
 
 By default, Autosubmit will try to bundle jobs of the same type. The user can alter this behavior by setting the `JOBS_IN_WRAPPER` parameter directive in the wrapper section.
 
@@ -46,6 +46,51 @@ When using multiple wrappers or 2-dim wrappers is essential to define the `JOBS_
       WRAPPER_HV:
         TYPE: "horizontal-vertical"
         JOBS_IN_WRAPPER: "SIM5 SIM6"
+
+    experiment:
+      DATELIST: 20220101
+      MEMBERS: "fc0 fc1"
+      CHUNKSIZEUNIT: day
+      CHUNKSIZE: '1'
+      NUMCHUNKS: '4'
+      CALENDAR: standard
+    JOBS:
+        SIM:
+          FILE: sim.sh
+          RUNNING: chunk
+          QUEUE: debug
+          DEPENDENCIES: SIM-1
+          WALLCLOCK: 00:15
+        SIM2:
+          FILE: sim.sh
+          RUNNING: chunk
+          QUEUE: debug
+          DEPENDENCIES: SIM2-1
+          WALLCLOCK: 00:15
+        SIM3:
+          FILE: sim.sh
+          RUNNING: chunk
+          QUEUE: debug
+          DEPENDENCIES: SIM3-1
+          WALLCLOCK: 00:15
+        SIM4:
+          FILE: sim.sh
+          RUNNING: chunk
+          QUEUE: debug
+          DEPENDENCIES: SIM4-1
+          WALLCLOCK: 00:15
+        SIM5:
+          FILE: sim.sh
+          RUNNING: chunk
+          QUEUE: debug
+          DEPENDENCIES: SIM5-1
+          WALLCLOCK: 00:15
+        SIM6:
+          FILE: sim.sh
+          RUNNING: chunk
+          QUEUE: debug
+          DEPENDENCIES: SIM6-1
+          WALLCLOCK: 00:15
 
 .. figure:: fig/wrapper_all.png
    :name: wrapper all
@@ -391,9 +436,9 @@ Considering the following configuration:
             DATES_FROM:
               "20120201":
                 CHUNKS_FROM:
-                1:
-                  DATES_TO: "20120101"
-                  CHUNKS_TO: "1"
+                  1:
+                    DATES_TO: "20120101"
+                    CHUNKS_TO: "1"
         RUNNING: chunk
         SYNCHRONIZE: member
         DELAY: '0'

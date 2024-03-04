@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import inspect
 import tempfile
-from mock import MagicMock
+from mock import MagicMock, ANY
 from mock import patch
 
 from autosubmit.job.job import Job
@@ -43,11 +43,8 @@ class TestJobPackage(TestCase):
         self.job_package_wrapper = None
         self.experiment_id = 'random-id'
         self._wrapper_factory = MagicMock()
-
         self.config = FakeBasicConfig
         self.config.read = MagicMock()
-
-
         with patch.object(Path, 'exists') as mock_exists:
             mock_exists.return_value = True
             self.as_conf = AutosubmitConfig(self.experiment_id, self.config, YAMLParserFactory())
@@ -59,11 +56,13 @@ class TestJobPackage(TestCase):
         self.job_list = JobList(self.experiment_id, self.config, YAMLParserFactory(),
                                 JobListPersistenceDb(self.temp_directory, 'db'), self.as_conf)
         self.parser_mock = MagicMock(spec='SafeConfigParser')
-
+        for job in self.jobs:
+            job._init_runtime_parameters()
         self.platform.max_waiting_jobs = 100
         self.platform.total_jobs = 100
         self.as_conf.experiment_data["WRAPPERS"]["WRAPPERS"] = options
         self._wrapper_factory.as_conf = self.as_conf
+
         self.jobs[0].wallclock = "00:00"
         self.jobs[0].threads = "1"
         self.jobs[0].tasks = "1"
@@ -87,6 +86,7 @@ class TestJobPackage(TestCase):
         self.jobs[1]._platform = self.platform
 
 
+
         self.wrapper_type = options.get('TYPE', 'vertical')
         self.wrapper_policy = options.get('POLICY', 'flexible')
         self.wrapper_method = options.get('METHOD', 'ASThread')
@@ -107,6 +107,9 @@ class TestJobPackage(TestCase):
         self.platform.serial_partition = "debug-serial"
         self.jobs = [Job('dummy1', 0, Status.READY, 0),
                      Job('dummy2', 0, Status.READY, 0)]
+        for job in self.jobs:
+            job._init_runtime_parameters()
+
         self.jobs[0]._platform = self.jobs[1]._platform = self.platform
         self.job_package = JobPackageSimple(self.jobs)
     def test_default_parameters(self):
@@ -117,7 +120,6 @@ class TestJobPackage(TestCase):
             'POLICY': "flexible",
             'EXTEND_WALLCLOCK': 0,
         }
-
         self.setUpWrappers(options)
         self.assertEqual(self.job_package_wrapper.wrapper_type, "vertical")
         self.assertEqual(self.job_package_wrapper.jobs_in_wrapper, "None")
@@ -177,28 +179,26 @@ class TestJobPackage(TestCase):
     def test_job_package_platform_getter(self):
         self.assertEqual(self.platform, self.job_package.platform)
 
-    @patch("builtins.open",MagicMock())
-    def test_job_package_submission(self):
-        # arrange
-        MagicMock().write = MagicMock()
-
+    @patch('multiprocessing.cpu_count')
+    def test_job_package_submission(self, mocked_cpu_count):
+        # N.B.: AS only calls ``_create_scripts`` if you have less jobs than threads.
+        # So we simply set threads to be greater than the amount of jobs.
+        mocked_cpu_count.return_value = len(self.jobs) + 1
         for job in self.jobs:
             job._tmp_path = MagicMock()
-            job._get_paramiko_template = MagicMock("false","empty")
+            job._get_paramiko_template = MagicMock("false", "empty")
+            job.update_parameters = MagicMock()
 
         self.job_package._create_scripts = MagicMock()
         self.job_package._send_files = MagicMock()
         self.job_package._do_submission = MagicMock()
-        for job in self.jobs:
-            job.update_parameters = MagicMock()
+
         # act
         self.job_package.submit('fake-config', 'fake-params')
         # assert
         for job in self.jobs:
             job.update_parameters.assert_called_once_with('fake-config', 'fake-params')
+
         self.job_package._create_scripts.is_called_once_with()
         self.job_package._send_files.is_called_once_with()
         self.job_package._do_submission.is_called_once_with()
-
-    def test_wrapper_parameters(self):
-        pass

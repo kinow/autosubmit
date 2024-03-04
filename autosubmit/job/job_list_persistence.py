@@ -13,16 +13,15 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import pickle
-from sys import setrecursionlimit
 
 import os
-
-from log.log import Log
+import pickle
+from sys import setrecursionlimit
+import shutil
 from autosubmit.database.db_manager import DbManager
+from log.log import AutosubmitCritical, Log
 
 
 class JobListPersistence(object):
@@ -31,7 +30,7 @@ class JobListPersistence(object):
 
     """
 
-    def save(self, persistence_path, persistence_file, job_list):
+    def save(self, persistence_path, persistence_file, job_list , graph):
         """
         Persists a job list
         :param job_list: JobList
@@ -67,14 +66,31 @@ class JobListPersistencePkl(JobListPersistence):
 
         """
         path = os.path.join(persistence_path, persistence_file + '.pkl')
-        if os.path.exists(path):
-            fd = open(path, 'rb')
-            return pickle.load(fd)
-        else:
-            Log.printlog('File {0} does not exist'.format(path),Log.WARNING)
+        try:
+            open(path).close()
+        except PermissionError:
+            raise AutosubmitCritical(f'Permission denied to read {path}', 7012)
+        except FileNotFoundError:
+            Log.printlog(f'File {path} does not exist. ',Log.WARNING)
             return list()
+        else:
+            # copy the path to a tmp file randomseed to avoid corruption
+            path_tmp = f'{path}.tmp_{os.urandom(8).hex()}'
+            shutil.copy(path, path_tmp)
+            with open(path_tmp, 'rb') as fd:
+                graph = pickle.load(fd)
+            os.remove(path_tmp)
+            for u in ( node for node in graph ):
+                # Set after the dependencies are set
+                graph.nodes[u]["job"].children = set()
+                graph.nodes[u]["job"].parents = set()
+                # Set in recovery/run
+                graph.nodes[u]["job"]._platform = None
+                graph.nodes[u]["job"]._serial_platform = None
+                graph.nodes[u]["job"].submitter = None
+            return graph
 
-    def save(self, persistence_path, persistence_file, job_list):
+    def save(self, persistence_path, persistence_file, job_list, graph):
         """
         Persists a job list in a pkl file
         :param job_list: JobList
@@ -82,17 +98,16 @@ class JobListPersistencePkl(JobListPersistence):
         :param persistence_path: str
 
         """
-        path = os.path.join(persistence_path, persistence_file + '.pkl')
-        fd = open(path, 'wb')
-        setrecursionlimit(50000)
+
+        path = os.path.join(persistence_path, persistence_file + '.pkl' + '.tmp')
+        if os.path.exists(path):
+            os.remove(path)
+        setrecursionlimit(500000000)
         Log.debug("Saving JobList: " + path)
-        jobs_data = [(job.name, job.id, job.status,
-                      job.priority, job.section, job.date,
-                      job.member, job.chunk,
-                      job.local_logs[0], job.local_logs[1],
-                      job.remote_logs[0], job.remote_logs[1],job.wrapper_type) for job in job_list]
-        pickle.dump(jobs_data, fd, protocol=2)
-        Log.debug('Job list saved')
+        with open(path, 'wb') as fd:
+            pickle.dump(graph, fd, pickle.HIGHEST_PROTOCOL)
+        os.replace(path, path[:-4])
+        Log.debug(f'JobList saved in {path[:-4]}')
 
 
 class JobListPersistenceDb(JobListPersistence):
@@ -120,7 +135,7 @@ class JobListPersistenceDb(JobListPersistence):
         """
         return self.db_manager.select_all(self.JOB_LIST_TABLE)
 
-    def save(self, persistence_path, persistence_file, job_list):
+    def save(self, persistence_path, persistence_file, job_list, graph):
         """
         Persists a job list in a database
         :param job_list: JobList
@@ -131,7 +146,7 @@ class JobListPersistenceDb(JobListPersistence):
         self._reset_table()
         jobs_data = [(job.name, job.id, job.status,
                       job.priority, job.section, job.date,
-                      job.member, job.chunk,
+                      job.member, job.chunk, job.split,
                       job.local_logs[0], job.local_logs[1],
                       job.remote_logs[0], job.remote_logs[1],job.wrapper_type) for job in job_list]
         self.db_manager.insertMany(self.JOB_LIST_TABLE, jobs_data)

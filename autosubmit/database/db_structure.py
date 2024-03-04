@@ -25,9 +25,6 @@ import sqlite3
 
 from typing import Dict, List
 from log.log import Log
-# from networkx import DiGraph
-
-# DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"
 
 
 def get_structure(exp_id, structures_path):

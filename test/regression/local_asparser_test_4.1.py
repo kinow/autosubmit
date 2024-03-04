@@ -48,7 +48,6 @@ PLATFORMS.LEVANTE.PROJECT
 DIRECTORIES.TEST_FILE
 PROJECT.PROJECT_TYPE
 PROJECT.PROJECT_DESTINATION
-TOCHANGE
 TOLOAD
 TOLOAD2
 CONFIG.AUTOSUBMIT_VERSION
@@ -67,10 +66,9 @@ PLATFORMS.LEVANTE.USER=b382351
 PLATFORMS.LEVANTE.PROJECT=bb1153
 PROJECT.PROJECT_TYPE=none
 PROJECT.PROJECT_DESTINATION=auto-icon
-TOCHANGE=frominclude
 TOLOAD=from_testfile2
 TOLOAD2=from_version
-CONFIG.AUTOSUBMIT_VERSION=4.0.0b
+CONFIG.AUTOSUBMIT_VERSION=4.1.0b
     """.split("\n")
     if Path(report_file).exists():
         print("OK: report file exists")
@@ -91,7 +89,7 @@ CONFIG.AUTOSUBMIT_VERSION=4.0.0b
     print(sucess)
     print(error)
 
-print("Testing EXPID a009: Config in a external file")
-perform_test("a009")
-print("Testing EXPID a00a: Config in the minimal file")
-perform_test("a00a")
+print("Testing EXPID a01p copy of a009: Config in a external file")
+perform_test("a01p")
+print("Testing EXPID a01q copy of a00a: Config in the minimal file")
+perform_test("a01q")

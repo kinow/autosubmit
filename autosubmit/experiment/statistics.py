@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
 import datetime
 from autosubmit.job.job import Job
 from autosubmit.monitor.utils import FixedSizeList
@@ -107,6 +108,31 @@ class ExperimentStats(object):
     def fail_run(self):
         return FixedSizeList(self._fail_run, 0.0)
 
+    def _estimate_requested_nodes(self,nodes,processors,tasks,processors_per_node) -> int:
+        if str(nodes).isdigit():
+            return int(nodes)
+        elif str(tasks).isdigit():
+            return math.ceil(int(processors) / int(tasks))
+        elif str(processors_per_node).isdigit() and int(processors) > int(processors_per_node):
+            return math.ceil(int(processors) / int(processors_per_node))
+        else:
+            return 1
+
+    def _calculate_processing_elements(self,nodes,processors,tasks,processors_per_node,exclusive) -> int:
+        if str(processors_per_node).isdigit():
+            if str(nodes).isdigit():
+                return int(nodes) * int(processors_per_node)
+            else:
+                estimated_nodes = self._estimate_requested_nodes(nodes,processors,tasks,processors_per_node)
+                if not exclusive and estimated_nodes <= 1 and int(processors) <= int(processors_per_node):
+                    return int(processors)
+                else:
+                    return estimated_nodes * int(processors_per_node)
+        elif (str(tasks).isdigit() or str(nodes).isdigit()):
+            Log.warning(f'Missing PROCESSORS_PER_NODE. Should be set if TASKS or NODES are defined. The PROCESSORS will used instead.')
+        return int(processors)
+
+
     def _calculate_stats(self):
         """
         Main calculation
@@ -116,6 +142,10 @@ class ExperimentStats(object):
         for i, job in enumerate(self._jobs_list):
             last_retrials = job.get_last_retrials()
             processors = job.total_processors
+            nodes = job.nodes
+            tasks = job.tasks
+            processors_per_node = job.processors_per_node
+            processors = self._calculate_processing_elements(nodes, processors, tasks, processors_per_node, job.exclusive)
             for retrial in last_retrials:
                 if Job.is_a_completed_retrial(retrial):
                     # The retrial has all necessary values and is status COMPLETED
@@ -158,8 +188,7 @@ class ExperimentStats(object):
             self._total_jobs_run += len(last_retrials)
             self._total_jobs_failed += self.failed_jobs[i]
             self._threshold = max(self._threshold, job.total_wallclock)
-            self._expected_cpu_consumption += job.total_wallclock * \
-                int(processors)
+            self._expected_cpu_consumption += job.total_wallclock * int(processors)
             self._expected_real_consumption += job.total_wallclock
             self._total_queueing_time += self._queued[i]
 

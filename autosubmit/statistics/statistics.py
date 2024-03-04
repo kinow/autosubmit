@@ -47,9 +47,8 @@ class Statistics(object):
         for index, job in enumerate(self._jobs):
             retrials = job.get_last_retrials()
             for retrial in retrials:
-                print(retrial)
                 job_stat = self._name_to_jobstat_dict.setdefault(job.name, JobStat(job.name, parse_number_processors(
-                    job.processors), job.total_wallclock, job.section, job.date, job.member, job.chunk))
+                    job.processors), job.total_wallclock, job.section, job.date, job.member, job.chunk, job.processors_per_node, job.tasks, job.nodes, job.exclusive ))
                 job_stat.inc_retrial_count()
                 if Job.is_a_completed_retrial(retrial):
                     job_stat.inc_completed_retrial_count()

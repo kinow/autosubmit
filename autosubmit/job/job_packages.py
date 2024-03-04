@@ -112,9 +112,6 @@ class JobPackageBase(object):
                     Log.warning("On submission script has  some empty variables")
                 else:
                     Log.result("Script {0} OK", job.name)
-            lock.acquire()
-            job.update_parameters(configuration, parameters)
-            lock.release()
             # looking for directives on jobs
             self._custom_directives = self._custom_directives | set(job.custom_directives)
     @threaded
@@ -399,12 +396,12 @@ class JobPackageThread(JobPackageBase):
         # temporal hetjob code , to be upgraded in the future
         if configuration is not None:
             self.inner_retrials = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,
-                                                                                {}).get("RETRIALS",
-                                                                                        configuration.get_retrials())
+                                                                                {}).get("RETRIALS",self.jobs[0].retrials)
             if self.inner_retrials == 0:
                 self.inner_retrials = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,
-                                                                                    {}).get("INNER_RETRIALS",
-                                                                                            configuration.get_retrials())
+                                                                                    {}).get("INNER_RETRIALS",self.jobs[0].retrials)
+            for job in self.jobs:
+                job.retrials = self.inner_retrials
             self.export = configuration.get_wrapper_export(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
             if self.export.lower() != "none" and len(self.export) > 0:
                 for job in self.jobs:
@@ -746,13 +743,14 @@ class JobPackageVertical(JobPackageThread):
         return timedelta(**time_params),format_
     def _common_script_content(self):
         if self.jobs[0].wrapper_type == "vertical":
-            #wallclock = datetime.datetime.strptime(self._wallclock, '%H:%M')
             wallclock,format_ = self.parse_time()
+            original_wallclock_to_seconds = wallclock.days * 86400.0 + wallclock.seconds
+
             if format_ == "hour":
                 total = wallclock.days * 24 + wallclock.seconds / 60 / 60
             else:
                 total = wallclock.days * 24 + wallclock.seconds / 60
-            total = total * 1.15
+
             if format_ == "hour":
                 hour = int(total )
                 minute = int((total - int(total)) * 60.0)
@@ -766,14 +764,11 @@ class JobPackageVertical(JobPackageThread):
             wallclock_seconds = wallclock_delta.days * 24 * 60 * 60 + wallclock_delta.seconds
             wallclock_by_level = wallclock_seconds/(self.jobs[-1].level+1)
             if self.extensible_wallclock > 0:
-                original_wallclock_to_seconds = wallclock.days * 86400.0 + wallclock.seconds
                 wallclock_seconds = int(original_wallclock_to_seconds + wallclock_by_level * self.extensible_wallclock)
                 wallclock_delta = datetime.timedelta(hours=0, minutes=0, seconds=wallclock_seconds)
-                total = wallclock.days * 24 + wallclock.seconds / 60 / 60
+                total = wallclock_delta.days * 24 + wallclock_delta.seconds / 60 / 60
                 hh = int(total)
                 mm = int((total - int(total)) * 60.0)
-                ss = int(((total - int(total)) * 60 -
-                              int((total - int(total)) * 60.0)) * 60.0)
                 if hh < 10:
                     hh_str='0'+str(hh)
                 else:

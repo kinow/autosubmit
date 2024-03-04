@@ -180,7 +180,9 @@ To add a new hetjob, open the <experiments_directory>/cxxx/conf/jobs_cxxx.yml fi
 
 This will create a new job named "new_hetjob" with two components that will be executed once.
 
+* EXTENDED_HEADER_PATH: specify the path relative to the project folder where the extension to the autosubmit's header is
 
+* EXTENDED_TAILER_PATH: specify the path relative to the project folder where the extension to the autosubmit's tailer is
 
 How to configure email notifications
 ------------------------------------

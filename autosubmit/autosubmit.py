@@ -442,6 +442,8 @@ class Autosubmit:
                                    default=False, help='Update experiment version')
             subparser.add_argument('-p', '--profile', action='store_true', default=False, required=False,
                                    help='Prints performance parameters of the execution of this command.')
+            subparser.add_argument(
+                '-f', '--force', action='store_true', default=False, help='force regenerate job_list')
             # Configure
             subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
                                                                        "can be done at machine, user or local level."
@@ -505,6 +507,11 @@ class Autosubmit:
                                selected from for that member will be updated for all the members. Example: all [1], will have as a result that the \
                                    chunks 1 for all the members will be updated. Follow the format: '
                                     '"[ 19601101 [ fc0 [1 2 3 4] Any [1] ] 19651101 [ fc0 [16-30] ] ],SIM,SIM2,SIM3"')
+            group.add_argument('-ftcs', '--filter_type_chunk_split', type=str,
+                               help='Supply the list of chunks & splits to change the status. Default = "Any". When the member name "all" is set, all the chunks \
+                                           selected from for that member will be updated for all the members. Example: all [1], will have as a result that the \
+                                               chunks 1 for all the members will be updated. Follow the format: '
+                                    '"[ 19601101 [ fc0 [1 [1 2] 2 3 4] Any [1] ] 19651101 [ fc0 [16-30] ] ],SIM,SIM2,SIM3"')
 
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
@@ -692,7 +699,7 @@ class Autosubmit:
             return Autosubmit.migrate(args.expid, args.offer, args.pickup, args.onlyremote)
         elif args.command == 'create':
             return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand,
-                                     args.expand_status, args.notransitive, args.check_wrapper, args.detail, args.profile)
+                                     args.expand_status, args.notransitive, args.check_wrapper, args.detail, args.profile, args.force)
         elif args.command == 'configure':
             if not args.advanced or (args.advanced and dialog is None):
                 return Autosubmit.configure(args.advanced, args.databasepath, args.databasefilename,
@@ -705,7 +712,7 @@ class Autosubmit:
         elif args.command == 'setstatus':
             return Autosubmit.set_status(args.expid, args.noplot, args.save, args.status_final, args.list,
                                          args.filter_chunks, args.filter_status, args.filter_type,
-                                         args.filter_type_chunk, args.hide,
+                                         args.filter_type_chunk, args.filter_type_chunk_split, args.hide,
                                          args.group_by, args.expand, args.expand_status, args.notransitive,
                                          args.check_wrapper, args.detail)
         elif args.command == 'testcase':
@@ -1417,7 +1424,8 @@ class Autosubmit:
             packages_persistence.reset_table(True)
             job_list_original = Autosubmit.load_job_list(
                 expid, as_conf, notransitive=notransitive)
-            job_list = copy.deepcopy(job_list_original)
+            job_list = Autosubmit.load_job_list(
+                expid, as_conf, notransitive=notransitive)
             job_list.packages_dict = {}
 
             Log.debug("Length of the jobs list: {0}", len(job_list))
@@ -1498,30 +1506,12 @@ class Autosubmit:
                         else:
                             jobs = job_list.get_job_list()
             if isinstance(jobs, type([])):
-                referenced_jobs_to_remove = set()
-                for job in jobs:
-                    for child in job.children:
-                        if child not in jobs:
-                            referenced_jobs_to_remove.add(child)
-                    for parent in job.parents:
-                        if parent not in jobs:
-                            referenced_jobs_to_remove.add(parent)
-
                 for job in jobs:
                     job.status = Status.WAITING
 
                 Autosubmit.generate_scripts_andor_wrappers(
                     as_conf, job_list, jobs, packages_persistence, False)
             if len(jobs_cw) > 0:
-                referenced_jobs_to_remove = set()
-                for job in jobs_cw:
-                    for child in job.children:
-                        if child not in jobs_cw:
-                            referenced_jobs_to_remove.add(child)
-                    for parent in job.parents:
-                        if parent not in jobs_cw:
-                            referenced_jobs_to_remove.add(parent)
-
                 for job in jobs_cw:
                     job.status = Status.WAITING
                 Autosubmit.generate_scripts_andor_wrappers(
@@ -1592,9 +1582,11 @@ class Autosubmit:
             job.platform = submitter.platforms[job.platform_name]
             if job.platform is not None and job.platform != "":
                 platforms_to_test.add(job.platform)
-
-        job_list.check_scripts(as_conf)
-
+        if not only_wrappers:
+            job_list.check_scripts(as_conf) # added only in inspect
+        else:  # no longer check_Scripts if -cw is added to monitor or create, just update the parameters
+            for job in ( job for job in job_list.get_job_list() ):
+                job.update_parameters(as_conf,parameters)
         job_list.update_list(as_conf, False)
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
@@ -1603,7 +1595,7 @@ class Autosubmit:
         if unparsed_two_step_start != "":
             job_list.parse_jobs_by_filter(unparsed_two_step_start)
         job_list.create_dictionary(date_list, member_list, num_chunks, chunk_ini, date_format, as_conf.get_retrials(),
-                                   wrapper_jobs)
+                                   wrapper_jobs, as_conf)
         for job in job_list.get_active():
             if job.status != Status.WAITING:
                 job.status = Status.READY
@@ -1613,6 +1605,7 @@ class Autosubmit:
             # for job in job_list.get_uncompleted_and_not_waiting():
             #    job.status = Status.COMPLETED
             job_list.update_list(as_conf, False)
+
 
     @staticmethod
     def terminate(all_threads):
@@ -1886,7 +1879,7 @@ class Autosubmit:
             Log.info("Recovering job_list")
         try:
             job_list = Autosubmit.load_job_list(
-                expid, as_conf, notransitive=notransitive)
+                expid, as_conf, notransitive=notransitive, new=False)
         except IOError as e:
             raise AutosubmitError(
                 "Job_list not found", 6016, str(e))
@@ -1913,7 +1906,7 @@ class Autosubmit:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
             try:
-                job.platform = submitter.platforms[job.platform_name.upper()]
+                 job.platform = submitter.platforms[job.platform_name.upper()]
             except Exception as e:
                 raise AutosubmitCritical(
                     "hpcarch={0} not found in the platforms configuration file".format(job.platform_name),
@@ -1963,6 +1956,7 @@ class Autosubmit:
         Log.debug("Checking job_list current status")
         job_list.update_list(as_conf, first_time=True)
         job_list.save()
+        as_conf.save()
         if not recover:
             Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
             # Before starting main loop, setup historical database tables and main information
@@ -2118,6 +2112,8 @@ class Autosubmit:
                             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
+                            as_conf.save()
+
                         # Submit jobs that are prepared to hold (if remote dependencies parameter are enabled)
                         # This currently is not used as SLURM no longer allows to jobs to adquire priority while in hold state.
                         # This only works for SLURM. ( Prepare status can not be achieved in other platforms )
@@ -2126,6 +2122,7 @@ class Autosubmit:
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
+                            as_conf.save()
                         # Safe spot to store changes
                         try:
                             exp_history = Autosubmit.process_historical_data_iteration(job_list, job_changes_tracker, expid)
@@ -2142,6 +2139,7 @@ class Autosubmit:
                         job_changes_tracker = {}
                         if Autosubmit.exit:
                             job_list.save()
+                            as_conf.save()
                         time.sleep(safetysleeptime)
                         #Log.debug(f"FD endsubmit: {fd_show.fd_table_status_str()}")
 
@@ -2266,7 +2264,11 @@ class Autosubmit:
                 else:
                     Log.result("Run successful")
                     # Updating finish time for job data header
-                    exp_history.finish_current_experiment_run()
+                    # Database is locked, may be related to my local db todo 4.1.1
+                    try:
+                        exp_history.finish_current_experiment_run()
+                    except:
+                        Log.warning("Database is locked")
         except (portalocker.AlreadyLocked, portalocker.LockException) as e:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message, 7000)
@@ -2384,6 +2386,9 @@ class Autosubmit:
                                                                                                               hold=hold)
                 # Jobs that are being retrieved in batch. Right now, only available for slurm platforms.
                 if not inspect and len(valid_packages_to_submit) > 0:
+                    for package in (package for package in valid_packages_to_submit):
+                        for job in (job for job in package.jobs):
+                            job._clean_runtime_parameters()
                     job_list.save()
                 save_2 = False
                 if platform.type.lower() in [ "slurm" , "pjm" ] and not inspect and not only_wrappers:
@@ -2392,6 +2397,9 @@ class Autosubmit:
                                                                                          failed_packages,
                                                                                          error_message="", hold=hold)
                     if not inspect and len(valid_packages_to_submit) > 0:
+                        for package in (package for package in valid_packages_to_submit):
+                            for job in (job for job in package.jobs):
+                                job._clean_runtime_parameters()
                         job_list.save()
                 # Save wrappers(jobs that has the same id) to be visualized and checked in other parts of the code
                 job_list.save_wrappers(valid_packages_to_submit, failed_packages, as_conf, packages_persistence,
@@ -2467,7 +2475,7 @@ class Autosubmit:
             output_type = as_conf.get_output_type()
             pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
             job_list = Autosubmit.load_job_list(
-                expid, as_conf, notransitive=notransitive, monitor=True)
+                expid, as_conf, notransitive=notransitive, monitor=True, new=False)
             Log.debug("Job list restored from {0} files", pkl_dir)
         except AutosubmitError as e:
             raise AutosubmitCritical(e.message, e.code, e.trace)
@@ -2542,21 +2550,9 @@ class Autosubmit:
             if profile:
                 profiler.stop()
 
-        referenced_jobs_to_remove = set()
-        for job in jobs:
-            for child in job.children:
-                if child not in jobs:
-                    referenced_jobs_to_remove.add(child)
-            for parent in job.parents:
-                if parent not in jobs:
-                    referenced_jobs_to_remove.add(parent)
-        if len(referenced_jobs_to_remove) > 0:
-            for job in jobs:
-                job.children = job.children - referenced_jobs_to_remove
-                job.parents = job.parents - referenced_jobs_to_remove
         # WRAPPERS
         try:
-            if as_conf.get_wrapper_type() != 'none' and check_wrapper:
+            if len(as_conf.experiment_data.get("WRAPPERS", {})) > 0 and check_wrapper:
                 # Class constructor creates table if it does not exist
                 packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                              "job_packages_" + expid)
@@ -2564,24 +2560,10 @@ class Autosubmit:
                 os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0o644)
                 # Database modification
                 packages_persistence.reset_table(True)
-                referenced_jobs_to_remove = set()
-                job_list_wrappers = copy.deepcopy(job_list)
-                jobs_wr_aux = copy.deepcopy(jobs)
-                jobs_wr = []
-                [jobs_wr.append(job) for job in jobs_wr_aux]
-                for job in jobs_wr:
-                    for child in job.children:
-                        if child not in jobs_wr:
-                            referenced_jobs_to_remove.add(child)
-                    for parent in job.parents:
-                        if parent not in jobs_wr:
-                            referenced_jobs_to_remove.add(parent)
-
-                for job in jobs_wr:
-                    job.children = job.children - referenced_jobs_to_remove
-                    job.parents = job.parents - referenced_jobs_to_remove
-
-                Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr,
+                # Load another job_list to go through that goes through the jobs, but we want to monitor the other one
+                job_list_wr = Autosubmit.load_job_list(
+                    expid, as_conf, notransitive=notransitive, monitor=True, new=False)
+                Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wr, job_list_wr.get_job_list(),
                                                            packages_persistence, True)
 
                 packages = packages_persistence.load(True)
@@ -2676,6 +2658,8 @@ class Autosubmit:
 
             pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
             job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+            for job in job_list.get_job_list():
+                job._init_runtime_parameters()
             Log.debug("Job list restored from {0} files", pkl_dir)
             jobs = StatisticsUtils.filter_by_section(job_list.get_job_list(), filter_type)
             jobs, period_ini, period_fi = StatisticsUtils.filter_by_time_period(jobs, filter_period)
@@ -2687,7 +2671,7 @@ class Autosubmit:
                 current_table_structure = get_structure(expid, BasicConfig.STRUCTURES_DIR)
                 subjobs = []
                 for job in job_list.get_job_list():
-                    job_info = JobList.retrieve_times(job.status, job.name, job._tmp_path, make_exception=False,
+                    job_info = JobList.retrieve_times(job.status, job.name, job._tmp_path, make_exception=True,
                                                       job_times=None, seconds=True, job_data_collection=None)
                     time_total = (job_info.queue_time + job_info.run_time) if job_info else 0
                     subjobs.append(
@@ -2801,7 +2785,7 @@ class Autosubmit:
             Log.info('Recovering experiment {0}'.format(expid))
             pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
             job_list = Autosubmit.load_job_list(
-                expid, as_conf, notransitive=notransitive, monitor=True)
+                expid, as_conf, notransitive=notransitive, new=False, monitor=True)
 
             current_active_jobs = job_list.get_in_queue()
 
@@ -2867,7 +2851,6 @@ class Autosubmit:
                     job.platform_name = hpcarch
                 # noinspection PyTypeChecker
                 job.platform = platforms[job.platform_name]
-
                 if job.platform.get_completed_files(job.name, 0, recovery=True):
                     job.status = Status.COMPLETED
                     Log.info(
@@ -2881,7 +2864,7 @@ class Autosubmit:
                             pass
                 elif job.status != Status.SUSPENDED:
                     job.status = Status.WAITING
-                    job.fail_count = 0
+                    job._fail_count = 0
                     # Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
                     # Log.status("CHANGED job '{0}' status to WAITING".format(job.name))
 
@@ -3336,7 +3319,7 @@ class Autosubmit:
                 if job.platform_name is None:
                     job.platform_name = hpc_architecture
                 job.platform = submitter.platforms[job.platform_name]
-                job.update_parameters(as_conf, job_list.parameters)
+
         except AutosubmitError:
             raise
         except BaseException as e:
@@ -3431,6 +3414,7 @@ class Autosubmit:
                 try:
                     for job in job_list.get_job_list():
                         job_parameters = job.update_parameters(as_conf, {})
+                        job._clean_runtime_parameters()
                         for key, value in job_parameters.items():
                             jobs_parameters["JOBS"+"."+job.section+"."+key] = value
                 except:
@@ -4052,7 +4036,7 @@ class Autosubmit:
                 shutil.copyfile(template_path, backup_path)
             template_content = open(template_path, 'r', encoding=locale.getlocale()[1]).read()
             # Look for %_%
-            variables = re.findall('%(?<!%%)[a-zA-Z0-9_.]+%(?!%%)', template_content,flags=re.IGNORECASE)
+            variables = re.findall('%(?<!%%)[a-zA-Z0-9_.-]+%(?!%%)', template_content,flags=re.IGNORECASE)
             variables = [variable[1:-1].upper() for variable in variables]
             results = {}
             # Change format
@@ -4078,7 +4062,7 @@ class Autosubmit:
             # write_it
             # Deletes unused keys from confs
             if template_path.name.lower().find("autosubmit") > -1:
-                template_content = re.sub('(?m)^( )*(EXPID:)( )*[a-zA-Z0-9]*(\n)*', "", template_content, flags=re.I)
+                template_content = re.sub('(?m)^( )*(EXPID:)( )*[a-zA-Z0-9._-]*(\n)*', "", template_content, flags=re.I)
             # Write final result
             open(template_path, "w").write(template_content)
 
@@ -4599,7 +4583,7 @@ class Autosubmit:
 
     @staticmethod
     def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(),
-               notransitive=False, check_wrappers=False, detail=False, profile=False):
+               notransitive=False, check_wrappers=False, detail=False, profile=False, force=False):
         """
         Creates job list for given experiment. Configuration files must be valid before executing this process.
 
@@ -4689,11 +4673,11 @@ class Autosubmit:
                     rerun = as_conf.get_rerun()
 
                     Log.info("\nCreating the jobs list...")
-                    job_list = JobList(expid, BasicConfig, YAMLParserFactory(),
-                                       Autosubmit._get_job_list_persistence(expid, as_conf), as_conf)
-                    prev_job_list = Autosubmit.load_job_list(
-                        expid, as_conf, notransitive=notransitive)
-
+                    job_list = JobList(expid, BasicConfig, YAMLParserFactory(),Autosubmit._get_job_list_persistence(expid, as_conf), as_conf)
+                    try:
+                         prev_job_list_logs = Autosubmit.load_logs_from_previous_run(expid, as_conf)
+                    except:
+                        prev_job_list_logs = None
                     date_format = ''
                     if as_conf.get_chunk_size_unit() == 'hour':
                         date_format = 'H'
@@ -4710,20 +4694,20 @@ class Autosubmit:
                             continue
                         wrapper_jobs[wrapper_name] = as_conf.get_wrapper_jobs(wrapper_parameters)
 
-                    job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
+                    job_list.generate(as_conf,date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
                                       as_conf.get_default_job_type(),
-                                      as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive,
-                                      update_structure=True, run_only_members=run_only_members,
-                                      jobs_data=as_conf.experiment_data, as_conf=as_conf)
+                                      wrapper_jobs, run_only_members=run_only_members, force=force, create=True)
 
                     if str(rerun).lower() == "true":
                         job_list.rerun(as_conf.get_rerun_jobs(),as_conf)
                     else:
                         job_list.remove_rerun_only_jobs(notransitive)
                     Log.info("\nSaving the jobs list...")
-                    job_list.add_logs(prev_job_list.get_logs())
+                    if prev_job_list_logs:
+                        job_list.add_logs(prev_job_list_logs)
                     job_list.save()
+                    as_conf.save()
                     JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                           "job_packages_" + expid).reset_table()
                     groups_dict = dict()
@@ -4768,30 +4752,14 @@ class Autosubmit:
                             packages_persistence = JobPackagePersistence(
                                 os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                             packages_persistence.reset_table(True)
-                            referenced_jobs_to_remove = set()
-                            job_list_wrappers = copy.deepcopy(job_list)
-                            jobs_wr = job_list_wrappers.get_job_list()
-                            for job in jobs_wr:
-                                for child in job.children:
-                                    if child not in jobs_wr:
-                                        referenced_jobs_to_remove.add(child)
-                                for parent in job.parents:
-                                    if parent not in jobs_wr:
-                                        referenced_jobs_to_remove.add(parent)
-
-                            for job in jobs_wr:
-                                job.children = job.children - referenced_jobs_to_remove
-                                job.parents = job.parents - referenced_jobs_to_remove
+                            job_list_wr = Autosubmit.load_job_list(
+                                expid, as_conf, notransitive=notransitive, monitor=True, new=False)
                             Autosubmit.generate_scripts_andor_wrappers(
-                                as_conf, job_list_wrappers, jobs_wr, packages_persistence, True)
+                                as_conf, job_list_wr, job_list_wr.get_job_list(), packages_persistence, True)
 
                             packages = packages_persistence.load(True)
                         else:
                             packages = None
-                        Log.info("\nSaving unified data..")
-                        as_conf.save()
-                        Log.info("")
-
                         Log.info("\nPlotting the jobs list...")
                         monitor_exp = Monitor()
                         # if output is set, use output
@@ -4830,7 +4798,7 @@ class Autosubmit:
             raise AutosubmitError(e.message, e.code, e.trace)
         except AutosubmitCritical as e:
             # TODO: == "" or is None?
-            if e.trace == "":
+            if e.trace == "" or not e.trace:
                 e.trace = traceback.format_exc()
             raise AutosubmitCritical(e.message, e.code, e.trace)
         except BaseException as e:
@@ -4876,14 +4844,13 @@ class Autosubmit:
             submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
             try:
-                hpcarch = submitter.platforms[as_conf.get_platform()]
+                hpcarch = submitter.platforms.get(as_conf.get_platform(), "local")
             except BaseException as e:
                 error = str(e)
                 try:
                     hpcarch = submitter.platforms[as_conf.get_platform()]
                 except Exception as e:
                     hpcarch = "local"
-                #Log.warning("Remote clone may be disabled due to: " + error)
             return AutosubmitGit.clone_repository(as_conf, force, hpcarch)
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()
@@ -4995,41 +4962,369 @@ class Autosubmit:
             elif final_status in [Status.QUEUING, Status.RUNNING] and (job.status == Status.SUSPENDED):
                 if job.platform_name and job.platform_name.upper() != "LOCAL":
                     job.platform.send_command("scontrol release " + "{0}".format(job.id), ignore_log=True)
+        if job.status == Status.FAILED and job.status != final_status:
+            job._fail_count = 0
         job.status = final_status
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
         Log.status("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
-    def set_status(expid, noplot, save, final, lst, filter_chunks, filter_status, filter_section, filter_type_chunk,
+    def _validate_section(as_conf,filter_section):
+        section_validation_error = False
+        section_error = False
+        section_not_foundList = list()
+        section_validation_message = "\n## Section Validation Message ##"
+        countStart = filter_section.count('[')
+        countEnd = filter_section.count(']')
+        if countStart > 1 or countEnd > 1:
+            section_validation_error = True
+            section_validation_message += "\n\tList of sections has a format error. Perhaps you were trying to use -fc instead."
+        if section_validation_error is False:
+            if len(str(filter_section).strip()) > 0:
+                if len(filter_section.split()) > 0:
+                    jobSections = as_conf.jobs_data
+                    for section in filter_section.split():
+                        # print(section)
+                        # Provided section is not an existing section, or it is not the keyword 'Any'
+                        if section not in jobSections and (section != "Any"):
+                            section_error = True
+                            section_not_foundList.append(section)
+            else:
+                section_validation_error = True
+                section_validation_message += "\n\tEmpty input. No changes performed."
+        if section_validation_error is True or section_error is True:
+            if section_error is True:
+                section_validation_message += "\n\tSpecified section(s) : [" + str(section_not_foundList) + " not found"\
+                                              ".\n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
+                                              "\n\tRemember that this option expects section names separated by a blank space as input."
+
+            raise AutosubmitCritical("Error in the supplied input for -ft.", 7011, section_validation_message)
+    @staticmethod
+    def _validate_list(as_conf,job_list,filter_list):
+        job_validation_error = False
+        job_error = False
+        job_not_foundList = list()
+        job_validation_message = "\n## Job Validation Message ##"
+        jobs = list()
+        countStart = filter_list.count('[')
+        countEnd = filter_list.count(']')
+        if countStart > 1 or countEnd > 1:
+            job_validation_error = True
+            job_validation_message += "\n\tList of jobs has a format error. Perhaps you were trying to use -fc instead."
+
+        if job_validation_error is False:
+            for job in job_list.get_job_list():
+                jobs.append(job.name)
+            if len(str(filter_list).strip()) > 0:
+                if len(filter_list.split()) > 0:
+                    for sentJob in filter_list.split():
+                        # Provided job does not exist, or it is not the keyword 'Any'
+                        if sentJob not in jobs and (sentJob != "Any"):
+                            job_error = True
+                            job_not_foundList.append(sentJob)
+            else:
+                job_validation_error = True
+                job_validation_message += "\n\tEmpty input. No changes performed."
+
+        if job_validation_error is True or job_error is True:
+            if job_error is True:
+                job_validation_message += "\n\tSpecified job(s) : [" + str(
+                    job_not_foundList) + "] not found in the experiment " + \
+                                          str(as_conf.expid) + ". \n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
+                                          "\n\tRemember that this option expects job names separated by a blank space as input."
+            raise AutosubmitCritical(
+                "Error in the supplied input for -ft.", 7011, job_validation_message)
+    @staticmethod
+    def _validate_chunks(as_conf,filter_chunks):
+        fc_validation_message = "## -fc Validation Message ##"
+        fc_filter_is_correct = True
+        selected_sections = filter_chunks.split(",")[1:]
+        selected_formula = filter_chunks.split(",")[0]
+        current_sections = as_conf.jobs_data
+        fc_deserialized_json = object()
+        # Starting Validation
+        if len(str(selected_sections).strip()) == 0:
+            fc_filter_is_correct = False
+            fc_validation_message += "\n\tMust include a section (job type)."
+        else:
+            for section in selected_sections:
+                # section = section.strip()
+                # Validating empty sections
+                if len(str(section).strip()) == 0:
+                    fc_filter_is_correct = False
+                    fc_validation_message += "\n\tEmpty sections are not accepted."
+                    break
+                # Validating existing sections
+                # Retrieve experiment data
+
+                if section not in current_sections:
+                    fc_filter_is_correct = False
+                    fc_validation_message += "\n\tSection " + section + \
+                                             " does not exist in experiment. Remember not to include blank spaces."
+
+        # Validating chunk formula
+        if len(selected_formula) == 0:
+            fc_filter_is_correct = False
+            fc_validation_message += "\n\tA formula for chunk filtering has not been provided."
+
+        # If everything is fine until this point
+        if fc_filter_is_correct is True:
+            # Retrieve experiment data
+            current_dates = as_conf.experiment_data["EXPERIMENT"]["DATELIST"].split()
+            current_members = as_conf.get_member_list()
+            # Parse json
+            try:
+                fc_deserialized_json = json.loads(
+                    Autosubmit._create_json(selected_formula))
+            except Exception as e:
+                fc_filter_is_correct = False
+                fc_validation_message += "\n\tProvided chunk formula does not have the right format. Were you trying to use another option?"
+            if fc_filter_is_correct is True:
+                for startingDate in fc_deserialized_json['sds']:
+                    if startingDate['sd'] not in current_dates:
+                        fc_filter_is_correct = False
+                        fc_validation_message += "\n\tStarting date " + \
+                                                 startingDate['sd'] + \
+                                                 " does not exist in experiment."
+                    for member in startingDate['ms']:
+                        if member['m'] not in current_members and member['m'].lower() != "any":
+                            fc_filter_is_correct = False
+                            fc_validation_message += "\n\tMember " + \
+                                                     member['m'] + \
+                                                     " does not exist in experiment."
+
+        # Ending validation
+        if fc_filter_is_correct is False:
+            raise AutosubmitCritical(
+                "Error in the supplied input for -fc.", 7011, fc_validation_message)
+    @staticmethod
+    def _validate_status(job_list,filter_status):
+        status_validation_error = False
+        status_validation_message = "\n## Status Validation Message ##"
+        # Trying to identify chunk formula
+        countStart = filter_status.count('[')
+        countEnd = filter_status.count(']')
+        if countStart > 1 or countEnd > 1:
+            status_validation_error = True
+            status_validation_message += "\n\tList of status provided has a format error. Perhaps you were trying to use -fc instead."
+        # If everything is fine until this point
+        if status_validation_error is False:
+            status_filter = filter_status.split()
+            status_reference = Status()
+            status_list = list()
+            for job in job_list.get_job_list():
+                reference = status_reference.VALUE_TO_KEY[job.status]
+                if reference not in status_list:
+                    status_list.append(reference)
+            for status in status_filter:
+                if status not in status_list:
+                    status_validation_error = True
+                    status_validation_message += "\n\t There are no jobs with status " + \
+                                                 status + " in this experiment."
+        if status_validation_error is True:
+            raise AutosubmitCritical("Error in the supplied input for -fs.", 7011, status_validation_message)
+
+    @staticmethod
+    def _validate_type_chunk(as_conf,filter_type_chunk):
+        #Change status by section, member, and chunk; freely.
+        # Including inner validation. Trying to make it independent.
+        # 19601101 [ fc0 [1 2 3 4] Any [1] ] 19651101 [ fc0 [16-30] ] ],SIM,SIM2,SIM3
+        validation_message = "## -ftc Validation Message ##"
+        filter_is_correct = True
+        selected_sections = filter_type_chunk.split(",")[1:]
+        selected_formula = filter_type_chunk.split(",")[0]
+        deserialized_json = object()
+        # Starting Validation
+        if len(str(selected_sections).strip()) == 0:
+            filter_is_correct = False
+            validation_message += "\n\tMust include a section (job type). If you want to apply the changes to all sections, include 'Any'."
+        else:
+            for section in selected_sections:
+                # Validating empty sections
+                if len(str(section).strip()) == 0:
+                    filter_is_correct = False
+                    validation_message += "\n\tEmpty sections are not accepted."
+                    break
+                # Validating existing sections
+                # Retrieve experiment data
+                current_sections = as_conf.jobs_data
+                if section not in current_sections and section != "Any":
+                    filter_is_correct = False
+                    validation_message += "\n\tSection " + \
+                                          section + " does not exist in experiment."
+
+        # Validating chunk formula
+        if len(selected_formula) == 0:
+            filter_is_correct = False
+            validation_message += "\n\tA formula for chunk filtering has not been provided. If you want to change all chunks, include 'Any'."
+
+        if filter_is_correct is False:
+            raise AutosubmitCritical(
+                "Error in the supplied input for -ftc.", 7011, validation_message)
+
+    @staticmethod
+    def _validate_chunk_split(as_conf,filter_chunk_split):
+        # new filter
+        pass
+    @staticmethod
+    def _validate_set_status_filters(as_conf,job_list,filter_list,filter_chunks,filter_status,filter_section,filter_type_chunk, filter_chunk_split):
+        if filter_section is not None:
+            Autosubmit._validate_section(as_conf,filter_section)
+        if filter_list is not None:
+            Autosubmit._validate_list(as_conf,job_list,filter_list)
+        if filter_chunks is not None:
+            Autosubmit._validate_chunks(as_conf,filter_chunks)
+        if filter_status is not None:
+            Autosubmit._validate_status(job_list,filter_status)
+        if filter_type_chunk is not None:
+            Autosubmit._validate_type_chunk(as_conf,filter_type_chunk)
+        if filter_chunk_split is not None:
+            Autosubmit._validate_chunk_split(as_conf,filter_chunk_split)
+
+    @staticmethod
+    def _apply_ftc(job_list,filter_type_chunk_split):
+        """
+        Accepts a string with the formula: "[ 19601101 [ fc0 [1 [1] 2 [2 3] 3 4] Any [1] ] 19651101 [ fc0 [16 30] ] ],SIM [ Any ] ,SIM2 [ 1 2]"
+        Where SIM, SIM2 are section (job types) names that also accept the keyword "Any" so the changes apply to all sections.
+        Starting Date (19601101) does not accept the keyword "Any", so you must specify the starting dates to be changed.
+        You can also specify date ranges to apply the change to a range on dates.
+        Member names (fc0) accept the keyword "Any", so the chunks ([1 2 3 4]) given will be updated for all members.
+        Chunks must be in the format "[1 2 3 4]" where "1 2 3 4" represent the numbers of the chunks in the member,
+        Splits must be in the format "[ 1 2 3 4]" where "1 2 3 4" represent the numbers of the splits in the sections.
+        no range format is allowed.
+        :param filter_type_chunk_split: string with the formula
+        :return: final_list
+        """
+        # Get selected sections and formula
+        final_list = []
+        selected_sections = filter_type_chunk_split.split(",")[1:]
+        selected_formula = filter_type_chunk_split.split(",")[0]
+        # Retrieve experiment data
+        # Parse json
+        deserialized_json = json.loads(Autosubmit._create_json(selected_formula))
+        # Get current list
+        working_list = job_list.get_job_list()
+        for section in selected_sections:
+            if str(section).upper() == "ANY":
+                # Any section
+                section_selection = working_list
+                # Go through start dates
+                for starting_date in deserialized_json['sds']:
+                    date = starting_date['sd']
+                    date_selection = [j for j in section_selection if date2str(
+                        j.date) == date]
+                    # Members for given start date
+                    for member_group in starting_date['ms']:
+                        member = member_group['m']
+                        if str(member).upper() == "ANY":
+                            # Any member
+                            member_selection = date_selection
+                            chunk_group = member_group['cs']
+                            for chunk in chunk_group:
+                                filtered_job = [j for j in member_selection if j.chunk == int(chunk)]
+                                for job in filtered_job:
+                                    final_list.append(job)
+                                # From date filter and sync is not None
+                                for job in [j for j in date_selection if
+                                            j.chunk == int(chunk) and j.synchronize is not None]:
+                                    final_list.append(job)
+                        else:
+                            # Selected members
+                            member_selection = [j for j in date_selection if j.member == member]
+                            chunk_group = member_group['cs']
+                            for chunk in chunk_group:
+                                filtered_job = [j for j in member_selection if j.chunk == int(chunk)]
+                                for job in filtered_job:
+                                    final_list.append(job)
+                                # From date filter and sync is not None
+                                for job in [j for j in date_selection if
+                                            j.chunk == int(chunk) and j.synchronize is not None]:
+                                    final_list.append(job)
+            else:
+                # Only given section
+                section_splits = section.split("[")
+                section = section_splits[0].strip(" [")
+                if len(section_splits) > 1:
+                    if "," in section_splits[1]:
+                        splits = section_splits[1].strip(" ]").split(",")
+                    else:
+                        splits = section_splits[1].strip(" ]").split(" ")
+                else:
+                    splits = ["ANY"]
+                final_splits = []
+                for split in splits:
+                    start = None
+                    end = None
+                    if split.find("-") != -1:
+                        start = split.split("-")[0]
+                        end = split.split("-")[1]
+                    if split.find(":") != -1:
+                        start = split.split(":")[0]
+                        end = split.split(":")[1]
+                    if start and end:
+                        final_splits += [ str(i) for i in range(int(start),int(end)+1)]
+                    else:
+                        final_splits.append(str(split))
+                splits = final_splits
+                jobs_filtered = [j for j in working_list if j.section == section and ( j.split is None or splits[0] == "ANY" or str(j.split) in splits ) ]
+                # Go through start dates
+                for starting_date in deserialized_json['sds']:
+                    date = starting_date['sd']
+                    date_selection = [j for j in jobs_filtered if date2str(
+                        j.date) == date]
+                    # Members for given start date
+                    for member_group in starting_date['ms']:
+                        member = member_group['m']
+                        if str(member).upper() == "ANY":
+                            # Any member
+                            member_selection = date_selection
+                            chunk_group = member_group['cs']
+                            for chunk in chunk_group:
+                                filtered_job = [j for j in member_selection if
+                                                j.chunk is None or j.chunk == int(chunk)]
+                                for job in filtered_job:
+                                    final_list.append(job)
+                                # From date filter and sync is not None
+                                for job in [j for j in date_selection if
+                                            j.chunk == int(chunk) and j.synchronize is not None]:
+                                    final_list.append(job)
+                        else:
+                            # Selected members
+                            member_selection = [j for j in date_selection if j.member == member]
+                            chunk_group = member_group['cs']
+                            for chunk in chunk_group:
+                                filtered_job = [j for j in member_selection if j.chunk == int(chunk)]
+                                for job in filtered_job:
+                                    final_list.append(job)
+                                # From date filter and sync is not None
+                                for job in [j for j in date_selection if
+                                            j.chunk == int(chunk) and j.synchronize is not None]:
+                                    final_list.append(job)
+        return final_list
+    @staticmethod
+    def set_status(expid, noplot, save, final, filter_list, filter_chunks, filter_status, filter_section, filter_type_chunk, filter_type_chunk_split,
                    hide, group_by=None,
                    expand=list(), expand_status=list(), notransitive=False, check_wrapper=False, detail=False):
         """
-        Set status
-
-        :param detail:
-        :param check_wrapper:
-        :param notransitive:
-        :param expand_status:
-        :param expand:
-        :param group_by:
-        :param filter_type_chunk:
-        :param noplot:
-        :param expid: experiment identifier
-        :type expid: str
-        :param save: if true, saves the new jobs list
-        :type save: bool
-        :param final: status to set on jobs
-        :type final: str
-        :param lst: list of jobs to change status
-        :type lst: str
-        :param filter_chunks: chunks to change status
-        :type filter_chunks: str
-        :param filter_status: current status of the jobs to change status
-        :type filter_status: str
-        :param filter_section: sections to change status
-        :type filter_section: str
-        :param hide: hides plot window
-        :type hide: bool
+        Set status of jobs
+        :param expid: experiment id
+        :param noplot: do not plot
+        :param save: save
+        :param final: final status
+        :param filter_list: list of jobs
+        :param filter_chunks: filter chunks
+        :param filter_status: filter status
+        :param filter_section: filter section
+        :param filter_type_chunk: filter type chunk
+        :param filter_chunk_split: filter chunk split
+        :param hide: hide
+        :param group_by: group by
+        :param expand: expand
+        :param expand_status: expand status
+        :param notransitive: notransitive
+        :param check_wrapper: check wrapper
+        :param detail: detail
+        :return:
         """
         Autosubmit._check_ownership(expid, raise_error=True)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
@@ -5045,10 +5340,11 @@ class Autosubmit:
                 Log.debug('Exp ID: {0}', expid)
                 Log.debug('Save: {0}', save)
                 Log.debug('Final status: {0}', final)
-                Log.debug('List of jobs to change: {0}', lst)
+                Log.debug('List of jobs to change: {0}', filter_list)
                 Log.debug('Chunks to change: {0}', filter_chunks)
                 Log.debug('Status of jobs to change: {0}', filter_status)
                 Log.debug('Sections to change: {0}', filter_section)
+
                 wrongExpid = 0
                 as_conf = AutosubmitConfig(
                     expid, BasicConfig, YAMLParserFactory())
@@ -5057,46 +5353,8 @@ class Autosubmit:
                 # Getting output type from configuration
                 output_type = as_conf.get_output_type()
                 # Getting db connections
-
-                # Validating job sections, if filter_section -ft has been set:
-                if filter_section is not None:
-                    section_validation_error = False
-                    section_error = False
-                    section_not_foundList = list()
-                    section_validation_message = "\n## Section Validation Message ##"
-                    countStart = filter_section.count('[')
-                    countEnd = filter_section.count(']')
-                    if countStart > 1 or countEnd > 1:
-                        section_validation_error = True
-                        section_validation_message += "\n\tList of sections has a format error. Perhaps you were trying to use -fc instead."
-                    # countUnderscore =  filter_section.count('_')
-                    # if countUnderscore > 1:
-                    #    section_validation_error = True
-                    #    section_validation_message += "\n\tList of sections provided has a format error. Perhaps you were trying to use -fl instead."
-                    if section_validation_error is False:
-                        if len(str(filter_section).strip()) > 0:
-                            if len(filter_section.split()) > 0:
-                                jobSections = as_conf.jobs_data
-                                for section in filter_section.split():
-                                    # print(section)
-                                    # Provided section is not an existing section, or it is not the keyword 'Any'
-                                    if section not in jobSections and (section != "Any"):
-                                        section_error = True
-                                        section_not_foundList.append(section)
-                        else:
-                            section_validation_error = True
-                            section_validation_message += "\n\tEmpty input. No changes performed."
-                    if section_validation_error is True or section_error is True:
-                        if section_error is True:
-                            section_validation_message += "\n\tSpecified section(s) : [" + str(section_not_foundList) + \
-                                                          "] not found in the experiment " + str(expid) + \
-                                                          ".\n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
-                                                          "\n\tRemember that this option expects section names separated by a blank space as input."
-
-                        raise AutosubmitCritical(
-                            "Error in the supplied input for -ft.", 7011, section_validation_message+job_validation_message)
-                job_list = Autosubmit.load_job_list(
-                    expid, as_conf, notransitive=notransitive)
+                # To be added in a function that checks which platforms must be connected to
+                job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive, monitor=True, new=False)
                 submitter = Autosubmit._get_submitter(as_conf)
                 submitter.load_platforms(as_conf)
                 hpcarch = as_conf.get_platform()
@@ -5115,8 +5373,7 @@ class Autosubmit:
                     job.platform = platforms[job.platform_name]
                     # noinspection PyTypeChecker
                     if job.status in [Status.QUEUING, Status.SUBMITTED, Status.RUNNING]:
-                        platforms_to_test.add(
-                            platforms[job.platform_name])
+                        platforms_to_test.add(platforms[job.platform_name])
                 # establish the connection to all platforms
                 definitive_platforms = list()
                 for platform in platforms_to_test:
@@ -5125,340 +5382,44 @@ class Autosubmit:
                         definitive_platforms.append(platform.name)
                     except Exception as e:
                         pass
-
-                # Validating list of jobs, if filter_list -fl has been set:
-                # Seems that Autosubmit.load_job_list call is necessary before verification is executed
-                if job_list is not None and lst is not None:
-                    job_validation_error = False
-                    job_error = False
-                    job_not_foundList = list()
-                    job_validation_message = "\n## Job Validation Message ##"
-                    jobs = list()
-                    countStart = lst.count('[')
-                    countEnd = lst.count(']')
-                    if countStart > 1 or countEnd > 1:
-                        job_validation_error = True
-                        job_validation_message += "\n\tList of jobs has a format error. Perhaps you were trying to use -fc instead."
-
-                    if job_validation_error is False:
-                        for job in job_list.get_job_list():
-                            jobs.append(job.name)
-                        if len(str(lst).strip()) > 0:
-                            if len(lst.split()) > 0:
-                                for sentJob in lst.split():
-                                    # Provided job does not exist, or it is not the keyword 'Any'
-                                    if sentJob not in jobs and (sentJob != "Any"):
-                                        job_error = True
-                                        job_not_foundList.append(sentJob)
-                        else:
-                            job_validation_error = True
-                            job_validation_message += "\n\tEmpty input. No changes performed."
-
-                    if job_validation_error is True or job_error is True:
-                        if job_error is True:
-                            job_validation_message += "\n\tSpecified job(s) : [" + str(
-                                job_not_foundList) + "] not found in the experiment " + \
-                                                      str(expid) + ". \n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
-                                                      "\n\tRemember that this option expects job names separated by a blank space as input."
-                        raise AutosubmitCritical(
-                            "Error in the supplied input for -ft.", 7011, section_validation_message+job_validation_message)
-
-                # Validating fc if filter_chunks -fc has been set:
-                if filter_chunks is not None:
-                    fc_validation_message = "## -fc Validation Message ##"
-                    fc_filter_is_correct = True
-                    selected_sections = filter_chunks.split(",")[1:]
-                    selected_formula = filter_chunks.split(",")[0]
-                    current_sections = as_conf.jobs_data
-                    fc_deserializedJson = object()
-                    # Starting Validation
-                    if len(str(selected_sections).strip()) == 0:
-                        fc_filter_is_correct = False
-                        fc_validation_message += "\n\tMust include a section (job type)."
-                    else:
-                        for section in selected_sections:
-                            # section = section.strip()
-                            # Validating empty sections
-                            if len(str(section).strip()) == 0:
-                                fc_filter_is_correct = False
-                                fc_validation_message += "\n\tEmpty sections are not accepted."
-                                break
-                            # Validating existing sections
-                            # Retrieve experiment data
-
-                            if section not in current_sections:
-                                fc_filter_is_correct = False
-                                fc_validation_message += "\n\tSection " + section + \
-                                                         " does not exist in experiment. Remember not to include blank spaces."
-
-                    # Validating chunk formula
-                    if len(selected_formula) == 0:
-                        fc_filter_is_correct = False
-                        fc_validation_message += "\n\tA formula for chunk filtering has not been provided."
-
-                    # If everything is fine until this point
-                    if fc_filter_is_correct is True:
-                        # Retrieve experiment data
-                        current_dates = as_conf.experiment_data["EXPERIMENT"]["DATELIST"].split()
-                        current_members = as_conf.get_member_list()
-                        # Parse json
-                        try:
-                            fc_deserializedJson = json.loads(
-                                Autosubmit._create_json(selected_formula))
-                        except Exception as e:
-                            fc_filter_is_correct = False
-                            fc_validation_message += "\n\tProvided chunk formula does not have the right format. Were you trying to use another option?"
-                        if fc_filter_is_correct is True:
-                            for startingDate in fc_deserializedJson['sds']:
-                                if startingDate['sd'] not in current_dates:
-                                    fc_filter_is_correct = False
-                                    fc_validation_message += "\n\tStarting date " + \
-                                                             startingDate['sd'] + \
-                                                             " does not exist in experiment."
-                                for member in startingDate['ms']:
-                                    if member['m'] not in current_members and member['m'].lower() != "any":
-                                        fc_filter_is_correct = False
-                                        fc_validation_message += "\n\tMember " + \
-                                                                 member['m'] + \
-                                                                 " does not exist in experiment."
-
-                    # Ending validation
-                    if fc_filter_is_correct is False:
-                        section_validation_message = fc_validation_message
-                        raise AutosubmitCritical(
-                            "Error in the supplied input for -fc.", 7011, section_validation_message+job_validation_message)
-                # Validating status, if filter_status -fs has been set:
-                # At this point we already have job_list from where we are getting the allows STATUS
-                if filter_status is not None:
-                    status_validation_error = False
-                    status_validation_message = "\n## Status Validation Message ##"
-                    # Trying to identify chunk formula
-                    countStart = filter_status.count('[')
-                    countEnd = filter_status.count(']')
-                    if countStart > 1 or countEnd > 1:
-                        status_validation_error = True
-                        status_validation_message += "\n\tList of status provided has a format error. Perhaps you were trying to use -fc instead."
-                    # Trying to identify job names, implying status names won't use more than 1 underscore _
-                    # countUnderscore = filter_status.count('_')
-                    # if countUnderscore > 1:
-                    #    status_validation_error = True
-                    #    status_validation_message += "\n\tList of status provided has a format error. Perhaps you were trying to use -fl instead."
-                    # If everything is fine until this point
-                    if status_validation_error is False:
-                        status_filter = filter_status.split()
-                        status_reference = Status()
-                        status_list = list()
-                        for job in job_list.get_job_list():
-                            reference = status_reference.VALUE_TO_KEY[job.status]
-                            if reference not in status_list:
-                                status_list.append(reference)
-                        for status in status_filter:
-                            if status not in status_list:
-                                status_validation_error = True
-                                status_validation_message += "\n\t There are no jobs with status " + \
-                                                             status + " in this experiment."
-                    if status_validation_error is True:
-                        raise AutosubmitCritical("Error in the supplied input for -fs.{0}".format(
-                            status_validation_message), 7011, section_validation_message+job_validation_message)
-
+                ##### End of the ""function""
+                # This will raise an autosubmit critical if any of the filters has issues in the format specified by the user
+                Autosubmit._validate_set_status_filters(as_conf,job_list,filter_list,filter_chunks,filter_status,filter_section,filter_type_chunk, filter_type_chunk_split)
+                #### Starts the filtering process ####
+                final_list = []
                 jobs_filtered = []
+                jobs_left_to_be_filtered = True
                 final_status = Autosubmit._get_status(final)
-                if filter_section or filter_chunks:
-                    if filter_section:
-                        ft = filter_section.split()
-                    else:
-                        ft = filter_chunks.split(",")[1:]
-                    if ft == 'Any':
+                # I have the impression that whoever did this function thought about the possibility of having multiple filters at the same time
+                # But, as it was, it is not possible to have multiple filters at the same time due to the way the code is written
+                if filter_section:
+                    ft = filter_section.split()
+                    if str(ft).upper() == 'ANY':
                         for job in job_list.get_job_list():
-                            Autosubmit.change_status(
-                                final, final_status, job, save)
+                            final_list.append(job)
                     else:
                         for section in ft:
                             for job in job_list.get_job_list():
                                 if job.section == section:
-                                    if filter_chunks:
-                                        jobs_filtered.append(job)
-                                    else:
-                                        Autosubmit.change_status(
-                                            final, final_status, job, save)
-
-                # New feature : Change status by section, member, and chunk; freely.
-                # Including inner validation. Trying to make it independent.
-                # 19601101 [ fc0 [1 2 3 4] Any [1] ] 19651101 [ fc0 [16-30] ] ],SIM,SIM2,SIM3
-                if filter_type_chunk:
-                    validation_message = "## -ftc Validation Message ##"
-                    filter_is_correct = True
-                    selected_sections = filter_type_chunk.split(",")[1:]
-                    selected_formula = filter_type_chunk.split(",")[0]
-                    deserializedJson = object()
-                    performed_changes = dict()
-
-                    # Starting Validation
-                    if len(str(selected_sections).strip()) == 0:
-                        filter_is_correct = False
-                        validation_message += "\n\tMust include a section (job type). If you want to apply the changes to all sections, include 'Any'."
-                    else:
-                        for section in selected_sections:
-                            # Validating empty sections
-                            if len(str(section).strip()) == 0:
-                                filter_is_correct = False
-                                validation_message += "\n\tEmpty sections are not accepted."
-                                break
-                            # Validating existing sections
-                            # Retrieve experiment data
-                            current_sections = as_conf.jobs_data
-                            if section not in current_sections and section != "Any":
-                                filter_is_correct = False
-                                validation_message += "\n\tSection " + \
-                                                      section + " does not exist in experiment."
-
-                    # Validating chunk formula
-                    if len(selected_formula) == 0:
-                        filter_is_correct = False
-                        validation_message += "\n\tA formula for chunk filtering has not been provided. If you want to change all chunks, include 'Any'."
-
-                    # If everything is fine until this point
-                    if filter_is_correct is True:
-                        # Retrieve experiment data
-                        current_dates = as_conf.experiment_data["EXPERIMENT"]["DATELIST"].split()
-                        current_members = as_conf.get_member_list()
-                        # Parse json
-                        try:
-                            deserializedJson = json.loads(
-                                Autosubmit._create_json(selected_formula))
-                        except Exception as e:
-                            filter_is_correct = False
-                            validation_message += "\n\tProvided chunk formula does not have the right format. Were you trying to use another option?"
-                        if filter_is_correct is True:
-                            for startingDate in deserializedJson['sds']:
-                                if startingDate['sd'] not in current_dates:
-                                    filter_is_correct = False
-                                    validation_message += "\n\tStarting date " + \
-                                                          startingDate['sd'] + \
-                                                          " does not exist in experiment."
-                                for member in startingDate['ms']:
-                                    if member['m'] not in current_members and member['m'] != "Any":
-                                        filter_is_correct_ = False
-                                        validation_message += "\n\tMember " + \
-                                                              member['m'] + \
-                                                              " does not exist in experiment."
-
-                    # Ending validation
-                    if filter_is_correct is False:
-                        raise AutosubmitCritical(
-                            "Error in the supplied input for -ftc.", 7011, section_validation_message+job_validation_message)
-
-                    # If input is valid, continue.
-                    record = dict()
-                    final_list = []
-                    # Get current list
-                    working_list = job_list.get_job_list()
-                    for section in selected_sections:
-                        if section == "Any":
-                            # Any section
-                            section_selection = working_list
-                            # Go through start dates
-                            for starting_date in deserializedJson['sds']:
-                                date = starting_date['sd']
-                                date_selection = [j for j in section_selection if date2str(
-                                    j.date) == date]
-                                # Members for given start date
-                                for member_group in starting_date['ms']:
-                                    member = member_group['m']
-                                    if member == "Any":
-                                        # Any member
-                                        member_selection = date_selection
-                                        chunk_group = member_group['cs']
-                                        for chunk in chunk_group:
-                                            filtered_job = [j for j in member_selection if j.chunk == int(chunk)]
-                                            for job in filtered_job:
-                                                final_list.append(job)
-                                            # From date filter and sync is not None
-                                            for job in [j for j in date_selection if
-                                                        j.chunk == int(chunk) and j.synchronize is not None]:
-                                                final_list.append(job)
-                                    else:
-                                        # Selected members
-                                        member_selection = [j for j in date_selection if j.member == member]
-                                        chunk_group = member_group['cs']
-                                        for chunk in chunk_group:
-                                            filtered_job = [j for j in member_selection if j.chunk == int(chunk)]
-                                            for job in filtered_job:
-                                                final_list.append(job)
-                                            # From date filter and sync is not None
-                                            for job in [j for j in date_selection if
-                                                        j.chunk == int(chunk) and j.synchronize is not None]:
-                                                final_list.append(job)
-                        else:
-                            # Only given section
-                            section_selection = [j for j in working_list if j.section == section]
-                            # Go through start dates
-                            for starting_date in deserializedJson['sds']:
-                                date = starting_date['sd']
-                                date_selection = [j for j in section_selection if date2str(
-                                    j.date) == date]
-                                # Members for given start date
-                                for member_group in starting_date['ms']:
-                                    member = member_group['m']
-                                    if member == "Any":
-                                        # Any member
-                                        member_selection = date_selection
-                                        chunk_group = member_group['cs']
-                                        for chunk in chunk_group:
-                                            filtered_job = [j for j in member_selection if
-                                                            j.chunk is None or j.chunk == int(chunk)]
-                                            for job in filtered_job:
-                                                final_list.append(job)
-                                            # From date filter and sync is not None
-                                            for job in [j for j in date_selection if
-                                                        j.chunk == int(chunk) and j.synchronize is not None]:
-                                                final_list.append(job)
-                                    else:
-                                        # Selected members
-                                        member_selection = [j for j in date_selection if j.member == member]
-                                        chunk_group = member_group['cs']
-                                        for chunk in chunk_group:
-                                            filtered_job = [j for j in member_selection if j.chunk == int(chunk)]
-                                            for job in filtered_job:
-                                                final_list.append(job)
-                                            # From date filter and sync is not None
-                                            for job in [j for j in date_selection if
-                                                        j.chunk == int(chunk) and j.synchronize is not None]:
-                                                final_list.append(job)
-                    status = Status()
-                    for job in final_list:
-                        if job.status in [Status.QUEUING, Status.RUNNING,
-                                          Status.SUBMITTED] and job.platform.name not in definitive_platforms:
-                            Log.printlog("JOB: [{1}] is ignored as the [{0}] platform is currently offline".format(
-                                job.platform.name, job.name), 6000)
-                            continue
-                        if job.status != final_status:
-                            # Only real changes
-                            performed_changes[job.name] = str(
-                                Status.VALUE_TO_KEY[job.status]) + " -> " + str(final)
-                            Autosubmit.change_status(
-                                final, final_status, job, save)
-                    # If changes have been performed
-                    if len(list(performed_changes.keys())) > 0:
-                        if detail:
-                            Autosubmit.detail(job_list)
-                    else:
-                        Log.warning("No changes were performed.")
-                # End of New Feature
-
+                                    final_list.append(job)
                 if filter_chunks:
+                    ft = filter_chunks.split(",")[1:]
+                    # Any located in section part
+                    if str(ft).upper() == "ANY":
+                        for job in job_list.get_job_list():
+                            final_list.append(job)
+                        for job in job_list.get_job_list():
+                            if job.section == section:
+                                if filter_chunks:
+                                    jobs_filtered.append(job)
                     if len(jobs_filtered) == 0:
                         jobs_filtered = job_list.get_job_list()
-
                     fc = filter_chunks
-                    Log.debug(fc)
-
-                    if fc == 'Any':
+                    # Any located in chunks part
+                    if str(fc).upper() == "ANY":
                         for job in jobs_filtered:
-                            Autosubmit.change_status(
-                                final, final_status, job, save)
+                            final_list.append(job)
                     else:
-                        # noinspection PyTypeChecker
                         data = json.loads(Autosubmit._create_json(fc))
                         for date_json in data['sds']:
                             date = date_json['sd']
@@ -5482,49 +5443,73 @@ class Autosubmit:
                                 for chunk_json in member_json['cs']:
                                     chunk = int(chunk_json)
                                     for job in [j for j in jobs_date if j.chunk == chunk and j.synchronize is not None]:
-                                        Autosubmit.change_status(
-                                            final, final_status, job, save)
-
+                                        final_list.append(job)
                                     for job in [j for j in jobs_member if j.chunk == chunk]:
-                                        Autosubmit.change_status(
-                                            final, final_status, job, save)
-
+                                        final_list.append(job)
                 if filter_status:
                     status_list = filter_status.split()
-
                     Log.debug("Filtering jobs with status {0}", filter_status)
-                    if status_list == 'Any':
+                    if str(status_list).upper() == 'ANY':
                         for job in job_list.get_job_list():
-                            Autosubmit.change_status(
-                                final, final_status, job, save)
+                            final_list.append(job)
                     else:
                         for status in status_list:
                             fs = Autosubmit._get_status(status)
                             for job in [j for j in job_list.get_job_list() if j.status == fs]:
-                                Autosubmit.change_status(
-                                    final, final_status, job, save)
+                                final_list.append(job)
 
-                if lst:
-                    jobs = lst.split()
+                if filter_list:
+                    jobs = filter_list.split()
                     expidJoblist = defaultdict(int)
-                    for x in lst.split():
+                    for x in filter_list.split():
                         expidJoblist[str(x[0:4])] += 1
-
                     if str(expid) in expidJoblist:
                         wrongExpid = jobs.__len__() - expidJoblist[expid]
                     if wrongExpid > 0:
                         Log.warning(
                             "There are {0} job.name with an invalid Expid", wrongExpid)
-
-                    if jobs == 'Any':
+                    if str(jobs).upper() == 'ANY':
                         for job in job_list.get_job_list():
-                            Autosubmit.change_status(
-                                final, final_status, job, save)
+                            final_list.append(job)
                     else:
                         for job in job_list.get_job_list():
                             if job.name in jobs:
-                                Autosubmit.change_status(
-                                    final, final_status, job, save)
+                                final_list.append(job)
+                # All filters should be in a function but no have time to do it
+                # filter_Type_chunk_split == filter_type_chunk, but with the split essencially is the same but not sure about of changing the name to the filter itself
+                if filter_type_chunk_split is not None:
+                    final_list.extend(Autosubmit._apply_ftc(job_list,filter_type_chunk_split))
+                if filter_type_chunk:
+                    final_list.extend(Autosubmit._apply_ftc(job_list,filter_type_chunk))
+                # Time to change status
+                final_list = list(set(final_list))
+                performed_changes = {}
+                for job in final_list:
+                    if job.status in [Status.QUEUING, Status.RUNNING,
+                                      Status.SUBMITTED] and job.platform.name not in definitive_platforms:
+                        Log.printlog("JOB: [{1}] is ignored as the [{0}] platform is currently offline".format(
+                            job.platform.name, job.name), 6000)
+                        continue
+                    if job.status != final_status:
+                        # Only real changes
+                        performed_changes[job.name] = str(
+                            Status.VALUE_TO_KEY[job.status]) + " -> " + str(final)
+                        Autosubmit.change_status(
+                            final, final_status, job, save)
+                # If changes have been performed
+                if performed_changes:
+                    if detail:
+                        current_length = len(job_list.get_job_list())
+                        if current_length > 1000:
+                            Log.warning(
+                                "-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(
+                                    current_length) + " jobs.")
+                        else:
+                            Log.info(job_list.print_with_status(
+                                statusChange=performed_changes))
+                else:
+                    Log.warning("No changes were performed.")
+
 
                 job_list.update_list(as_conf, False, True)
 
@@ -5541,37 +5526,25 @@ class Autosubmit:
                 else:
                     Log.printlog(
                         "Changes NOT saved to the JobList!!!!:  use -s option to save", 3000)
-
-                if as_conf.get_wrapper_type() != 'none' and check_wrapper:
-                    packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                                                                 "job_packages_" + expid)
-                    os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                          expid, "pkl", "job_packages_" + expid + ".db"), 0o775)
-                    packages_persistence.reset_table(True)
-                    referenced_jobs_to_remove = set()
-                    job_list_wrappers = copy.deepcopy(job_list)
-                    jobs_wr = copy.deepcopy(job_list.get_job_list())
-                    [job for job in jobs_wr if (
-                            job.status != Status.COMPLETED)]
-                    for job in jobs_wr:
-                        for child in job.children:
-                            if child not in jobs_wr:
-                                referenced_jobs_to_remove.add(child)
-                        for parent in job.parents:
-                            if parent not in jobs_wr:
-                                referenced_jobs_to_remove.add(parent)
-
-                    for job in jobs_wr:
-                        job.children = job.children - referenced_jobs_to_remove
-                        job.parents = job.parents - referenced_jobs_to_remove
-                    Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr,
-                                                               packages_persistence, True)
-
-                    packages = packages_persistence.load(True)
-                else:
-                    packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                                                     "job_packages_" + expid).load()
+                #Visualization stuff that should be in a function common to monitor , create, -cw flag, inspect and so on
                 if not noplot:
+                    if as_conf.get_wrapper_type() != 'none' and check_wrapper:
+                        packages_persistence = JobPackagePersistence(
+                            os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                            "job_packages_" + expid)
+                        os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
+                                              expid, "pkl", "job_packages_" + expid + ".db"), 0o775)
+                        packages_persistence.reset_table(True)
+                        job_list_wr = Autosubmit.load_job_list(
+                            expid, as_conf, notransitive=notransitive, monitor=True, new=False)
+
+                        Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wr, job_list_wr.get_job_list(),
+                                                                   packages_persistence, True)
+
+                        packages = packages_persistence.load(True)
+                    else:
+                        packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                                         "job_packages_" + expid).load()
                     groups_dict = dict()
                     if group_by:
                         status = list()
@@ -5595,11 +5568,7 @@ class Autosubmit:
                                                 show=not hide,
                                                 groups=groups_dict,
                                                 job_list_object=job_list)
-
-                if not filter_type_chunk and detail is True:
-                    Log.warning("-d option only works with -ftc.")
                 return True
-
         except (portalocker.AlreadyLocked, portalocker.LockException) as e:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message, 7000)
@@ -5936,7 +5905,21 @@ class Autosubmit:
         open(as_conf.experiment_file, 'wb').write(content)
 
     @staticmethod
-    def load_job_list(expid, as_conf, notransitive=False, monitor=False):
+    def load_logs_from_previous_run(expid,as_conf):
+        logs = None
+        if Path(f'{BasicConfig.LOCAL_ROOT_DIR}/{expid}/pkl/job_list_{expid}.pkl').exists():
+            job_list = JobList(expid, BasicConfig, YAMLParserFactory(),Autosubmit._get_job_list_persistence(expid, as_conf), as_conf)
+            with suppress(BaseException):
+                graph = job_list.load()
+                if len(graph.nodes) > 0:
+                    # fast-look if graph existed, skips some steps
+                    job_list._job_list = [job["job"] for _, job in graph.nodes.data() if
+                                                job.get("job", None)]
+                logs = job_list.get_logs()
+            del job_list
+        return logs
+    @staticmethod
+    def load_job_list(expid, as_conf, notransitive=False, monitor=False, new = True):
         rerun = as_conf.get_rerun()
 
         job_list = JobList(expid, BasicConfig, YAMLParserFactory(),
@@ -5956,11 +5939,11 @@ class Autosubmit:
             if isinstance(wrapper_data, collections.abc.Mapping):
                 wrapper_jobs[wrapper_section] = wrapper_data.get("JOBS_IN_WRAPPER", "")
 
-        job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
+        job_list.generate(as_conf, date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.experiment_data, date_format, as_conf.get_retrials(),
-                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), wrapper_jobs,
-                          new=False, notransitive=notransitive, run_only_members=run_only_members,
-                          jobs_data=as_conf.experiment_data, as_conf=as_conf)
+                          as_conf.get_default_job_type(), wrapper_jobs,
+                          new=new, run_only_members=run_only_members,monitor=monitor)
+
         if str(rerun).lower() == "true":
             rerun_jobs = as_conf.get_rerun_jobs()
             job_list.rerun(rerun_jobs,as_conf, monitor=monitor)
