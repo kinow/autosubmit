@@ -1709,6 +1709,9 @@ class Job(object):
         if as_conf.get_project_type() != "none":
             parameters['EXTENDED_HEADER'] = self.read_header_tailer_script(self.ext_header_path, as_conf, True)
             parameters['EXTENDED_TAILER'] = self.read_header_tailer_script(self.ext_tailer_path, as_conf, False)
+        else: # If not, this show a warning when it tries to check the script
+            parameters['EXTENDED_HEADER'] = ""
+            parameters['EXTENDED_TAILER'] = ""
         parameters['CURRENT_QUEUE'] = self.queue
         parameters['RESERVATION'] = self.reservation
         parameters['CURRENT_EC_QUEUE'] = self.ec_queue
@@ -2158,6 +2161,7 @@ class Job(object):
                 variables_tmp = [variable[1:-1] for variable in variables_tmp]
                 variables_tmp = [variable for variable in variables_tmp if variable not in self.default_parameters]
                 variables.extend(variables_tmp)
+
             out = set(parameters).issuperset(set(variables))
             # Check if the variables in the templates are defined in the configurations
             if not out:
