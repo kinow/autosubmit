@@ -256,17 +256,6 @@ class Job(object):
         self._memory = ''
         self._memory_per_task = ''
 
-    def _clean_runtime_parameters(self):
-        # hetjobs
-        self.het = None
-        self.parameters = None
-        self._tasks = None
-        self._nodes = None
-        self.default_parameters = None
-        self._threads = None
-        self._processors = None
-        self._memory = None
-        self._memory_per_task = None
     @property
     @autosubmit_parameter(name='tasktype')
     def section(self):
