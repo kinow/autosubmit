@@ -1679,7 +1679,7 @@ class JobList(object):
 
     def get_completed_without_logs(self, platform=None):
         """
-        Returns a list of completed jobs wihtout updated logs
+        Returns a list of completed jobs without updated logs
 
         :param platform: job platform
         :type platform: HPCPlatform

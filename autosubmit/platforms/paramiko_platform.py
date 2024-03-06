@@ -1332,16 +1332,6 @@ class ParamikoPlatform(Platform):
             if self.transport:
                 self.transport.close()
                 self.transport.stop_thread()
-        # with suppress(Exception):
-        #     del self._ssh._agent # May not be in all runs
-        # with suppress(Exception):
-        #     del self._ssh._transport
-        # with suppress(Exception):
-        #     del self._ftpChannel
-        # with suppress(Exception):
-        #     del self.transport
-        # with suppress(Exception):
-        #     del self._ssh
 
     def check_tmp_exists(self):
         try:
