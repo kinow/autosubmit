@@ -438,10 +438,7 @@ class JobPackager(object):
             job.packed = False
         jobs_to_wrap = self._divide_list_by_section(jobs_to_submit)
         non_wrapped_jobs = jobs_to_wrap.pop("SIMPLE",[])
-        if len(non_wrapped_jobs) > 0:
-            any_simple_packages = True
-        else:
-            any_simple_packages = False
+        any_simple_packages = len(non_wrapped_jobs) > 0
         # Prepare packages for wrapped jobs
         for wrapper_name, jobs in jobs_to_wrap.items():
             if max_jobs_to_submit == 0:
