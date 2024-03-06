@@ -89,6 +89,7 @@ jobs:
 
       - name: Test Docker image
         run: |
+          cd dockerfiles/
           docker build \
             -t ${USER}/autosubmit:4.0.84-bullseye-slim \
             -t ${USER}/autosubmit:latest \
