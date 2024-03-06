@@ -102,8 +102,7 @@ class JobPackageBase(object):
                 if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
                     raise AutosubmitCritical(f"Job script:{job.file} does not exists",7014)
             if not job.check_script(configuration, parameters, show_logs=job.check_warnings):
-                Log.warning("Script {0} check failed", job.name)
-                Log.warning("On submission script has  some empty variables")
+                Log.warning(f'Script {job.name} has some empty variables. An empty value has substituted these variables')
             else:
                 Log.result("Script {0} OK", job.name)
             # looking for directives on jobs
@@ -150,8 +149,7 @@ class JobPackageBase(object):
                         if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
                             raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
                     if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
-                        Log.warning("Script {0} check failed",job.name)
-                        Log.warning("On submission script has some empty variables")
+                        Log.warning(f'Script {job.name} has some empty variables. An empty value has substituted these variables')
                     else:
                         Log.result("Script {0} OK",job.name)
                     # looking for directives on jobs
