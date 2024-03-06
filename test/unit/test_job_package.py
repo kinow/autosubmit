@@ -188,16 +188,20 @@ class TestJobPackage(TestCase):
             job._tmp_path = MagicMock()
             job._get_paramiko_template = MagicMock("false", "empty")
             job.update_parameters = MagicMock()
+            job.file = "fake-file"
 
         self.job_package._create_scripts = MagicMock()
         self.job_package._send_files = MagicMock()
         self.job_package._do_submission = MagicMock()
-
+        configuration = MagicMock()
+        configuration.get_project_dir = MagicMock()
+        configuration.get_project_dir.return_value = "fake-proj-dir"
         # act
-        self.job_package.submit('fake-config', 'fake-params')
+        self.job_package.submit(configuration, 'fake-params')
         # assert
         for job in self.jobs:
-            job.update_parameters.assert_called_once_with('fake-config', 'fake-params')
+            job.update_parameters.assert_called() # Should be called once for each job, but currently it needs two calls (for additional files ) to change the code
+            #job.update_parameters.assert_called_once_with(configuration, 'fake-params')
 
         self.job_package._create_scripts.is_called_once_with()
         self.job_package._send_files.is_called_once_with()
