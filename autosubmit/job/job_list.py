@@ -220,21 +220,19 @@ class JobList(object):
                 Log.info("Load finished")
             if monitor:
                 as_conf.experiment_data = as_conf.last_experiment_data
-                as_conf.data_changed = False
-                if not as_conf.data_changed:
-                    self._dic_jobs._job_list = {job["job"].name: job["job"] for _, job in self.graph.nodes.data() if
-                                                job.get("job", None)}
+                self._dic_jobs.changes = {}
             else:
                 self._dic_jobs.compare_backbone_sections()
+            if not self._dic_jobs.changes:
+                self._dic_jobs._job_list = {job["job"].name: job["job"] for _, job in self.graph.nodes.data() if
+                                            job.get("job", None)}
+            else:
                 # fast-look if graph existed, skips some steps
                 # If VERSION in CONFIG or HPCARCH in DEFAULT it will exist, if not it won't.
                 if not new and not self._dic_jobs.changes.get("EXPERIMENT", {}) and not self._dic_jobs.changes.get(
                         "CONFIG", {}) and not self._dic_jobs.changes.get("DEFAULT", {}):
                     self._dic_jobs._job_list = {job["job"].name: job["job"] for _, job in self.graph.nodes.data() if
                                                 job.get("job", None)}
-
-            # Force to use the last known job_list when autosubmit monitor is running.
-            self._dic_jobs.last_experiment_data = as_conf.last_experiment_data
         else:
             if not create:
                 raise AutosubmitCritical("Autosubmit couldn't load the workflow graph. Please run autosubmit create first. If the pkl file exists and was generated with Autosubmit v4.1+, try again.",7013)
@@ -376,7 +374,7 @@ class JobList(object):
                 Log.debug("No changes detected, keeping edges")
         else:
             changes = True
-            Log.debug("No dependencies detected, calculating dependencies")
+            Log.debug("Changes detected, calculating dependencies")
         sections_gen = (section for section in jobs_data.keys())
         for job_section in sections_gen:
             # Changes when all jobs of a section are added
