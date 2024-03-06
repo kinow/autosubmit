@@ -1,0 +1,81 @@
+name: Autosubmit CICD
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ['ubuntu-latest']
+        python-version: [ '3.7', '3.8', '3.10', '3.11', '3' ]
+        include:
+          # mac os test
+          - os: 'macos-11'
+            python-version: '3.7'  # oldest supported version
+
+          # non-utc timezone test
+          - os: 'ubuntu-latest'
+            python-version: '3.9'  # not the oldest, not the most recent version
+            time-zone: 'XXX-09:35'
+
+    env:
+      TZ: ${{ matrix.time-zone }}
+      PYTEST_ADDOPTS: --cov --cov-append -n 5 --color=yes
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install
+        run: |
+          pip install -e ."[all]"
+
+      - name: Unit Tests
+        timeout-minutes: 5
+        run: |
+          python3 -m 'nose' --exclude=regression  --verbosity=3 test/unit --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml
+
+      - name: Coverage report
+        run: |
+          coverage xml
+          coverage report
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage_${{ matrix.os }}_py-${{ matrix.python-version }}
+          path: coverage.xml
+          retention-days: 7
+
+  codecov:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Codecov upload
+        uses: codecov/codecov-action@v4
+        with:
+          name: ${{ github.workflow }}
+          flags: unit-tests
+          fail_ci_if_error: true
+          verbose: true
+          # Token not required for public repos, but avoids upload failure due
+          # to rate-limiting (but not for PRs opened from forks)
+          # token: ${{ secrets.CODECOV_TOKEN }}
