@@ -248,6 +248,7 @@ class TestJobList(TestCase):
             default_job_type=Type.BASH,
             wrapper_jobs={},
             new=True,
+            create=True,
         )
 
 
@@ -317,6 +318,7 @@ class TestJobList(TestCase):
             default_job_type=Type.BASH,
             wrapper_jobs={},
             new=True,
+            create=True,
         )
         job_list._job_list[0].member = "fake-member1"
         job_list._job_list[1].member = "fake-member2"
@@ -363,6 +365,7 @@ class TestJobList(TestCase):
             default_job_type=Type.BASH,
             wrapper_jobs={},
             new=True,
+            create=True,
         )
         job_list._job_list[0].section = "fake-section"
         job_list._job_list[0].date = "fake-date1"
@@ -446,6 +449,7 @@ class TestJobList(TestCase):
                 default_job_type=Type.BASH,
                 wrapper_jobs={},
                 new=True,
+                create=True,
             )
             job_list.save()
             job_list2 = self.new_job_list(factory,temp_dir)
@@ -461,6 +465,7 @@ class TestJobList(TestCase):
                 default_job_type=Type.BASH,
                 wrapper_jobs={},
                 new=False,
+                create=True,
             )
             #return False
             job_list2.update_from_file = Mock()
@@ -526,6 +531,7 @@ class TestJobList(TestCase):
                 default_job_type=Type.BASH,
                 wrapper_jobs={},
                 new=False,
+                create=True,
             )
             # assert update_genealogy called with right values
             # When using an 4.0 experiment, the pkl has to be recreated and act as a new one.
