@@ -79,3 +79,17 @@ jobs:
           # Token not required for public repos, but avoids upload failure due
           # to rate-limiting (but not for PRs opened from forks)
           # token: ${{ secrets.CODECOV_TOKEN }}
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test Docker image
+        run: |
+          docker build \
+            -t ${USER}/autosubmit:4.0.84-bullseye-slim \
+            -t ${USER}/autosubmit:latest \
+            .
