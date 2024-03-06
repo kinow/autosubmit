@@ -22,6 +22,7 @@ from sys import setrecursionlimit
 import shutil
 from autosubmit.database.db_manager import DbManager
 from log.log import AutosubmitCritical, Log
+from contextlib import suppress
 
 
 class JobListPersistence(object):
@@ -100,8 +101,9 @@ class JobListPersistencePkl(JobListPersistence):
         """
 
         path = os.path.join(persistence_path, persistence_file + '.pkl' + '.tmp')
-        if os.path.exists(path):
+        with suppress(FileNotFoundError, PermissionError):
             os.remove(path)
+
         setrecursionlimit(500000000)
         Log.debug("Saving JobList: " + path)
         with open(path, 'wb') as fd:
