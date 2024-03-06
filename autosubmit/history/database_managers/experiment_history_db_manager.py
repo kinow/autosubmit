@@ -234,6 +234,9 @@ class ExperimentHistoryDbManager(DatabaseManager):
     statement = self.get_built_select_statement("job_data", "last=1 and job_name=? ORDER BY counter DESC")
     arguments = (job_name,)
     job_data_rows_last = self.get_from_statement_with_arguments(self.historicaldb_file_path, statement, arguments)
+    if not job_data_rows_last: # if previous job didn't finished but a new create has been made
+      statement = self.get_built_select_statement("job_data", "last=0 and job_name=? ORDER BY counter DESC")
+      job_data_rows_last = self.get_from_statement_with_arguments(self.historicaldb_file_path, statement, arguments)
     return [Models.JobDataRow(*row) for row in job_data_rows_last]
   
   def get_job_data_dcs_last_by_run_id(self, run_id):    

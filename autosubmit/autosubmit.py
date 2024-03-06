@@ -2386,9 +2386,6 @@ class Autosubmit:
                                                                                                               hold=hold)
                 # Jobs that are being retrieved in batch. Right now, only available for slurm platforms.
                 if not inspect and len(valid_packages_to_submit) > 0:
-                    for package in (package for package in valid_packages_to_submit):
-                        for job in (job for job in package.jobs):
-                            job._clean_runtime_parameters()
                     job_list.save()
                 save_2 = False
                 if platform.type.lower() in [ "slurm" , "pjm" ] and not inspect and not only_wrappers:
@@ -2397,9 +2394,6 @@ class Autosubmit:
                                                                                          failed_packages,
                                                                                          error_message="", hold=hold)
                     if not inspect and len(valid_packages_to_submit) > 0:
-                        for package in (package for package in valid_packages_to_submit):
-                            for job in (job for job in package.jobs):
-                                job._clean_runtime_parameters()
                         job_list.save()
                 # Save wrappers(jobs that has the same id) to be visualized and checked in other parts of the code
                 job_list.save_wrappers(valid_packages_to_submit, failed_packages, as_conf, packages_persistence,
@@ -3414,7 +3408,6 @@ class Autosubmit:
                 try:
                     for job in job_list.get_job_list():
                         job_parameters = job.update_parameters(as_conf, {})
-                        job._clean_runtime_parameters()
                         for key, value in job_parameters.items():
                             jobs_parameters["JOBS"+"."+job.section+"."+key] = value
                 except:
