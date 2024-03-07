@@ -1,11 +1,13 @@
+:html_theme.sidebar_secondary.remove:
+
 .. autosubmit documentation master file, created by
    sphinx-quickstart on Wed Mar 18 16:55:44 2015.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-######################################
-Welcome to autosubmit's documentation!
-######################################
+############################
+Autosubmit Workflow Manager
+############################
 
 .. toctree::
    :maxdepth: 1
@@ -77,19 +79,46 @@ Welcome to autosubmit's documentation!
    /moduledoc/index
 
 
-Autosubmit is a Python software to manage complicated workflows on HPC platforms.
+.. raw:: html
 
-Automatization
-   Autosubmit manages job submission and dependencies without user intervention
-Data Provenance.
-   Autosubmit assigns unique ID's to experiments, uses open standards, and
-   applies other techniques to enable :doc:`data provenance </userguide/provenance>`
-   in the experiments and workflows.
-Failure Tolerance
-   Autosubmit manages automatic retrials and has the ability to rerun specific parts of
-   the experiment in case of failure
-Resource Management
-   Autosubmit supports a per-platform configuration, allowing users to run their experiments
-   without adapting job scripts.
-Multiple Platform
-   Autosubmit can run jobs of an experiment in different platforms
+   <div>
+        <div class="row gap-4">
+            <div class="col d-flex flex-column justify-content-center">
+                <h1 class="fw-bold">Autosubmit workflow manager</h1>
+                <p>Autosubmit is a Python software to manage complicated workflows on HPC platforms</p>
+                <div class="m-2 bg-black text-white font-monospace">autosubmit expid -H HPCname -d Description</div>
+            </div>
+            <div class="col my-2" style="min-width: 20rem;">
+                <img src="_static/isometric.svg" style="background-color: transparent;"/>
+                <label class="w-100 text-end mt-2" style="opacity: 0.5; font-size: 0.7rem;">Illustration by Storyset</label>
+            </div>
+        </div>
+
+        <div class="row gap-4">
+            <div class="col" style="min-width: 20rem;">
+                <i class="fa-solid fa-gear fs-2" style="color: #4E8490;"></i>
+                <div class="fs-4">Automatization</div>
+                <p>Autosubmit manages job submission and dependencies without user intervention</p>
+            </div>
+            <div class="col" style="min-width: 20rem;">
+                <i class="fa-solid fa-fingerprint fs-2" style="color: #4E8490;"></i>
+                <div class="fs-4">Data Provenance</div>
+                <p>Autosubmit assigns unique ID's to experiments, uses open standards, and applies other techniques to enable data provenance in the experiments and workflows</p>
+            </div>
+            <div class="col" style="min-width: 20rem;">
+                <i class="fa-solid fa-clock-rotate-left fs-2" style="color: #4E8490;"></i>
+                <div class="fs-4">Failure Tolerance</div>
+                <p>Autosubmit manages automatic retrials and has the ability to rerun specific parts of the experiment in case of failure</p>
+            </div>
+            <div class="col" style="min-width: 20rem;">
+                <i class="fa-solid fa-sitemap fs-2" style="color: #4E8490;"></i>
+                <div class="fs-4">Resource Management</div>
+                <p>Autosubmit supports a per-platform configuration, allowing users to run their experiments without adapting job scripts</p>
+            </div>
+            <div class="col" style="min-width: 20rem;">
+                <i class="fa-solid fa-server fs-2" style="color: #4E8490;"></i>
+                <div class="fs-4">Multiple Platform</div>
+                <p>Autosubmit can run jobs of an experiment in different platforms</p>
+            </div>
+        </div>
+    </div>
