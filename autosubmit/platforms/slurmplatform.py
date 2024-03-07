@@ -176,7 +176,11 @@ class SlurmPlatform(ParamikoPlatform):
                         job_name = package.name if hasattr(package, "name") else package.jobs[0].name
                         jobid = self.get_jobid_by_jobname(job_name)
                         if len(jobid) > 1: # Cancel each job that is not the associated
-                            for id_ in [ jobid for jobid in jobid if jobid != package.jobs[0].id ]:
+                            ids_to_check = [package.jobs[0].id]
+                            if package.jobs[0].het:
+                                for i in range(1,package.jobs[0].het.get("HETSIZE",1)):
+                                    ids_to_check.append(str(int(ids_to_check[0]) + i))
+                            for id_ in [ jobid for jobid in jobid if jobid not in ids_to_check]:
                                 self.send_command(self.cancel_job(id_)) # This can be faster if we cancel all jobs at once but there is no cancel_all_jobs call right now so todo in future
                                 Log.debug(f'Job {id_} with the assigned name: {job_name} has been cancelled')
                             Log.debug(f'Job {package.jobs[0].id} with the assigned name: {job_name} has been submitted')
