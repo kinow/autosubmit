@@ -36,7 +36,7 @@ def exit_from_error(e):
     with suppress(FileNotFoundError, PermissionError):
         os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
     try:
-        if not e.trace:
+        if hasattr(e,"trace") and e.trace:
             Log.debug("Trace: {0}", str(e.trace))
         Log.critical("{1} [eCode={0}]", e.code, e.message)
     except:
