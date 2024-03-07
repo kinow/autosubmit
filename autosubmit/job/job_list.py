@@ -2341,7 +2341,7 @@ class JobList(object):
                         f'JobList backup could not be loaded due: {e}')
                 else:
                     Log.warning(
-                        f'Joblist backup will be created from scratch due: {e}')
+                        f'Joblist will be created from scratch due: {e}')
 
     def save(self):
         """
