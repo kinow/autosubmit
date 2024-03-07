@@ -2396,8 +2396,15 @@ class JobList(object):
             else:
                 queue = job.queue
             platform_name = job.platform.name if job.platform else "no-platform"
-            Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status(
-            ).VALUE_TO_KEY[job.status], platform_name, queue)
+            if job.id is None:
+                job_id = "no-id"
+            else:
+                job_id = job.id
+            try:
+                Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job_id, Status(
+                ).VALUE_TO_KEY[job.status], platform_name, queue)
+            except:
+                Log.debug("Couldn't print job status for job {0}".format(job.name))
         for job in failed_job_list:
             if len(job.queue) < 1:
                 queue = "no-scheduler"
