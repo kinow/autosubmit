@@ -67,6 +67,8 @@ class JobListPersistencePkl(JobListPersistence):
 
         """
         path = os.path.join(persistence_path, persistence_file + '.pkl')
+        path_tmp = os.path.join(persistence_path[:-3]+"tmp", persistence_file + f'.pkl.tmp_{os.urandom(8).hex()}')
+
         try:
             open(path).close()
         except PermissionError:
@@ -76,11 +78,11 @@ class JobListPersistencePkl(JobListPersistence):
             return list()
         else:
             # copy the path to a tmp file randomseed to avoid corruption
-            path_tmp = f'{path}.tmp_{os.urandom(8).hex()}'
-            shutil.copy(path, path_tmp)
             try:
+                shutil.copy(path, path_tmp)
                 with open(path_tmp, 'rb') as fd:
                     graph = pickle.load(fd)
+                os.remove(path_tmp)
             except:
                 os.remove(path_tmp)
                 raise
