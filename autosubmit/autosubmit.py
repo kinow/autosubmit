@@ -649,13 +649,9 @@ class Autosubmit:
             if args.command is None:
                 parser.print_help()
                 parser.exit()
-
-        except Exception as e:
-            if type(e) is SystemExit:  # todo check
-                # Version keyword force an exception in parse arg due and os_exit(0) but the program is successfully finished
-                if "0" in str(e):
-                    print(Autosubmit.autosubmit_version)
-                    return 0
+        except SystemExit as e:
+            return 0
+        except BaseException as e:
             raise AutosubmitCritical(
                 "Incorrect arguments for this command", 7011)
 
