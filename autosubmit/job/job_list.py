@@ -204,7 +204,7 @@ class JobList(object):
         chunk_list = list(range(chunk_ini, num_chunks + 1))
         self._chunk_list = chunk_list
         try:
-            self.graph = self.load()
+            self.graph = self.load(create)
             if type(self.graph) is not DiGraph:
                 self.graph = nx.DiGraph()
         except AutosubmitCritical:
@@ -213,8 +213,6 @@ class JobList(object):
             self.graph = nx.DiGraph()
         self._dic_jobs = DicJobs(date_list, member_list, chunk_list, date_format, default_retrials, as_conf)
         self._dic_jobs.graph = self.graph
-        if show_log:
-            Log.info("Creating jobs...")
         if len(self.graph.nodes) > 0:
             if show_log:
                 Log.info("Load finished")
@@ -246,6 +244,8 @@ class JobList(object):
                 os.remove(os.path.join(self._persistence_path, self._persistence_file + "_backup.pkl"))
             new = True
         # This generates the job object and also finds if dic_jobs has modified from previous iteration in order to expand the workflow
+        if show_log:
+            Log.info("Creating jobs...")
         self._create_jobs(self._dic_jobs, 0, default_job_type)
         # not needed anymore all data is inside their correspondent sections in dic_jobs
         # This dic_job is key to the dependencies management as they're ordered by date[member[chunk]]
@@ -2312,32 +2312,36 @@ class JobList(object):
                 "Autosubmit will use a backup for recover the job_list", 6010)
             return list()
 
-    def load(self):
+    def load(self, create=False, backup=""):
         """
         Recreates a stored job list from the persistence
 
         :return: loaded job list object
         :rtype: JobList
         """
-        Log.info("Loading JobList")
+        if backup == "":
+            Log.info("Loading JobList")
         try:
-            return self._persistence.load(self._persistence_path, self._persistence_file)
+            return self._persistence.load(self._persistence_path, self._persistence_file + backup)
         except AutosubmitCritical:
             raise
-        except:
-            Log.printlog(
-                "Autosubmit will use a backup for recover the job_list", 6010)
-            return self.backup_load()
-
-    def backup_load(self):
-        """
-        Recreates a stored job list from the persistence
-
-        :return: loaded job list object
-        :rtype: JobList
-        """
-        Log.info("Loading backup JobList")
-        return self._persistence.load(self._persistence_path, self._persistence_file + "_backup")
+        except ValueError as e:
+            if not create:
+                raise AutosubmitCritical(f'JobList could not be loaded due pkl being saved with a different version of Autosubmit or Python version. {e}')
+            else:
+                Log.warning(f'Job list will be created from scratch due pkl being saved with a different version of Autosubmit or Python version. {e}')
+        except BaseException as e:
+            if backup == "":
+                Log.printlog(
+                    "Autosubmit will use a backup for recover the job_list", 6010)
+                return self.load(create, "_backup")
+            else:
+                if not create:
+                    raise AutosubmitCritical(
+                        f'JobList backup could not be loaded due: {e}')
+                else:
+                    Log.warning(
+                        f'Joblist backup will be created from scratch due: {e}')
 
     def save(self):
         """
