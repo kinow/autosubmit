@@ -558,10 +558,11 @@ class Platform(object):
         :rtype: bool
         """
         if recovery:
-            if self.get_file('{0}_COMPLETED'.format(job_name), False, ignore_log=recovery):
-                return True
-            else:
-                return False
+            retries = 5
+            for i in range(retries):
+                if self.get_file('{0}_COMPLETED'.format(job_name), False, ignore_log=recovery):
+                    return True
+            return False
         if self.check_file_exists('{0}_COMPLETED'.format(job_name), wrapper_failed=wrapper_failed):
             if self.get_file('{0}_COMPLETED'.format(job_name), True, wrapper_failed=wrapper_failed):
                 return True
