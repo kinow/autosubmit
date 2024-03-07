@@ -78,9 +78,12 @@ class JobListPersistencePkl(JobListPersistence):
             # copy the path to a tmp file randomseed to avoid corruption
             path_tmp = f'{path}.tmp_{os.urandom(8).hex()}'
             shutil.copy(path, path_tmp)
-            with open(path_tmp, 'rb') as fd:
-                graph = pickle.load(fd)
-            os.remove(path_tmp)
+            try:
+                with open(path_tmp, 'rb') as fd:
+                    graph = pickle.load(fd)
+            except:
+                os.remove(path_tmp)
+                raise
             for u in ( node for node in graph ):
                 # Set after the dependencies are set
                 graph.nodes[u]["job"].children = set()
