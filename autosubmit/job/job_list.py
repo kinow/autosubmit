@@ -217,7 +217,6 @@ class JobList(object):
             if show_log:
                 Log.info("Load finished")
             if monitor:
-                as_conf.experiment_data = as_conf.last_experiment_data
                 self._dic_jobs.changes = {}
             else:
                 self._dic_jobs.compare_backbone_sections()
