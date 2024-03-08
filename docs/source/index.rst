@@ -87,10 +87,14 @@ Autosubmit Workflow Manager
                 <h1 class="fw-bold">Autosubmit workflow manager</h1>
                 <p>Autosubmit is a Python software to manage complicated workflows on HPC platforms</p>
                 <div class="m-2 bg-black text-white font-monospace">autosubmit expid -H HPCname -d Description</div>
+                <div class="mt-3 mx-2 d-flex gap-2">
+                  <a class="btn text-white rounded-pill px-3" style="background-color: #4E8490;" href="/qstartguide/index.html">Get started</a>
+                  <a class="btn text-white rounded-pill px-3" style="background-color: #4E8490;" href="/installation/index.html">Installation</a>
+                </div>
             </div>
             <div class="col my-2" style="min-width: 20rem;">
                 <img src="_static/isometric.svg" style="background-color: transparent;"/>
-                <label class="w-100 text-end mt-2" style="opacity: 0.5; font-size: 0.7rem;">Illustration by Storyset</label>
+                <label class="w-100 text-end mt-2" style="opacity: 0.25; font-size: 0.7rem;">Illustration by Storyset</label>
             </div>
         </div>
 
