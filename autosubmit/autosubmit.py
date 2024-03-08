@@ -646,7 +646,7 @@ class Autosubmit:
 
             args, unknown = parser.parse_known_args()
             if args.version:
-                print(Autosubmit.autosubmit_version)
+                Log.info(Autosubmit.autosubmit_version)
                 return 0
             if unknown or args.command is None:
                 parser.print_help()
