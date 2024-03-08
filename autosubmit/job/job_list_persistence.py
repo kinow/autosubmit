@@ -67,20 +67,24 @@ class JobListPersistencePkl(JobListPersistence):
 
         """
         path = os.path.join(persistence_path, persistence_file + '.pkl')
+        path_tmp = os.path.join(persistence_path[:-3]+"tmp", persistence_file + f'.pkl.tmp_{os.urandom(8).hex()}')
+
         try:
             open(path).close()
         except PermissionError:
-            raise AutosubmitCritical(f'Permission denied to read {path}', 7012)
+            Log.warning(f'Permission denied to read {path}')
+            raise
         except FileNotFoundError:
-            Log.printlog(f'File {path} does not exist. ',Log.WARNING)
-            return list()
+            Log.warning(f'File {path} does not exist. ')
+            raise
         else:
             # copy the path to a tmp file randomseed to avoid corruption
-            path_tmp = f'{path}.tmp_{os.urandom(8).hex()}'
-            shutil.copy(path, path_tmp)
-            with open(path_tmp, 'rb') as fd:
-                graph = pickle.load(fd)
-            os.remove(path_tmp)
+            try:
+                shutil.copy(path, path_tmp)
+                with open(path_tmp, 'rb') as fd:
+                    graph = pickle.load(fd)
+            finally:
+                os.remove(path_tmp)
             for u in ( node for node in graph ):
                 # Set after the dependencies are set
                 graph.nodes[u]["job"].children = set()

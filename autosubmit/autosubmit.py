@@ -2476,12 +2476,10 @@ class Autosubmit:
         except AutosubmitCritical as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Error while checking the configuration files or loading the job_list", 7040,
-                                     str(e))
+            raise
         finally:
             if profile:
                 profiler.stop()
-
         try:
             jobs = []
             if not isinstance(job_list, type([])):
