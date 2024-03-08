@@ -647,10 +647,10 @@ class Autosubmit:
             args, unknown = parser.parse_known_args()
             if args.version:
                 print(Autosubmit.autosubmit_version)
-                return 0
+                return 1
             if unknown or args.command is None:
                 parser.print_help()
-                return 0
+                return 1
         except BaseException as e:
             raise AutosubmitCritical(
                 "Incorrect arguments for this command", 7011)
