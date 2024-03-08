@@ -36,7 +36,7 @@ def exit_from_error(e: BaseException):
     try:
         Log.debug(traceback.format_exc())
     except:
-        Log.debug("No traceback available")
+        print(traceback.format_exc())
     with suppress(FileNotFoundError, PermissionError):
         os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
     if isinstance(e, (AutosubmitCritical, AutosubmitError)):
