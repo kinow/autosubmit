@@ -21,7 +21,6 @@
 import os
 import sys
 import traceback
-from io import StringIO  # for handling the traceback print
 from contextlib import suppress
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
@@ -34,7 +33,10 @@ from typing import Union
 
 
 def exit_from_error(e: BaseException):
-    Log.debug(str(traceback.format_exc()))
+    try:
+        Log.debug(traceback.format_exc())
+    except:
+        Log.debug("No traceback available")
     with suppress(FileNotFoundError, PermissionError):
         os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
     if isinstance(e, (AutosubmitCritical, AutosubmitError)):
@@ -48,19 +50,6 @@ def exit_from_error(e: BaseException):
         Log.critical(msg.format(*args))
     Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")
     os._exit(1)
-
-
-# def exit_from_error(e: BaseException):
-#     with suppress(FileNotFoundError, PermissionError):
-#         os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
-#     try:
-#         if hasattr(e,"trace") and e.trace:
-#             Log.debug("Trace: {0}", str(e.trace))
-#         Log.critical("{1} [eCode={0}]", e.code, e.message)
-#     except BaseException as e:
-#         Log.critical("An Unknown error occurred: {0}.\n Please report it to Autosubmit Developers through Git", str(e))
-#     Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")
-#     os._exit(1)
 
 # noinspection PyProtectedMember
 def main():
