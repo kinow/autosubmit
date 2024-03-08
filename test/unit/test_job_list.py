@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 from copy import copy
 import networkx
@@ -15,6 +16,7 @@ from autosubmit.job.job_common import Type
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list_persistence import JobListPersistencePkl
 from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
+from log.log import AutosubmitCritical
 
 
 class TestJobList(TestCase):
@@ -65,6 +67,72 @@ class TestJobList(TestCase):
 
     def tearDown(self) -> None:
         shutil.rmtree(self.temp_directory)
+
+    def test_load(self):
+        as_conf = Mock()
+        as_conf.experiment_data = dict()
+        parser_mock = Mock()
+        parser_mock.read = Mock()
+        factory = YAMLParserFactory()
+        factory.create_parser = Mock(return_value=parser_mock)
+        date_list = ['fake-date1', 'fake-date2']
+        member_list = ['fake-member1', 'fake-member2']
+        num_chunks = 999
+        parameters = {'fake-key': 'fake-value',
+                      'fake-key2': 'fake-value2'}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            job_list = self.new_job_list(factory, temp_dir)
+            FakeBasicConfig.LOCAL_ROOT_DIR = str(temp_dir)
+            Path(temp_dir, self.experiment_id).mkdir()
+            for path in [f'{self.experiment_id}/tmp', f'{self.experiment_id}/tmp/ASLOGS',
+                         f'{self.experiment_id}/tmp/ASLOGS_{self.experiment_id}', f'{self.experiment_id}/proj',
+                         f'{self.experiment_id}/conf', f'{self.experiment_id}/pkl']:
+                Path(temp_dir, path).mkdir()
+            job_list.changes = Mock(return_value=['random_section', 'random_section'])
+            as_conf.detailed_deep_diff = Mock(return_value={})
+            # as_conf.get_member_list = Mock(return_value=member_list)
+            # act
+            job_list.generate(
+                as_conf=as_conf,
+                date_list=date_list,
+                member_list=member_list,
+                num_chunks=num_chunks,
+                chunk_ini=1,
+                parameters=parameters,
+                date_format='H',
+                default_retrials=9999,
+                default_job_type=Type.BASH,
+                wrapper_jobs={},
+                new=True,
+                create=True,
+            )
+            job_list.save()
+            # Test load
+            job_list_to_load = self.new_job_list(factory, temp_dir)
+            # chmod
+            job_list_to_load.load(False)
+            self.assertEqual(job_list_to_load._job_list, job_list._job_list)
+            job_list_to_load.load(True)
+            self.assertEqual(job_list_to_load._job_list, job_list._job_list)
+            os.chmod(f'{temp_dir}/{self.experiment_id}/pkl/job_list_random-id.pkl', 0o000)
+            with self.assertRaises(AutosubmitCritical):
+                job_list_to_load.load(False)
+            job_list_to_load.load(True)
+            self.assertEqual(job_list_to_load._job_list, job_list._job_list)
+            os.chmod(f'{temp_dir}/{self.experiment_id}/pkl/job_list_random-id.pkl', 0o777)
+            shutil.copy(f'{temp_dir}/{self.experiment_id}/pkl/job_list_random-id.pkl',f'{temp_dir}/{self.experiment_id}/pkl/job_list_random-id_backup.pkl')
+            os.remove(f'{temp_dir}/{self.experiment_id}/pkl/job_list_random-id.pkl')
+            job_list_to_load.load(False)
+            self.assertEqual(job_list_to_load._job_list, job_list._job_list)
+            job_list_to_load.load(True)
+            self.assertEqual(job_list_to_load._job_list, job_list._job_list)
+
+
+
+
+
+
+
 
     def test_get_job_list_returns_the_right_list(self):
         job_list = self.job_list.get_job_list()

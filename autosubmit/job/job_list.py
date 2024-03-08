@@ -2312,36 +2312,38 @@ class JobList(object):
                 "Autosubmit will use a backup for recover the job_list", 6010)
             return list()
 
-    def load(self, create=False, backup=""):
+    def load(self, create=False, backup=False):
         """
         Recreates a stored job list from the persistence
 
         :return: loaded job list object
         :rtype: JobList
         """
-        if backup == "":
-            Log.info("Loading JobList")
         try:
-            return self._persistence.load(self._persistence_path, self._persistence_file + backup)
-        except AutosubmitCritical:
-            raise
+            if not backup:
+                Log.info("Loading JobList")
+                return self._persistence.load(self._persistence_path, self._persistence_file)
+            else:
+                return self._persistence.load(self._persistence_path, self._persistence_file + "_backup")
         except ValueError as e:
             if not create:
                 raise AutosubmitCritical(f'JobList could not be loaded due pkl being saved with a different version of Autosubmit or Python version. {e}')
             else:
                 Log.warning(f'Job list will be created from scratch due pkl being saved with a different version of Autosubmit or Python version. {e}')
+        except PermissionError as e:
+            if not create:
+                raise AutosubmitCritical(f'JobList could not be loaded due to permission error. {e}')
+            else:
+                Log.warning(f'Job list will be created from scratch due to permission error. {e}')
         except BaseException as e:
-            if backup == "":
-                Log.printlog(
-                    "Autosubmit will use a backup for recover the job_list", 6010)
-                return self.load(create, "_backup")
+            if not backup:
+                Log.debug("Autosubmit will use a backup to recover the job_list")
+                return self.load(create, True)
             else:
                 if not create:
-                    raise AutosubmitCritical(
-                        f'JobList backup could not be loaded due: {e}')
+                    raise AutosubmitCritical(f"JobList could not be loaded due: {e}\nAutosubmit won't do anything")
                 else:
-                    Log.warning(
-                        f'Joblist will be created from scratch due: {e}')
+                    Log.warning(f'Joblist will be created from scratch due: {e}')
 
     def save(self):
         """
