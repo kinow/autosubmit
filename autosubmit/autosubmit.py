@@ -158,11 +158,17 @@ class Autosubmit:
     exit = False
 
     @staticmethod
+    def environ_init():
+        """Initialise AS environment."""
+        # Python output buffering delays appearance of stdout and stderr
+        # when output is not directed to a terminal
+        os.environ['PYTHONUNBUFFERED'] = 'true'
+    @staticmethod
     def parse_args():
         """
         Parse arguments given to an executable and start execution of command given
         """
-
+        Autosubmit.environ_init()
         try:
             BasicConfig.read()
             parser = MyParser(
