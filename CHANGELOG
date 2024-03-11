@@ -9,6 +9,8 @@
 4.1.1 - Workflow optimizations and bug fixes
 ==========================================
 
+In this version, Autosubmit supports much larger workflows and has improved performance and memory usage. We have also fixed several bugs and added new features.
+
 - Improved the performance and memory usage of the workflow generation process.
     -  Improved the performance and memory usage of jobs generation process.
     -  Improved the performance and memory usage of the dependency generation process.
