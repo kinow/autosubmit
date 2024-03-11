@@ -1,4 +1,13 @@
-4.1 - Workflow optimizations and bug fixes
+
+4.1.2 - Bug fixes
+=================
+- Fixed issues with version.
+- Fixed issues with the duplication of jobs when using the heterogeneous option.
+- Fixed some error messages.
+- Fixed issues with monitoring non-owned experiments.
+
+4.1.1 - Workflow optimizations and bug fixes
+==========================================
 
 - Improved the performance and memory usage of the workflow generation process.
     -  Improved the performance and memory usage of jobs generation process.
@@ -12,5 +21,7 @@
 - Reworked the deadlock detection mechanism.
 - Changed multiple debug messages to be more clear.
 - Changed the load/save pkl procedure
-- Fixed issues with check command
+- Fixed issues with check command and additional files regex.
 - Added previous keyword.
+- Fixed an issue with the historical db.
+- Fixed an issue with historical db logs.
