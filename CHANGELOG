@@ -1,0 +1,16 @@
+4.1 - Workflow optimizations and bug fixes
+
+- Improved the performance and memory usage of the workflow generation process.
+    -  Improved the performance and memory usage of jobs generation process.
+    -  Improved the performance and memory usage of the dependency generation process.
+- Improved the performance and memory usage of the workflow visualization process.
+- Added a new filter to setstatus ( -ftcs ) to filter by split.
+- Added -no-requeue to avoid requeueing jobs.
+- Added a mechanism to detect duplicated jobs.
+- Fixed multiples issues with the splits usage.
+- Fixed multiples issues with Totaljobs.
+- Reworked the deadlock detection mechanism.
+- Changed multiple debug messages to be more clear.
+- Changed the load/save pkl procedure
+- Fixed issues with check command
+- Added previous keyword.
