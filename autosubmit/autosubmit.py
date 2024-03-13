@@ -2273,16 +2273,15 @@ class Autosubmit:
                     except Exception as e:
                         pass
                 # Wait for all remaining threads of I/O, close remaining connections
-                timeout = 180
                 Log.info("Waiting for all logs to be updated")
-                while len(job_list.get_completed_without_logs()) > 0 and timeout > 0:
+                for timeout in range(180, 0, -1):
+                    if len(job_list.get_completed_without_logs()) == 0:
+                        break
                     for job in job_list.get_completed_without_logs():
                         job_list.update_log_status(job)
                     sleep(1)
-                    timeout = timeout - 1
                     if timeout % 10 == 0:
                         Log.info(f"Timeout: {timeout}")
-
 
                 for platform in platforms_to_test:
                     platform.closeConnection()

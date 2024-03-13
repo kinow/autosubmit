@@ -1012,7 +1012,7 @@ class Job(object):
         if it exists, remote_log variable is updated
         """
         try:
-            if self.wrapper_type and self.wrapper_type == "vertical":
+            if self.wrapper_type == "vertical":
                 platform.check_stat_file_by_retrials(stat_file + str(max_logs), retries=1)
                 for i in range(max_logs-1,-1,-1):
                     if platform.check_stat_file_by_retrials(stat_file + str(i), retries=1, first=False):
@@ -1037,10 +1037,8 @@ class Job(object):
             err_exist = platform.check_file_exists(self.remote_logs[1], False, sleeptime=0, max_retries=1)
         except IOError:
             err_exist = False
-        if out_exist or err_exist:
-            return True
-        else:
-            return False
+        return out_exist or err_exist
+
     def retrieve_vertical_wrapper_logs(self, last_log, max_logs, platform, stat_file, max_retrials, fail_count):
         """
         Retrieves log files from remote host meant to be used inside a daemon thread.
