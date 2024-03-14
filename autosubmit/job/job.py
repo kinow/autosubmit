@@ -1191,7 +1191,6 @@ class Job(object):
         :return:
         """
         self.log_avaliable = False
-        copy_remote_logs = as_conf.get_copy_remote_logs()
         previous_status = self.status
         self.prev_status = previous_status
         new_status = self.new_status
@@ -1246,10 +1245,7 @@ class Job(object):
             self.write_submit_time()
         # Updating logs
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
-            import time
-            start = time.time()
             self.platform.add_job_to_log_recover(self)
-            Log.debug(f"Time to retrieve logs for job {self.name} {time.time() - start}")
             if self.wrapper_type == "vertical":
                 max_logs = int(self.retrials)
                 for i in range(0,max_logs):
