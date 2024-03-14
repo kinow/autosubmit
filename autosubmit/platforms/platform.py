@@ -857,12 +857,12 @@ class Platform(object):
         while True:
             try:
                 job,children = self.recovery_queue.get()
-                if job.name in job_names_processed:
+                if (f'{job.name}_{job.fail_count}') in job_names_processed:
                     continue
                 job.children = children
                 job.platform = self
                 job.retrieve_logfiles(self)
-                job_names_processed.add(job.name)
+                job_names_processed.add(f'{job.name}_{job.fail_count}')
             except queue.Empty:
                 pass
             except Exception as e:
