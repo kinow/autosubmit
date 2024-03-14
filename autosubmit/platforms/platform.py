@@ -672,6 +672,8 @@ class Platform(object):
          check *STAT* file
 
          :param retries: number of intents to get the completed files
+         :type retries: int
+         :param first: First time calling the function
          :type first: int
          :param job_name: name of job to check
          :type job_name: str

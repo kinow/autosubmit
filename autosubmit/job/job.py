@@ -244,6 +244,7 @@ class Job(object):
         self.het = None
         self.updated_log = True
         self.ready_start_date = None
+        self.log_retrieved = False
 
     def _init_runtime_parameters(self):
         # hetjobs
@@ -1032,10 +1033,12 @@ class Job(object):
         try:
             out_exist = platform.check_file_exists(self.remote_logs[0], False, sleeptime=0, max_retries=1)
         except IOError:
+            Log.debug(f'Output log {self.remote_logs[0]} still does not exist')
             out_exist = False
         try:
             err_exist = platform.check_file_exists(self.remote_logs[1], False, sleeptime=0, max_retries=1)
         except IOError:
+            Log.debug(f'Error log {self.remote_logs[1]} still does not exist')
             err_exist = False
         return out_exist or err_exist
 
@@ -1050,17 +1053,12 @@ class Job(object):
         :param fail_count:
         :return:
         """
-        lang = locale.getlocale()[1]
-        if not lang:
-            lang = locale.getdefaultlocale()[1]
-            if not lang:
-                lang = 'UTF-8'
-        log_start = last_log
+        lang = locale.getlocale()[1] or locale.getdefaultlocale()[1] or 'UTF-8'
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.name[:4])
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         time_stamp = "1970"
         at_least_one_recovered = False
-        while log_start <= max_logs:
+        for _ in range(max_logs, last_log - 1, -1):
             try:
                 if platform.get_stat_file_by_retrials(stat_file + str(max_logs)):
                     with open(os.path.join(tmp_path, stat_file + str(max_logs)), 'r+') as f:
@@ -1069,6 +1067,7 @@ class Job(object):
                         total_stats[0] = float(total_stats[0])
                         total_stats[1] = float(total_stats[1])
                     except Exception as e:
+                        Log.debug(f"Trace {e} \n Failed to convert total stats to float, falling back to int")
                         total_stats[0] = int(str(total_stats[0]).split('.')[0])
                         total_stats[1] = int(str(total_stats[1]).split('.')[0])
                     if max_logs != (int(max_retrials) - fail_count):
@@ -1087,14 +1086,14 @@ class Job(object):
                     r_log = (self.remote_logs[0][:-1] + str(max_logs), self.remote_logs[1][:-1] + str(max_logs))
                     self.synchronize_logs(platform, r_log, l_log, last=False)
                     platform.get_logs_files(self.expid, l_log)
-                    with suppress(BaseException):
+                    try:
                         for local_log in l_log:
                             platform.write_jobid(self.id,os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
-                    max_logs = max_logs - 1
+                    except BaseException as e:
+                        Log.debug(f"Trace {e} \n Failed to write the {self.id} inside {l_log}")
                     at_least_one_recovered = True
-                else:
-                    max_logs = -1  # exit, no more logs
-            except Exception:
+            except Exception as e:
+                Log.debug(f"Trace {e} \n Failed to retrieve log files for job {self.name}")
                 return False
         return at_least_one_recovered
 
