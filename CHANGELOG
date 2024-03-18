@@ -1,4 +1,3 @@
-
 4.1.2 - Bug fixes
 =================
 - Fixed issues with version.
@@ -9,21 +8,22 @@
 4.1.1 - Workflow optimizations and bug fixes
 ==========================================
 
-In this version, Autosubmit supports much larger workflows and has improved performance and memory usage. We have also fixed several bugs and added new features.
+Autosubmit supports much larger workflows in this version and has improved performance and memory usage. We have also fixed several bugs and added new features.
 
 - Improved the performance and memory usage of the workflow generation process.
-    -  Improved the performance and memory usage of jobs generation process.
+    -  Improved the performance and memory usage of the jobs generation process.
     -  Improved the performance and memory usage of the dependency generation process.
 - Improved the performance and memory usage of the workflow visualization process.
 - Added a new filter to setstatus ( -ftcs ) to filter by split.
 - Added -no-requeue to avoid requeueing jobs.
-- Added a mechanism to detect duplicated jobs.
-- Fixed multiples issues with the splits usage.
-- Fixed multiples issues with Totaljobs.
+- A mechanism was added to detect duplicate jobs.
+- Fixed multiple issues with the splits usage.
+- Fixed multiple issues with Totaljobs.
 - Reworked the deadlock detection mechanism.
-- Changed multiple debug messages to be more clear.
+- Changed multiple debug messages to make them more straightforward.
 - Changed the load/save pkl procedure
 - Fixed issues with check command and additional files regex.
-- Added previous keyword.
+- Added the previous keyword.
 - Fixed an issue with the historical db.
 - Fixed an issue with historical db logs.
+
