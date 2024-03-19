@@ -120,7 +120,6 @@ class TestJob(TestCase):
     def test_command_line_help(self):
         args = ['autosubmit', 'cat-log', '--help']
         with patch.object(sys, 'argv', args) as _, io.StringIO() as buf, redirect_stdout(buf):
-            with suppress(SystemExit):
-                assert Autosubmit.parse_args()
+            assert Autosubmit.parse_args()
             assert buf
             assert 'View workflow and job logs.' in buf.getvalue()
