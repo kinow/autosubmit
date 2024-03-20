@@ -86,25 +86,44 @@ def calendar_get_month_days(date_str):
     else:
         return 31
 
-def calendar_split_size_isvalid(datestr, size, unit_size):
+
+def calendar_split_size_isvalid(date_str, split_size, split_unit, chunk_unit, chunk_length):
     """
     Check if the split size is valid for the calendar
-    :param datestr:  Date in string format (YYYYMMDD)
-    :param size: Split size
-    :param unit_size: Split unit size ( hour, day, month, year)
-    :return:
+    :param date_str: Date in string format (YYYYMMDD)
+    :param split_size: Size of the split
+    :param split_unit: Unit of the split
+    :param chunk_unit: Unit of the chunk
+    :param chunk_length: Size of the chunk
+    :return: Boolean
     """
-    if unit_size == "hour":
-        return size <= 24
-    elif unit_size == "day":
-        return size <= calendar_get_month_days(datestr)
-    elif unit_size == "month":
-        return size <= 12
-    elif unit_size == "year":
-        return size <= 1
+    if is_leap_year(int(date_str[0:4])):
+        num_days_in_a_year = 366
     else:
-        return False
+        num_days_in_a_year = 365
+    if chunk_unit == "year":
+        chunk_size_in_hours = num_days_in_a_year * 24 * chunk_length
+    elif chunk_unit == "month":
+        chunk_size_in_hours = calendar_get_month_days(date_str) * 24 * chunk_length
+    elif chunk_unit == "day":
+        chunk_size_in_hours = 24 * chunk_length
+    else:
+        chunk_size_in_hours = chunk_length
 
+    if split_unit == "year":
+        split_size_in_hours = num_days_in_a_year * 24 * split_size
+    elif split_unit == "month":
+        split_size_in_hours = calendar_get_month_days(date_str) * 24 * split_size
+    elif split_unit == "day":
+        split_size_in_hours = 24 * split_size
+    else:
+        split_size_in_hours = split_size
+
+    if split_size_in_hours != chunk_size_in_hours:
+        Log.warning(f"After calculations, the total sizes are: SplitSize*SplitUnitSize:{split_size_in_hours} hours, ChunkSize*ChunkUnitsize:{chunk_size_in_hours} hours.")
+    else:
+        Log.debug(f"Split size in hours: {split_size_in_hours}, Chunk size in hours: {chunk_size_in_hours}")
+    return split_size_in_hours <= chunk_size_in_hours
 
 
 
@@ -149,7 +168,7 @@ def calendar_chunk_section(exp_data, section, date, chunk):
         else:
             num_max_splits = run_days
         split_size = get_split_size(exp_data, section)
-        if not calendar_split_size_isvalid(date_str, split_size, split_unit):
+        if not calendar_split_size_isvalid(date_str, split_size, split_unit, chunk_unit, chunk_length):
             raise AutosubmitCritical(f"Invalid split size for the calendar. The split size is {split_size} and the unit is {split_unit}.")
         splits = num_max_splits / split_size
         if not splits.is_integer() and split_policy == "flexible":
