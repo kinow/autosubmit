@@ -454,19 +454,20 @@ class TestJobList(unittest.TestCase):
         job.member = None
         job.chunk = None
         job.running = "once"
-        job.split = 2
+        job.split = 1
         job.splits = 2
         job.max_checkpoint_step = 0
         job_list = Mock(wraps=self.JobList)
         job_list._job_list = [job]
-        filters_to = {'SPLITS_TO': 'previous'}
-        filters_to_of_parent = {}
+        filters_to = {'SPLITS_TO': "1*\\1"}
+        filters_to_of_parent = {'SPLITS_TO': 'previous'}
         natural_chunk = 1
         natural_member = 'fc0'
         section = 'SIM'
         result = self.dictionary.get_jobs_filtered(section, job, filters_to, None, natural_member, natural_chunk, filters_to_of_parent)
         expected_output = [self.dictionary._dic["SIM"][0]]
         self.assertEqual(expected_output, result)
+
 
 
 if __name__ == '__main__':
