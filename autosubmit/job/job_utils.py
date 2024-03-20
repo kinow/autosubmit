@@ -68,6 +68,46 @@ def calendar_unitsize_getlowersize(unitsize):
     else:
         return list(CALENDAR_UNITSIZE_ENUM.keys())[unit_value - 1]
 
+def calendar_get_month_days(date_str):
+    """
+    Get the number of days in a month
+    :param date_str: Date in string format (YYYYMMDD)
+    :return:
+    """
+    year = int(date_str[0:4])
+    month = int(date_str[4:6])
+    if month == 2:
+        if is_leap_year(year):
+            return 29
+        else:
+            return 28
+    elif month in [4, 6, 9, 11]:
+        return 30
+    else:
+        return 31
+
+def calendar_split_size_isvalid(datestr, size, unit_size):
+    """
+    Check if the split size is valid for the calendar
+    :param datestr:  Date in string format (YYYYMMDD)
+    :param size: Split size
+    :param unit_size: Split unit size ( hour, day, month, year)
+    :return:
+    """
+    if unit_size == "hour":
+        return size <= 24
+    elif unit_size == "day":
+        return size <= calendar_get_month_days(datestr)
+    elif unit_size == "month":
+        return size <= 12
+    elif unit_size == "year":
+        return size <= 1
+    else:
+        return False
+
+
+
+
 
 
 def calendar_chunk_section(exp_data, section, date, chunk):
@@ -109,6 +149,8 @@ def calendar_chunk_section(exp_data, section, date, chunk):
         else:
             num_max_splits = run_days
         split_size = get_split_size(exp_data, section)
+        if not calendar_split_size_isvalid(date_str, split_size, split_unit):
+            raise AutosubmitCritical(f"Invalid split size for the calendar. The split size is {split_size} and the unit is {split_unit}.")
         splits = num_max_splits / split_size
         if not splits.is_integer() and split_policy == "flexible":
             Log.warning(f"The number of splits:{num_max_splits}/{split_size} is not an integer. The number of splits will be rounded up due the flexible split policy.\n You can modify the SPLITPOLICY parameter in the section {section} to 'strict' to avoid this behavior.")
