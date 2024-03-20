@@ -1323,6 +1323,7 @@ CONFIG:
                 new=True,
                 run_only_members=config.get_member_list(run_only=True),
                 show_log=True,
+                create=True,
             )
             job_list = job_list.get_job_list()
             self.assertEqual(24, len(job_list))

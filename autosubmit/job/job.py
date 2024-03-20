@@ -1768,90 +1768,75 @@ class Job(object):
         self.total_jobs = job_data.get("TOTALJOBS",job_data.get("TOTALJOBS", job_platform.get("TOTALJOBS", job_platform.get("TOTAL_JOBS", -1))))
         self.max_waiting_jobs = job_data.get("MAXWAITINGJOBS",job_data.get("MAXWAITINGJOBS", job_platform.get("MAXWAITINGJOBS", job_platform.get("MAX_WAITING_JOBS", -1))))
 
-    def update_job_parameters(self,as_conf, parameters):
-        self.splits = as_conf.jobs_data[self.section].get("SPLITS", None)
-        self.delete_when_edgeless = as_conf.jobs_data[self.section].get("DELETE_WHEN_EDGELESS", True)
-        self.check = as_conf.jobs_data[self.section].get("CHECK", False)
-        self.check_warnings = as_conf.jobs_data[self.section].get("CHECK_WARNINGS", False)
-        if self.checkpoint: # To activate placeholder sustitution per <empty> in the template
-            parameters["AS_CHECKPOINT"] = self.checkpoint
-        parameters['JOBNAME'] = self.name
-        parameters['FAIL_COUNT'] = str(self.fail_count)
-        parameters['SDATE'] = self.sdate
-        parameters['MEMBER'] = self.member
-        parameters['SPLIT'] = self.split
-        parameters['SPLITS'] = self.splits
-        parameters['DELAY'] = self.delay
-        parameters['FREQUENCY'] = self.frequency
-        parameters['SYNCHRONIZE'] = self.synchronize
-        parameters['PACKED'] = self.packed
-        parameters['CHUNK'] = 1
-        parameters['RETRIALS'] = self.retrials
-        parameters['DELAY_RETRIALS'] = self.delay_retrials
-        parameters['DELETE_WHEN_EDGELESS'] = self.delete_when_edgeless
-
-        def calendar_split(self, as_conf, parameters):
-            """
-            Calendar for splits
-            :param parameters:
-            :return:
-            """
-            # Calendar struct type numbered ( year, month, day, hour )
+    def calendar_split(self, as_conf, parameters):
+        """
+        Calendar for splits
+        :param parameters:
+        :return:
+        """
+        # Calendar struct type numbered ( year, month, day, hour )
 
 
-            job_data = as_conf.jobs_data.get(self.section,{})
-            if job_data.get("SPLITS", None) and self.running != "once": # once jobs has no date
-                # total_split = int(self.splits)
-                split_unit = get_split_size_unit(as_conf.experiment_data, self.section)
-                cal = str(parameters.get('EXPERIMENT.CALENDAR', "standard")).lower()
-                split_length = get_split_size(as_conf.experiment_data, self.section)
-                start_date = parameters.get('CHUNK_START_DATE', None)
-                if start_date:
-                    self.date = datetime.datetime.strptime(start_date, "%Y%m%d")
-                split_start = self.split_start_date(self.date, int(self.split), split_length, split_unit, cal)
-                split_end = self.split_end_date(split_start, split_length, split_unit, cal)
-                if split_unit == 'hour':
-                    split_end_1 = split_end
-                else:
-                    split_end_1 = previous_day(split_end, cal)
+        job_data = as_conf.jobs_data.get(self.section,{})
+        if job_data.get("SPLITS", None) and self.running != "once": # once jobs has no date
+            # total_split = int(self.splits)
+            split_unit = get_split_size_unit(as_conf.experiment_data, self.section)
+            cal = str(parameters.get('EXPERIMENT.CALENDAR', "standard")).lower()
+            split_length = get_split_size(as_conf.experiment_data, self.section)
+            start_date = parameters.get('CHUNK_START_DATE', None)
+            if start_date:
+                self.date = datetime.datetime.strptime(start_date, "%Y%m%d")
+            split_start = self.split_start_date(self.date, int(self.split), split_length, split_unit, cal)
+            split_end = self.split_end_date(split_start, split_length, split_unit, cal)
+            if split_unit == 'hour':
+                split_end_1 = split_end
+            else:
+                split_end_1 = previous_day(split_end, cal)
 
-                parameters['SPLIT'] = self.split
-                parameters['SPLITSCALENDAR'] = cal
-                parameters['SPLITSIZE'] = split_length
-                parameters['SPLITSIZEUNIT'] = split_unit
+            parameters['SPLIT'] = self.split
+            parameters['SPLITSCALENDAR'] = cal
+            parameters['SPLITSIZE'] = split_length
+            parameters['SPLITSIZEUNIT'] = split_unit
 
-                parameters['SPLIT_START_DATE'] = date2str(
-                    split_start, self.date_format)
-                parameters['SPLIT_START_YEAR'] = str(split_start.year)
-                parameters['SPLIT_START_MONTH'] = str(split_start.month).zfill(2)
-                parameters['SPLIT_START_DAY'] = str(split_start.day).zfill(2)
-                parameters['SPLIT_START_HOUR'] = str(split_start.hour).zfill(2)
+            parameters['SPLIT_START_DATE'] = date2str(
+                split_start, self.date_format)
+            parameters['SPLIT_START_YEAR'] = str(split_start.year)
+            parameters['SPLIT_START_MONTH'] = str(split_start.month).zfill(2)
+            parameters['SPLIT_START_DAY'] = str(split_start.day).zfill(2)
+            parameters['SPLIT_START_HOUR'] = str(split_start.hour).zfill(2)
 
-                parameters['SPLIT_SECOND_TO_LAST_DATE'] = date2str(
-                    split_end_1, self.date_format)
-                parameters['SPLIT_SECOND_TO_LAST_YEAR'] = str(split_end_1.year)
-                parameters['SPLIT_SECOND_TO_LAST_MONTH'] = str(split_end_1.month).zfill(2)
-                parameters['SPLIT_SECOND_TO_LAST_DAY'] = str(split_end_1.day).zfill(2)
-                parameters['SPLIT_SECOND_TO_LAST_HOUR'] = str(split_end_1.hour).zfill(2)
+            parameters['SPLIT_SECOND_TO_LAST_DATE'] = date2str(
+                split_end_1, self.date_format)
+            parameters['SPLIT_SECOND_TO_LAST_YEAR'] = str(split_end_1.year)
+            parameters['SPLIT_SECOND_TO_LAST_MONTH'] = str(split_end_1.month).zfill(2)
+            parameters['SPLIT_SECOND_TO_LAST_DAY'] = str(split_end_1.day).zfill(2)
+            parameters['SPLIT_SECOND_TO_LAST_HOUR'] = str(split_end_1.hour).zfill(2)
 
-                parameters['SPLIT_END_DATE'] = date2str(
-                    split_end, self.date_format)
-                parameters['SPLIT_END_YEAR'] = str(split_end.year)
-                parameters['SPLIT_END_MONTH'] = str(split_end.month).zfill(2)
-                parameters['SPLIT_END_DAY'] = str(split_end.day).zfill(2)
-                parameters['SPLIT_END_HOUR'] = str(split_end.hour).zfill(2)
-                if int(self.split) == 1:
-                    parameters['SPLIT_FIRST'] = 'TRUE'
-                else:
-                    parameters['SPLIT_FIRST'] = 'FALSE'
+            parameters['SPLIT_END_DATE'] = date2str(
+                split_end, self.date_format)
+            parameters['SPLIT_END_YEAR'] = str(split_end.year)
+            parameters['SPLIT_END_MONTH'] = str(split_end.month).zfill(2)
+            parameters['SPLIT_END_DAY'] = str(split_end.day).zfill(2)
+            parameters['SPLIT_END_HOUR'] = str(split_end.hour).zfill(2)
+            if int(self.split) == 1:
+                parameters['SPLIT_FIRST'] = 'TRUE'
+            else:
+                parameters['SPLIT_FIRST'] = 'FALSE'
 
-                # if int(total_split) == int(self.split):
-                #     parameters['SPLIT_LAST'] = 'TRUE'
-                # else:
-                #     parameters['SPLIT_LAST'] = 'FALSE'
+            # if int(total_split) == int(self.split):
+            #     parameters['SPLIT_LAST'] = 'TRUE'
+            # else:
+            #     parameters['SPLIT_LAST'] = 'FALSE'
 
-            return parameters
+        return parameters
 
+    def calendar_chunk(self, parameters):
+        """
+        Calendar for chunks
+
+        :param parameters:
+        :return:
+        """
         if self.date is not None and len(str(self.date)) > 0:
             if self.chunk is None and len(str(self.chunk)) > 0:
                 chunk = 1
