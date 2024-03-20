@@ -1786,8 +1786,8 @@ class Job(object):
             start_date = parameters.get('CHUNK_START_DATE', None)
             if start_date:
                 self.date = datetime.datetime.strptime(start_date, "%Y%m%d")
-            split_start = self.split_start_date(self.date, int(self.split), split_length, split_unit, cal)
-            split_end = self.split_end_date(split_start, split_length, split_unit, cal)
+            split_start = chunk_start_date(self.date, int(self.split), split_length, split_unit, cal)
+            split_end = chunk_end_date(split_start, split_length, split_unit, cal)
             if split_unit == 'hour':
                 split_end_1 = split_end
             else:
