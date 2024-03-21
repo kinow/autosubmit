@@ -75,7 +75,7 @@ import signal
 import datetime
 import log.fd_show as fd_show
 import portalocker
-from pkg_resources import require, resource_listdir, resource_exists, resource_string, resource_filename
+from importlib.resources import require, resource_listdir, resource_exists, resource_string, resource_filename
 from collections import defaultdict
 from pyparsing import nestedExpr
 from .history.experiment_status import ExperimentStatus
