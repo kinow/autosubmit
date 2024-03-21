@@ -148,13 +148,11 @@ class DicJobs:
         parameters = self.experiment_data["JOBS"]
         splits = parameters[section].get("SPLITS", -1)
         running = str(parameters[section].get('RUNNING', "once")).lower()
-        if running != "chunk":
-            if str(splits).isdigit() or splits == -1:
-                splits = int(splits)
-            elif splits == "auto":
-                raise AutosubmitCritical("Splits: auto is only allowed for chunk splitted jobs")
-            else:
-                raise AutosubmitCritical(f"Splits must be an integer: {splits}")
+
+        if splits == "auto" and running != "chunk":
+            raise AutosubmitCritical("SPLITS=auto is only allowed for running=chunk")
+        else:
+            splits = int(splits)
         frequency = int(parameters[section].get("FREQUENCY", 1))
         if running == 'once':
             self._create_jobs_once(section, priority, default_job_type, splits)
