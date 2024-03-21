@@ -20,7 +20,7 @@
 from autosubmit.platforms.wrappers.wrapper_builder import WrapperDirector, PythonVerticalWrapperBuilder, \
     PythonHorizontalWrapperBuilder, PythonHorizontalVerticalWrapperBuilder, PythonVerticalHorizontalWrapperBuilder, \
     BashHorizontalWrapperBuilder, BashVerticalWrapperBuilder, SrunHorizontalWrapperBuilder,SrunVerticalHorizontalWrapperBuilder
-
+import re
 
 class WrapperFactory(object):
 
@@ -33,7 +33,6 @@ class WrapperFactory(object):
     def get_wrapper(self, wrapper_builder, **kwargs):
         wrapper_data = kwargs['wrapper_data']
         wrapper_data.wallclock = kwargs['wallclock']
-        # This was crashing in horizontal, non related to this issue
         if wrapper_data.het.get("HETSIZE",0) <= 1:
             kwargs['allocated_nodes'] = self.allocated_nodes()
             kwargs['dependency'] = self.dependency(kwargs['dependency'])
@@ -55,7 +54,21 @@ class WrapperFactory(object):
         kwargs["executable"] = wrapper_data.executable
 
         kwargs['header_directive'] = self.header_directives(**kwargs)
-        return self.wrapper_director.construct(wrapper_builder(**kwargs))
+        wrapper_cmd = self.wrapper_director.construct(wrapper_builder(**kwargs))
+
+        # # look for placeholders inside constructed ( CURRENT_ variables )
+        # placeholders_inside_wrapper = re.findall('%(?<!%%)[a-zA-Z0-9_.-]+%(?!%%)',
+        #                                                      wrapper_cmd, flags=re.IGNORECASE)
+        # for placeholder in placeholders_inside_wrapper:
+        #     placeholder = placeholder[1:-1]
+        #     value = str(self.jobs[0].parameters.get(placeholder.upper(), ""))
+        #     if not value:
+        #         wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', '', placeholders_inside_wrapper, flags=re.I)
+        #     else:
+        #         if "\\" in value:
+        #             value = re.escape(value)
+        #         wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', value, placeholders_inside_wrapper, flags=re.I)
+        return wrapper_cmd
 
     def vertical_wrapper(self, **kwargs):
         raise NotImplemented(self.exception)
