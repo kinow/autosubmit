@@ -259,6 +259,8 @@ class JobPackager(object):
                             max_jobs_to_submit = max_jobs_to_submit - 1
                 continue
             for job in p.jobs:
+                job.wrapper_type = p.wrapper_type
+
                 if job.fail_count > 0:
                     failed_innerjobs = True
                     break
