@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from copy import deepcopy
 from datetime import datetime
+from mock import patch
 
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job import Job
@@ -434,6 +435,40 @@ class TestJobList(unittest.TestCase):
         self.assertEqual(str(job_list.jobs_edges.get("RUNNING", ())), str({job}))
         job_list.add_special_conditions(job, special_conditions, filters_to_apply, parent2)
         self.assertEqual(len(job.edge_info.get("RUNNING", "")), 2)
+
+    @patch('autosubmit.job.job_dict.date2str')
+    def test_jobdict_get_jobs_filtered(self, mock_date2str):
+        # Test the get_jobs_filtered function
+        # DicJobs.get_jobs_filtered(self, section, job, filters_to, natural_date, natural_member, natural_chunk,filters_to_of_parent)
+        as_conf = mock.Mock()
+        as_conf.experiment_data = dict()
+        as_conf.experiment_data = {'CONFIG': {'AUTOSUBMIT_VERSION': '4.1.2', 'MAXWAITINGJOBS': 20, 'TOTALJOBS': 20, 'SAFETYSLEEPTIME': 10, 'RETRIALS': 0}, 'MAIL': {'NOTIFICATIONS': False, 'TO': None}, 'STORAGE': {'TYPE': 'pkl', 'COPY_REMOTE_LOGS': True}, 'DEFAULT': {'EXPID': 'a03b', 'HPCARCH': 'marenostrum4'}, 'EXPERIMENT': {'DATELIST': '20000101', 'MEMBERS': 'fc0', 'CHUNKSIZEUNIT': 'month', 'CHUNKSIZE': 4, 'NUMCHUNKS': 5, 'CHUNKINI': '', 'CALENDAR': 'standard'}, 'PROJECT': {'PROJECT_TYPE': 'none', 'PROJECT_DESTINATION': ''}, 'GIT': {'PROJECT_ORIGIN': '', 'PROJECT_BRANCH': '', 'PROJECT_COMMIT': '', 'PROJECT_SUBMODULES': '', 'FETCH_SINGLE_BRANCH': True}, 'SVN': {'PROJECT_URL': '', 'PROJECT_REVISION': ''}, 'LOCAL': {'PROJECT_PATH': ''}, 'PROJECT_FILES': {'FILE_PROJECT_CONF': '', 'FILE_JOBS_CONF': '', 'JOB_SCRIPTS_TYPE': ''}, 'RERUN': {'RERUN': False, 'RERUN_JOBLIST': ''}, 'JOBS': {'SIM': {'FILE': 'SIM.sh', 'RUNNING': 'once', 'DEPENDENCIES': {'SIM-1': {'CHUNKS_FROM': {'ALL': {'SPLITS_TO': 'previous'}}}}, 'WALLCLOCK': '00:05', 'SPLITS': 10, 'ADDITIONAL_FILES': []}, 'TEST': {'FILE': 'Test.sh', 'DEPENDENCIES': {'TEST-1': {'CHUNKS_FROM': {'ALL': {'SPLITS_TO': 'previous'}}}, 'SIM': None}, 'RUNNING': 'once', 'WALLCLOCK': '00:05', 'SPLITS': 10, 'ADDITIONAL_FILES': []}}, 'PLATFORMS': {'MARENOSTRUM4': {'TYPE': 'slurm', 'HOST': 'mn2.bsc.es', 'PROJECT': 'bsc32', 'USER': 'bsc32070', 'QUEUE': 'debug', 'SCRATCH_DIR': '/gpfs/scratch', 'ADD_PROJECT_TO_HOST': False, 'MAX_WALLCLOCK': '48:00', 'TEMP_DIR': ''}, 'MARENOSTRUM_ARCHIVE': {'TYPE': 'ps', 'HOST': 'dt02.bsc.es', 'PROJECT': 'bsc32', 'USER': None, 'SCRATCH_DIR': '/gpfs/scratch', 'ADD_PROJECT_TO_HOST': False, 'TEST_SUITE': False}, 'TRANSFER_NODE': {'TYPE': 'ps', 'HOST': 'dt01.bsc.es', 'PROJECT': 'bsc32', 'USER': None, 'ADD_PROJECT_TO_HOST': False, 'SCRATCH_DIR': '/gpfs/scratch'}, 'TRANSFER_NODE_BSCEARTH000': {'TYPE': 'ps', 'HOST': 'bscearth000', 'USER': None, 'PROJECT': 'Earth', 'ADD_PROJECT_TO_HOST': False, 'QUEUE': 'serial', 'SCRATCH_DIR': '/esarchive/scratch'}, 'BSCEARTH000': {'TYPE': 'ps', 'HOST': 'bscearth000', 'USER': None, 'PROJECT': 'Earth', 'ADD_PROJECT_TO_HOST': False, 'QUEUE': 'serial', 'SCRATCH_DIR': '/esarchive/scratch'}, 'NORD3': {'TYPE': 'SLURM', 'HOST': 'nord1.bsc.es', 'PROJECT': 'bsc32', 'USER': None, 'QUEUE': 'debug', 'SCRATCH_DIR': '/gpfs/scratch', 'MAX_WALLCLOCK': '48:00'}, 'ECMWF-XC40': {'TYPE': 'ecaccess', 'VERSION': 'pbs', 'HOST': 'cca', 'USER': None, 'PROJECT': 'spesiccf', 'ADD_PROJECT_TO_HOST': False, 'SCRATCH_DIR': '/scratch/ms', 'QUEUE': 'np', 'SERIAL_QUEUE': 'ns', 'MAX_WALLCLOCK': '48:00'}}, 'ROOTDIR': '/home/dbeltran/new_autosubmit/a03b', 'PROJDIR': '/home/dbeltran/new_autosubmit/a03b/proj/'}
+        as_conf.jobs_data = as_conf.experiment_data["JOBS"]
+        as_conf.last_experiment_data = as_conf.experiment_data
+        as_conf.detailed_deep_diff = Mock()
+        as_conf.detailed_deep_diff.return_value = {}
+        self.dictionary = DicJobs(self.date_list, self.member_list, self.chunk_list, "", default_retrials=0,as_conf=as_conf)
+        self.dictionary.read_section("SIM", 1, "bash")
+        job = Job("SIM", 1, Status.READY, 1)
+        job.date = None
+        job.member = None
+        job.chunk = None
+        job.running = "once"
+        job.split = 1
+        job.splits = 2
+        job.max_checkpoint_step = 0
+        job_list = Mock(wraps=self.JobList)
+        job_list._job_list = [job]
+        filters_to = {'SPLITS_TO': "1*\\1"}
+        filters_to_of_parent = {'SPLITS_TO': 'previous'}
+        natural_chunk = 1
+        natural_member = 'fc0'
+        section = 'SIM'
+        result = self.dictionary.get_jobs_filtered(section, job, filters_to, None, natural_member, natural_chunk, filters_to_of_parent)
+        expected_output = [self.dictionary._dic["SIM"][0]]
+        self.assertEqual(expected_output, result)
+
+
 
 if __name__ == '__main__':
     unittest.main()

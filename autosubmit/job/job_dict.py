@@ -508,13 +508,19 @@ class DicJobs:
                                     end = len(final_jobs_list)
                             final_jobs_list_special = final_jobs_list[split_index:end]
                             if "previous" in filters_to_of_parent.get("SPLITS_TO", ""):
-                                final_jobs_list_special = [final_jobs_list_special[-1]]
+                                if type(final_jobs_list_special) is list:
+                                    final_jobs_list_special = [final_jobs_list_special[-1]]
+                                else:
+                                    final_jobs_list_special = final_jobs_list_special
                         else:  # get 1-N (part 2)
                             my_complete_slice = matches[0].strip(",").split("*")
                             split_index = int(my_complete_slice[0]) - 1
                             final_jobs_list_special = final_jobs_list[split_index]
                             if "previous" in filters_to_of_parent.get("SPLITS_TO", ""):
-                                final_jobs_list_special = [final_jobs_list_special[-1]]
+                                if type(final_jobs_list_special) is list:
+                                    final_jobs_list_special = [final_jobs_list_special[-1]]
+                                else:
+                                    final_jobs_list_special = final_jobs_list_special
                     else:
                         final_jobs_list_special = []
                 if type(final_jobs_list_special) is not list:
@@ -637,6 +643,7 @@ class DicJobs:
             section_data.append(job)
             self.changes["NEWJOBS"] = True
         else:
+            self._job_list[name].update_dict_parameters(self.as_conf)
             self._job_list[name].status = Status.WAITING if self._job_list[name].status in [Status.DELAYED,
                                                                                             Status.PREPARED,
                                                                                             Status.READY] else \
