@@ -21,10 +21,12 @@
 from bscearth.utils.date import date2str
 
 from autosubmit.job.job import Job
+from autosubmit.job.job_utils import get_split_size_unit, get_split_size, calendar_chunk_section
 from autosubmit.job.job_common import Status
 import datetime
 
 import re
+from log.log import AutosubmitCritical
 
 
 class DicJobs:
@@ -144,8 +146,15 @@ class DicJobs:
         """
         self.compare_section(section)
         parameters = self.experiment_data["JOBS"]
-        splits = int(parameters[section].get("SPLITS", -1))
+        splits = parameters[section].get("SPLITS", -1)
         running = str(parameters[section].get('RUNNING', "once")).lower()
+        if running != "chunk":
+            if str(splits).isdigit() or splits == -1:
+                splits = int(splits)
+            elif splits == "auto":
+                raise AutosubmitCritical("Splits: auto is only allowed for chunk splitted jobs")
+            else:
+                raise AutosubmitCritical(f"Splits must be an integer: {splits}")
         frequency = int(parameters[section].get("FREQUENCY", 1))
         if running == 'once':
             self._create_jobs_once(section, priority, default_job_type, splits)
@@ -258,6 +267,8 @@ class DicJobs:
                 self._dic[section][date][member] = dict()
                 count = 0
                 for chunk in (chunk for chunk in self._chunk_list):
+                    if splits == "auto":
+                        splits = calendar_chunk_section(self.experiment_data, section, date, chunk)
                     count += 1
                     if delay == -1 or delay < chunk:
                         if count % frequency == 0 or count == len(self._chunk_list):

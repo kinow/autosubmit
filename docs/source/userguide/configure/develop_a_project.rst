@@ -40,12 +40,17 @@ Expdef configuration
         MEMBERS: fc0
         # Chunk size unit. STRING: hour, day, month, year
         CHUNKSIZEUNIT: month
+        # Split size unit. STRING: hour, day, month, year and lower than CHUNKSIZEUNIT
+        SPLITSIZEUNIT: day # default CHUNKSIZEUNIT-1 (month-1 == day)
         # Chunk size. NUMERIC: 4, 6, 12
         CHUNKSIZE: 1
+        # Split size. NUMERIC: 4, 6, 12
+        SPLITSIZE: 1
         # Total number of chunks in experiment. NUMERIC: 30, 15, 10
         NUMCHUNKS: 2
         # Calendar used. LIST: standard, noleap
         CALENDAR: standard
+
         # List of members that can be included in this run. Optional.
         # RUN_ONLY_MEMBERS: fc0 fc1 fc2 fc3 fc4
         # RUN_ONLY_MEMBERS: fc[0-4]
@@ -201,6 +206,12 @@ Jobs configuration
             ## Specify the path to the interpreter. If empty, use system default based on job type  . Default: empty
             # EXECUTABLE: /my_python_env/python3
 
+            # Split the job in N jobs. If not specified, defaults to None
+            # Splits = 2
+            # Size unit of the split. Options: hour, day, month, year. Defaults to EXPERIMENT.CHUNKSIZEUNIT-1
+            # SPLITSIZEUNIT: day
+            # Size of the split. If not specified, defaults to 1
+            # SPLITSIZE: 1
 
         LOCAL_SETUP:
             FILE: LOCAL_SETUP.sh
