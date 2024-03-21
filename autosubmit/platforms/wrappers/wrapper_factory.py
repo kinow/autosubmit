@@ -56,18 +56,18 @@ class WrapperFactory(object):
         kwargs['header_directive'] = self.header_directives(**kwargs)
         wrapper_cmd = self.wrapper_director.construct(wrapper_builder(**kwargs))
 
-        # # look for placeholders inside constructed ( CURRENT_ variables )
-        # placeholders_inside_wrapper = re.findall('%(?<!%%)[a-zA-Z0-9_.-]+%(?!%%)',
-        #                                                      wrapper_cmd, flags=re.IGNORECASE)
-        # for placeholder in placeholders_inside_wrapper:
-        #     placeholder = placeholder[1:-1]
-        #     value = str(self.jobs[0].parameters.get(placeholder.upper(), ""))
-        #     if not value:
-        #         wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', '', placeholders_inside_wrapper, flags=re.I)
-        #     else:
-        #         if "\\" in value:
-        #             value = re.escape(value)
-        #         wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', value, placeholders_inside_wrapper, flags=re.I)
+        # look for placeholders inside constructed ( CURRENT_ variables )
+        placeholders_inside_wrapper = re.findall('%(?<!%%)[a-zA-Z0-9_.-]+%(?!%%)',
+                                                             wrapper_cmd, flags=re.IGNORECASE)
+        for placeholder in placeholders_inside_wrapper:
+            placeholder = placeholder[1:-1]
+            value = str(wrapper_data.jobs[0].parameters.get(placeholder.upper(), ""))
+            if not value:
+                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', '', placeholders_inside_wrapper, flags=re.I)
+            else:
+                if "\\" in value:
+                    value = re.escape(value)
+                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', value, placeholders_inside_wrapper, flags=re.I)
         return wrapper_cmd
 
     def vertical_wrapper(self, **kwargs):
