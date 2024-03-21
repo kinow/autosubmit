@@ -98,7 +98,7 @@ class JobPackageBase(object):
         for job in jobs:
             if only_generate and not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
                 break
-            else:
+            elif not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
                 if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
                     raise AutosubmitCritical(f"Job script:{job.file} does not exists",7014)
             if not job.check_script(configuration, parameters, show_logs=job.check_warnings):
