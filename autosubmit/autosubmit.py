@@ -1518,10 +1518,10 @@ class Autosubmit:
                         else:
                             jobs = job_list.get_job_list()
             if quick:
+                wrapped_sections = list()
                 if check_wrapper:
-                    wrapped_sections = list()
                     for wrapper_data in as_conf.experiment_data.get("WRAPPERS",{}).values():
-                        jobs_in_wrapper = wrapper_data.get("JOBS_IN_WRAPPER",{})
+                        jobs_in_wrapper = wrapper_data.get("JOBS_IN_WRAPPER","").upper()
                         if "," in jobs_in_wrapper:
                             jobs_in_wrapper = jobs_in_wrapper.split(",")
                         else:
@@ -1531,7 +1531,7 @@ class Autosubmit:
                 jobs_aux = list()
                 sections_added = set()
                 for job in jobs:
-                    if job.section not in [sections_added, wrapped_sections]:
+                    if job.section not in sections_added or job.section in wrapped_sections:
                         sections_added.add(job.section)
                         jobs_aux.append(job)
                 jobs = jobs_aux
@@ -1539,7 +1539,7 @@ class Autosubmit:
                 sections_added = set()
                 jobs_aux = list()
                 for job in jobs_cw:
-                    if job.section not in sections_added:
+                    if job.section not in sections_added or job.section in wrapped_sections:
                         sections_added.add(job.section)
                         jobs_aux.append(job)
                     jobs_cw = jobs_aux
