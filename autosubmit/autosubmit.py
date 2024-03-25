@@ -374,6 +374,9 @@ class Autosubmit:
                                    default=False, help='Generate possible wrapper in the current workflow')
             subparser.add_argument('-v', '--update_version', action='store_true',
                                    default=False, help='Update experiment version')
+            subparser.add_argument(
+                '-q', '--quick', action="store_true", help='Only checks one job per each section')
+
             group.add_argument('-fs', '--filter_status', type=str,
                                choices=('Any', 'READY', 'COMPLETED',
                                         'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
@@ -695,7 +698,7 @@ class Autosubmit:
             return Autosubmit.check(args.expid, args.notransitive)
         elif args.command == 'inspect':
             return Autosubmit.inspect(args.expid, args.list, args.filter_chunks, args.filter_status,
-                                      args.filter_type, args.notransitive, args.force, args.check_wrapper)
+                                      args.filter_type, args.notransitive, args.force, args.check_wrapper, args.quick)
         elif args.command == 'report':
             return Autosubmit.report(args.expid, args.template, args.show_all_parameters, args.folder_path,
                                      args.placeholders)
@@ -1393,7 +1396,7 @@ class Autosubmit:
 
     @staticmethod
     def inspect(expid, lst, filter_chunks, filter_status, filter_section, notransitive=False, force=False,
-                check_wrapper=False):
+                check_wrapper=False, quick=False):
         """
          Generates cmd files experiment.
 
@@ -1452,16 +1455,15 @@ class Autosubmit:
                 if check_wrapper and (not locked or (force and locked)):
                     Log.info("Generating all cmd script adapted for wrappers")
                     jobs = job_list.get_uncompleted()
-
-                    jobs_cw = job_list.get_completed()
+                    if force:
+                        jobs_cw = job_list.get_completed()
                 else:
-                    if (force and not locked) or (force and locked):
+                    if locked:
+                        Log.warning("There is a .lock file and not -f, generating only all unsubmitted cmd scripts")
+                        jobs = job_list.get_unsubmitted()
+                    elif force:
                         Log.info("Overwriting all cmd scripts")
                         jobs = job_list.get_job_list()
-                    elif locked:
-                        Log.warning(
-                            "There is a .lock file and not -f, generating only all unsubmitted cmd scripts")
-                        jobs = job_list.get_unsubmitted()
                     else:
                         Log.info("Generating cmd scripts only for selected jobs")
                         if filter_chunks:
@@ -1515,10 +1517,36 @@ class Autosubmit:
                                         jobs.append(job)
                         else:
                             jobs = job_list.get_job_list()
+            if quick:
+                wrapped_sections = list()
+                if check_wrapper:
+                    for wrapper_data in as_conf.experiment_data.get("WRAPPERS",{}).values():
+                        jobs_in_wrapper = wrapper_data.get("JOBS_IN_WRAPPER","").upper()
+                        if "," in jobs_in_wrapper:
+                            jobs_in_wrapper = jobs_in_wrapper.split(",")
+                        else:
+                            jobs_in_wrapper = jobs_in_wrapper.split(" ")
+                        wrapped_sections.extend(jobs_in_wrapper)
+                    wrapped_sections = list(set(wrapped_sections))
+                jobs_aux = list()
+                sections_added = set()
+                for job in jobs:
+                    if job.section not in sections_added or job.section in wrapped_sections:
+                        sections_added.add(job.section)
+                        jobs_aux.append(job)
+                jobs = jobs_aux
+                del jobs_aux
+                sections_added = set()
+                jobs_aux = list()
+                for job in jobs_cw:
+                    if job.section not in sections_added or job.section in wrapped_sections:
+                        sections_added.add(job.section)
+                        jobs_aux.append(job)
+                    jobs_cw = jobs_aux
+                del jobs_aux
             if isinstance(jobs, type([])):
                 for job in jobs:
                     job.status = Status.WAITING
-
                 Autosubmit.generate_scripts_andor_wrappers(
                     as_conf, job_list, jobs, packages_persistence, False)
             if len(jobs_cw) > 0:
@@ -1592,11 +1620,6 @@ class Autosubmit:
             job.platform = submitter.platforms[job.platform_name]
             if job.platform is not None and job.platform != "":
                 platforms_to_test.add(job.platform)
-        if not only_wrappers:
-            job_list.check_scripts(as_conf) # added only in inspect
-        else:  # no longer check_Scripts if -cw is added to monitor or create, just update the parameters
-            for job in ( job for job in job_list.get_job_list() ):
-                job.update_parameters(as_conf,parameters)
         job_list.update_list(as_conf, False)
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
@@ -1612,8 +1635,6 @@ class Autosubmit:
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True,
                                          only_wrappers, hold=False)
-            # for job in job_list.get_uncompleted_and_not_waiting():
-            #    job.status = Status.COMPLETED
             job_list.update_list(as_conf, False)
 
 
