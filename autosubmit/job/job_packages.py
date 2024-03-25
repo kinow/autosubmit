@@ -94,7 +94,7 @@ class JobPackageBase(object):
         return self._platform
 
     @threaded
-    def check_scripts(self,jobs,configuration, parameters,only_generate,hold):
+    def check_scripts(self, jobs, configuration, parameters, only_generate, hold):
         for job in jobs:
             if only_generate and not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
                 break
@@ -116,7 +116,32 @@ class JobPackageBase(object):
         pass
 
 
-
+    def submit_unthreaded(self, configuration, parameters,only_generate=False,hold=False):
+        """
+        :param hold:
+        :para configuration: Autosubmit basic configuration \n
+        :type configuration: AutosubmitConfig object \n
+        :param parameters; Parameters from joblist \n
+        :type parameters: JobList,parameters \n
+        :param only_generate: True if coming from generate_scripts_andor_wrappers(). If true, only generates scripts; otherwise, submits. \n
+        :type only_generate: Boolean
+        """
+        for job in self.jobs:
+            if only_generate and not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
+                exit_ = True
+                break
+            if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
+                if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
+                    raise AutosubmitCritical(
+                        "Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name), 7014)
+            if not job.check_script(configuration, parameters, show_logs=job.check_warnings):
+                Log.warning(
+                    f'Script {job.name} has some empty variables. An empty value has substituted these variables')
+            else:
+                Log.result("Script {0} OK", job.name)
+            # looking for directives on jobs
+            self._custom_directives = self._custom_directives | set(job.custom_directives)
+        self._create_scripts(configuration)
     def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
         :param hold:
@@ -125,10 +150,8 @@ class JobPackageBase(object):
         :param parameters; Parameters from joblist \n
         :type parameters: JobList,parameters \n
         :param only_generate: True if coming from generate_scripts_andor_wrappers(). If true, only generates scripts; otherwise, submits. \n
-        :type only_generate: Boolean 
+        :type only_generate: Boolean
         """
-        job = None
-        exit_=False
         thread_number = multiprocessing.cpu_count()
         if len(self.jobs) > 2500:
             thread_number = thread_number * 2
@@ -140,47 +163,38 @@ class JobPackageBase(object):
             thread_number = thread_number * 5
         chunksize = int((len(self.jobs) + thread_number - 1) / thread_number)
         try:
-            if len(self.jobs) < thread_number:
-                for job in self.jobs:
-                    if only_generate and not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                        exit_=True
-                        break
-                    if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                        if configuration.get_project_type().lower() != "none" and len(configuration.get_project_type()) > 0:
-                            raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
-                    if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
-                        Log.warning(f'Script {job.name} has some empty variables. An empty value has substituted these variables')
-                    else:
-                        Log.result("Script {0} OK",job.name)
-                    # looking for directives on jobs
-                    self._custom_directives = self._custom_directives | set(job.custom_directives)
-            else:
-                Lhandle = list()
-                for i in range(0, len(self.jobs), chunksize):
-                    Lhandle.append(self.check_scripts(self.jobs[i:i + chunksize], configuration, parameters, only_generate, hold))
-                for dataThread in Lhandle:
-                    dataThread.join()
-        except AutosubmitCritical : #Raise the intended message
-            raise
-        except BaseException as e: #should be IOERROR
-            raise AutosubmitCritical(
-                "Error on {1}, template [{0}] still does not exists in running time(check=on_submission activated) ".format(job.file,job.name), 7014)
-        Log.debug("Creating Scripts")
-        if not exit_:
-            if len(self.jobs) < thread_number:
+            if len(self.jobs) < thread_number or str(configuration.experiment_data.get("CONFIG",{}).get("ENABLE_WRAPPER_THREADS","False")).lower() in ["true","yes","1"]:
+                self.submit_unthreaded(configuration, parameters, only_generate, hold)
+                Log.debug("Creating Scripts")
                 self._create_scripts(configuration)
             else:
-                Lhandle = list()
+                lhandle = list()
                 for i in range(0, len(self.jobs), chunksize):
-                    Lhandle.append(self._create_scripts_threaded(self.jobs[i:i + chunksize],configuration))
-                for dataThread in Lhandle:
+                    Log.debug("Checking Scripts")
+                    lhandle.append(self.check_scripts(self.jobs[i:i + chunksize], configuration, parameters, only_generate, hold))
+                for dataThread in lhandle:
+                    dataThread.join()
+                for i in range(0, len(self.jobs), chunksize):
+                    Log.debug("Creating Scripts")
+                    lhandle.append(self._create_scripts_threaded(self.jobs[i:i + chunksize], configuration))
+                for dataThread in lhandle:
                     dataThread.join()
                 self._common_script = self._create_common_script()
+        except AutosubmitCritical:
+            raise
+        except BaseException as e:
+            raise AutosubmitCritical("Error while building the scripts: {0}".format(e), 7013)
+        try:
             if not only_generate:
                 Log.debug("Sending Files")
                 self._send_files()
                 Log.debug("Submitting")
                 self._do_submission(hold=hold)
+        except AutosubmitCritical:
+            raise
+        except BaseException as e:
+            raise AutosubmitCritical("Error while submitting jobs: {0}".format(e), 7013)
+
 
 
     def _create_scripts(self, configuration):
