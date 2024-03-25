@@ -146,6 +146,10 @@ With autosubmit.lock and no (-f) force, it will only generate all files that are
 
 Without autosubmit.lock, it will generate all unless filtered by -fl,fc,fs or ft.
 
+To generate cmd only for a single job of the section :
+::
+
+    autosubmit inspect expid -q
 
 How to monitor an experiment
 ----------------------------
