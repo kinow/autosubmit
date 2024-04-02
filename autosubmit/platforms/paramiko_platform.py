@@ -21,7 +21,7 @@ from paramiko.ssh_exception import (SSHException)
 import Xlib.support.connect as xlib_connect
 from threading import Thread
 import getpass
-
+from paramiko.agent import Agent
 
 def threaded(fn):
     def wrapper(*args, **kwargs):
@@ -187,6 +187,10 @@ class ParamikoPlatform(Platform):
         :return: True if authentication was successful, False otherwise
         """
         try:
+            self._ssh._agent = Agent()
+            for key in self._ssh._agent.get_keys():
+                if not hasattr(key,"public_blob"):
+                    key.public_blob = None
             self._ssh.connect(self._host_config['hostname'], port=port, username=self.user, timeout=60, banner_timeout=60)
         except BaseException as e:
             Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
