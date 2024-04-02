@@ -163,7 +163,7 @@ class JobPackageBase(object):
             thread_number = thread_number * 5
         chunksize = int((len(self.jobs) + thread_number - 1) / thread_number)
         try:
-            if len(self.jobs) < thread_number or str(configuration.experiment_data.get("CONFIG",{}).get("ENABLE_WRAPPER_THREADS","False")).lower() in ["true","yes","1"]:
+            if len(self.jobs) < thread_number or str(configuration.experiment_data.get("CONFIG",{}).get("ENABLE_WRAPPER_THREADS","False")).lower() == "false":
                 self.submit_unthreaded(configuration, parameters, only_generate, hold)
                 Log.debug("Creating Scripts")
                 self._create_scripts(configuration)
