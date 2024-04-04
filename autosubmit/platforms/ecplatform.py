@@ -171,8 +171,8 @@ class EcPlatform(ParamikoPlatform):
         except:
             self.connected = False
         if not self.log_retrieval_process_active and (
-                as_conf is None or as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS',
-                                                                                 "false").lower() == "false"):
+                as_conf is None or str(as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS',
+                                                                                 "false")).lower() == "false"):
             self.log_retrieval_process_active = True
             self.recover_job_logs()
 

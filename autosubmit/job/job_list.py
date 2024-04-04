@@ -2556,7 +2556,7 @@ class JobList(object):
                 if not hasattr(job, "ready_start_date") or not job.ready_start_date or log_file.name.split(".")[
                     -2] >= job.ready_start_date:  # hasattr for backward compatibility
                     job.updated_log = True
-                if not job.updated_log and as_conf.platforms_data.get(self.platform.name, {}).get('DISABLE_RECOVERY_THREADS', "false").lower() == "false":
+                if not job.updated_log and str(as_conf.platforms_data.get(self.platform.name, {}).get('DISABLE_RECOVERY_THREADS', "false")).lower() == "false":
                     job.platform.add_job_to_log_recover(job)
 
     def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time=False):

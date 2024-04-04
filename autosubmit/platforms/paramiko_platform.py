@@ -194,7 +194,8 @@ class ParamikoPlatform(Platform):
                     key.public_blob = None
             self._ssh.connect(self._host_config['hostname'], port=port, username=self.user, timeout=60, banner_timeout=60)
         except BaseException as e:
-            Log.warning(f'Failed to authenticate with ssh-agent due to {e}')
+            Log.debug(f'Failed to authenticate with ssh-agent due to {e}')
+            Log.debug('Trying to authenticate with other methods')
             return False
         return True
 
@@ -301,7 +302,7 @@ class ParamikoPlatform(Platform):
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=pow(4, 12) ,max_packet_size=pow(4, 12) )
             self._ftpChannel.get_channel().settimeout(120)
             self.connected = True
-            if not self.log_retrieval_process_active and (as_conf is None or as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS', "false").lower() == "false"):
+            if not self.log_retrieval_process_active and (as_conf is None or str(as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS', "false")).lower() == "false"):
                 self.log_retrieval_process_active = True
                 self.recover_job_logs()
         except SSHException:
