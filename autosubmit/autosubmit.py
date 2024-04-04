@@ -2013,7 +2013,7 @@ class Autosubmit:
             exp_history = Autosubmit.get_historical_database(expid, job_list,as_conf)
             # establish the connection to all platforms
             # Restore is a missleading, it is actually a "connect" function when the recover flag is not set.
-            Autosubmit.restore_platforms(platforms_to_test)
+            Autosubmit.restore_platforms(platforms_to_test,as_conf=as_conf)
             return job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence, False
         else:
             return job_list, submitter , None, None, as_conf , platforms_to_test, packages_persistence, True
@@ -2322,7 +2322,7 @@ class Autosubmit:
         for platform in platform_to_test:
             platform_issues = ""
             try:
-                message = platform.test_connection()
+                message = platform.test_connection(as_conf)
                 if message is None:
                     message = "OK"
                 if message != "OK":
@@ -2828,7 +2828,7 @@ class Autosubmit:
                         job.platform = submitter.platforms[job.platform_name]
                         platforms_to_test.add(job.platform)
                     for platform in platforms_to_test:
-                        platform.test_connection()
+                        platform.test_connection(as_conf)
                     for job in current_active_jobs:
                         job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
 
@@ -2851,7 +2851,7 @@ class Autosubmit:
                 # noinspection PyTypeChecker
                 platforms_to_test.add(platforms[job.platform_name])
             # establish the connection to all platforms
-            Autosubmit.restore_platforms(platforms_to_test)
+            Autosubmit.restore_platforms(platforms_to_test,as_conf=as_conf)
 
             if all_jobs:
                 jobs_to_recover = job_list.get_job_list()
@@ -2984,7 +2984,7 @@ class Autosubmit:
                     job.platform_name = as_conf.get_platform()
                 platforms_to_test.add(platforms[job.platform_name])
             # establish the connection to all platforms on use
-            Autosubmit.restore_platforms(platforms_to_test)
+            Autosubmit.restore_platforms(platforms_to_test,as_conf=as_conf)
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Autosubmit._check_ownership(experiment_id, raise_error=True)
             if submitter.platforms is None:
@@ -3201,7 +3201,7 @@ class Autosubmit:
             backup_files = []
             # establish the connection to all platforms on use
             try:
-                Autosubmit.restore_platforms(platforms_to_test)
+                Autosubmit.restore_platforms(platforms_to_test,as_conf=as_conf)
             except AutosubmitCritical as e:
                 raise AutosubmitCritical(
                     e.message + "\nInvalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.yml with the correct info\n 2) autosubmit expid -p --onlyremote",
@@ -5396,7 +5396,7 @@ class Autosubmit:
                 definitive_platforms = list()
                 for platform in platforms_to_test:
                     try:
-                        Autosubmit.restore_platforms([platform])
+                        Autosubmit.restore_platforms([platform],as_conf=as_conf)
                         definitive_platforms.append(platform.name)
                     except Exception as e:
                         pass

@@ -111,19 +111,21 @@ class LocalPlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self.get_pscall(job_id)
 
-    def connect(self, reconnect=False):
+    def connect(self, as_conf, reconnect=False):
         self.connected = True
-        if not self.log_retrieval_process_active:
+        if not self.log_retrieval_process_active and (
+                as_conf is None or as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS',
+                                                                                 "false").lower() == "false"):
             self.log_retrieval_process_active = True
             self.recover_job_logs()
 
 
-    def test_connection(self):
+    def test_connection(self,as_conf):
         if not self.connected:
-            self.connect()
+            self.connect(as_conf)
 
 
-    def restore_connection(self):
+    def restore_connection(self,as_conf):
         self.connected = True
 
     def check_Alljobs(self, job_list, as_conf, retries=5):

@@ -1245,7 +1245,10 @@ class Job(object):
             self.write_submit_time()
         # Updating logs
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
-            self.platform.add_job_to_log_recover(self)
+            if as_conf.platforms_data.get(self.platform.name, {}).get('DISABLE_RECOVERY_THREADS', "false").lower() == "true":
+                self.retrieve_logfiles(self.platform)
+            else:
+                self.platform.add_job_to_log_recover(self)
             if self.wrapper_type == "vertical":
                 max_logs = int(self.retrials)
                 for i in range(0,max_logs):

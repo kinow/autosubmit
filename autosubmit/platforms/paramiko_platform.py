@@ -115,7 +115,7 @@ class ParamikoPlatform(Platform):
         self.local_x11_display = xlib_connect.get_display(display)
 
 
-    def test_connection(self):
+    def test_connection(self,as_conf):
         """
         Test if the connection is still alive, reconnect if not.
         """
@@ -123,7 +123,7 @@ class ParamikoPlatform(Platform):
             if not self.connected:
                 self.reset()
                 try:
-                    self.restore_connection()
+                    self.restore_connection(as_conf)
                     message = "OK"
                 except BaseException as e:
                     message = str(e)
@@ -147,13 +147,13 @@ class ParamikoPlatform(Platform):
             raise AutosubmitCritical(str(e),7051)
             #raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
 
-    def restore_connection(self):
+    def restore_connection(self, as_conf):
         try:
             self.connected = False
             retries = 2
             retry = 0
             try:
-                self.connect()
+                self.connect(as_conf)
             except Exception as e:
                 if ',' in self.host:
                     Log.printlog("Connection Failed to {0}, will test another host".format(
@@ -163,7 +163,7 @@ class ParamikoPlatform(Platform):
                         "First connection to {0} is failed, check host configuration or try another login node ".format(self.host), 7050,str(e))
             while self.connected is False and retry < retries:
                 try:
-                    self.connect(True)
+                    self.connect(as_conf,True)
                 except Exception as e:
                     pass
                 retry += 1
@@ -225,7 +225,7 @@ class ParamikoPlatform(Platform):
         #         pass
         return tuple(answers)
 
-    def connect(self, reconnect=False):
+    def connect(self, as_conf, reconnect=False):
         """
         Creates ssh connection to host
 
@@ -301,7 +301,7 @@ class ParamikoPlatform(Platform):
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=pow(4, 12) ,max_packet_size=pow(4, 12) )
             self._ftpChannel.get_channel().settimeout(120)
             self.connected = True
-            if not self.log_retrieval_process_active:
+            if not self.log_retrieval_process_active and (as_conf is None or as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS', "false").lower() == "false"):
                 self.log_retrieval_process_active = True
                 self.recover_job_logs()
         except SSHException:
@@ -319,7 +319,7 @@ class ParamikoPlatform(Platform):
                 raise AutosubmitCritical("Authentication Failed, please check the platform.conf of {0}".format(
                     self._host_config['hostname']), 7050, str(e))
             if not reconnect and "," in self._host_config['hostname']:
-                self.restore_connection()
+                self.restore_connection(as_conf)
             else:
                 raise AutosubmitError(
                     "Couldn't establish a connection to the specified host, wrong configuration?", 6003, str(e))
@@ -974,7 +974,7 @@ class ParamikoPlatform(Platform):
             except paramiko.SSHException as e:
                 if str(e) in "SSH session not active":
                     self._ssh = None
-                    self.restore_connection()
+                    self.restore_connection(None)
                 timeout = timeout + 60
                 retries = retries - 1
         if retries <= 0:

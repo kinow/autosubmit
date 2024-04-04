@@ -843,17 +843,17 @@ class Platform(object):
     def add_job_to_log_recover(self, job):
         self.recovery_queue.put((job,job.children))
 
-    def connect(self, reconnect=False):
+    def connect(self, as_conf, reconnect=False):
         raise NotImplementedError
 
-    def restore_connection(self):
+    def restore_connection(self,as_conf):
         raise NotImplementedError
 
     @processed
     def recover_job_logs(self):
         job_names_processed = set()
         self.connected = False
-        self.restore_connection()
+        self.restore_connection(None)
         while True:
             try:
                 job,children = self.recovery_queue.get()
@@ -866,7 +866,7 @@ class Platform(object):
             except queue.Empty:
                 pass
             except Exception as e:
-                self.restore_connection()
+                self.restore_connection(None)
             time.sleep(1)
 
 
