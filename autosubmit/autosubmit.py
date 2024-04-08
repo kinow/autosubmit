@@ -2261,6 +2261,22 @@ class Autosubmit:
 
 
                 Log.result("No more jobs to run.")
+
+                # Wait for all remaining threads of I/O, close remaining connections
+                # search hint - finished run
+                Log.info("Waiting for all logs to be updated")
+                # get all threads
+                threads = threading.enumerate()
+                # print name
+                for timeout in range(7000, 0, -1):
+                    if len(job_list.get_completed_without_logs()) == 0:
+                        break
+                    for job in job_list.get_completed_without_logs():
+                        job_list.update_log_status(job, as_conf)
+                    sleep(1)
+                    if timeout % 10 == 0:
+                        Log.info(f"Timeout: {timeout}")
+
                 # Updating job data header with current information when experiment ends
                 try:
                     exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
@@ -2272,16 +2288,6 @@ class Autosubmit:
                         Autosubmit.database_fix(expid)
                     except Exception as e:
                         pass
-                # Wait for all remaining threads of I/O, close remaining connections
-                Log.info("Waiting for all logs to be updated")
-                for timeout in range(180, 0, -1):
-                    if len(job_list.get_completed_without_logs()) == 0:
-                        break
-                    for job in job_list.get_completed_without_logs():
-                        job_list.update_log_status(job)
-                    sleep(1)
-                    if timeout % 10 == 0:
-                        Log.info(f"Timeout: {timeout}")
 
                 for platform in platforms_to_test:
                     platform.closeConnection()

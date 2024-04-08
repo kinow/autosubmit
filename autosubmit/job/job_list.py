@@ -2535,7 +2535,7 @@ class JobList(object):
 
         return jobs_to_check
 
-    def update_log_status(self, job):
+    def update_log_status(self, job, as_conf):
         """
         Updates the log err and log out.
         """
@@ -2550,14 +2550,20 @@ class JobList(object):
                     err = log_file.name
                 elif "out" in log_file.suffix:
                     out = log_file.name
-            job.local_logs = (out, err)
-            job.remote_logs = (out, err)
+            if out or err:
+                if out and not err:
+                    err = out[-3] + ".err"
+                else:
+                    out = err[-3] + ".out"
+                job.local_logs = (out, err)
+                job.remote_logs = (out, err)
+
             if log_file:
                 if not hasattr(job, "ready_start_date") or not job.ready_start_date or log_file.name.split(".")[
                     -2] >= job.ready_start_date:  # hasattr for backward compatibility
                     job.updated_log = True
-                if not job.updated_log and str(as_conf.platforms_data.get(self.platform.name, {}).get('DISABLE_RECOVERY_THREADS', "false")).lower() == "false":
-                    job.platform.add_job_to_log_recover(job)
+            if not job.updated_log and str(as_conf.platforms_data.get(job.platform.name, {}).get('DISABLE_RECOVERY_THREADS', "false")).lower() == "false":
+                job.platform.add_job_to_log_recover(job)
 
     def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time=False):
         # type: (AutosubmitConfig, bool, bool, object, bool) -> bool
@@ -2651,7 +2657,7 @@ class JobList(object):
             # Log name has this format:
                 # a02o_20000101_fc0_2_SIM.20240212115021.err
                 # $jobname.$(YYYYMMDDHHMMSS).err or .out
-            self.update_log_status(job)
+            self.update_log_status(job, as_conf)
             if job.synchronize is not None and len(str(job.synchronize)) > 0:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):

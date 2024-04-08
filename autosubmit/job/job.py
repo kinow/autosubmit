@@ -1097,12 +1097,13 @@ class Job(object):
                 return False
         return at_least_one_recovered
 
-    def retrieve_logfiles(self, platform):
+    def retrieve_logfiles(self, platform, raise_error=False):
         """
         Retrieves log files from remote host meant to be used inside a process.
         :param platform: platform that is calling the function, already connected.
         :return:
         """
+        backup_logname = copy.copy(self.local_logs)
         log_retrieved = False
         max_retrials = self.retrials
         max_logs = int(max_retrials) - self._fail_count
@@ -1134,7 +1135,10 @@ class Job(object):
                         Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(str(e), self.name))
         self.log_retrieved = log_retrieved
         if not self.log_retrieved:
-            Log.printlog("Failed to retrieve logs for job {0}".format(self.name), 6001)
+            self.local_logs = backup_logname
+            Log.printlog("Failed to retrieve logs for job {0}".format(self.name), 6000)
+            if raise_error:
+                raise
 
     def parse_time(self,wallclock):
         regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
@@ -1238,10 +1242,7 @@ class Job(object):
             # after checking the jobs , no job should have the status "submitted"
             Log.printlog("Job {0} in SUBMITTED status. This should never happen on this step..".format(
                 self.name), 6008)
-        if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
-                                                                 Status.RUNNING]:
-            self.write_start_time()
-        if previous_status == Status.HELD and self.status in [Status.SUBMITTED, Status.QUEUING, Status.RUNNING]:
+        if previous_status == Status.HELD and self.status in [Status.SUBMITTED, Status.QUEUING, Status.RUNNING, Status.COMPLETED]:
             self.write_submit_time()
         # Updating logs
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:

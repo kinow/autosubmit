@@ -861,12 +861,20 @@ class Platform(object):
                     continue
                 job.children = children
                 job.platform = self
-                job.retrieve_logfiles(self)
-                job_names_processed.add(f'{job.name}_{job.fail_count}')
+                try:
+                    job.retrieve_logfiles(self, raise_error=True)
+                    job_names_processed.add(f'{job.name}_{job.fail_count}')
+                except:
+                    pass
             except queue.Empty:
                 pass
+            except (IOError, OSError):
+                pass
             except Exception as e:
-                self.restore_connection(None)
+                try:
+                    self.restore_connection(None)
+                except:
+                    pass
             time.sleep(1)
 
 
