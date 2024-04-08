@@ -2268,14 +2268,15 @@ class Autosubmit:
                 # get all threads
                 threads = threading.enumerate()
                 # print name
-                for timeout in range(7000, 0, -1):
+                timeout = as_conf.experiment_data.get("CONFIG",{}).get("LAST_LOGS_TIMEOUT", 180)
+                for remaining in range(timeout, 0, -1):
                     if len(job_list.get_completed_without_logs()) == 0:
                         break
                     for job in job_list.get_completed_without_logs():
                         job_list.update_log_status(job, as_conf)
                     sleep(1)
-                    if timeout % 10 == 0:
-                        Log.info(f"Timeout: {timeout}")
+                    if remaining % 10 == 0:
+                        Log.info(f"Timeout: {remaining}")
 
                 # Updating job data header with current information when experiment ends
                 try:

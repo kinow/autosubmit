@@ -121,7 +121,10 @@ Autosubmit configuration
         TOTALJOBS: 6
         # Time (seconds) between connections to the HPC queue scheduler to poll already submitted jobs status
         # Default:10
-        SAFETYSLEEPTIME:10
+        SAFETYSLEEPTIME: 10
+        # Time (seconds) before ending the run to retrieve the last logs.
+        # Default:180
+        LAST_LOGS_TIMEOUT: 180
         # Number of retrials if a job fails. Can ve override at job level
         # Default:0
         RETRIALS:0
