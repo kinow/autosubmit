@@ -2550,7 +2550,7 @@ class JobList(object):
                     err = log_file.name
                 elif "out" in log_file.suffix:
                     out = log_file.name
-            if out or err:
+            if out != "" or err != "":
                 if out and not err:
                     err = out[-3] + ".err"
                 else:

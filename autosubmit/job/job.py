@@ -2161,6 +2161,7 @@ class Job(object):
         Writes submit date and time to TOTAL_STATS file. It doesn't write if hold is True.
         """
         # print(traceback.format_stack())
+        self.write_start_time()
         print(("Call from {} with status {}".format(self.name, self.status_str)))
         if hold is True:
             return # Do not write for HELD jobs.
@@ -2209,17 +2210,16 @@ class Job(object):
         :return: True if successful, False otherwise
         :rtype: bool
         """
-        timestamp = date2str(datetime.datetime.now(), 'S')
+        start_time = time.time()
 
-        self.local_logs = (f"{self.name}.{timestamp}.out", f"{self.name}.{timestamp}.err")
+        if self.wrapper_type == "vertical":
+            timestamp = date2str(datetime.datetime.now(), 'S')
+            self.local_logs = (f"{self.name}.{timestamp}.out", f"{self.name}.{timestamp}.err")
 
-        if self.wrapper_type != "vertical" or enabled:
-            if self._platform.get_stat_file(self.name, retries=5): #fastlook
-                start_time = self.check_start_time()
-            else:
-                Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(
-                    self.name), 3000)
-                start_time = time.time()
+        elif self.wrapper_type != "vertical" or enabled:
+            start_time_ = self.check_start_time()
+            if start_time_:
+                start_time = start_time_
             timestamp = date2str(datetime.datetime.now(), 'S')
 
             self.local_logs = (self.name + "." + timestamp +
@@ -2231,11 +2231,11 @@ class Job(object):
             # noinspection PyTypeChecker
             f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
             # Writing database
-            exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-            exp_history.write_start_time(self.name, start=start_time, status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
-                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
-                                    platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
-                                    children=self.children_names_str)
+        exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+        exp_history.write_start_time(self.name, start=start_time, status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
+                                wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
+                                platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
+                                children=self.children_names_str)
         return True
 
     def write_end_time(self, completed,enabled = False):
@@ -2303,18 +2303,18 @@ class Job(object):
         out, err = self.local_logs
         path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
         # Launch first as simple non-threaded function
+
+        exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+        exp_history.write_start_time(self.name, start=total_stats[0], status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
+                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
+                                    platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
+                                    children=self.children_names_str)
         if not first_retrial:
             exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
             exp_history.write_submit_time(self.name, submit=total_stats[0], status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
                                         wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
                                         platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
                                         children=self.children_names_str)
-        exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-        exp_history.write_start_time(self.name, start=total_stats[0], status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
-                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
-                                    platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
-                                    children=self.children_names_str)
-
         exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
         job_data_dc = exp_history.write_finish_time(self.name, finish=total_stats[1], status=total_stats[2], ncpus=self.processors,
                                         wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
@@ -2388,7 +2388,7 @@ class Job(object):
     def synchronize_logs(self, platform, remote_logs, local_logs, last = True):
         platform.move_file(remote_logs[0], local_logs[0], True)  # .out
         platform.move_file(remote_logs[1], local_logs[1], True)  # .err
-        if last:
+        if last and local_logs[0] != "":
             self.local_logs = local_logs
             self.remote_logs = copy.deepcopy(local_logs)
 

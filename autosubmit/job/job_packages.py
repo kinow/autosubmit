@@ -236,7 +236,6 @@ class JobPackageSimple(JobPackageBase):
         if len(job_scripts) == 0:
             job_scripts = self._job_scripts
         for job in self.jobs:
-            job.write_start_time()
             #CLEANS PREVIOUS RUN ON LOCAL
             log_completed = os.path.join(self._tmp_path, job.name + '_COMPLETED')
             log_stat = os.path.join(self._tmp_path, job.name + '_STAT')
@@ -274,8 +273,6 @@ class JobPackageSimpleWrapped(JobPackageSimple):
             self.platform.send_file(self._job_wrapped_scripts[job.name])
 
     def _do_submission(self, job_scripts=None, hold=False):
-        for job in self.jobs:
-            job.write_start_time()
         if job_scripts is None or not job_scripts:
             job_scripts = self._job_wrapped_scripts
         super(JobPackageSimpleWrapped, self)._do_submission(job_scripts, hold=hold)
@@ -333,7 +330,6 @@ class JobPackageArray(JobPackageBase):
         for job in self.jobs:
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
-            job.write_start_time()
 
         package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
@@ -614,7 +610,6 @@ class JobPackageThread(JobPackageBase):
             for job in self.jobs:
                 filenames += " " + self.platform.remote_log_dir + "/" + job.name + "_STAT " + \
                              self.platform.remote_log_dir + "/" + job.name + "_COMPLETED"
-                job.write_start_time()
             self.platform.remove_multiple_files(filenames)
 
         else:
@@ -623,7 +618,7 @@ class JobPackageThread(JobPackageBase):
                 self.platform.remove_completed_file(job.name)
                 if hold:
                     job.hold = hold
-                job.write_start_time()
+
 
         package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
@@ -702,7 +697,6 @@ class JobPackageThreadWrapped(JobPackageThread):
             self.platform.remove_completed_file(job.name)
             if hold:
                 job.hold = hold
-            job.write_start_time()
 
 
         package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
