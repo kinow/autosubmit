@@ -245,6 +245,8 @@ class Job(object):
         self.updated_log = True
         self.ready_start_date = None
         self.log_retrieved = False
+        self.start_time_writted = False
+        self.submission_time_writted = False
 
     def _init_runtime_parameters(self):
         # hetjobs
