@@ -70,7 +70,11 @@ Autosubmit Workflow Manager
                 </div>
             </div>
             <div class="col my-2" style="min-width: 20rem;">
-                <img src="_static/isometric.svg" style="background-color: transparent;"/>
+                <img
+                  src="_static/isometric.svg"
+                  style="background-color: transparent;"
+                  alt="Illustration of a person and workflows running on a platform."
+                />
             </div>
         </div>
    </div>
@@ -81,9 +85,9 @@ necessities. Unlike other workflow solutions in the domain, it integrates the
 capabilities of an experiment manager, workflow orchestrator and monitor in a
 self-contained application.
 
-Autosubmit is a Python package provided in PyPI. Conda recipes can also be found
-on the website. A containerized version for testing purposes is also available
-in the Git source code but not public yet.
+It is a Python package available at PyPI. The source code in Git contains a
+Dockerfile used in cloud environments with Kubernetes, and there are examples
+of how to install Autosubmit with Conda.
 
 
 .. raw:: html
@@ -91,29 +95,52 @@ in the Git source code but not public yet.
    <div>
         <div class="row gap-4">
             <div class="col" style="min-width: 20rem;">
-                <i class="fa-solid fa-gear fs-2" style="color: #4E8490;"></i>
-                <div class="fs-4">Automatization</div>
-                <p>Autosubmit manages job submission and dependencies without user intervention</p>
+                <p class="fs-4">
+                  <i class="fa-solid fa-gear fs-4" style="color: #4E8490;"></i>
+                  Automation
+                </p>
+                <p>Management of job submission and dependencies without user intervention.</p>
             </div>
             <div class="col" style="min-width: 20rem;">
-                <i class="fa-solid fa-fingerprint fs-2" style="color: #4E8490;"></i>
-                <div class="fs-4">Data Provenance</div>
-                <p>Autosubmit assigns unique ID's to experiments, uses open standards, and applies other techniques to enable data provenance in the experiments and workflows</p>
+                <p class="fs-4">
+                  <i class="fa-solid fa-fingerprint fs-4" style="color: #4E8490;"></i>
+                  Data Provenance
+                </p>
+                <p>Experiments with unique PIDs, use of open standards for data provenance
+                   in the experiments and workflows.</p>
             </div>
             <div class="col" style="min-width: 20rem;">
-                <i class="fa-solid fa-clock-rotate-left fs-2" style="color: #4E8490;"></i>
-                <div class="fs-4">Failure Tolerance</div>
-                <p>Autosubmit manages automatic retrials and has the ability to rerun specific parts of the experiment in case of failure</p>
+                <p class="fs-4">
+                  <i class="fa-solid fa-clock-rotate-left fs-4" style="color: #4E8490;"></i>
+                  Fault Tolerance
+                </p>
+                <p>Automatic retrials and ability to re-run specific parts of
+                   the experiment in case of failure.</p>
             </div>
             <div class="col" style="min-width: 20rem;">
-                <i class="fa-solid fa-sitemap fs-2" style="color: #4E8490;"></i>
-                <div class="fs-4">Resource Management</div>
-                <p>Autosubmit supports a per-platform configuration, allowing users to run their experiments without adapting job scripts</p>
+                <p class="fs-4">
+                  <i class="fa-solid fa-sitemap fs-4" style="color: #4E8490;"></i>
+                  Resource Management
+                </p>
+                <p>Individual platform configuration, allowing users
+                   to run their experiments without having to modify job scripts.</p>
             </div>
             <div class="col" style="min-width: 20rem;">
-                <i class="fa-solid fa-server fs-2" style="color: #4E8490;"></i>
-                <div class="fs-4">Multiple Platform</div>
-                <p>Autosubmit can run jobs of an experiment in different platforms</p>
+                <p class="fs-4">
+                  <i class="fa-solid fa-server fs-4" style="color: #4E8490;"></i>
+                  Multiplatform
+                </p>
+                <p>Extensively used to run experiments on different platforms, and
+                   using batch schedulers like Slurm, PBS, LSF. It is deployed and used
+                   on different HPC and cloud platforms.</p>
+            </div>
+            <div class="col" style="min-width: 20rem;">
+                <p class="fs-4">
+                  <i class="fa-brands fa-gitlab fs-4" style="color: #4E8490;"></i>
+                  Open Source
+                </p>
+                <p>Autosubmit code is hosted at BSC Earth Sciences' GitLab, licensed
+                   under the GPLv3 License, and under active development.</p>
             </div>
         </div>
     </div>
