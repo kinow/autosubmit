@@ -5,7 +5,7 @@ Error codes and solutions
 .. note::
   Increasing the logging level gives you more detailed information
   about your error, e.g. ``autosubmit -lc DEBUG -lf DEBUG <CMD>``,
-  where ``<CMD>>`` could be ``create``, ``run``, etc.
+  where ``<CMD>`` could be ``create``, ``run``, etc.
 
 Every error in Autosubmit contains a numeric error code, to help users and developers
 to identify the category of the error. These errors are organized as follows:
