@@ -1,6 +1,6 @@
-====================
-Tutorial start guide
-====================
+===============
+Getting Started
+===============
 
 This tutorial is a starter’s guide to run a dummy experiment with Autosubmit.
 

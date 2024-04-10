@@ -5,10 +5,16 @@ User Guide
 .. toctree::
    /userguide/create/index
    /userguide/configure/index
+   /userguide/defining_workflows/index
+   /userguide/wrappers/index
    /userguide/run/index
+   /userguide/modifying_workflow/index
    /userguide/manage/index
    /userguide/monitor_and_check/index
    /userguide/set_and_share_the_configuration/index
+   /userguide/variables
+   /userguide/expids
+   /userguide/provenance
 
 Command list
 ============

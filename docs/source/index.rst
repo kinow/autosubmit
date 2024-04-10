@@ -10,13 +10,7 @@ Autosubmit Workflow Manager
 ############################
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
-
-   /introduction/index
-
-.. toctree::
-   :caption: Quick Start Guide
+   :caption: Getting Started
    :maxdepth: 1
    :hidden:
 
@@ -31,22 +25,10 @@ Autosubmit Workflow Manager
 
 .. toctree::
    :caption: User Guide
-   :maxdepth: 2
+   :maxdepth: 1
    :hidden:
 
    /userguide/index
-   /userguide/create/index
-   /userguide/configure/index
-   /userguide/defining_workflows/index
-   /userguide/wrappers/index
-   /userguide/run/index
-   /userguide/modifying_workflow/index
-   /userguide/manage/index
-   /userguide/monitor_and_check/index
-   /userguide/set_and_share_the_configuration/index
-   /userguide/variables
-   /userguide/expids
-   /userguide/provenance
 
 .. toctree::
    :caption: Database Documentation
@@ -56,20 +38,11 @@ Autosubmit Workflow Manager
    /database/index
 
 .. toctree::
-   :caption: Developer Guide
-   :maxdepth: 1
-   :hidden:
-
-   /devguide/index
-
-.. toctree::
    :caption: Troubleshooting
    :maxdepth: 1
    :hidden:
 
    /troubleshooting/index
-   /troubleshooting/error-codes
-   /troubleshooting/changelog
 
 .. toctree::
    :caption: Module Documentation
@@ -84,20 +57,38 @@ Autosubmit Workflow Manager
    <div>
         <div class="row gap-4">
             <div class="col d-flex flex-column justify-content-center">
-                <h1 class="fw-bold">Autosubmit workflow manager</h1>
-                <p>Autosubmit is a Python software to manage complicated workflows on HPC platforms</p>
-                <div class="m-2 bg-black text-white font-monospace">autosubmit expid -H HPCname -d Description</div>
-                <div class="mt-3 mx-2 d-flex gap-2">
+                <h1 class="fw-bold">Autosubmit</h1>
+                <p>
+                     Autosubmit is an open source Python <strong>experiment and workflow
+                     manager</strong> used to manage complex workflows on Cloud and HPC
+                     platforms.
+                </p>
+                <div class="px-2 py-1 bg-black text-white font-monospace">$ pip install autosubmit</div>
+                <div class="mt-3 d-flex gap-2">
                   <a class="btn text-white rounded-pill px-3" style="background-color: #4E8490;" href="qstartguide/index.html">Get started</a>
                   <a class="btn text-white rounded-pill px-3" style="background-color: #4E8490;" href="installation/index.html">Installation</a>
                 </div>
             </div>
             <div class="col my-2" style="min-width: 20rem;">
                 <img src="_static/isometric.svg" style="background-color: transparent;"/>
-                <label class="w-100 text-end mt-2" style="opacity: 0.25; font-size: 0.7rem;">Illustration by Storyset</label>
             </div>
         </div>
+   </div>
 
+
+Autosubmit is a lightweight workflow manager designed to meet climate research
+necessities. Unlike other workflow solutions in the domain, it integrates the
+capabilities of an experiment manager, workflow orchestrator and monitor in a
+self-contained application.
+
+Autosubmit is a Python package provided in PyPI. Conda recipes can also be found
+on the website. A containerized version for testing purposes is also available
+in the Git source code but not public yet.
+
+
+.. raw:: html
+
+   <div>
         <div class="row gap-4">
             <div class="col" style="min-width: 20rem;">
                 <i class="fa-solid fa-gear fs-2" style="color: #4E8490;"></i>
@@ -126,3 +117,17 @@ Autosubmit Workflow Manager
             </div>
         </div>
     </div>
+
+Contact Us
+==========
+
+.. list-table::
+  :widths: 20 80
+  :header-rows: 0
+  :stub-columns: 1
+
+  * - GitLab
+    - https://earth.bsc.es/gitlab/es/autosubmit/
+  * - Email
+    - support-autosubmit@bsc.es
+

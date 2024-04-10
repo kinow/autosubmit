@@ -1,6 +1,13 @@
-###
-FAQ
-###
+.. toctree::
+   :caption: Troubleshooting
+   :maxdepth: 1
+
+   /troubleshooting/error-codes
+   /troubleshooting/changelog
+
+###############
+Troubleshooting
+###############
 
 How to change the job status stopping autosubmit
 ================================================

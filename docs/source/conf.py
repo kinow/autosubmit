@@ -139,7 +139,34 @@ html_theme = 'pydata_sphinx_theme'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-# html_theme_options = {}
+html_theme_options = {
+    'header_links_before_dropdown': 6,
+    'show_nav_level': 2,
+    'use_edit_page_button': True,
+    'icon_links': [
+        {
+            'name': 'GitLab',
+            'url': 'https://earth.bsc.es/gitlab/es/autosubmit/',
+            'icon': 'fa-brands fa-square-gitlab',
+            'type': 'fontawesome'
+        },
+        # TODO: https://github.com/pydata/pydata-sphinx-theme/blob/662758e6afb498be269fd123ba6e446a8099534a/docs/user_guide/header-links.rst#L252
+        # {
+        #     'name': 'PyPI',
+        #     'url': 'https://pypi.org/project/autosubmit/',
+        #     'icon': 'fa-custom fa-pypi',
+        #     'type': 'fontawesome'
+        # }
+    ]
+}
+
+html_context = {
+    'gitlab_url': 'https://earth.bsc.es/gitlab',
+    'gitlab_user': 'es',
+    'gitlab_repo': 'autosubmit',
+    'gitlab_version': 'master',
+    'doc_path': 'docs/source/'
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
