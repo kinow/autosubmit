@@ -1,0 +1,4 @@
+/* Hide home title */
+#autosubmit-workflow-manager > h1 {
+    display: none;
+}

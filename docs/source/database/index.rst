@@ -1,6 +1,6 @@
-####################
-Autosubmit databases
-####################
+#########
+Databases
+#########
 
 Introduction
 ------------
