@@ -157,7 +157,9 @@ html_theme_options = {
         #     'icon': 'fa-custom fa-pypi',
         #     'type': 'fontawesome'
         # }
-    ]
+    ],
+    'footer_start': ['copyright', 'sphinx-version'],
+    'footer_end': ['theme-version', 'footer_notes']
 }
 
 html_context = {
