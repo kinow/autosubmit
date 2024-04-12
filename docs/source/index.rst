@@ -130,9 +130,7 @@ of how to install Autosubmit with Conda.
                   <i class="fa-solid fa-server fs-4" style="color: #4E8490;"></i>
                   Multiplatform
                 </p>
-                <p>Extensively used to run experiments on different platforms, and
-                   using batch schedulers like Slurm, PBS, LSF. It is deployed and used
-                   on different HPC and cloud platforms.</p>
+                <p>Widely used to run experiments on different platforms simultaneously, using batch schedulers such as Slurm, PBS, LSF. It is deployed and used on various HPC and cloud systems.</p>
             </div>
             <div class="col" style="min-width: 20rem;">
                 <p class="fs-4">
