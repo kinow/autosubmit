@@ -39,14 +39,15 @@ test_python3:
         coverage_format: cobertura
         path: test/coverage.xml
 
-docs:
-  stage: docs
-  script:
-    - conda activate autosubmit3
-    - pip install -e .
-    - cd docs
-    - pip install -r requirements.txt
-    - make html
+# FIXME: Our GitLab worker has 3.7, but pydata-sphinx-theme requires 3.8+
+# docs:
+#   stage: docs
+#   script:
+#     - conda activate autosubmit3
+#     - pip install -e .
+#     - cd docs
+#     - pip install -r requirements.txt
+#     - make html
 
 
 clean:
