@@ -606,6 +606,7 @@ class JobPackager(object):
         return packages
 
     def _build_hybrid_package(self, jobs_list, wrapper_limits, section,wrapper_info={}):
+        self.wrapper_info = wrapper_info
         jobs_resources = dict()
         jobs_resources['MACHINEFILES'] = self._as_config.get_wrapper_machinefiles()
 
@@ -621,12 +622,12 @@ class JobPackager(object):
 
     def _build_horizontal_vertical_package(self, horizontal_packager, section, jobs_resources):
         total_wallclock = '00:00'
-        horizontal_package = horizontal_packager.build_horizontal_package()
+        horizontal_package = horizontal_packager.build_horizontal_package(wrapper_info=self.wrapper_info)
         horizontal_packager.create_sections_order(section)
         horizontal_packager.add_sectioncombo_processors(
             horizontal_packager.total_processors)
         horizontal_package.sort(
-            key=lambda job: horizontal_packager.sort_by_expression(job.name))
+            key=lambda job: horizontal_packager.sort_by_expression(job.section))
         job = max(horizontal_package, key=attrgetter('total_wallclock'))
         wallclock = job.wallclock
         current_package = [horizontal_package]
@@ -664,7 +665,7 @@ class JobPackager(object):
             dict_jobs = self._jobs_list.get_ordered_jobs_by_date_member(self.current_wrapper_section)
             job_list = JobPackagerVerticalMixed(dict_jobs, job, [job], job.wallclock,
                                                              horizontal_packager.wrapper_limits["max"], horizontal_packager.wrapper_limits,
-                                                             self._platform.max_wallclock).build_vertical_package(job)
+                                                             self._platform.max_wallclock,wrapper_info=self.wrapper_info).build_vertical_package(job)
             current_package.append(list(set(job_list)))
 
         for job in current_package[-1]:
@@ -858,14 +859,16 @@ class JobPackagerHorizontal(object):
         self._maxTotalProcessors = 0
         self._sectionList = list()
         self._package_sections = dict()
-
-    def build_horizontal_package(self, horizontal_vertical=False):
+        self.wrapper_info = {}
+    def build_horizontal_package(self, horizontal_vertical=False,wrapper_info={}):
+        self.wrapper_info = wrapper_info
         current_package = []
         current_package_by_section = {}
         if horizontal_vertical:
             self._current_processors = 0
         jobs_by_section = dict()
         for job in self.job_list:
+            job.update_parameters(self.wrapper_info[-1],{})
             if job.section not in jobs_by_section:
                 jobs_by_section[job.section] = list()
             jobs_by_section[job.section].append(job)
@@ -920,9 +923,8 @@ class JobPackagerHorizontal(object):
             max(self._package_sections.values()), self._maxTotalProcessors)
         return True
 
-    def sort_by_expression(self, jobname):
-        jobname = jobname.split('_')[-1]
-        return self._sort_order_dict[jobname]
+    def sort_by_expression(self, section):
+        return self._sort_order_dict[section]
 
     def get_next_packages(self, jobs_sections, max_wallclock=None, potential_dependency=None, packages_remote_dependencies=list(), horizontal_vertical=False, max_procs=0):
         packages = []
@@ -941,12 +943,13 @@ class JobPackagerHorizontal(object):
                             if other_parent.status != Status.COMPLETED and other_parent not in self.job_list:
                                 wrappable = False
                         if wrappable and child not in next_section_list:
+                            child.update_parameters(self.wrapper_info[-1],{})
                             next_section_list.append(child)
 
             next_section_list.sort(
-                key=lambda job: self.sort_by_expression(job.name))
+                key=lambda job: self.sort_by_expression(job.section))
             self.job_list = next_section_list
-            package_jobs = self.build_horizontal_package(horizontal_vertical)
+            package_jobs = self.build_horizontal_package(horizontal_vertical,wrapper_info=self.wrapper_info)
 
             if package_jobs:
                 sections_aux = set()
