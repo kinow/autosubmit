@@ -2434,6 +2434,14 @@ class Autosubmit:
                 if error_message != "":
                     raise AutosubmitCritical("Submission Failed due wrong configuration:{0}".format(error_message),
                                              7014)
+                if not inspect:
+                    for package in valid_packages_to_submit:
+                        wrapper_time = None
+                        for job in package.jobs: # if jobs > 1 == wrapped == same submission time
+                            job.write_submit_time(wrapper_submit_time=wrapper_time)
+                            wrapper_time = job.write_submit_time
+
+
             if save_1 or save_2:
                 return True
             else:

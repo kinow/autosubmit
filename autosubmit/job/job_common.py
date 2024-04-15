@@ -199,7 +199,7 @@ class StatisticsSnippetPython:
                 locale.setlocale(locale.LC_ALL, 'C')
             job_name_ptrn = '%CURRENT_LOGDIR%/%JOBNAME%'
             stat_file = open(job_name_ptrn + '_STAT', 'w')
-            stat_file.write('{0:.0f}\\n'.format(time.time()))
+            stat_file.write('int({0:.0f})\\n'.format(time.time()))
             stat_file.close()
             ###################
             # Autosubmit Checkpoint
@@ -228,7 +228,7 @@ class StatisticsSnippetPython:
                 ###################
 
                 stat_file = open(job_name_ptrn + '_STAT', 'a')
-                stat_file.write('{0:.0f}\\n'.format(time.time()))
+                stat_file.write('int({0:.0f})\\n'.format(time.time()))
                 stat_file.close()
                 open(job_name_ptrn + '_COMPLETED', 'a').close()
                 exit(0)

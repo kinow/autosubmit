@@ -170,7 +170,6 @@ class SlurmPlatform(ParamikoPlatform):
                         job.hold = hold
                         job.id = str(jobs_id[i])
                         job.status = Status.SUBMITTED
-                        job.write_submit_time(hold=hold)
                     # Check if there are duplicated jobnames
                     if not duplicated_jobs_already_checked:
                         job_name = package.name if hasattr(package, "name") else package.jobs[0].name

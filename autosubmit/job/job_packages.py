@@ -333,14 +333,15 @@ class JobPackageArray(JobPackageBase):
 
         package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
-        if package_id is None or not package_id:
+        if package_id is None or not package_id: # platforms with a submit.cmd
             return
-
-        for i in range(0, len(self.jobs)):
+        wrapper_time = None
+        for i in range(0, len(self.jobs)): # platforms without a submit.cmd
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id) + '[{0}]'.format(i)
             self.jobs[i].status = Status.SUBMITTED            
-            self.jobs[i].write_submit_time(hold=hold)
+            self.jobs[i].write_submit_time(hold=hold,wrapper_submit_time=wrapper_time)
+            wrapper_time = self.jobs[i].write_submit_time
 
 
 class JobPackageThread(JobPackageBase):
@@ -624,12 +625,13 @@ class JobPackageThread(JobPackageBase):
 
         if package_id is None or not package_id:
             return
-
-        for i in range(0, len(self.jobs) ):
+        wrapper_time = None
+        for i in range(0, len(self.jobs)):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id)
-            self.jobs[i].status = Status.SUBMITTED            
-            self.jobs[i].write_submit_time(hold=hold)
+            self.jobs[i].status = Status.SUBMITTED
+            self.jobs[i].write_submit_time(hold=hold,wrapper_submit_time=wrapper_time)
+            wrapper_time = self.jobs[i].write_submit_time
 
     def _common_script_content(self):
         pass
@@ -703,12 +705,14 @@ class JobPackageThreadWrapped(JobPackageThread):
 
         if package_id is None or not package_id:
             raise Exception('Submission failed')
-
+        wrapper_time = None
         for i in range(0, len(self.jobs)):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id)
-            self.jobs[i].status = Status.SUBMITTED            
-            self.jobs[i].write_submit_time(hold=hold)
+            self.jobs[i].status = Status.SUBMITTED
+            self.jobs[i].write_submit_time(hold=hold,wrapper_submit_time=wrapper_time)
+            wrapper_time = self.jobs[i].write_submit_time
+
 class JobPackageVertical(JobPackageThread):
     """
     Class to manage a vertical thread-based package of jobs to be submitted by autosubmit

@@ -245,9 +245,9 @@ class Job(object):
         self.updated_log = True
         self.ready_start_date = None
         self.log_retrieved = False
-        self.start_time_writted = False
-        self.submission_time_writted = False
-
+        self.start_time_written = False
+        self.submit_time_timestamp = None # for wrappers, all jobs inside a wrapper are submitted at the same time
+        self.finish_time_timestamp = None # for wrappers, with inner_retrials, the submission time should be the last finish_time of the previous retrial
     def _init_runtime_parameters(self):
         # hetjobs
         self.het = {'HETSIZE': 0}
@@ -261,6 +261,7 @@ class Job(object):
         self._memory = ''
         self._memory_per_task = ''
         self.log_retrieved = False
+        self.start_time_placeholder = ""
 
     @property
     @autosubmit_parameter(name='tasktype')
@@ -908,7 +909,7 @@ class Job(object):
         """
         return self.parents.__len__()
 
-    def _get_from_stat(self, index):
+    def _get_from_stat(self, index, fail_count =-1):
         """
         Returns value from given row index position in STAT file associated to job
 
@@ -917,7 +918,11 @@ class Job(object):
         :return: value in index position
         :rtype: int
         """
-        logname = os.path.join(self._tmp_path, self.name + '_STAT')
+        if fail_count == -1:
+            logname = os.path.join(self._tmp_path, self.name + '_STAT')
+        else:
+            fail_count = str(fail_count)
+            logname = os.path.join(self._tmp_path, self.name + '_STAT_' + fail_count)
         if os.path.exists(logname):
             lines = open(logname).readlines()
             if len(lines) >= index + 1:
@@ -947,23 +952,23 @@ class Job(object):
                     lst.append(parse_date(fields[index]))
         return lst
 
-    def check_end_time(self):
+    def check_end_time(self, fail_count=-1):
         """
         Returns end time from stat file
 
         :return: date and time
         :rtype: str
         """
-        return self._get_from_stat(1)
+        return self._get_from_stat(1, fail_count)
 
-    def check_start_time(self):
+    def check_start_time(self, fail_count=-1):
         """
         Returns job's start time
 
         :return: start time
         :rtype: str
         """
-        return self._get_from_stat(0)
+        return self._get_from_stat(0,fail_count)
 
     def check_retrials_end_time(self):
         """
@@ -1009,26 +1014,17 @@ class Job(object):
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
-    def get_new_remotelog(self, platform, max_logs, last_log, stat_file):
+    def get_new_remotelog_name(self):
         """
-        Checks if stat file exists on remote host
+        Checks if remote log file exists on remote host
         if it exists, remote_log variable is updated
+        :param
         """
         try:
-            if self.wrapper_type == "vertical":
-                platform.check_stat_file_by_retrials(stat_file + str(max_logs), retries=1)
-                for i in range(max_logs-1,-1,-1):
-                    if platform.check_stat_file_by_retrials(stat_file + str(i), retries=1, first=False):
-                        last_log = i
-                    else:
-                        break
-                remote_logs = (f"{self.script_name}.out.{last_log}", f"{self.script_name}.err.{last_log}")
-            else:
-                remote_logs = (f"{self.script_name}.out.{self._fail_count}", f"{self.script_name}.err.{self._fail_count}")
-
+            remote_logs = (f"{self.script_name}.out.{self._fail_count}", f"{self.script_name}.err.{self._fail_count}")
         except BaseException as e:
             remote_logs = ""
-            Log.printlog(f"Trace {e} \n Failed to retrieve stat file for job {self.name}", 6000)
+            Log.printlog(f"Trace {e} \n Failed to retrieve log file for job {self.name}", 6000)
         return remote_logs
 
     def check_remote_log_exists(self, platform):
@@ -1044,103 +1040,56 @@ class Job(object):
             err_exist = False
         return out_exist or err_exist
 
-    def retrieve_vertical_wrapper_logs(self, last_log, max_logs, platform, stat_file, max_retrials, fail_count):
-        """
-        Retrieves log files from remote host meant to be used inside a daemon thread.
-        :param last_log:
-        :param max_logs:
-        :param platform:
-        :param stat_file:
-        :param max_retrials:
-        :param fail_count:
-        :return:
-        """
-        lang = locale.getlocale()[1] or locale.getdefaultlocale()[1] or 'UTF-8'
-        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.name[:4])
-        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
-        time_stamp = "1970"
-        at_least_one_recovered = False
-        for _ in range(max_logs, last_log - 1, -1):
-            try:
-                if platform.get_stat_file_by_retrials(stat_file + str(max_logs)):
-                    with open(os.path.join(tmp_path, stat_file + str(max_logs)), 'r+') as f:
-                        total_stats = [f.readline()[:-1], f.readline()[:-1], f.readline()[:-1]]
-                    try:
-                        total_stats[0] = float(total_stats[0])
-                        total_stats[1] = float(total_stats[1])
-                    except Exception as e:
-                        Log.debug(f"Trace {e} \n Failed to convert total stats to float, falling back to int")
-                        total_stats[0] = int(str(total_stats[0]).split('.')[0])
-                        total_stats[1] = int(str(total_stats[1]).split('.')[0])
-                    if max_logs != (int(max_retrials) - fail_count):
-                        time_stamp = date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S')
-                    else:
-                        with open(os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP'), 'rb+') as f2:
-                            for line in f2.readlines():
-                                if len(line) > 0:
-                                    line = line.decode(lang)
-                                    time_stamp = line.split(" ")[0]
-
-                    self.write_total_stat_by_retries(total_stats, max_logs == (int(max_retrials) - fail_count))
-                    platform.remove_stat_file_by_retrials(stat_file + str(max_logs))
-                    l_log = (self.script_name[:-4] + "." + time_stamp + ".out",
-                             self.script_name[:-4] + "." + time_stamp + ".err")
-                    r_log = (self.remote_logs[0][:-1] + str(max_logs), self.remote_logs[1][:-1] + str(max_logs))
-                    self.synchronize_logs(platform, r_log, l_log, last=False)
-                    platform.get_logs_files(self.expid, l_log)
-                    try:
-                        for local_log in l_log:
-                            platform.write_jobid(self.id,os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
-                    except BaseException as e:
-                        Log.debug(f"Trace {e} \n Failed to write the {self.id} inside {l_log}")
-                    at_least_one_recovered = True
-            except Exception as e:
-                Log.debug(f"Trace {e} \n Failed to retrieve log files for job {self.name}")
-                return False
-        return at_least_one_recovered
-
     def retrieve_logfiles(self, platform, raise_error=False):
         """
         Retrieves log files from remote host meant to be used inside a process.
         :param platform: platform that is calling the function, already connected.
+        :param raise_error: boolean to raise an error if the logs are not retrieved
         :return:
         """
         backup_logname = copy.copy(self.local_logs)
         log_retrieved = False
         max_retrials = self.retrials
-        max_logs = int(max_retrials) - self._fail_count
-        last_log = int(max_retrials) - self._fail_count
-        stat_file = self.script_name[:-4] + "_STAT_"
-        self.remote_logs = self.get_new_remotelog(platform, max_logs, last_log, stat_file)
+        if self.wrapper_type == "vertical":
+            stat_file = self.script_name[:-4] + "_STAT_"
+        else:
+            stat_file = self.script_name[:-4] + "_STAT"
+        self.remote_logs = self.get_new_remotelog_name()
         if not self.remote_logs:
             self.log_retrieved = False
         else:
             if self.check_remote_log_exists(platform):
-                # retrieve logs and stat files
-                if self.wrapper_type is not None and self.wrapper_type == "vertical":
-                    if self.retrieve_vertical_wrapper_logs(last_log, max_logs, platform, stat_file, max_retrials, self._fail_count):
-                        log_retrieved = True
-                else:
-                    try:
-                        self.synchronize_logs(platform, self.remote_logs, self.local_logs)
-                        remote_logs = copy.deepcopy(self.local_logs)
-                        platform.get_logs_files(self.expid, remote_logs)
-                        log_retrieved = True
-                    except:
-                        log_retrieved = False
-                    # Update the logs with Autosubmit Job ID Brand
-                    try:
-                        for local_log in self.local_logs:
-                            platform.write_jobid(self.id, os.path.join(
-                                self._tmp_path, 'LOG_' + str(self.expid), local_log))
-                    except BaseException as e:
-                        Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(str(e), self.name))
+                try:
+                    self.synchronize_logs(platform, self.remote_logs, self.local_logs)
+                    remote_logs = copy.deepcopy(self.local_logs)
+                    platform.get_logs_files(self.expid, remote_logs)
+                    log_retrieved = True
+                except BaseException:
+                    log_retrieved = False
         self.log_retrieved = log_retrieved
         if not self.log_retrieved:
             self.local_logs = backup_logname
             Log.printlog("Failed to retrieve logs for job {0}".format(self.name), 6000)
             if raise_error:
                 raise
+        else:
+            # Update the logs with Autosubmit Job ID Brand
+            try:
+                for local_log in self.local_logs:
+                    platform.write_jobid(self.id, os.path.join(
+                        self._tmp_path, 'LOG_' + str(self.expid), local_log))
+            except BaseException as e:
+                Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(str(e), self.name))
+            # write stats
+            if self.wrapper_type == "vertical": # Disable AS retrials for vertical wrappers to use internal ones
+                for i in range(0,int(self.retrials)):
+                    self.platform.get_stat_file(self.name, stat_file, count=i)
+                    self.write_vertical_time()
+                    self.inc_fail_count()
+            else:
+                self.platform.get_stat_file(self.name, stat_file)
+                self.write_start_time(from_stat_file=True)
+                self.write_end_time(self.status == Status.COMPLETED)
 
     def parse_time(self,wallclock):
         regex = re.compile(r'(((?P<hours>\d+):)((?P<minutes>\d+)))(:(?P<seconds>\d+))?')
@@ -1244,23 +1193,21 @@ class Job(object):
             # after checking the jobs , no job should have the status "submitted"
             Log.printlog("Job {0} in SUBMITTED status. This should never happen on this step..".format(
                 self.name), 6008)
-        if previous_status == Status.HELD and self.status in [Status.SUBMITTED, Status.QUEUING, Status.RUNNING, Status.COMPLETED]:
-            self.write_submit_time()
+
         # Updating logs
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             if str(as_conf.platforms_data.get(self.platform.name, {}).get('DISABLE_RECOVERY_THREADS', "false")).lower() == "true":
                 self.retrieve_logfiles(self.platform)
             else:
                 self.platform.add_job_to_log_recover(self)
-            if self.wrapper_type == "vertical":
-                max_logs = int(self.retrials)
-                for i in range(0,max_logs):
-                    self.inc_fail_count()
-            else:
-                self.write_end_time(self.status == Status.COMPLETED)
+
 
         if self.status in [Status.COMPLETED, Status.FAILED]:
             self.updated_log = False
+
+        # Write start_time() if not already written and job is running, completed or failed
+        if self.status in [Status.RUNNING, Status.COMPLETED, Status.FAILED] and not self.start_time_written:
+            self.write_start_time()
 
         return self.status
 
@@ -1655,6 +1602,14 @@ class Job(object):
 
     def update_dict_parameters(self,as_conf):
         self.retrials = as_conf.jobs_data.get(self.section,{}).get("RETRIALS", as_conf.experiment_data.get("CONFIG",{}).get("RETRIALS", 0))
+        for wrapper_data in ( wrapper for wrapper in as_conf.experiment_data.get("WRAPPERS",{}).values() if type(wrapper) is dict):
+            jobs_in_wrapper = wrapper_data.get("JOBS_IN_WRAPPER", "").upper()
+            if "," in jobs_in_wrapper:
+                jobs_in_wrapper = jobs_in_wrapper.split(",")
+            else:
+                jobs_in_wrapper = jobs_in_wrapper.split(" ")
+            if self.section.upper() in jobs_in_wrapper:
+                self.retrials = wrapper_data.get("RETRIALS", self.retrials)
         self.splits = as_conf.jobs_data.get(self.section,{}).get("SPLITS", None)
         self.delete_when_edgeless = as_conf.jobs_data.get(self.section,{}).get("DELETE_WHEN_EDGELESS", True)
         self.dependencies = str(as_conf.jobs_data.get(self.section,{}).get("DEPENDENCIES",""))
@@ -2157,135 +2112,126 @@ class Job(object):
                         str(set(parameters) - set(variables))), 5013)
         return out
 
-    def write_submit_time(self, enabled=False, hold=False):
+    def write_submit_time(self, hold=False, enable_vertical_write=False, wrapper_submit_time=None):
         # type: (bool, bool) -> None
         """
         Writes submit date and time to TOTAL_STATS file. It doesn't write if hold is True.
         """
-        # print(traceback.format_stack())
-        self.write_start_time()
+
+        self.start_time_written = False
+        if wrapper_submit_time:
+            self.submit_time_timestamp = wrapper_submit_time
+        else:
+            self.submit_time_timestamp = date2str(datetime.datetime.now(), 'S')
+        if self.wrapper_type == "vertical" and self.fail_count > 0:
+            self.submit_time_timestamp = self.finish_time_timestamp
+        self.local_logs = (f"{self.name}.{self.submit_time_timestamp}.out", f"{self.name}.{self.submit_time_timestamp}.err") # for wrappers with inner retrials
+
+        if not enable_vertical_write and self.wrapper_type == "vertical":
+            return
         print(("Call from {} with status {}".format(self.name, self.status_str)))
         if hold is True:
             return # Do not write for HELD jobs.
-        data_time = ["",time.time()]
-        if self.wrapper_type != "vertical" or enabled:
-            path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-        else:
-            path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP')
+
+        data_time = ["",int(datetime.datetime.strptime(self.submit_time_timestamp, "%Y%m%d%H%M%S").timestamp())]
+        path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         if os.path.exists(path):
             f = open(path, 'a')
             f.write('\n')
         else:
             f = open(path, 'w')
-        if not enabled:
-            f.write(date2str(datetime.datetime.now(), 'S'))
-            if self.wrapper_type == "vertical":
-                f.write(" "+str(time.time()))
-        else:
-            path2 = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP')
-            f2 = open(path2, 'r')
-            for line in f2.readlines():
-                if len(line) > 0:
-                    data_time = line.split(" ")
-                    try:
-                        data_time[1] = float(data_time[1])
-                    except Exception as e:
-                        data_time[1] = int(data_time[1])
-            f.write(data_time[0])
-            f2.close()
-            try:
-                os.remove(path2)
-            except Exception as e:
-                pass
-        # Get
-        # Writing database
-        if self.wrapper_type != "vertical" or enabled:
-            exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-            exp_history.write_submit_time(self.name, submit=data_time[1], status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
-                                        wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
-                                        platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
-                                        children=self.children_names_str)
+        f.write(self.submit_time_timestamp)
 
-    def write_start_time(self, enabled = False):
+        # Writing database
+        exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+        exp_history.write_submit_time(self.name, submit=data_time[1], status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
+                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
+                                    platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
+                                    children=self.children_names_str)
+
+    def write_start_time(self, enable_vertical_write=False, from_stat_file=False, count=-1):
         """
         Writes start date and time to TOTAL_STATS file
         :return: True if successful, False otherwise
         :rtype: bool
         """
-        start_time = time.time()
 
-        if self.wrapper_type == "vertical":
-            timestamp = date2str(datetime.datetime.now(), 'S')
-            self.local_logs = (f"{self.name}.{timestamp}.out", f"{self.name}.{timestamp}.err")
+        if not enable_vertical_write and self.wrapper_type == "vertical":
+            return
 
-        elif self.wrapper_type != "vertical" or enabled:
-            start_time_ = self.check_start_time()
+        self.start_time_written = True
+        if not from_stat_file: # last known start time from AS
+            self.start_time_placeholder = time.time()
+        elif from_stat_file:
+            start_time_ = self.check_start_time(count) # last known start time from the .cmd file
             if start_time_:
                 start_time = start_time_
-            timestamp = date2str(datetime.datetime.now(), 'S')
-
-            self.local_logs = (self.name + "." + timestamp +
-                               ".out", self.name + "." + timestamp + ".err")
-
+            else:
+                start_time = self.start_time_placeholder if self.start_time_placeholder else time.time()
             path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
             f = open(path, 'a')
             f.write(' ')
             # noinspection PyTypeChecker
             f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
             # Writing database
-        exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-        exp_history.write_start_time(self.name, start=start_time, status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
-                                wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
-                                platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
-                                children=self.children_names_str)
+            exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+            exp_history.write_start_time(self.name, start=start_time, status=Status.VALUE_TO_KEY.get(self.status, "UNKNOWN"), ncpus=self.processors,
+                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
+                                    platform=self.platform_name, job_id=self.id, wrapper_queue=self._wrapper_queue, wrapper_code=get_job_package_code(self.expid, self.name),
+                                    children=self.children_names_str)
         return True
 
-    def write_end_time(self, completed,enabled = False):
+    def write_vertical_time(self):
+        self.write_submit_time(enable_vertical_write=True)
+        self.write_start_time(enable_vertical_write=True, from_stat_file=True)
+        self.write_end_time(self.status == Status.COMPLETED, enable_vertical_write=True)
+    def write_end_time(self, completed, enable_vertical_write=False):
         """
         Writes ends date and time to TOTAL_STATS file
-        :param enabled:
         :param completed: True if job was completed successfully, False otherwise
         :type completed: bool
         """
-        if self.wrapper_type != "vertical" or enabled:
-            self._platform.get_stat_file(self.name, retries=5)
-            end_time = self.check_end_time()
-            path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-            f = open(path, 'a')
-            f.write(' ')
-            finish_time = None
-            final_status = None
-            if len(str(end_time)) > 0:
-                # noinspection PyTypeChecker
-                f.write(date2str(datetime.datetime.fromtimestamp(float(end_time)), 'S'))
-                # date2str(datetime.datetime.fromtimestamp(end_time), 'S')
-                finish_time = end_time
-            else:
-                f.write(date2str(datetime.datetime.now(), 'S'))
-                finish_time = time.time()  # date2str(datetime.datetime.now(), 'S')
-            f.write(' ')
-            if completed:
-                final_status = "COMPLETED"
-                f.write('COMPLETED')
-            else:
-                final_status = "FAILED"
-                f.write('FAILED')
-            out, err = self.local_logs
-            path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
-            # Launch first as simple non-threaded function
-            exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-            job_data_dc = exp_history.write_finish_time(self.name, finish=finish_time, status=final_status, ncpus=self.processors,
-                                        wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
-                                        platform=self.platform_name, job_id=self.id, out_file=out, err_file=err, wrapper_queue=self._wrapper_queue,
-                                        wrapper_code=get_job_package_code(self.expid, self.name), children=self.children_names_str)
+        if not enable_vertical_write and self.wrapper_type == "vertical":
+            return
+        end_time = self.check_end_time()
+        path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        f = open(path, 'a')
+        f.write(' ')
+        finish_time = None
+        final_status = None
+        if end_time > 0:
+            # noinspection PyTypeChecker
+            f.write(date2str(datetime.datetime.fromtimestamp(float(end_time)), 'S'))
+            self.finish_time_timestamp = date2str(datetime.datetime.fromtimestamp(end_time),'S')
+            # date2str(datetime.datetime.fromtimestamp(end_time), 'S')
+            finish_time = end_time
+        else:
+            f.write(date2str(datetime.datetime.now(), 'S'))
+            self.finish_time_timestamp = date2str(datetime.datetime.now(), 'S')
+            finish_time = time.time()  # date2str(datetime.datetime.now(), 'S')
+        f.write(' ')
+        if completed:
+            final_status = "COMPLETED"
+            f.write('COMPLETED')
+        else:
+            final_status = "FAILED"
+            f.write('FAILED')
+        out, err = self.local_logs
+        path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
+        # Launch first as simple non-threaded function
+        exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+        job_data_dc = exp_history.write_finish_time(self.name, finish=finish_time, status=final_status, ncpus=self.processors,
+                                    wallclock=self.wallclock, qos=self.queue, date=self.date, member=self.member, section=self.section, chunk=self.chunk,
+                                    platform=self.platform_name, job_id=self.id, out_file=out, err_file=err, wrapper_queue=self._wrapper_queue,
+                                    wrapper_code=get_job_package_code(self.expid, self.name), children=self.children_names_str)
 
-            # Launch second as threaded function only for slurm
-            if job_data_dc and type(self.platform) is not str and self.platform.type == "slurm":
-                thread_write_finish = Thread(target=ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR).write_platform_data_after_finish, args=(job_data_dc, self.platform))
-                thread_write_finish.name = "JOB_data_{}".format(self.name)
-                thread_write_finish.start()
+        # Launch second as threaded function only for slurm
+        if job_data_dc and type(self.platform) is not str and self.platform.type == "slurm":
+            thread_write_finish = Thread(target=ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR).write_platform_data_after_finish, args=(job_data_dc, self.platform))
+            thread_write_finish.name = "JOB_data_{}".format(self.name)
+            thread_write_finish.start()
 
-    def write_total_stat_by_retries(self,total_stats, first_retrial = False):
+    def write_total_stat_by_retries(self, total_stats, first_retrial = False):
         """
         Writes all data to TOTAL_STATS file
         :param total_stats: data gathered by the wrapper
@@ -2294,8 +2240,6 @@ class Job(object):
         :type first_retrial: bool
 
         """
-        if first_retrial:
-            self.write_submit_time(enabled=True)
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         if first_retrial:

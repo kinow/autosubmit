@@ -454,7 +454,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
             while job_retrials >= 0 and not completed:
                 current = {1}
                 current.start()
-                os.system("echo "+str(time.time())+" > "+scripts[i][:-4]+"_STAT_"+str(job_retrials)) #Start/submit running
+                os.system("echo "+str(int(time.time()))+" > "+scripts[i][:-4]+"_STAT_"+str(job_retrials)) #Start/submit running
                 current.join({3})
                 job_retrials = job_retrials - 1
                 total_steps = total_steps + 1
@@ -467,7 +467,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 failed_filename = {0}[i].replace('.cmd', '_FAILED')
                 failed_path = os.path.join(os.getcwd(), failed_filename)
                 failed_wrapper = os.path.join(os.getcwd(), wrapper_id)
-                os.system("echo "+str(time.time())+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials+1)) #Completed
+                os.system("echo "+str(int(time.time()))+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials+1)) #Completed
                 if os.path.exists(completed_path):
                     completed = True
                     print(datetime.now(), "The job ", current.template," has been COMPLETED")
