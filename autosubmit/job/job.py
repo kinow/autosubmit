@@ -1082,7 +1082,7 @@ class Job(object):
                 Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(str(e), self.name))
             # write stats
             if self.wrapper_type == "vertical": # Disable AS retrials for vertical wrappers to use internal ones
-                for i in range(0,int(self.retrials)):
+                for i in range(0,int(self.retrials+1)):
                     self.platform.get_stat_file(self.name, stat_file, count=i)
                     self.write_vertical_time()
                     self.inc_fail_count()
