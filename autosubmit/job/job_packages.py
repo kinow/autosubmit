@@ -720,7 +720,7 @@ class JobPackageVertical(JobPackageThread):
     :type jobs:
     :param: dependency:
     """
-    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="WRAPPERS", wrapper_info = {}):
+    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="WRAPPERS", wrapper_info = []):
         self._num_processors = 0
         for job in jobs:
             if int(job.processors) >= int(self._num_processors):
