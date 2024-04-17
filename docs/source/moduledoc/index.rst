@@ -1,6 +1,6 @@
-*******
-Modules
-*******
+***
+API
+***
 
 .. toctree::
    :titlesonly:
