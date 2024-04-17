@@ -242,7 +242,7 @@ class Job(object):
         self.delete_when_edgeless = False
         # hetjobs
         self.het = None
-        self.updated_log = True
+        self.updated_log = False
         self.ready_start_date = None
         self.log_retrieved = False
         self.start_time_written = False
@@ -1014,14 +1014,16 @@ class Job(object):
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
-    def get_new_remotelog_name(self):
+    def get_new_remotelog_name(self, count = -1):
         """
         Checks if remote log file exists on remote host
         if it exists, remote_log variable is updated
         :param
         """
+        if count == -1:
+            count = self._fail_count
         try:
-            remote_logs = (f"{self.script_name}.out.{self._fail_count}", f"{self.script_name}.err.{self._fail_count}")
+            remote_logs = (f"{self.script_name}.out.{count}", f"{self.script_name}.err.{count}")
         except BaseException as e:
             remote_logs = ""
             Log.printlog(f"Trace {e} \n Failed to retrieve log file for job {self.name}", 6000)
@@ -1040,20 +1042,8 @@ class Job(object):
             err_exist = False
         return out_exist or err_exist
 
-    def retrieve_logfiles(self, platform, raise_error=False):
-        """
-        Retrieves log files from remote host meant to be used inside a process.
-        :param platform: platform that is calling the function, already connected.
-        :param raise_error: boolean to raise an error if the logs are not retrieved
-        :return:
-        """
-        backup_logname = copy.copy(self.local_logs)
+    def retrieve_external_retrials_logfiles(self, platform):
         log_retrieved = False
-        max_retrials = self.retrials
-        if self.wrapper_type == "vertical":
-            stat_file = self.script_name[:-4] + "_STAT_"
-        else:
-            stat_file = self.script_name[:-4] + "_STAT"
         self.remote_logs = self.get_new_remotelog_name()
         if not self.remote_logs:
             self.log_retrieved = False
@@ -1067,6 +1057,42 @@ class Job(object):
                 except BaseException:
                     log_retrieved = False
         self.log_retrieved = log_retrieved
+
+    def retrieve_internal_retrials_logfiles(self, platform):
+        log_retrieved = False
+        original = copy.deepcopy(self.local_logs)
+        for i in range(0, int(self.retrials + 1)):
+            if i > 0:
+                self.local_logs = (original[0][:-4] + "_{0}".format(i) + ".out", original[1][:-4] + "_{0}".format(i) + ".err")
+            self.remote_logs = self.get_new_remotelog_name(i)
+            if not self.remote_logs:
+                self.log_retrieved = False
+            else:
+                if self.check_remote_log_exists(platform):
+                    try:
+                        self.synchronize_logs(platform, self.remote_logs, self.local_logs)
+                        remote_logs = copy.deepcopy(self.local_logs)
+                        platform.get_logs_files(self.expid, remote_logs)
+                        log_retrieved = True
+                    except BaseException:
+                        log_retrieved = False
+            self.log_retrieved = log_retrieved
+    def retrieve_logfiles(self, platform, raise_error=False):
+        """
+        Retrieves log files from remote host meant to be used inside a process.
+        :param platform: platform that is calling the function, already connected.
+        :param raise_error: boolean to raise an error if the logs are not retrieved
+        :return:
+        """
+        backup_logname = copy.copy(self.local_logs)
+
+        if self.wrapper_type == "vertical":
+            stat_file = self.script_name[:-4] + "_STAT_"
+            self.retrieve_internal_retrials_logfiles(platform)
+        else:
+            stat_file = self.script_name[:-4] + "_STAT"
+            self.retrieve_external_retrials_logfiles(platform)
+
         if not self.log_retrieved:
             self.local_logs = backup_logname
             Log.printlog("Failed to retrieve logs for job {0}".format(self.name), 6000)
@@ -1083,9 +1109,9 @@ class Job(object):
             # write stats
             if self.wrapper_type == "vertical": # Disable AS retrials for vertical wrappers to use internal ones
                 for i in range(0,int(self.retrials+1)):
-                    self.platform.get_stat_file(self.name, stat_file, count=i)
-                    self.write_vertical_time()
-                    self.inc_fail_count()
+                    if self.platform.get_stat_file(self.name, stat_file, count=i):
+                        self.write_vertical_time(i)
+                        self.inc_fail_count()
             else:
                 self.platform.get_stat_file(self.name, stat_file)
                 self.write_start_time(from_stat_file=True)
@@ -1193,6 +1219,12 @@ class Job(object):
             # after checking the jobs , no job should have the status "submitted"
             Log.printlog("Job {0} in SUBMITTED status. This should never happen on this step..".format(
                 self.name), 6008)
+        if self.status in [Status.COMPLETED, Status.FAILED]:
+            self.updated_log = False
+
+        # # Write start_time() if not already written and job is running, completed or failed
+        # if self.status in [Status.RUNNING, Status.COMPLETED, Status.FAILED] and not self.start_time_written:
+        #     self.write_start_time()
 
         # Updating logs
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
@@ -1202,12 +1234,7 @@ class Job(object):
                 self.platform.add_job_to_log_recover(self)
 
 
-        if self.status in [Status.COMPLETED, Status.FAILED]:
-            self.updated_log = False
 
-        # Write start_time() if not already written and job is running, completed or failed
-        if self.status in [Status.RUNNING, Status.COMPLETED, Status.FAILED] and not self.start_time_written:
-            self.write_start_time()
 
         return self.status
 
@@ -2119,16 +2146,19 @@ class Job(object):
         """
 
         self.start_time_written = False
-        if wrapper_submit_time:
-            self.submit_time_timestamp = wrapper_submit_time
-        else:
-            self.submit_time_timestamp = date2str(datetime.datetime.now(), 'S')
+        if not enable_vertical_write:
+            if wrapper_submit_time:
+                self.submit_time_timestamp = wrapper_submit_time
+            else:
+                self.submit_time_timestamp = date2str(datetime.datetime.now(), 'S')
+            if self.wrapper_type != "vertical":
+                self.local_logs = (f"{self.name}.{self.submit_time_timestamp}.out", f"{self.name}.{self.submit_time_timestamp}.err") # for wrappers with inner retrials
+            else:
+                self.local_logs = (f"{self.name}.{self.submit_time_timestamp}.out",
+                                   f"{self.name}.{self.submit_time_timestamp}.err")  # for wrappers with inner retrials
+                return
         if self.wrapper_type == "vertical" and self.fail_count > 0:
             self.submit_time_timestamp = self.finish_time_timestamp
-        self.local_logs = (f"{self.name}.{self.submit_time_timestamp}.out", f"{self.name}.{self.submit_time_timestamp}.err") # for wrappers with inner retrials
-
-        if not enable_vertical_write and self.wrapper_type == "vertical":
-            return
         print(("Call from {} with status {}".format(self.name, self.status_str)))
         if hold is True:
             return # Do not write for HELD jobs.
@@ -2181,11 +2211,12 @@ class Job(object):
                                     children=self.children_names_str)
         return True
 
-    def write_vertical_time(self):
+    def write_vertical_time(self, count=-1):
         self.write_submit_time(enable_vertical_write=True)
-        self.write_start_time(enable_vertical_write=True, from_stat_file=True)
-        self.write_end_time(self.status == Status.COMPLETED, enable_vertical_write=True)
-    def write_end_time(self, completed, enable_vertical_write=False):
+        self.write_start_time(enable_vertical_write=True, from_stat_file=True, count=count)
+        self.write_end_time(self.status == Status.COMPLETED, enable_vertical_write=True, count=count)
+
+    def write_end_time(self, completed, enable_vertical_write=False, count = -1):
         """
         Writes ends date and time to TOTAL_STATS file
         :param completed: True if job was completed successfully, False otherwise
@@ -2193,7 +2224,7 @@ class Job(object):
         """
         if not enable_vertical_write and self.wrapper_type == "vertical":
             return
-        end_time = self.check_end_time()
+        end_time = self.check_end_time(count)
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         f.write(' ')

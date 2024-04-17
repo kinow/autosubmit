@@ -2439,7 +2439,7 @@ class Autosubmit:
                         wrapper_time = None
                         for job in package.jobs: # if jobs > 1 == wrapped == same submission time
                             job.write_submit_time(wrapper_submit_time=wrapper_time)
-                            wrapper_time = job.write_submit_time
+                            wrapper_time = job.submit_time_timestamp
 
 
             if save_1 or save_2:

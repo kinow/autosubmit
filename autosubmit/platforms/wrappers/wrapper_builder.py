@@ -451,12 +451,12 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
         for i in range(len({0})):
             job_retrials = retrials
             completed = False
-            while job_retrials >= 0 and not completed:
+            fail_count = 0
+            while fail_count <= job_retrials and not completed:
                 current = {1}
                 current.start()
-                os.system("echo "+str(int(time.time()))+" > "+scripts[i][:-4]+"_STAT_"+str(job_retrials)) #Start/submit running
+                os.system("echo "+str(int(time.time()))+" > "+scripts[i][:-4]+"_STAT_"+str(fail_count)) #Start/submit running
                 current.join({3})
-                job_retrials = job_retrials - 1
                 total_steps = total_steps + 1
         """).format(jobs_list, thread,self.retrials,str(self.wallclock_by_level),'\n'.ljust(13))
 
@@ -467,15 +467,17 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 failed_filename = {0}[i].replace('.cmd', '_FAILED')
                 failed_path = os.path.join(os.getcwd(), failed_filename)
                 failed_wrapper = os.path.join(os.getcwd(), wrapper_id)
-                os.system("echo "+str(int(time.time()))+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials+1)) #Completed
+                os.system("echo "+str(int(time.time()))+" >> "+scripts[i][:-4]+"_STAT_"+str(fail_count)) #Completed
                 if os.path.exists(completed_path):
                     completed = True
                     print(datetime.now(), "The job ", current.template," has been COMPLETED")
-                    os.system("echo COMPLETED >>  " + scripts[i][:-4]+"_STAT_"+str(job_retrials+1))
+                    os.system("echo COMPLETED >>  " + scripts[i][:-4]+"_STAT_"+str(fail_count))
                 else:
                     print(datetime.now(), "The job ", current.template," has FAILED")
-                    os.system("echo FAILED >>  " + scripts[i][:-4]+"_STAT_"+str(job_retrials+1))
+                    os.system("echo FAILED >>  " + scripts[i][:-4]+"_STAT_"+str(fail_count))
                     #{1}
+                fail_count = fail_count + 1
+
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
             sequential_threads_launcher += self._indent(textwrap.dedent("""
             if not os.path.exists(completed_path):
@@ -493,17 +495,17 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
     def build_job_thread(self): # fastlook
         return textwrap.dedent("""
         class JobThread(Thread):
-            def __init__ (self, template, id_run, retrials):
+            def __init__ (self, template, id_run, retrials, fail_count):
                 Thread.__init__(self)
                 self.template = template
                 self.id_run = id_run
                 self.retrials = retrials
+                self.fail_count = fail_count
 
             def run(self):
                 jobname = self.template.replace('.cmd', '')
-                #os.system("echo $(date +%s) > "+jobname+"_STAT")
-                out = str(self.template) + ".out." + str(self.retrials)
-                err = str(self.template) + ".err." + str(self.retrials)
+                out = str(self.template) + ".out." + str(self.fail_count)
+                err = str(self.template) + ".err." + str(self.fail_count)
                 print((out+"\\n"))
                 command = "./" + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 print((command+"\\n"))
@@ -515,7 +517,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
         """).format(str(self.wallclock_by_level),'\n'.ljust(13))
     def build_main(self):
         self.exit_thread = "os._exit(1)"
-        return self.build_sequential_threads_launcher("scripts", "JobThread(scripts[i], i, job_retrials)")
+        return self.build_sequential_threads_launcher("scripts", "JobThread(scripts[i], i, retrials, fail_count)")
 class PythonHorizontalWrapperBuilder(PythonWrapperBuilder):
 
     def build_main(self):
