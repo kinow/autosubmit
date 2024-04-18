@@ -393,6 +393,8 @@ class PJMPlatform(ParamikoPlatform):
         return self.get_checkAlljobs_cmd(job_id)
 
     def get_jobid_by_jobname_cmd(self, job_name):
+        if job_name[-1] == ",":
+            job_name = job_name[:-1]
         return 'pjstat -v --choose jid,st,ermsg --filter \"jnam={0}\"'.format(job_name)
 
 
