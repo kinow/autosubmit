@@ -385,7 +385,8 @@ class PJMPlatform(ParamikoPlatform):
     def get_checkAlljobs_cmd(self, jobs_id):
         # jobs_id = "jobid1+jobid2+jobid3"
         # -H == sacct
-        jobs_id = jobs_id[:-1] # deletes comma
+        if jobs_id[-1] == ",":
+            jobs_id = jobs_id[:-1] # deletes comma
         return "pjstat -H -v --choose jid,st,ermsg --filter \"jid={0}\" > as_checkalljobs.txt ; pjstat -v --choose jid,st,ermsg --filter \"jid={0}\" >> as_checkalljobs.txt ; cat as_checkalljobs.txt ; rm as_checkalljobs.txt".format(jobs_id)
 
     def get_queue_status_cmd(self, job_id):
