@@ -153,7 +153,7 @@ class EcPlatform(ParamikoPlatform):
             export += " ; "
         return export + self._submit_cmd + job_script
 
-    def connect(self, reconnect=False):
+    def connect(self, as_conf, reconnect=False):
         """
         In this case, it does nothing because connection is established for each command
 
@@ -170,7 +170,13 @@ class EcPlatform(ParamikoPlatform):
                 self.connected = False
         except:
             self.connected = False
-    def restore_connection(self):
+        if not self.log_retrieval_process_active and (
+                as_conf is None or str(as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS',
+                                                                                 "false")).lower() == "false"):
+            self.log_retrieval_process_active = True
+            self.recover_job_logs()
+
+    def restore_connection(self,as_conf):
         """
         In this case, it does nothing because connection is established for each command
 
@@ -187,7 +193,8 @@ class EcPlatform(ParamikoPlatform):
                 self.connected = False
         except:
             self.connected = False
-    def test_connection(self):
+
+    def test_connection(self,as_conf):
         """
         In this case, it does nothing because connection is established for each command
 

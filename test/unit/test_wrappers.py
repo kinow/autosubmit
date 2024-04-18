@@ -172,6 +172,7 @@ class TestWrappers(TestCase):
         self.temp_directory = tempfile.mkdtemp()
         self.job_list = JobList(self.experiment_id, self.config, YAMLParserFactory(),
                                 JobListPersistenceDb(self.temp_directory, 'db'),self.as_conf)
+
         self.parser_mock = MagicMock(spec='SafeConfigParser')
 
         self._platform.max_waiting_jobs = 100
@@ -200,6 +201,8 @@ class TestWrappers(TestCase):
         self.job_packager = JobPackager(
             self.as_conf, self._platform, self.job_list)
         self.job_list._ordered_jobs_by_date_member["WRAPPERS"] = dict()
+        self.wrapper_info = ['vertical', 'flexible', 'asthread', ['SIM'], 0,self.as_conf]
+
 
     def tearDown(self) -> None:
         shutil.rmtree(self.temp_directory)
@@ -272,8 +275,10 @@ class TestWrappers(TestCase):
         wrapper_limits["min_v"] = 2
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapped_job_by_section
+
+
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits, self.wrapper_info)
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2,
                          d1_m1_9_s2, d1_m1_10_s2]
@@ -354,7 +359,7 @@ class TestWrappers(TestCase):
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits, wrapper_info=self.wrapper_info)
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2,
                          d1_m1_9_s2, d1_m1_10_s2]
@@ -362,7 +367,7 @@ class TestWrappers(TestCase):
                          d1_m2_9_s2, d1_m2_10_s2]
 
         packages = [JobPackageVertical(
-            package_m1_s2,configuration=self.as_conf), JobPackageVertical(package_m2_s2,configuration=self.as_conf)]
+            package_m1_s2,configuration=self.as_conf, wrapper_info=self.wrapper_info), JobPackageVertical(package_m2_s2,configuration=self.as_conf, wrapper_info=self.wrapper_info)]
 
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
@@ -424,7 +429,7 @@ class TestWrappers(TestCase):
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits, self.wrapper_info)
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2,
                          d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
@@ -432,7 +437,7 @@ class TestWrappers(TestCase):
                          d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2]
 
         packages = [JobPackageVertical(
-            package_m1_s2,configuration=self.as_conf), JobPackageVertical(package_m2_s2,configuration=self.as_conf)]
+            package_m1_s2,configuration=self.as_conf,wrapper_info=self.wrapper_info), JobPackageVertical(package_m2_s2,configuration=self.as_conf,wrapper_info=self.wrapper_info)]
 
         #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
@@ -495,7 +500,7 @@ class TestWrappers(TestCase):
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits, self.wrapper_info)
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2,
                          d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
@@ -503,7 +508,7 @@ class TestWrappers(TestCase):
                          d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2]
 
         packages = [JobPackageVertical(
-            package_m1_s2,configuration=self.as_conf), JobPackageVertical(package_m2_s2,configuration=self.as_conf)]
+            package_m1_s2,configuration=self.as_conf, wrapper_info=self.wrapper_info), JobPackageVertical(package_m2_s2,configuration=self.as_conf, wrapper_info=self.wrapper_info)]
 
         #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
@@ -646,7 +651,7 @@ class TestWrappers(TestCase):
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits,wrapper_info=self.wrapper_info)
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
@@ -654,7 +659,7 @@ class TestWrappers(TestCase):
                             d1_m2_4_s3]
 
         packages = [JobPackageVertical(
-            package_m1_s2_s3,configuration=self.as_conf), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf)]
+            package_m1_s2_s3,configuration=self.as_conf,wrapper_info=self.wrapper_info), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf,wrapper_info=self.wrapper_info)]
 
         #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
@@ -726,12 +731,12 @@ class TestWrappers(TestCase):
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapper_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits,wrapper_info=self.wrapper_info)
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
 
-        packages = [JobPackageVertical(package_m1_s2_s3,configuration=self.as_conf)]
+        packages = [JobPackageVertical(package_m1_s2_s3,configuration=self.as_conf,wrapper_info=self.wrapper_info)]
 
         #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
@@ -805,7 +810,7 @@ class TestWrappers(TestCase):
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits, wrapper_info=self.wrapper_info)
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
@@ -813,7 +818,7 @@ class TestWrappers(TestCase):
                             d1_m2_4_s3]
 
         packages = [JobPackageVertical(
-            package_m1_s2_s3,configuration=self.as_conf), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf)]
+            package_m1_s2_s3,configuration=self.as_conf, wrapper_info=self.wrapper_info), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf, wrapper_info=self.wrapper_info)]
 
         #returned_packages = returned_packages[0]
         # print("test_returned_packages_max_jobs_mixed_wrapper")
@@ -895,7 +900,7 @@ class TestWrappers(TestCase):
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits,wrapper_info=self.wrapper_info)
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3,
                             d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2]
@@ -903,7 +908,7 @@ class TestWrappers(TestCase):
                             d1_m2_2_s2, d1_m2_2_s3, d1_m2_3_s2]
 
         packages = [JobPackageVertical(
-            package_m1_s2_s3,configuration=self.as_conf), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf)]
+            package_m1_s2_s3,configuration=self.as_conf,wrapper_info=self.wrapper_info), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf,wrapper_info=self.wrapper_info)]
 
         #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
@@ -977,13 +982,13 @@ class TestWrappers(TestCase):
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits,wrapper_info=self.wrapper_info)
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3]
         package_m2_s2_s3 = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3]
 
         packages = [JobPackageVertical(
-            package_m1_s2_s3,configuration=self.as_conf), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf)]
+            package_m1_s2_s3,configuration=self.as_conf, wrapper_info=self.wrapper_info), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf, wrapper_info=self.wrapper_info)]
 
         #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
@@ -1075,13 +1080,13 @@ class TestWrappers(TestCase):
         wrapper_limits["min_h"] = 2
         wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, wrapper_limits)
+            section_list, wrapper_limits, wrapper_info=self.wrapper_info)
 
         package_m1_s2_s3 = [d1_m1_2_s3, d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
         package_m2_s2_s3 = [d1_m2_3_s2, d1_m2_3_s3, d1_m2_4_s2, d1_m2_4_s3]
 
         packages = [JobPackageVertical(
-            package_m1_s2_s3,configuration=self.as_conf), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf)]
+            package_m1_s2_s3,configuration=self.as_conf,wrapper_info=self.wrapper_info), JobPackageVertical(package_m2_s2_s3,configuration=self.as_conf,wrapper_info=self.wrapper_info)]
 
         #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
@@ -1879,6 +1884,7 @@ class TestWrappers(TestCase):
         self._manage_dependencies(sections_dict)
         for job in self.job_list.get_job_list():
             job._init_runtime_parameters()
+            job.update_parameters = MagicMock()
 
     def _manage_dependencies(self, sections_dict):
         for job in self.job_list.get_job_list():

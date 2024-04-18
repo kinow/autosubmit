@@ -453,6 +453,8 @@ class Monitor:
                 log_out = ""
                 log_err = ""
                 if job.status in [Status.FAILED, Status.COMPLETED]:
+                    if type(job.local_logs) is not tuple:
+                        job.local_logs = ("","")
                     log_out = path + "/" + job.local_logs[0]
                     log_err = path + "/" + job.local_logs[1]
 

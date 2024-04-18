@@ -1,6 +1,11 @@
+import copy
+
+import queue
+
+import time
+
 import locale
 import os
-from pathlib import Path
 
 import traceback
 from autosubmit.job.job_common import Status
@@ -8,7 +13,16 @@ from typing import List, Union
 
 from autosubmit.helpers.parameters import autosubmit_parameter
 from log.log import AutosubmitCritical, AutosubmitError, Log
-import getpass
+from multiprocessing import Process, Queue
+
+
+def processed(fn):
+    def wrapper(*args, **kwargs):
+        process = Process(target=fn, args=args, kwargs=kwargs, name=f"{args[0].name}_platform")
+        process.start()
+        return process
+
+    return wrapper
 class Platform(object):
     """
     Class to manage the connections to the different platforms.
@@ -78,6 +92,8 @@ class Platform(object):
                 self.pw = auth_password
         else:
             self.pw = None
+        self.recovery_queue = Queue()
+        self.log_retrieval_process_active = False
 
 
     @property
@@ -272,6 +288,7 @@ class Platform(object):
                     for innerJob in package._jobs:
                         # Setting status to COMPLETED, so it does not get stuck in the loop that calls this function
                         innerJob.status = Status.COMPLETED
+                        innerJob.updated_log = False
 
                 # If called from RUN or inspect command
                 if not only_wrappers:
@@ -318,6 +335,7 @@ class Platform(object):
                 raise
             except Exception as e:
                 raise
+
         return save, failed_packages, error_message, valid_packages_to_submit
 
     @property
@@ -624,10 +642,10 @@ class Platform(object):
         if self.check_file_exists(filename):
             self.delete_file(filename)
 
-    def check_file_exists(self, src, wrapper_failed=False, sleeptime=5, max_retries=3):
+    def check_file_exists(self, src, wrapper_failed=False, sleeptime=5, max_retries=3, first=True):
         return True
 
-    def get_stat_file(self, job_name, retries=0):
+    def get_stat_file(self, job_name, retries=0, count = -1):
         """
         Copies *STAT* files from remote to local
 
@@ -638,7 +656,10 @@ class Platform(object):
         :return: True if successful, False otherwise
         :rtype: bool
         """
-        filename = job_name + '_STAT'
+        if count == -1: # No internal retrials
+            filename = job_name + '_STAT'
+        else:
+            filename = job_name + '_STAT_{0}'.format(str(count))
         stat_local_path = os.path.join(
             self.config.get("LOCAL_ROOT_DIR"), self.expid, self.config.get("LOCAL_TMP_DIR"), filename)
         if os.path.exists(stat_local_path):
@@ -650,46 +671,6 @@ class Platform(object):
         Log.debug('{0}_STAT file not found', job_name)
         return False
 
-    def check_stat_file_by_retrials(self, job_name, retries=0):
-        """
-         check *STAT* file
-
-         :param retries: number of intents to get the completed files
-         :type retries: int
-         :param job_name: name of job to check
-         :type job_name: str
-         :return: True if successful, False otherwise
-         :rtype: bool
-         """
-        filename = job_name
-        if self.check_file_exists(filename):
-            return True
-        else:
-            return False
-
-    def get_stat_file_by_retrials(self, job_name, retries=0):
-        """
-        Copies *STAT* files from remote to local
-
-        :param retries: number of intents to get the completed files
-        :type retries: int
-        :param job_name: name of job to check
-        :type job_name: str
-        :return: True if successful, False otherwise
-        :rtype: bool
-        """
-        filename = job_name
-        stat_local_path = os.path.join(
-            self.config.get("LOCAL_ROOT_DIR"), self.expid, self.config.get("LOCAL_TMP_DIR"), filename)
-        if os.path.exists(stat_local_path):
-            os.remove(stat_local_path)
-        if self.check_file_exists(filename):
-            if self.get_file(filename, True):
-                return True
-            else:
-                return False
-        else:
-            return False
 
     @autosubmit_parameter(name='current_logdir')
     def get_files_path(self):
@@ -820,4 +801,50 @@ class Platform(object):
         Sends a Submit file Script, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
         """
         raise NotImplementedError
+
+    def add_job_to_log_recover(self, job):
+        self.recovery_queue.put((job,job.children))
+
+    def connect(self, as_conf, reconnect=False):
+        raise NotImplementedError
+
+    def restore_connection(self,as_conf):
+        raise NotImplementedError
+
+    @processed
+    def recover_job_logs(self):
+        job_names_processed = set()
+        self.connected = False
+        self.restore_connection(None)
+        while True:
+            try:
+                job,children = self.recovery_queue.get()
+                if job.wrapper_type != "vertical":
+                    if f'{job.name}_{job.fail_count}' in job_names_processed:
+                        continue
+                else:
+                    if f'{job.name}' in job_names_processed:
+                        continue
+                job.children = children
+                job.platform = self
+                try:
+                    job.retrieve_logfiles(self, raise_error=True)
+                    if job.wrapper_type != "vertical":
+                        job_names_processed.add(f'{job.name}_{job.fail_count}')
+                    else:
+                        job_names_processed.add(f'{job.name}')
+                except:
+                    pass
+            except queue.Empty:
+                pass
+            except (IOError, OSError):
+                pass
+            except Exception as e:
+                try:
+                    self.restore_connection(None)
+                except:
+                    pass
+            time.sleep(1)
+
+
 

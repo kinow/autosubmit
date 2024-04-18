@@ -28,7 +28,7 @@ from autosubmit.platforms.headers.local_header import LocalHeader
 from autosubmitconfigparser.config.basicconfig import BasicConfig
 from time import sleep
 from log.log import Log, AutosubmitError, AutosubmitCritical
-
+import threading
 class LocalPlatform(ParamikoPlatform):
     """
     Class to manage jobs to localhost
@@ -111,17 +111,27 @@ class LocalPlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self.get_pscall(job_id)
 
-    def connect(self, reconnect=False):
+    def connect(self, as_conf, reconnect=False):
         self.connected = True
-    def test_connection(self):
-        self.connected = True
-    def restore_connection(self):
+        if not self.log_retrieval_process_active and (
+                as_conf is None or str(as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS',"false")).lower() == "false"):
+            self.log_retrieval_process_active = True
+            self.recover_job_logs()
+
+
+    def test_connection(self,as_conf):
+        if not self.connected:
+            self.connect(as_conf)
+
+
+    def restore_connection(self,as_conf):
         self.connected = True
 
     def check_Alljobs(self, job_list, as_conf, retries=5):
         for job,prev_job_status in job_list:
             self.check_job(job)
-    def send_command(self, command,ignore_log=False, x11 = False):
+
+    def send_command(self, command, ignore_log=False, x11 = False):
         lang = locale.getlocale()[1]
         if lang is None:
             lang = locale.getdefaultlocale()[1]
@@ -175,7 +185,7 @@ class LocalPlatform(ParamikoPlatform):
         return True
 
     # Moves .err .out
-    def check_file_exists(self, src, wrapper_failed=False, sleeptime=5, max_retries=3):
+    def check_file_exists(self, src, wrapper_failed=False, sleeptime=5, max_retries=3, first=True):
         """
         Moves a file on the platform
         :param src: source name
@@ -187,12 +197,17 @@ class LocalPlatform(ParamikoPlatform):
         file_exist = False
         remote_path = os.path.join(self.get_files_path(), src)
         retries = 0
+        # Not first is meant for vertical_wrappers. There you have to download STAT_{MAX_LOGS} then STAT_{MAX_LOGS-1} and so on
+        if not first:
+            max_retries = 1
+            sleeptime = 0
         while not file_exist and retries < max_retries:
             try:
                 file_exist = os.path.isfile(os.path.join(self.get_files_path(),src))
                 if not file_exist:  # File doesn't exist, retry in sleep-time
-                    Log.debug("{2} File does not exist.. waiting {0}s for a new retry (retries left: {1})", sleeptime,
-                             max_retries - retries, remote_path)
+                    if first:
+                        Log.debug("{2} File does not exist.. waiting {0}s for a new retry (retries left: {1})", sleeptime,
+                                 max_retries - retries, remote_path)
                     if not wrapper_failed:
                         sleep(sleeptime)
                         sleeptime = sleeptime + 5

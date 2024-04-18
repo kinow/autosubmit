@@ -1636,6 +1636,8 @@ class Autosubmit:
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True,
                                          only_wrappers, hold=False)
             job_list.update_list(as_conf, False)
+        for job in job_list.get_job_list():
+            job.status = Status.WAITING
 
 
     @staticmethod
@@ -2011,8 +2013,7 @@ class Autosubmit:
             exp_history = Autosubmit.get_historical_database(expid, job_list,as_conf)
             # establish the connection to all platforms
             # Restore is a missleading, it is actually a "connect" function when the recover flag is not set.
-            Autosubmit.restore_platforms(platforms_to_test)
-
+            Autosubmit.restore_platforms(platforms_to_test,as_conf=as_conf)
             return job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence, False
         else:
             return job_list, submitter , None, None, as_conf , platforms_to_test, packages_persistence, True
@@ -2193,7 +2194,6 @@ class Autosubmit:
                             Log.printlog("Error trying to store failed job count", Log.WARNING)
                         Log.result("Storing failed job count...done")
                         while not recovery and (recovery_retrials < max_recovery_retrials or max_recovery_retrials <= 0 ):
-
                             delay = min(15 * consecutive_retrials, 120)
                             recovery_retrials += 1
                             sleep(delay)
@@ -2261,6 +2261,23 @@ class Autosubmit:
 
 
                 Log.result("No more jobs to run.")
+
+                # Wait for all remaining threads of I/O, close remaining connections
+                # search hint - finished run
+                Log.info("Waiting for all logs to be updated")
+                # get all threads
+                threads = threading.enumerate()
+                # print name
+                timeout = as_conf.experiment_data.get("CONFIG",{}).get("LAST_LOGS_TIMEOUT", 180)
+                for remaining in range(timeout, 0, -1):
+                    if len(job_list.get_completed_without_logs()) == 0:
+                        break
+                    for job in job_list.get_completed_without_logs():
+                        job_list.update_log_status(job, as_conf)
+                    sleep(1)
+                    if remaining % 10 == 0:
+                        Log.info(f"Timeout: {remaining}")
+
                 # Updating job data header with current information when experiment ends
                 try:
                     exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
@@ -2272,22 +2289,7 @@ class Autosubmit:
                         Autosubmit.database_fix(expid)
                     except Exception as e:
                         pass
-                # Wait for all remaining threads of I/O, close remaining connections
-                timeout = 0
-                active_threads = True
-                all_threads = threading.enumerate()
-                while active_threads and timeout <= 180:
-                    active_threads = False
-                    for thread in all_threads:
-                        if "JOB_" in thread.name:
-                            if thread.is_alive():
-                                active_threads = True
-                                Log.info("{0} is still retrieving outputs, time remaining is {1} seconds.".format(
-                                    thread.name, 180 - timeout))
-                                break
-                    if active_threads:
-                        sleep(10)
-                        timeout += 10
+
                 for platform in platforms_to_test:
                     platform.closeConnection()
                 if len(job_list.get_failed()) > 0:
@@ -2327,7 +2329,7 @@ class Autosubmit:
         for platform in platform_to_test:
             platform_issues = ""
             try:
-                message = platform.test_connection()
+                message = platform.test_connection(as_conf)
                 if message is None:
                     message = "OK"
                 if message != "OK":
@@ -2432,6 +2434,14 @@ class Autosubmit:
                 if error_message != "":
                     raise AutosubmitCritical("Submission Failed due wrong configuration:{0}".format(error_message),
                                              7014)
+                if not inspect:
+                    for package in valid_packages_to_submit:
+                        wrapper_time = None
+                        for job in package.jobs: # if jobs > 1 == wrapped == same submission time
+                            job.write_submit_time(wrapper_submit_time=wrapper_time)
+                            wrapper_time = job.submit_time_timestamp
+
+
             if save_1 or save_2:
                 return True
             else:
@@ -2833,7 +2843,7 @@ class Autosubmit:
                         job.platform = submitter.platforms[job.platform_name]
                         platforms_to_test.add(job.platform)
                     for platform in platforms_to_test:
-                        platform.test_connection()
+                        platform.test_connection(as_conf)
                     for job in current_active_jobs:
                         job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
 
@@ -2856,7 +2866,7 @@ class Autosubmit:
                 # noinspection PyTypeChecker
                 platforms_to_test.add(platforms[job.platform_name])
             # establish the connection to all platforms
-            Autosubmit.restore_platforms(platforms_to_test)
+            Autosubmit.restore_platforms(platforms_to_test,as_conf=as_conf)
 
             if all_jobs:
                 jobs_to_recover = job_list.get_job_list()
@@ -2989,7 +2999,7 @@ class Autosubmit:
                     job.platform_name = as_conf.get_platform()
                 platforms_to_test.add(platforms[job.platform_name])
             # establish the connection to all platforms on use
-            Autosubmit.restore_platforms(platforms_to_test)
+            Autosubmit.restore_platforms(platforms_to_test,as_conf=as_conf)
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Autosubmit._check_ownership(experiment_id, raise_error=True)
             if submitter.platforms is None:
@@ -3206,7 +3216,7 @@ class Autosubmit:
             backup_files = []
             # establish the connection to all platforms on use
             try:
-                Autosubmit.restore_platforms(platforms_to_test)
+                Autosubmit.restore_platforms(platforms_to_test,as_conf=as_conf)
             except AutosubmitCritical as e:
                 raise AutosubmitCritical(
                     e.message + "\nInvalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.yml with the correct info\n 2) autosubmit expid -p --onlyremote",
@@ -5401,7 +5411,7 @@ class Autosubmit:
                 definitive_platforms = list()
                 for platform in platforms_to_test:
                     try:
-                        Autosubmit.restore_platforms([platform])
+                        Autosubmit.restore_platforms([platform],as_conf=as_conf)
                         definitive_platforms.append(platform.name)
                     except Exception as e:
                         pass
