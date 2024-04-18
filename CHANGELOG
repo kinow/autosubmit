@@ -1,6 +1,28 @@
+4.1.4 - Docs and Log Rework
+=====================
+- Log retrieval has been fully reworked, improving it is performance, FD, and memory usage.
+- Fixed several issues with logs not being retrieved sometimes.
+- Fixed several issues with job_data not being written correctly.
+- Fixed some issues with retrials squashing stats/ logs.
+- Added Marenostrum5 support.
+- Fixed some issues with jobs inside a wrapper not having their parameters updated in realtime.
+- Features a complete design rework of the autosubmit readthedocs 
+
+
 4.1.3 - Bug fixes
 =================
-todo
+- Added Leonardo support.
+- Improved inspect command.
+- Added a new option to inspect.
+- Wrapper now admits placeholders. 
+- Reworked the wrapper deadlock code and total _jobs code. And fixed issues with "on_submission" jobs and wrappers. 
+- Fixed issues with create without -f and splits.
+- Improved error clarity.
+- Added RO-Crate.
+- Added Calendar for splits.
+
+
+
 
 4.1.2 - Bug fixes
 =================
