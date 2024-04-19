@@ -136,6 +136,23 @@ class PJMHeader(object):
         if int(job.parameters['TASKS']) > 1:
             return "max-proc-per-node={0}".format(job.parameters['TASKS'])
         return ""
+    def get_threads_per_task(self, job, het=-1):
+        """
+        Returns threads per task directive for the specified job
+
+        :param job: job to create threads per task directive for
+        :type job: Job
+        :return: threads per task directive
+        :rtype: str
+        """
+        # There is no threads per task, so directive is empty
+        if het > -1 and len(job.het['NUMTHREADS']) > 0:
+            if job.het['NUMTHREADS'][het] != '':
+                return f"export OMP_NUM_THREADS={job.het['NUMTHREADS'][het]}"
+        else:
+            if job.parameters['NUMTHREADS'] != '':
+                return "export OMP_NUM_THREADS={0}".format(job.parameters['NUMTHREADS'])
+        return ""
 
     SERIAL = textwrap.dedent("""\
 ###############################################################################
@@ -148,6 +165,8 @@ class PJMHeader(object):
 #%ACCOUNT_DIRECTIVE%
 #%MEMORY_DIRECTIVE%
 %CUSTOM_DIRECTIVES%
+%THREADS_PER_TASK_DIRECTIVE%
+
 #PJM -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
 #PJM -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
 #%X11%
@@ -164,6 +183,7 @@ class PJMHeader(object):
 #%NODES_DIRECTIVE%
 #PJM --mpi "proc=%NUMPROC%"
 #PJM --mpi "%TASKS_PER_NODE_DIRECTIVE%"
+%THREADS_PER_TASK_DIRECTIVE%
 #PJM -L elapse=%WALLCLOCK%:00
 #%QUEUE_DIRECTIVE%
 #%ACCOUNT_DIRECTIVE%
