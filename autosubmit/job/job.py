@@ -2672,8 +2672,12 @@ class WrapperJob(Job):
 
     def cancel_failed_wrapper_job(self):
         Log.printlog("Cancelling job with id {0}".format(self.id), 6009)
-        self._platform.send_command(
-            self._platform.cancel_cmd + " " + str(self.id))
+        try:
+            self._platform.send_command(
+                self._platform.cancel_cmd + " " + str(self.id))
+        except:
+            Log.info(f'Job with {self.id} was finished before canceling it')
+
         for job in self.job_list:
             #if job.status == Status.RUNNING:
                 #job.inc_fail_count()

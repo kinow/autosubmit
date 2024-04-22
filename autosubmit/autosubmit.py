@@ -2254,8 +2254,8 @@ class Autosubmit:
                     except (portalocker.AlreadyLocked, portalocker.LockException) as e:
                         message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
                         raise AutosubmitCritical(message, 7000)
-                    except BaseException as e:  # If this happens, there is a bug in the code or an exception not-well caught
-                        raise AutosubmitCritical("There is a bug in the code, please contact via Gitlab", 7070, str(e))
+                    except BaseException as e:
+                        raise # If this happens, there is a bug in the code or an exception not-well caught
 
 
                 Log.result("No more jobs to run.")
@@ -2306,7 +2306,7 @@ class Autosubmit:
         except AutosubmitCritical as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("This seems like a bug in the code, please contact AS developers", 7070, str(e))
+            raise
         finally:
             if profile:
                 profiler.stop()

@@ -61,13 +61,14 @@ class WrapperFactory(object):
                                                              wrapper_cmd, flags=re.IGNORECASE)
         for placeholder in placeholders_inside_wrapper:
             placeholder = placeholder[1:-1]
+
             value = str(wrapper_data.jobs[0].parameters.get(placeholder.upper(), ""))
-            if not value:
-                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', '', placeholders_inside_wrapper, flags=re.I)
+            if not value or value == "[]":
+                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', '', wrapper_cmd, flags=re.I)
             else:
                 if "\\" in value:
                     value = re.escape(value)
-                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', value, placeholders_inside_wrapper, flags=re.I)
+                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', value, wrapper_cmd, flags=re.I)
         return wrapper_cmd
 
     def vertical_wrapper(self, **kwargs):
@@ -214,7 +215,7 @@ class PJMWrapperFactory(WrapperFactory):
     def exclusive_directive(self, exclusive):
         return '#PJM --exclusive'
     def tasks_directive(self, tasks):
-        return '#PJM --ntasks-per-node={0}'.format(tasks)
+        return "#PJM --mpi max-proc-per-node={0}".format(tasks) # searchhint
     def nodes_directive(self, nodes):
         return '#PJM -N {0}'.format(nodes)
     def processors_directive(self, processors):
