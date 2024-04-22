@@ -33,10 +33,11 @@ from typing import Union
 
 
 def exit_from_error(e: BaseException):
+    trace = traceback.format_exc()
     try:
-        Log.debug(traceback.format_exc())
+        Log.debug(trace)
     except:
-        print(traceback.format_exc())
+        print(trace)
     with suppress(FileNotFoundError, PermissionError):
         os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
     if isinstance(e, (AutosubmitCritical, AutosubmitError)):
@@ -45,7 +46,7 @@ def exit_from_error(e: BaseException):
             Log.debug("Trace: {0}", str(e.trace))
         Log.critical("{1} [eCode={0}]", e.code, e.message)
     else:
-        msg = "An Unknown error occurred: {0}.\n Please report it to Autosubmit Developers through Git"
+        msg = "A not admitted configuration or error in the code has happened: {0}.\n Please report it to Autosubmit Developers through Git"
         args = [str(e)]
         Log.critical(msg.format(*args))
     Log.info("More info at https://autosubmit.readthedocs.io/en/master/troubleshooting/error-codes.html")

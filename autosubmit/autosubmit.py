@@ -1562,9 +1562,7 @@ class Autosubmit:
         except AutosubmitError as e:
             raise
         except BaseException as e:
-            raise AutosubmitCritical(
-                "There are issues that occurred during the templates generation, please check that job parameters are well set and the template path exists.",
-                7014, str(e))
+            raise
         return True
 
     @staticmethod
@@ -2451,6 +2449,7 @@ class Autosubmit:
         except AutosubmitCritical as e:
             raise
         except BaseException as e:
+            raise
             raise AutosubmitCritical("This seems like a bug in the code, please contact AS developers", 7070, str(e))
 
     @staticmethod

@@ -183,7 +183,7 @@ class JobPackageBase(object):
         except AutosubmitCritical:
             raise
         except BaseException as e:
-            raise AutosubmitCritical("Error while building the scripts: {0}".format(e), 7013)
+            raise
         try:
             if not only_generate:
                 Log.debug("Sending Files")
