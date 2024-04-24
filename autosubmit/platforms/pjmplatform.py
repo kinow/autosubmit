@@ -447,7 +447,6 @@ class PJMPlatform(ParamikoPlatform):
     #PJM -g {kwargs["project"]}
     #PJM -o {kwargs["name"]}.out
     #PJM -e {kwargs["name"]}.err
-    %CUSTOM_DIRECTIVES%
     #
     ###############################################################################
     

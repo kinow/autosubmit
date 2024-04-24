@@ -123,6 +123,16 @@ class PJMHeader(object):
         if int(job.parameters['TASKS']) > 1:
             return "max-proc-per-node={0}".format(job.parameters['TASKS'])
         return ""
+    def get_shape_directive(self, job):
+        """
+        Returns shape directive for the specified job
+        :param job:
+        :return:
+        """
+        if job.parameters['SHAPE'] != '':
+            return "PJM --mpi 'shape={0}'".format(job.parameters['SHAPE'])
+        return ""
+
 
     def get_tasks_per_node(self, job):
         """
@@ -166,6 +176,8 @@ class PJMHeader(object):
 #%MEMORY_DIRECTIVE%
 %CUSTOM_DIRECTIVES%
 %THREADS_PER_TASK_DIRECTIVE%
+#%SHAPE_DIRECTIVE%
+#%NODES_DIRECTIVE%
 
 #PJM -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
 #PJM -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
@@ -189,6 +201,7 @@ class PJMHeader(object):
 #%ACCOUNT_DIRECTIVE%
 #%MEMORY_DIRECTIVE%
 #%MEMORY_PER_TASK_DIRECTIVE%
+#%SHAPE_DIRECTIVE%
 #PJM -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%OUT_LOG_DIRECTIVE%
 #PJM -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ_DIR%/%CURRENT_USER%/%DEFAULT.EXPID%/LOG_%DEFAULT.EXPID%/%ERR_LOG_DIRECTIVE%
 %CUSTOM_DIRECTIVES%

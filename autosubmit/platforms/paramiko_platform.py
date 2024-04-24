@@ -1289,6 +1289,9 @@ class ParamikoPlatform(Platform):
             if hasattr(self.header, 'get_account_directive'):
                 header = header.replace(
                     '%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))
+            if hasattr(self.header, 'get_shape_directive'):
+                header = header.replace(
+                    '%SHAPE_DIRECTIVE%', self.header.get_shape_directive(job))
             if hasattr(self.header, 'get_nodes_directive'):
                 header = header.replace(
                     '%NODES_DIRECTIVE%', self.header.get_nodes_directive(job))

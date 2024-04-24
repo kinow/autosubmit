@@ -240,6 +240,7 @@ class Job(object):
         self.max_checkpoint_step = 0
         self.reservation = ""
         self.delete_when_edgeless = False
+        self.shape = ""
         # hetjobs
         self.het = None
         self.updated_log = False
@@ -716,6 +717,26 @@ class Job(object):
         :type value: HPCPlatform
         """
         self._partition = value
+
+    @property
+    def shape(self):
+        """
+        Returns the shape of the job. Chooses between serial and parallel platforms
+
+        :return HPCPlatform object for the job to use
+        :rtype: HPCPlatform
+        """
+        return self._shape
+
+    @shape.setter
+    def shape(self, value):
+        """
+        Sets the shape to be used by the job.
+
+        :param value: shape to set
+        :type value: HPCPlatform
+        """
+        self._shape = value
 
     @property
     def children(self):
@@ -1539,6 +1560,7 @@ class Job(object):
         self.total_jobs = job_data.get("TOTALJOBS",job_data.get("TOTAL_JOBS", job_platform.total_jobs))
         self.max_waiting_jobs = job_data.get("MAXWAITINGJOBS",job_data.get("MAX_WAITING_JOBS", job_platform.max_waiting_jobs))
         self.processors = job_data.get("PROCESSORS",platform_data.get("PROCESSORS","1"))
+        self.shape = job_data.get("SHAPE",platform_data.get("SHAPE",""))
         self.processors_per_node = job_data.get("PROCESSORS_PER_NODE",as_conf.platforms_data.get(job_platform.name,{}).get("PROCESSORS_PER_NODE","1"))
         self.nodes = job_data.get("NODES",platform_data.get("NODES",""))
         self.exclusive = job_data.get("EXCLUSIVE",platform_data.get("EXCLUSIVE",False))
@@ -1806,6 +1828,7 @@ class Job(object):
         self.delete_when_edgeless = as_conf.jobs_data[self.section].get("DELETE_WHEN_EDGELESS", True)
         self.check = as_conf.jobs_data[self.section].get("CHECK", False)
         self.check_warnings = as_conf.jobs_data[self.section].get("CHECK_WARNINGS", False)
+        self.shape = as_conf.jobs_data[self.section].get("SHAPE", "")
         if self.checkpoint: # To activate placeholder sustitution per <empty> in the template
             parameters["AS_CHECKPOINT"] = self.checkpoint
         parameters['JOBNAME'] = self.name
@@ -1813,6 +1836,7 @@ class Job(object):
         parameters['SDATE'] = self.sdate
         parameters['MEMBER'] = self.member
         parameters['SPLIT'] = self.split
+        parameters['SHAPE'] = self.shape
         parameters['SPLITS'] = self.splits
         parameters['DELAY'] = self.delay
         parameters['FREQUENCY'] = self.frequency
@@ -1849,6 +1873,7 @@ class Job(object):
         self.total_jobs = parameters["TOTALJOBS"]
         self.max_waiting_jobs = parameters["MAXWAITINGJOBS"]
         self.processors = parameters["PROCESSORS"]
+        self.shape = parameters["SHAPE"]
         self.processors_per_node = parameters["PROCESSORS_PER_NODE"]
         self.nodes = parameters["NODES"]
         self.exclusive = parameters["EXCLUSIVE"]
