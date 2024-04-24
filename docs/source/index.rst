@@ -51,6 +51,12 @@ Autosubmit Workflow Manager
 
    /moduledoc/index
 
+.. toctree::
+   :caption: media
+   :maxdepth: 1
+   :hidden:
+
+   /media/index
 
 .. raw:: html
 
