@@ -256,6 +256,7 @@ class Platform(object):
         :return: True if at least one job was submitted, False otherwise \n
         :rtype: Boolean
         """
+        any_job_submitted = False
         save = False
         failed_packages = list()
         error_message = ""
@@ -286,6 +287,7 @@ class Platform(object):
                         packages_persistence.save(
                             package.name, package.jobs, package._expid, inspect)
                     for innerJob in package._jobs:
+                        any_job_submitted = True
                         # Setting status to COMPLETED, so it does not get stuck in the loop that calls this function
                         innerJob.status = Status.COMPLETED
                         innerJob.updated_log = False
@@ -335,8 +337,9 @@ class Platform(object):
                 raise
             except Exception as e:
                 raise
-
-        return save, failed_packages, error_message, valid_packages_to_submit
+        if valid_packages_to_submit:
+            any_job_submitted = True
+        return save, failed_packages, error_message, valid_packages_to_submit, any_job_submitted
 
     @property
     def serial_platform(self):

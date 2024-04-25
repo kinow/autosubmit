@@ -60,6 +60,7 @@ class JobPackager(object):
         self.wrapper_info = list()
         self.calculate_job_limits(platform)
         self.special_variables = dict()
+        self.wrappers_with_error = {}
 
 
         #todo add default values
@@ -301,8 +302,9 @@ class JobPackager(object):
                             packages_to_submit.append(package)
                             max_jobs_to_submit = max_jobs_to_submit - 1
                     if error:
-                        if len(self._jobs_list.get_in_queue()) == 0:  # When there are not more possible jobs, autosubmit will stop the execution
-                            raise AutosubmitCritical(self.error_message_policy(min_h, min_v, wrapper_limits, p.wallclock, balanced), 7014)
+                        job_names = [job.name for job in p.jobs]
+                        job_names = ','.join(job_names)
+                        self.wrappers_with_error[job_names] =  self.error_message_policy(min_h, min_v, wrapper_limits, p.wallclock, balanced)
                 else:
                     Log.info(
                         "Wrapper policy is set to flexible and there is a deadlock, Autosubmit will submit the jobs sequentially")
@@ -496,6 +498,7 @@ class JobPackager(object):
                 built_packages_tmp = self._build_vertical_packages(jobs, wrapper_limits)
 
             packages_to_submit,max_jobs_to_submit = self.check_packages_respect_wrapper_policy(built_packages_tmp,packages_to_submit,max_jobs_to_submit,wrapper_limits,any_simple_packages)
+
         # Now, prepare the packages for non-wrapper jobs
         for job in non_wrapped_jobs:
             if job.section in section_jobs_to_submit:
@@ -515,6 +518,7 @@ class JobPackager(object):
             max_jobs_to_submit = max_jobs_to_submit - 1
             if job.section in section_jobs_to_submit:
                 section_jobs_to_submit[job.section] = section_jobs_to_submit[job.section] - 1
+
 
         for package in packages_to_submit:
             self.max_jobs = self.max_jobs - 1
@@ -557,12 +561,12 @@ class JobPackager(object):
         return jobs_by_section
 
 
-    def _build_horizontal_packages(self, section_list, wrapper_limits, section,wrapper_info={}):
+    def _build_horizontal_packages(self, section_list, wrapper_limits, section, wrapper_info={}):
         packages = []
         horizontal_packager = JobPackagerHorizontal(section_list, self._platform.max_processors, wrapper_limits,
                                                     wrapper_limits["max"], self._platform.processors_per_node, self.wrapper_method[self.current_wrapper_section])
 
-        package_jobs = horizontal_packager.build_horizontal_package()
+        package_jobs = horizontal_packager.build_horizontal_package(wrapper_info=wrapper_info)
 
         jobs_resources = dict()
 

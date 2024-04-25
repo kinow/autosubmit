@@ -22,6 +22,8 @@ Main module for Autosubmit. Only contains an interface class to all functionalit
 """
 
 from collections import OrderedDict
+
+from autosubmit.job import job_utils
 from contextlib import suppress
 import copy
 import datetime
@@ -240,6 +242,7 @@ class Job(object):
         self.max_checkpoint_step = 0
         self.reservation = ""
         self.delete_when_edgeless = False
+
         # hetjobs
         self.het = None
         self.updated_log = False
@@ -262,6 +265,7 @@ class Job(object):
         self._memory_per_task = ''
         self.log_retrieved = False
         self.start_time_placeholder = ""
+        self.processors_per_node = ""
 
     @property
     @autosubmit_parameter(name='tasktype')
@@ -1283,6 +1287,11 @@ class Job(object):
             else:
                 return default_status
     def update_platform_parameters(self,as_conf,parameters,job_platform):
+        if not job_platform:
+            submitter = job_utils._get_submitter(as_conf)
+            submitter.load_platforms(as_conf)
+            job_platform = submitter.platforms[self.platform_name]
+            self.platform = job_platform
         for key,value in as_conf.platforms_data.get(job_platform.name,{}).items():
             parameters["CURRENT_"+key.upper()] = value
         parameters['CURRENT_ARCH'] = job_platform.name
@@ -1884,7 +1893,8 @@ class Job(object):
         # Parameters that affect to all the rest of parameters
         self.update_dict_parameters(as_conf)
         parameters = parameters.copy()
-        parameters.update(as_conf.parameters)
+        if hasattr(as_conf,"parameters"):
+            parameters.update(as_conf.parameters)
         parameters.update(default_parameters)
         parameters = as_conf.substitute_dynamic_variables(parameters,25)
         parameters['ROOTDIR'] = os.path.join(
