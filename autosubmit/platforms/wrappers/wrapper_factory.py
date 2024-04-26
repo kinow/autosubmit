@@ -61,13 +61,14 @@ class WrapperFactory(object):
                                                              wrapper_cmd, flags=re.IGNORECASE)
         for placeholder in placeholders_inside_wrapper:
             placeholder = placeholder[1:-1]
+
             value = str(wrapper_data.jobs[0].parameters.get(placeholder.upper(), ""))
-            if not value:
-                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', '', placeholders_inside_wrapper, flags=re.I)
+            if not value or value == "[]":
+                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', '', wrapper_cmd, flags=re.I)
             else:
                 if "\\" in value:
                     value = re.escape(value)
-                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', value, placeholders_inside_wrapper, flags=re.I)
+                wrapper_cmd = re.sub('%(?<!%%)' + placeholder + '%(?!%%)', value, wrapper_cmd, flags=re.I)
         return wrapper_cmd
 
     def vertical_wrapper(self, **kwargs):
@@ -179,6 +180,54 @@ class SlurmWrapperFactory(WrapperFactory):
         return '#SBATCH --cpus-per-task={0}'.format(threads)
 
 
+class PJMWrapperFactory(WrapperFactory):
+
+    def vertical_wrapper(self, **kwargs):
+        return PythonVerticalWrapperBuilder(**kwargs)
+
+    def horizontal_wrapper(self, **kwargs):
+
+        if kwargs["method"] == 'srun':
+            return SrunHorizontalWrapperBuilder(**kwargs)
+        else:
+            return PythonHorizontalWrapperBuilder(**kwargs)
+
+    def hybrid_wrapper_horizontal_vertical(self, **kwargs):
+        return PythonHorizontalVerticalWrapperBuilder(**kwargs)
+
+    def hybrid_wrapper_vertical_horizontal(self, **kwargs):
+        if kwargs["method"] == 'srun':
+            return SrunVerticalHorizontalWrapperBuilder(**kwargs)
+        else:
+            return PythonVerticalHorizontalWrapperBuilder(**kwargs)
+
+    def header_directives(self, **kwargs):
+        return self.platform.wrapper_header(**kwargs)
+
+    def allocated_nodes(self):
+        return self.platform.allocated_nodes()
+
+
+    def queue_directive(self, queue):
+        return '#PJM --qos={0}'.format(queue)
+    def partition_directive(self, partition):
+        return '#PJM --partition={0}'.format(partition)
+    def exclusive_directive(self, exclusive):
+        return '#PJM --exclusive'
+    def tasks_directive(self, tasks):
+        return "#PJM --mpi max-proc-per-node={0}".format(tasks) # searchhint
+    def nodes_directive(self, nodes):
+        return '#PJM -N {0}'.format(nodes)
+    def processors_directive(self, processors):
+        return '#PJM -n {0}'.format(processors)
+    def threads_directive(self, threads):
+        return f"export OMP_NUM_THREADS={threads}"
+
+    def queue_directive(self, queue):
+        return '#PJM -L rscgrp={0}'.format(queue)
+
+    def partition_directive(self, partition):
+        return '#PJM -g {0}'.format(partition)
 
 class LSFWrapperFactory(WrapperFactory):
 
@@ -215,39 +264,4 @@ class EcWrapperFactory(WrapperFactory):
     def dependency_directive(self, dependency):
         return '#PBS -v depend=afterok:{0}'.format(dependency)
 
-class PJMWrapperFactory(WrapperFactory):
 
-    def vertical_wrapper(self, **kwargs):
-        return PythonVerticalWrapperBuilder(**kwargs)
-
-    def horizontal_wrapper(self, **kwargs):
-
-        if kwargs["method"] == 'srun':
-            return SrunHorizontalWrapperBuilder(**kwargs)
-        else:
-            return PythonHorizontalWrapperBuilder(**kwargs)
-
-    def hybrid_wrapper_horizontal_vertical(self, **kwargs):
-        return PythonHorizontalVerticalWrapperBuilder(**kwargs)
-
-    def hybrid_wrapper_vertical_horizontal(self, **kwargs):
-        if kwargs["method"] == 'srun':
-            return SrunVerticalHorizontalWrapperBuilder(**kwargs)
-        else:
-            return PythonVerticalHorizontalWrapperBuilder(**kwargs)
-
-    def header_directives(self, **kwargs):
-        return self.platform.wrapper_header(**kwargs)
-
-    def allocated_nodes(self):
-        return self.platform.allocated_nodes()
-
-    #def dependency_directive(self, dependency):
-    #    # There is no option for afterok in the PJM scheduler, but I think it is not needed.
-    #    return '#PJM --dependency=afterok:{0}'.format(dependency)
-
-    def queue_directive(self, queue):
-        return '#PJM -L rscgrp={0}'.format(queue)
-
-    def partition_directive(self, partition):
-        return '#PJM -g {0}'.format(partition)

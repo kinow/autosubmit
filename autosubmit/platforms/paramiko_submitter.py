@@ -192,6 +192,7 @@ class ParamikoSubmitter(Submitter):
             remote_platform.exclusivity = platform_data[section].get('EXCLUSIVITY', "")
             remote_platform.user = platform_data[section].get('USER', "")
             remote_platform.scratch = platform_data[section].get('SCRATCH_DIR', "")
+            remote_platform.shape = platform_data[section].get('SHAPE', "")
             remote_platform.project_dir = platform_data[section].get('SCRATCH_PROJECT_DIR', remote_platform.project)
             remote_platform.temp_dir = platform_data[section].get('TEMP_DIR', "")
             remote_platform._default_queue = platform_data[section].get('QUEUE', "")

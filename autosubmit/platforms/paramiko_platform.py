@@ -1064,6 +1064,7 @@ class ParamikoPlatform(Platform):
                 self._ssh_output_err += errorLineCase.decode(lang)
 
                 errorLine = errorLineCase.lower().decode(lang)
+                 # to be simplified in the future in a function and using in. The errors should be inside the class of the platform not here
                 if "not active" in errorLine:
                     raise AutosubmitError(
                         'SSH Session not active, will restart the platforms', 6005)
@@ -1071,8 +1072,8 @@ class ParamikoPlatform(Platform):
                     raise AutosubmitCritical("scheduler is not installed.",7052,self._ssh_output_err)
                 elif errorLine.find("syntax error") != -1:
                     raise AutosubmitCritical("Syntax error",7052,self._ssh_output_err)
-                elif errorLine.find("refused") != -1 or errorLine.find("slurm_persist_conn_open_without_init") != -1 or errorLine.find("slurmdbd") != -1 or errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1 or errorLine.find("sbatch: error: ") != -1 or errorLine.find("not submitted") != -1 or errorLine.find("invalid") != -1:
-                    if (self._submit_command_name == "sbatch" and (errorLine.find("policy") != -1 or errorLine.find("invalid") != -1) ) or (self._submit_command_name == "sbatch" and errorLine.find("argument") != -1) or (self._submit_command_name == "bsub" and errorLine.find("job not submitted") != -1) or self._submit_command_name == "ecaccess-job-submit" or self._submit_command_name == "qsub ":
+                elif errorLine.find("refused") != -1 or errorLine.find("slurm_persist_conn_open_without_init") != -1 or errorLine.find("slurmdbd") != -1 or errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1 or errorLine.find("sbatch: error: ") != -1 or errorLine.find("not submitted") != -1 or errorLine.find("invalid") != -1 or "[ERR.] PJM".lower() in errorLine:
+                    if "[ERR.] PJM".lower() in errorLine or (self._submit_command_name == "sbatch" and (errorLine.find("policy") != -1 or errorLine.find("invalid") != -1) ) or (self._submit_command_name == "sbatch" and errorLine.find("argument") != -1) or (self._submit_command_name == "bsub" and errorLine.find("job not submitted") != -1) or self._submit_command_name == "ecaccess-job-submit" or self._submit_command_name == "qsub ":
                         raise AutosubmitError(errorLine, 7014, "Bad Parameters.")
                     raise AutosubmitError('Command {0} in {1} warning: {2}'.format(command, self.host,self._ssh_output_err, 6005))
 
@@ -1288,6 +1289,9 @@ class ParamikoPlatform(Platform):
             if hasattr(self.header, 'get_account_directive'):
                 header = header.replace(
                     '%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))
+            if hasattr(self.header, 'get_shape_directive'):
+                header = header.replace(
+                    '%SHAPE_DIRECTIVE%', self.header.get_shape_directive(job))
             if hasattr(self.header, 'get_nodes_directive'):
                 header = header.replace(
                     '%NODES_DIRECTIVE%', self.header.get_nodes_directive(job))

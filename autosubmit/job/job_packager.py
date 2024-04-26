@@ -557,12 +557,12 @@ class JobPackager(object):
         return jobs_by_section
 
 
-    def _build_horizontal_packages(self, section_list, wrapper_limits, section,wrapper_info={}):
+    def _build_horizontal_packages(self, section_list, wrapper_limits, section,wrapper_info=[]):
         packages = []
         horizontal_packager = JobPackagerHorizontal(section_list, self._platform.max_processors, wrapper_limits,
                                                     wrapper_limits["max"], self._platform.processors_per_node, self.wrapper_method[self.current_wrapper_section])
 
-        package_jobs = horizontal_packager.build_horizontal_package()
+        package_jobs = horizontal_packager.build_horizontal_package(wrapper_info=wrapper_info)
 
         jobs_resources = dict()
 
@@ -860,7 +860,7 @@ class JobPackagerHorizontal(object):
         self._sectionList = list()
         self._package_sections = dict()
         self.wrapper_info = []
-    def build_horizontal_package(self, horizontal_vertical=False,wrapper_info={}):
+    def build_horizontal_package(self, horizontal_vertical=False,wrapper_info=[]):
         self.wrapper_info = wrapper_info
         current_package = []
         current_package_by_section = {}
