@@ -864,7 +864,7 @@ class JobPackagerHorizontal(object):
         self._sectionList = list()
         self._package_sections = dict()
         self.wrapper_info = []
-    def build_horizontal_package(self, horizontal_vertical=False,wrapper_info={}):
+    def build_horizontal_package(self, horizontal_vertical=False,wrapper_info=[]):
         self.wrapper_info = wrapper_info
         current_package = []
         current_package_by_section = {}

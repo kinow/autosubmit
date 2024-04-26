@@ -1,3 +1,10 @@
+4.1.5 - PJS - Fugaku - Support
+=====================
+- Added Fugaku support.
+- Enchanced the support for PJS.
+- Added wrapper support for PJS scheduler
+- Fixed issues with log traceback.
+
 4.1.4 - Docs and Log Rework
 =====================
 - Log retrieval has been fully reworked, improving it is performance, FD, and memory usage.
@@ -7,7 +14,7 @@
 - Added Marenostrum5 support.
 - Fixed some issues with jobs inside a wrapper not having their parameters updated in realtime.
 - Features a complete design rework of the autosubmit readthedocs 
-
+- Fixed an issue with create without -f causing some jobs not having parent dependencies
 
 4.1.3 - Bug fixes
 =================

@@ -28,6 +28,7 @@ from autosubmit.platforms.headers.pjm_header import PJMHeader
 from autosubmit.platforms.wrappers.wrapper_factory import PJMWrapperFactory
 from log.log import AutosubmitCritical, AutosubmitError, Log
 
+import textwrap
 class PJMPlatform(ParamikoPlatform):
     """
     Class to manage jobs to host using PJM scheduler
@@ -283,7 +284,7 @@ class PJMPlatform(ParamikoPlatform):
         return self.remote_log_dir
 
     def parse_job_output(self, output):
-        return output.strip().split()[0].strip()
+        return output.strip().split()[1].strip().strip("\n")
 
     def parse_job_finish_data(self, output, packed):
         return 0, 0, 0, 0, 0, 0, dict(), False
@@ -385,13 +386,22 @@ class PJMPlatform(ParamikoPlatform):
     def get_checkAlljobs_cmd(self, jobs_id):
         # jobs_id = "jobid1+jobid2+jobid3"
         # -H == sacct
+        if jobs_id[-1] == ",":
+            jobs_id = jobs_id[:-1] # deletes comma
         return "pjstat -H -v --choose jid,st,ermsg --filter \"jid={0}\" > as_checkalljobs.txt ; pjstat -v --choose jid,st,ermsg --filter \"jid={0}\" >> as_checkalljobs.txt ; cat as_checkalljobs.txt ; rm as_checkalljobs.txt".format(jobs_id)
 
+    def get_checkjob_cmd(self, job_id):
+        return f"pjstat -H -v --choose st --filter \"jid={job_id}\" > as_checkjob.txt ; pjstat -v --choose st --filter \"jid={job_id}\" >> as_checkjob.txt ; cat as_checkjob.txt ; rm as_checkjob.txt"
+
+        #return 'pjstat -v --choose jid,st,ermsg --filter \"jid={0}\"'.format(job_id)
     def get_queue_status_cmd(self, job_id):
         return self.get_checkAlljobs_cmd(job_id)
 
     def get_jobid_by_jobname_cmd(self, job_name):
+        if job_name[-1] == ",":
+            job_name = job_name[:-1]
         return 'pjstat -v --choose jid,st,ermsg --filter \"jnam={0}\"'.format(job_name)
+
 
 
     def cancel_job(self, job_id):
@@ -410,54 +420,52 @@ class PJMPlatform(ParamikoPlatform):
             return reason[0]
         return reason
 
-    def wrapper_header(self,**kwargs):
-        if method == 'srun':
-            language = "#!/bin/bash"
-            return \
-                language + """
-###############################################################################
-#              {0}
-###############################################################################
-#
-#PJM -N {0}
-{1}
-{8}
-#PJM -g {2}
-#PJM -o {0}.out
-#PJM -e {0}.err
-#PJM -elapse {3}:00
-#PJM --mpi "proc=%NUMPROC%"
-#PJM --mpi "max-proc-per-node={7}"
-{5}
-{6}
-
-#
-###############################################################################
-                """.format(filename, queue, project, wallclock, num_procs, dependency,
-                           '\n'.ljust(13).join(str(s) for s in directives), threads,partition)
+    def wrapper_header(self, **kwargs):
+        wr_header = textwrap.dedent(f"""
+    ###############################################################################
+    #              {kwargs["name"].split("_")[0] + "_Wrapper"}
+    ###############################################################################
+    """)
+        if kwargs["wrapper_data"].het.get("HETSIZE", 1) <= 1:
+            wr_header += textwrap.dedent(f"""
+    ###############################################################################
+    #                   %TASKTYPE% %DEFAULT.EXPID% EXPERIMENT
+    ###############################################################################
+    #
+    #PJM -N {kwargs["name"]}
+    #PJM -L elapse={kwargs["wallclock"]}:00
+    {kwargs["queue"]}
+    {kwargs["partition"]}
+    {kwargs["dependency"]}
+    {kwargs["threads"]}
+    {kwargs["nodes"]}
+    {kwargs["num_processors"]}
+    {kwargs["tasks"]}
+    {kwargs["exclusive"]}
+    {kwargs["custom_directives"]}
+    
+    #PJM -g {kwargs["project"]}
+    #PJM -o {kwargs["name"]}.out
+    #PJM -e {kwargs["name"]}.err
+    #
+    ###############################################################################
+    
+    
+    #
+        """).ljust(13)
         else:
-            language = "#!/usr/bin/env python3"
-            return \
-                language + """
-###############################################################################
-#              {0}
-###############################################################################
-#
-#PJM -N {0}
-{1}
-{8}
-#PJM -g {2}
-#PJM -o {0}.out
-#PJM -e {0}.err
-#PJM -elapse {3}:00
-#PJM --mpi "proc=%NUMPROC%"
-#PJM --mpi "max-proc-per-node={7}"
-{5}
-{6}
-#
-###############################################################################
-            """.format(filename, queue, project, wallclock, num_procs, dependency,
-                       '\n'.ljust(13).join(str(s) for s in directives), threads,partition)
+            wr_header = self.calculate_wrapper_het_header(kwargs["wrapper_data"])
+        if kwargs["method"] == 'srun':
+            language = kwargs["executable"]
+            if language is None or len(language) == 0:
+                language = "#!/bin/bash"
+            return language + wr_header
+        else:
+            language = kwargs["executable"]
+            if language is None or len(language) == 0 or "bash" in language:
+                language = "#!/usr/bin/env python3"
+            return language + wr_header
+
 
     @staticmethod
     def allocated_nodes():
