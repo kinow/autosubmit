@@ -1817,9 +1817,10 @@ class TestWrappers(TestCase):
 
         self.job_packager.wrapper_policy["WRAPPER_V"] = "mixed"
         packages_to_submit = []
-        with self.assertRaises(log.log.AutosubmitCritical):
-            self.job_packager.check_packages_respect_wrapper_policy(packages_h, packages_to_submit, max_jobs_to_submit, wrapper_limits)
-
+        self.job_packager.check_packages_respect_wrapper_policy(packages_h, packages_to_submit, max_jobs_to_submit, wrapper_limits)
+        error = self.job_packager.wrappers_with_error['expid_d1_m1_1_s2,expid_d1_m1_1_s2,expid_d1_m1_1_s2,expid_d1_m1_1_s2,expid_d1_m1_1_s2']
+        # check error not empty
+        assert error != ""
         self.job_packager.wrapper_policy["WRAPPER_V"] = "strict"
         packages_to_submit = []
         with self.assertRaises(log.log.AutosubmitCritical):

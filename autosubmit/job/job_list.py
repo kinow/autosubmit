@@ -317,8 +317,9 @@ class JobList(object):
         for platform in job_list_per_platform:
             first = True
             for job in job_list_per_platform[platform]:
+                job_platform = None
                 if first:
-                    if not job.platform:
+                    if not job.platform and hasattr(job, "platform_name") and job.platform_name:
                         submitter = _get_submitter(as_conf)
                         submitter.load_platforms(as_conf)
                         job_platform = submitter.platforms[job.platform_name]

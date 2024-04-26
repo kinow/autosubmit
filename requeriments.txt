@@ -1,13 +1,13 @@
 zipp>=3.1.0
-setuptools>=60.8.2
+setuptools>=60.0.0
 cython
-autosubmitconfigparser==1.0.59
+autosubmitconfigparser==1.0.61
 paramiko>=3.4
 bcrypt>=3.2
 PyNaCl>=1.5.0
 configobj>=5.0.6
 python-dateutil>=2.8.2
-matplotlib == 3.8.3
+matplotlib <= 3.8.3
 py3dotplus>=1.1.0
 pyparsing>=3.0.7
 mock>=4.0.3
