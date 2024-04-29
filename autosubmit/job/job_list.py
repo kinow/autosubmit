@@ -322,6 +322,8 @@ class JobList(object):
                     if not job.platform and hasattr(job, "platform_name") and job.platform_name:
                         submitter = _get_submitter(as_conf)
                         submitter.load_platforms(as_conf)
+                        if job.platform_name not in submitter.platforms:
+                            job.update_parameters(as_conf,{})
                         job_platform = submitter.platforms[job.platform_name]
                     first = False
                 job.platform = job_platform
