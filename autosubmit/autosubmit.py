@@ -307,6 +307,8 @@ class Autosubmit:
                                    default=False, help='Disable transitive reduction')
             subparser.add_argument('-v', '--update_version', action='store_true',
                                    default=False, help='Update experiment version')
+            subparser.add_argument('-db', '--database', action='store_true',
+                                   default=False, help='Use database for statistics')
             # Clean
             subparser = subparsers.add_parser(
                 'clean', description="clean specified experiment")
@@ -687,7 +689,7 @@ class Autosubmit:
                                       args.txt_logfiles, args.profile, detail=False)
         elif args.command == 'stats':
             return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide,
-                                         args.notransitive)
+                                         args.notransitive, args.database)
         elif args.command == 'clean':
             return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
         elif args.command == 'recovery':
@@ -2404,10 +2406,13 @@ class Autosubmit:
         """
         save_1 = False
         save_2 = False
+        wrapper_errors = {}
+        any_job_submitted = False
         try:
             for platform in platforms_to_test:
-                packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
-                save_1, failed_packages, error_message, valid_packages_to_submit = platform.submit_ready_jobs(as_conf,
+                packager = JobPackager(as_conf, platform, job_list, hold=hold)
+                packages_to_submit = packager.build_packages()
+                save_1, failed_packages, error_message, valid_packages_to_submit, any_job_submitted = platform.submit_ready_jobs(as_conf,
                                                                                                               job_list,
                                                                                                               platforms_to_test,
                                                                                                               packages_persistence,
@@ -2415,7 +2420,9 @@ class Autosubmit:
                                                                                                               inspect=inspect,
                                                                                                               only_wrappers=only_wrappers,
                                                                                                               hold=hold)
+                wrapper_errors.update(packager.wrappers_with_error)
                 # Jobs that are being retrieved in batch. Right now, only available for slurm platforms.
+
                 if not inspect and len(valid_packages_to_submit) > 0:
                     job_list.save()
                 save_2 = False
@@ -2439,11 +2446,17 @@ class Autosubmit:
                             job.write_submit_time(wrapper_submit_time=wrapper_time)
                             wrapper_time = job.submit_time_timestamp
 
-
+            if wrapper_errors and not any_job_submitted and len(job_list.get_in_queue()) == 0:
+                # Deadlock situation
+                err_msg = ""
+                for wrapper in wrapper_errors:
+                    err_msg += f"wrapped_jobs:{wrapper} in {wrapper_errors[wrapper]}\n"
+                raise AutosubmitCritical(err_msg, 7014)
             if save_1 or save_2:
                 return True
             else:
                 return False
+
         except AutosubmitError as e:
             raise
         except AutosubmitCritical as e:
@@ -2666,7 +2679,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def statistics(expid, filter_type, filter_period, file_format, hide, notransitive=False):
+    def statistics(expid, filter_type, filter_period, file_format, hide, notransitive=False, db = False):
         """
         Plots statistics graph for a given experiment.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -2681,7 +2694,8 @@ class Autosubmit:
         :type hide: bool
         :param notransitive: Reduces workflow linkage complexity
         :type hide: bool
-
+        :param db: Use database to get the statistics
+        :type db: bool
         """
         try:
             Log.info("Loading jobs...")
@@ -2692,6 +2706,7 @@ class Autosubmit:
             job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
             for job in job_list.get_job_list():
                 job._init_runtime_parameters()
+                job.update_dict_parameters(as_conf)
             Log.debug("Job list restored from {0} files", pkl_dir)
             jobs = StatisticsUtils.filter_by_section(job_list.get_job_list(), filter_type)
             jobs, period_ini, period_fi = StatisticsUtils.filter_by_time_period(jobs, filter_period)

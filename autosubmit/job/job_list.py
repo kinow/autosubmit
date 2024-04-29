@@ -46,7 +46,7 @@ from autosubmit.job.job_common import Status, bcolors
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_package_persistence import JobPackagePersistence
 from autosubmit.job.job_packages import JobPackageThread
-from autosubmit.job.job_utils import Dependency
+from autosubmit.job.job_utils import Dependency, _get_submitter
 from autosubmit.job.job_utils import transitive_reduction
 from autosubmitconfigparser.config.basicconfig import BasicConfig
 from autosubmitconfigparser.config.configcommon import AutosubmitConfig
@@ -311,7 +311,33 @@ class JobList(object):
                 raise AutosubmitCritical(
                     "Some section jobs of the wrapper:{0} are not in the current job_list defined in jobs.conf".format(
                         wrapper_section), 7014, str(e))
+        # divide job_list per platform name
+        job_list_per_platform = self.split_by_platform()
 
+        for platform in job_list_per_platform:
+            first = True
+            for job in job_list_per_platform[platform]:
+                job_platform = None
+                if first:
+                    if not job.platform and hasattr(job, "platform_name") and job.platform_name:
+                        submitter = _get_submitter(as_conf)
+                        submitter.load_platforms(as_conf)
+                        job_platform = submitter.platforms[job.platform_name]
+                    first = False
+                job.platform = job_platform
+
+    def split_by_platform(self):
+        """
+        Splits the job list by platform name
+        :return: job list per platform
+        :rtype: dict
+        """
+        job_list_per_platform = dict()
+        for job in self._job_list:
+            if job.platform not in job_list_per_platform:
+                job_list_per_platform[job.platform] = []
+            job_list_per_platform[job.platform].append(job)
+        return job_list_per_platform
     def _add_all_jobs_edge_info(self, dic_jobs, option="DEPENDENCIES"):
         jobs_data = dic_jobs.experiment_data.get("JOBS", {})
         sections_gen = (section for section in jobs_data.keys())

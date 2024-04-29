@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import math
+
+from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 from log.log import Log, AutosubmitCritical
 import os
 from autosubmit.job.job_package_persistence import JobPackagePersistence
@@ -36,6 +38,22 @@ CALENDAR_UNITSIZE_ENUM = {
     "year": 3
 }
 
+def _get_submitter(as_conf):
+    """
+    Returns the submitter corresponding to the communication defined on autosubmit's config file
+
+    :return: submitter
+    :rtype: Submitter
+    """
+    try:
+        communications_library = as_conf.get_communications_library()
+    except Exception as e:
+        communications_library = 'paramiko'
+    if communications_library == 'paramiko':
+        return ParamikoSubmitter()
+    else:
+        # only paramiko is available right now.
+        return ParamikoSubmitter()
 
 def is_leap_year(year):
     """Determine whether a year is a leap year."""
