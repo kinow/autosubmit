@@ -101,7 +101,6 @@ setup(
         'six>=1.10.0',
         'Pygments',
         'packaging==20',
-        'typing>=3.7',
         'wheel',
         'psutil',
         'rocrate==0.*'
