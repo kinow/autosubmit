@@ -41,7 +41,7 @@ setup(
     keywords=['climate', 'weather', 'workflow', 'HPC'],
     install_requires=[
         'zipp>=3.1.0',
-        'setuptools>=68.0.0',
+        'setuptools>=60.0.0',
         'cython',
         'autosubmitconfigparser==1.0.61',
         'paramiko>=3.4',
