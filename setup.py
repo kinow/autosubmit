@@ -77,7 +77,7 @@ setup(
                 'pythondialog==3.5.3',
                 'xlib==0.21',
                 'setuptools==69.0.3',
-                'cryptography==43.0.0.dev1',
+                'cryptography==43.0.0',
                 'bscearth.utils==0.5.2',
                 'requests==2.31.0',
                 'networkx==2.6.3',
