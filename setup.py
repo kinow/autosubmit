@@ -75,7 +75,7 @@ setup(
             [
                 'msgpack==1.0.5',
                 'setuptools==60.10.0'
-                'matplotlib==3.0.3'
+                'matplotlib==3.3.4'
             ],
         ':python_version > "3.7"':
             [
@@ -85,7 +85,7 @@ setup(
         ':python_version < "3.7"':
             [
                 'setuptools<60.10.0'
-                'matplotlib<=3.0.3'
+                'matplotlib<=3.3.4'
             ]
 
     },
