@@ -41,7 +41,6 @@ setup(
     keywords=['climate', 'weather', 'workflow', 'HPC'],
     install_requires=[
         'zipp>=3.1.0',
-        'setuptools>=60.0.0',
         'cython',
         'autosubmitconfigparser==1.0.61',
         'paramiko>=3.4',
@@ -49,7 +48,6 @@ setup(
         'PyNaCl>=1.5.0',
         'configobj>=5.0.6',
         'python-dateutil>=2.8.2',
-        'matplotlib < 3.5.2',
         'py3dotplus>=1.1.0',
         'pyparsing>=3.0.7',
         'mock>=4.0.3',
@@ -77,7 +75,19 @@ setup(
             [
                 'msgpack==1.0.5',
                 'setuptools==60.10.0'
+                'matplotlib==3.0.3'
+            ],
+        ':python_version > "3.7"':
+            [
+                'setuptools>60.11'
+                'matplotlib<3.8.2'
+            ],
+        ':python_version < "3.7"':
+            [
+                'setuptools<60.10.0'
+                'matplotlib<=3.0.3'
             ]
+
     },
     classifiers=[
         "Programming Language :: Python :: 3.7",
