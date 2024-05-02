@@ -39,39 +39,6 @@ setup(
     url='http://www.bsc.es/projects/earthscience/autosubmit/',
     download_url='https://earth.bsc.es/wiki/doku.php?id=tools:autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
-    # same but formatted
-    # zipp>=3.1.0
-    # setuptools>=60.8.2
-    # cython
-    # autosubmitconfigparser==1.0.61
-    # paramiko>=3.4
-    # bcrypt>=3.2
-    # PyNaCl>=1.5.0
-    # configobj>=5.0.6
-    # python-dateutil>=2.8.2
-    # matplotlib == 3.8.3
-    # py3dotplus>=1.1.0
-    # pyparsing>=3.0.7
-    # mock>=4.0.3
-    # portalocker>=2.3.2,<=2.7.0
-    # networkx==2.6.3
-    # requests>=2.27.1
-    # bscearth.utils>=0.5.2
-    # cryptography>=36.0.1
-    # xlib>=0.21
-    # pip>=22.0.3
-    # ruamel.yaml==0.17.21
-    # pythondialog
-    # pytest
-    # nose
-    # coverage
-    # six>=1.10.0
-    # Pygments
-    # packaging==20
-    # typing>=3.7
-    # wheel
-    # psutil
-    # rocrate==0.*
     install_requires=[
         'zipp>=3.1.0',
         'setuptools>=68.0.0',
@@ -105,6 +72,12 @@ setup(
         'psutil',
         'rocrate==0.*'
     ],
+    extras_require={
+            ':python_version == "3.7"': [
+                'msgpack==1.0.5',
+                'setuptools==61.1.1'
+        ],
+    },
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.9",
