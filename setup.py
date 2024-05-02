@@ -73,10 +73,11 @@ setup(
         'rocrate==0.*'
     ],
     extras_require={
-            ':python_version == "3.7"': [
+        ':python_version == "3.7"':
+            [
                 'msgpack==1.0.5',
-                'setuptools==61.1.1'
-        ],
+                'setuptools==60.10.0'
+            ]
     },
     classifiers=[
         "Programming Language :: Python :: 3.7",
