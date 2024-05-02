@@ -51,21 +51,20 @@ setup(
         'py3dotplus>=1.1.0',
         'pyparsing>=3.0.7',
         'mock>=4.0.3',
-        'portalocker>=2.3.2,<=2.7.0',
+        'portalocker<=2.7.0',
         'networkx==2.6.3',
         'requests>=2.27.1',
-        'bscearth.utils>=0.5.2',
+
+        'bscearth.utils==0.5.2',
         'cryptography>=36.0.1',
         'xlib>=0.21',
-        'pip>=22.0.3',
         'ruamel.yaml==0.17.21',
         'pythondialog',
         'pytest',
         'nose',
         'coverage',
-        'six>=1.10.0',
         'Pygments',
-        'packaging==20',
+        'packaging==23',
         'wheel',
         'psutil',
         'rocrate==0.*'
@@ -74,20 +73,18 @@ setup(
         ':python_version == "3.7"':
             [
                 'msgpack==1.0.5',
-                'setuptools==60.10.0',
-                'matplotlib==3.3.4'
+                'matplotlib==3.5.3',
+                'setuptools==69',
+                'typing_extensions==4.9'
             ],
         ':python_version > "3.7"':
             [
                 'setuptools>60.11',
-                'matplotlib<3.8.2'
+                'matplotlib<3.8.2',
+                'six>=1.10.0',
+                'pip>=22.0.3',
+                'typing-extensions>=4',
             ],
-        ':python_version < "3.7"':
-            [
-                'setuptools<60.10.0',
-                'matplotlib<=3.3.4'
-            ]
-
     },
     classifiers=[
         "Programming Language :: Python :: 3.7",
@@ -110,3 +107,4 @@ setup(
     },
     scripts=['bin/autosubmit']
 )
+
