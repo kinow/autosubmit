@@ -31,4 +31,4 @@ psutil
 rocrate==0.*
 typing
 msgpack==1.0.5 ; python_version == '3.7'
-setuptools == 61.1.1 ; python_version == '3.7'
+setuptools == 60.10.0 ; python_version == '3.7'
