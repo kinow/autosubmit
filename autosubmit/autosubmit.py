@@ -1222,6 +1222,23 @@ class Autosubmit:
                     yaml.dump(yaml_data, output)
 
     @staticmethod
+    def replace_parameter_inside_section(content, parameter, new_value, section):
+        # same but for any section any parameter, not only EXPID case insensitive
+        # Find the any section
+        if section:
+            section_match = re.search(rf'({section}:[\s\S]*?{parameter}:.*?)(?=\n|$)', content, re.IGNORECASE)
+            if section_match:
+                section = section_match.group(1)
+                # Replace parameter in the section
+                new_section = re.sub(rf'({parameter}:).*', rf'\1 "{new_value}"', section)
+                # Replace the old section
+                content = content.replace(section, new_section)
+        else:
+            # replace only the parameter
+            content = re.sub(rf'({parameter}:).*', rf'\1 "{new_value}"', content)
+        return content
+
+    @staticmethod
     def as_conf_default_values(exp_id,hpc="local",minimal_configuration=False,git_repo="",git_branch="main",git_as_conf=""):
         """
         Replace default values in as_conf files
@@ -1248,9 +1265,7 @@ class Autosubmit:
                     search = re.search('TO: .*', content, re.MULTILINE)
                     if search is not None:
                         content = content.replace(search.group(0), "TO: \"\"")
-                    search = re.search('EXPID: .*', content, re.MULTILINE)
-                    if search is not None:
-                        content = content.replace(search.group(0),"EXPID: \""+exp_id+"\"")
+                    content = Autosubmit.replace_parameter_inside_section(content, "EXPID", exp_id, "DEFAULT")
                     search = re.search('HPCARCH: .*', content, re.MULTILINE)
                     if search is not None:
                         content = content.replace(search.group(0),"HPCARCH: \""+hpc+"\"")
@@ -1267,9 +1282,6 @@ class Autosubmit:
                         search = re.search('PROJECT_BRANCH: .*', content, re.MULTILINE)
                         if search is not None:
                             content = content.replace(search.group(0), "PROJECT_BRANCH: \""+git_branch+"\"")
-
-
-
                 with open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id,"conf", as_conf_file), 'w') as f:
                     f.write(content)
 
