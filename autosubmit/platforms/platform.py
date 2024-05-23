@@ -24,6 +24,7 @@ def processed(fn):
         return process
 
     return wrapper
+
 class Platform(object):
     """
     Class to manage the connections to the different platforms.
