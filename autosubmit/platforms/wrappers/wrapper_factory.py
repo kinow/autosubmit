@@ -31,9 +31,15 @@ class WrapperFactory(object):
         self.exception = "This type of wrapper is not supported for this platform"
 
     def get_wrapper(self, wrapper_builder, **kwargs):
-        wrapper_data = kwargs['wrapper_data']
+        wrapper_data = kwargs['wrapper_data'] # this refers to the object with all parameters init
         wrapper_data.wallclock = kwargs['wallclock']
         if wrapper_data.het.get("HETSIZE",0) <= 1:
+            if not str(kwargs['num_processors_value']).isdigit():
+                kwargs['num_processors_value'] = 1
+            if str(wrapper_data.nodes).isdigit() and int(wrapper_data.nodes) > 1 and int(kwargs['num_processors_value']) <= 1:
+                kwargs['num_processors'] = "#"
+            else:
+                kwargs['num_processors'] = self.processors(kwargs['num_processors_value'])
             kwargs['allocated_nodes'] = self.allocated_nodes()
             kwargs['dependency'] = self.dependency(kwargs['dependency'])
             kwargs['partition'] = self.partition(wrapper_data.partition)
@@ -43,14 +49,8 @@ class WrapperFactory(object):
             kwargs["custom_directives"] = self.custom_directives(wrapper_data.custom_directives)
             kwargs['queue'] = self.queue(wrapper_data.queue)
             kwargs['threads'] = self.threads(wrapper_data.threads)
-            if str(kwargs['num_processors']).isdigit():
-                kwargs['num_processors_value'] = int(wrapper_data.processors)
-            else:
-                kwargs['num_processors_value'] = 1
-            if str(wrapper_data.nodes).isdigit() and int(wrapper_data.nodes) > 1 and kwargs['num_processors'] == '1':
-                kwargs['num_processors'] = "#"
-            else:
-                kwargs['num_processors'] = self.processors(wrapper_data.processors)
+            kwargs['reservation'] = self.reservation(wrapper_data.reservation)
+
         kwargs["executable"] = wrapper_data.executable
 
         kwargs['header_directive'] = self.header_directives(**kwargs)
@@ -89,6 +89,9 @@ class WrapperFactory(object):
     def allocated_nodes(self):
         return ''
 
+    def reservation(self, reservation):
+        return '#' if not reservation else self.reservation_directive(reservation)
+
     def dependency(self, dependency):
         return '#' if dependency is None else self.dependency_directive(dependency)
     def queue(self, queue):
@@ -118,6 +121,8 @@ class WrapperFactory(object):
             return '\n'.join(str(s) for s in custom_directives)
         return ""
 
+    def reservation_directive(self, reservation):
+        return '#'
     def dependency_directive(self, dependency):
         raise NotImplemented(self.exception)
     def queue_directive(self, queue):
@@ -162,6 +167,8 @@ class SlurmWrapperFactory(WrapperFactory):
     def allocated_nodes(self):
         return self.platform.allocated_nodes()
 
+    def reservation_directive(self, reservation):
+        return "#SBATCH --reservation={0}".format(reservation)
     def dependency_directive(self, dependency):
         return '#SBATCH --dependency=afterok:{0}'.format(dependency)
     def queue_directive(self, queue):
@@ -207,6 +214,8 @@ class PJMWrapperFactory(WrapperFactory):
     def allocated_nodes(self):
         return self.platform.allocated_nodes()
 
+    def reservation_directive(self, reservation):
+        return "#" # Reservation directive doesn't exist in PJM, they're handled directly by admins
 
     def queue_directive(self, queue):
         return '#PJM --qos={0}'.format(queue)

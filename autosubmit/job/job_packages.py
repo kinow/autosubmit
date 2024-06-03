@@ -52,6 +52,7 @@ class JobPackageBase(object):
 
     def __init__(self, jobs):
         # type: (List[Job]) -> None
+        self.nodes = ""
         self._common_script = None
         self._jobs = jobs # type: List[Job]
         self._expid = jobs[0].expid # type: str
@@ -59,6 +60,8 @@ class JobPackageBase(object):
         self.export = jobs[0].export 
         self.x11 = jobs[0].x11
         self.het = dict()
+        self._num_processors = '0'
+        self._threads = '0'
         try:
             self._tmp_path = jobs[0]._tmp_path
             self._platform = jobs[0]._platform
@@ -290,6 +293,8 @@ class JobPackageArray(JobPackageBase):
         self._array_size_id = "[1-" + str(len(jobs)) + "]"
         self._wallclock = '00:00'
         self._num_processors = '0'
+        self._threads = '0'
+
         for job in jobs:
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
@@ -371,9 +376,7 @@ class JobPackageThread(JobPackageBase):
         # It is in charge of merging ( switch ) the wrapper info by checking if the value is defined by the user in the wrapper section, current wrapper section, job or platform in that order.
         # Some variables are calculated in futher functions, like num_processors and wallclock.
         # These variables can only be present in the wrapper itself
-        self.parameters = dict()
-        self.wallclock = '00:00'
-        if len(wrapper_info) > 0 :
+        if len(wrapper_info) > 0:
             self.wrapper_type = wrapper_info[0]
             self.wrapper_policy = wrapper_info[1]
             self.wrapper_method = wrapper_info[2]
@@ -389,15 +392,27 @@ class JobPackageThread(JobPackageBase):
         # Seems like this one is not used at all in the class
         self._job_dependency = dependency
         self._common_script = None
+        self.executable = None
+
         self._wallclock = '00:00'
         # depends on the type of wrapper
-        if not hasattr(self,"_num_processors"):
-            self._num_processors = '0'
+
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
         self.current_wrapper_section = wrapper_section
         self.inner_retrials = 0
-        # temporal hetjob code , to be upgraded in the future
+        if not hasattr(self,"_num_processors"):
+            self._num_processors = '0'
+        self.parameters = dict()
+        self.nodes = jobs[0].nodes if not self.nodes else self.nodes
+        self.queue = jobs[0].queue
+        self.parameters["CURRENT_QUEUE"] = self.queue
+        self.partition = jobs[0].partition
+        self.tasks = jobs[0].tasks
+        self.exclusive = jobs[0].exclusive
+        self.custom_directives = jobs[0].custom_directives
+        self.wallclock = '00:00'
+        self.reservation = jobs[0].reservation
         if configuration is not None:
             self.inner_retrials = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,
                                                                                 {}).get("RETRIALS",self.jobs[0].retrials)
@@ -412,31 +427,17 @@ class JobPackageThread(JobPackageBase):
                     if job.export.lower() not in "none" and len(job.export) > 0:
                         self.export = job.export
                         break
-            wr_executable = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section, {}).get(
-                "EXECUTABLE", None)
-            if wr_executable:
-                self.executable = wr_executable
-            else:
-                self.executable = jobs[0].executable
+            self.executable = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section, {}).get(
+                "EXECUTABLE", self.executable)
             if jobs[0].het.get("HETSIZE", 1) <= 1:
                 wr_queue = configuration.get_wrapper_queue(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
                 if wr_queue is not None and len(str(wr_queue)) > 0:
                     self.queue = wr_queue
                     self.parameters["CURRENT_QUEUE"] = wr_queue
-                else:
-                    self.queue = jobs[0].queue
-                    self.parameters["CURRENT_QUEUE"] = jobs[0].queue
-
                 wr_partition = configuration.get_wrapper_partition(configuration.experiment_data["WRAPPERS"][self.current_wrapper_section])
                 if wr_partition and len(str(wr_partition)) > 0:
                     self.partition = wr_partition
-                else:
-                    self.partition = jobs[0].partition
-                wr_exclusive = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXCLUSIVE",None)
-                if wr_exclusive is not None:
-                    self.exclusive = wr_exclusive
-                else:
-                    self.exclusive = jobs[0].exclusive
+                self.exclusive = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("EXCLUSIVE",self.exclusive)
                 wr_custom_directives = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("CUSTOM_DIRECTIVES",[])
                 # parse custom_directives
                 if type(wr_custom_directives) is list:
@@ -460,44 +461,11 @@ class JobPackageThread(JobPackageBase):
                     wr_custom_directives = []
                 if len(str(wr_custom_directives)) > 0:
                     self.custom_directives = wr_custom_directives
-                else:
-                    self.custom_directives = jobs[0].custom_directives
+                self.tasks = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("TASKS",self.tasks)
+                self.nodes = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("NODES",self.nodes)
+                self.reservation = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("RESERVATION",self.reservation)
 
-                wr_tasks = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("TASKS",None)
-                if wr_tasks:
-                    self.tasks = wr_tasks
-                else:
-                    self.tasks = jobs[0].tasks
-                wr_nodes = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("NODES",None)
-                if wr_nodes:
-                    self.nodes = wr_nodes
-                else:
-                    self.nodes = jobs[0].nodes
-                wr_threads = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section,{}).get("THREADS",None)
-                if wr_threads:
-                    self.threads = wr_threads
-                else:
-                    self.threads = jobs[0].threads
-            else:
-                self.queue = jobs[0].queue
-                self.parameters["CURRENT_QUEUE"] = jobs[0].queue
-                self.partition = jobs[0].partition
-                self.nodes = jobs[0].nodes
-                self.tasks = jobs[0].tasks
-                self.threads = jobs[0].threads
-                self.exclusive = jobs[0].exclusive
-                self.custom_directives = jobs[0].custom_directives
-        else:
-            self.queue = jobs[0].queue
-            self.parameters["CURRENT_QUEUE"] = jobs[0].queue
-            self.partition = jobs[0].partition
-            self.nodes = jobs[0].nodes
-            self.tasks = jobs[0].tasks
-            self.threads = jobs[0].threads
-            self.exclusive = jobs[0].exclusive
-            self.custom_directives = jobs[0].custom_directives
         self.parameters["CURRENT_PROJ"] = self._project
-        self.parameters["NUMTHREADS"] = self.threads
         self.het = jobs[0].het
 
         # Memory needs more work outside this branch
@@ -507,30 +475,12 @@ class JobPackageThread(JobPackageBase):
         self.memory_per_task = jobs[0].memory_per_task
         self.parameters["NODES"] = self.nodes
         self.processors = self._num_processors
-        self.parameters["RESERVATION"] = jobs[0].reservation # have to look
+        self.parameters["RESERVATION"] = self.reservation # have to look
         self.parameters['TASKS'] = self.tasks
         self.parameters["EXECUTABLE"] = self.executable # have to look
         self.method = method
-        self._wrapper_data = configuration.experiment_data["WRAPPERS"][self.current_wrapper_section]
-        self._wrapper_data["WRAPPER"] = self
 
-        # self._wrapper_data["TYPE"] = self.wrapper_type
-        # self._wrapper_data["WRAPPER_POLICY"] = self.wrapper_policy
-        # self._wrapper_data["INNER_RETRIALS"] = self.inner_retrials
-        # self._wrapper_data["RETRIALS"] = self.inner_retrials
-        # self._wrapper_data["EXTEND_WALLCLOCK"] = self.extensible_wallclock
-        # self._wrapper_data["METHOD"] = self.wrapper_method
-        # self._wrapper_data["EXPORT"] = self.export
-        # self._wrapper_data["QUEUE"] = self.queue
-        # self._wrapper_data["NODES"] = self.nodes
-        # self._wrapper_data["TASKS"] = self.tasks
-        # self._wrapper_data["THREADS"] = self.threads
-        # self._wrapper_data["PROCESSORS"] = self._num_processors
-        # self._wrapper_data["PARTITION"] = self.partition
-        # self._wrapper_data["EXCLUSIVE"] = self.exclusive
-        # self._wrapper_data["EXECUTABLE"] = self.executable
-        # self._wrapper_data["CUSTOM_DIRECTIVES"] = self.custom_directives
-        # self._wrapper_data["HET"] = self.het
+
     @property
     def name(self):
         return self._name
@@ -550,7 +500,7 @@ class JobPackageThread(JobPackageBase):
         return jobs_scripts
     @property
     def queue(self):
-        if str(self._num_processors) == '1' or str(self._num_processors) == '0':
+        if (not str(self.nodes).isdigit() or (self.nodes.isdigit() and int(self.nodes) < 1)) and (not self._num_processors.isdigit() or (self._num_processors.isdigit() and int(self._num_processors) <= 1)):
             return self.platform.serial_platform.serial_queue
         else:
             return self._queue
@@ -648,7 +598,7 @@ class JobPackageThreadWrapped(JobPackageThread):
         self._common_script = None
         self._wallclock = '00:00'
         self._num_processors = '0'
-        self.threads = '1'
+        self._threads = '1'
         self.current_wrapper_section = wrapper_section
 
 
@@ -721,12 +671,14 @@ class JobPackageVertical(JobPackageThread):
     :param: dependency:
     """
     def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="WRAPPERS", wrapper_info = []):
-        self._num_processors = 0
+
+        super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section, wrapper_info = wrapper_info)
         for job in jobs:
             if int(job.processors) >= int(self._num_processors):
                 self._num_processors = job.processors
                 self._threads = job.threads
-        super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section, wrapper_info = wrapper_info)
+        self._threads = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section, {}).get("THREADS",
+                                                                                                            self._threads)
         for job in jobs:
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
@@ -808,13 +760,15 @@ class JobPackageHorizontal(JobPackageThread):
     def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="WRAPPERS"):
         super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources,configuration=configuration,wrapper_section=wrapper_section)
         self.method = method
-
         self._queue = self.queue
         for job in jobs:
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
             self._num_processors = str(int(self._num_processors) + int(job.processors))
             self._threads = job.threads
+        self._threads = configuration.experiment_data["WRAPPERS"].get(self.current_wrapper_section, {}).get("THREADS",
+                                                                                                            self._threads)
+
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
                                                                                   str(random.randint(1, 10000)),
                                                                                   self._num_processors,

@@ -2129,7 +2129,7 @@ class Autosubmit:
                     Log.debug("Preparing run")
                     # This function is called only once, when the experiment is started. It is used to initialize the experiment and to check the correctness of the configuration files.
                     # If there are issues while running, this function will be called again to reinitialize the experiment.
-                    job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence, _ = Autosubmit.prepare_run(expid, notransitive,start_time, start_after, run_only_members)
+                    job_list, submitter , exp_history, host , as_conf, platforms_to_test, packages_persistence, _ = Autosubmit.prepare_run(expid, notransitive, start_time, start_after, run_only_members)
                 except AutosubmitCritical as e:
                     #e.message += " HINT: check the CUSTOM_DIRECTIVE syntax in your jobs configuration files."
                     raise AutosubmitCritical(e.message, 7014, e.trace)
@@ -4825,8 +4825,14 @@ class Autosubmit:
                         job_list.add_logs(prev_job_list_logs)
                     job_list.save()
                     as_conf.save()
-                    JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                                          "job_packages_" + expid).reset_table()
+                    try:
+                        packages_persistence = JobPackagePersistence(
+                            os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
+                        packages_persistence.reset_table()
+                        packages_persistence.reset_table(True)
+                    except:
+                        pass
+
                     groups_dict = dict()
 
                     # Setting up job historical database header. Must create a new run.
@@ -4863,20 +4869,15 @@ class Autosubmit:
                                                        expand_list=expand, expanded_status=status)
                             groups_dict = job_grouping.group_jobs()
                         # WRAPPERS
-
                         if len(as_conf.experiment_data.get("WRAPPERS", {})) > 0 and check_wrappers:
-                            as_conf.check_conf_files(True)
-                            packages_persistence = JobPackagePersistence(
-                                os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
-                            packages_persistence.reset_table(True)
                             job_list_wr = Autosubmit.load_job_list(
                                 expid, as_conf, notransitive=notransitive, monitor=True, new=False)
                             Autosubmit.generate_scripts_andor_wrappers(
                                 as_conf, job_list_wr, job_list_wr.get_job_list(), packages_persistence, True)
-
                             packages = packages_persistence.load(True)
                         else:
                             packages = None
+
                         Log.info("\nPlotting the jobs list...")
                         monitor_exp = Monitor()
                         # if output is set, use output
@@ -4909,15 +4910,9 @@ class Autosubmit:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message, 7000)
         except AutosubmitError as e:
-            # TODO: == "" or is None?
-            if e.trace == "":
-                e.trace = traceback.format_exc()
-            raise AutosubmitError(e.message, e.code, e.trace)
+            raise
         except AutosubmitCritical as e:
-            # TODO: == "" or is None?
-            if e.trace == "" or not e.trace:
-                e.trace = traceback.format_exc()
-            raise AutosubmitCritical(e.message, e.code, e.trace)
+            raise
         except BaseException as e:
             raise
         finally:
@@ -5602,6 +5597,9 @@ class Autosubmit:
                 final_list = list(set(final_list))
                 performed_changes = {}
                 for job in final_list:
+                    if final_status in [Status.WAITING, Status.PREPARED, Status.DELAYED, Status.READY]:
+                        job.packed = False
+                        job.fail_count = 0
                     if job.status in [Status.QUEUING, Status.RUNNING,
                                       Status.SUBMITTED] and job.platform.name not in definitive_platforms:
                         Log.printlog("JOB: [{1}] is ignored as the [{0}] platform is currently offline".format(

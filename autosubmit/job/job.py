@@ -252,6 +252,7 @@ class Job(object):
         self.start_time_written = False
         self.submit_time_timestamp = None # for wrappers, all jobs inside a wrapper are submitted at the same time
         self.finish_time_timestamp = None # for wrappers, with inner_retrials, the submission time should be the last finish_time of the previous retrial
+        self._script = None # Inline code to be executed
     def _init_runtime_parameters(self):
         # hetjobs
         self.het = {'HETSIZE': 0}
@@ -287,6 +288,15 @@ class Job(object):
     @name.setter
     def name(self, value):
         self._name = value
+
+    @property
+    @autosubmit_parameter(name='script')
+    def script(self):
+        """Allows to launch inline code instead of using the file parameter"""
+        return self._script
+    @script.setter
+    def script(self, value):
+        self._script = value
 
     @property
     @autosubmit_parameter(name='fail_count')
@@ -1393,25 +1403,23 @@ class Job(object):
             # Get the max tasks, each element can be a str or int
             self.het['TASKS'] = list()
             if len(self.tasks) == 1:
-                if int(self.tasks) <= 1 and int(job_platform.processors_per_node) > 1 and int(
-                        self.processors) > int(job_platform.processors_per_node):
+                if int(job_platform.processors_per_node) > 1 and int(self.tasks) > int(job_platform.processors_per_node):
                     self.tasks = job_platform.processors_per_node
                 for task in range(self.het['HETSIZE']):
-                    if int(self.tasks) <= 1 < int(job_platform.processors_per_node) and int(
-                            self.processors) > int(job_platform.processors_per_node):
+                    if int(job_platform.processors_per_node) > 1 and int(task) > int(
+                            job_platform.processors_per_node):
                         self.het['TASKS'].append(str(job_platform.processors_per_node))
                     else:
                         self.het['TASKS'].append(str(self.tasks))
                 self.tasks = str(max([int(x) for x in self.tasks]))
             else:
                 for task in self.tasks:
-                    if int(task) <= 1 < int(job_platform.processors_per_node) and int(
-                            self.processors) > int(job_platform.processors_per_node):
+                    if int(job_platform.processors_per_node) > 1 and int(task) > int(
+                            job_platform.processors_per_node):
                         task = job_platform.processors_per_node
                     self.het['TASKS'].append(str(task))
         else:
-            if int(self.tasks) <= 1 < int(job_platform.processors_per_node) and int(
-                    self.processors) > int(job_platform.processors_per_node):
+            if job_platform.processors_per_node and int(job_platform.processors_per_node) > 1 and int(self.tasks) > int(job_platform.processors_per_node):
                 self.tasks = job_platform.processors_per_node
             self.tasks = str(self.tasks)
 
@@ -1838,6 +1846,7 @@ class Job(object):
         self.check = as_conf.jobs_data[self.section].get("CHECK", False)
         self.check_warnings = as_conf.jobs_data[self.section].get("CHECK_WARNINGS", False)
         self.shape = as_conf.jobs_data[self.section].get("SHAPE", "")
+        self.script = as_conf.jobs_data[self.section].get("SCRIPT", "")
         if self.checkpoint: # To activate placeholder sustitution per <empty> in the template
             parameters["AS_CHECKPOINT"] = self.checkpoint
         parameters['JOBNAME'] = self.name
@@ -1960,34 +1969,38 @@ class Job(object):
         :rtype: str
         """
         self.update_parameters(as_conf, self.parameters)
-        try:
-            if as_conf.get_project_type().lower() != "none" and len(as_conf.get_project_type()) > 0:
-                template_file = open(os.path.join(as_conf.get_project_dir(), self.file), 'r')
-                template = ''
-                if as_conf.get_remote_dependencies() == "true":
+        if self.script and self.file:
+            Log.warning(f"Custom script for job {self.name} is being used, file contents are ignored.")
+            template = self.script
+        else:
+            try:
+                if as_conf.get_project_type().lower() != "none" and len(as_conf.get_project_type()) > 0:
+                    template_file = open(os.path.join(as_conf.get_project_dir(), self.file), 'r')
+                    template = ''
+                    if as_conf.get_remote_dependencies() == "true":
+                        if self.type == Type.BASH:
+                            template = 'sleep 5' + "\n"
+                        elif self.type == Type.PYTHON2:
+                            template = 'time.sleep(5)' + "\n"
+                        elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
+                            template = 'time.sleep(5)' + "\n"
+                        elif self.type == Type.R:
+                            template = 'Sys.sleep(5)' + "\n"
+                    template += template_file.read()
+                    template_file.close()
+                else:
                     if self.type == Type.BASH:
-                        template = 'sleep 5' + "\n"
+                        template = 'sleep 5'
                     elif self.type == Type.PYTHON2:
                         template = 'time.sleep(5)' + "\n"
                     elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
                         template = 'time.sleep(5)' + "\n"
                     elif self.type == Type.R:
-                        template = 'Sys.sleep(5)' + "\n"
-                template += template_file.read()
-                template_file.close()
-            else:
-                if self.type == Type.BASH:
-                    template = 'sleep 5'
-                elif self.type == Type.PYTHON2:
-                    template = 'time.sleep(5)' + "\n"
-                elif self.type == Type.PYTHON3 or self.type == Type.PYTHON:
-                    template = 'time.sleep(5)' + "\n"
-                elif self.type == Type.R:
-                    template = 'Sys.sleep(5)'
-                else:
-                    template = ''
-        except Exception as e:
-            template = ''
+                        template = 'Sys.sleep(5)'
+                    else:
+                        template = ''
+            except Exception as e:
+                template = ''
 
         if self.type == Type.BASH:
             snippet = StatisticsSnippetBash
