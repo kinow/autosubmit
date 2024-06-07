@@ -10,7 +10,6 @@ from autosubmit.notifications.mail_notifier import MailNotifier
 
 from autosubmit.notifications.notifier import Notifier
 
-from autosubmit.job.job_list import JobList
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 from autosubmitconfigparser.config.basicconfig import BasicConfig
 from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
@@ -84,38 +83,6 @@ def check_experiment_ownership(expid, basic_config, raise_error=False, logger=No
     if not is_owner and raise_error:
         raise AutosubmitCritical("You don't own the experiment {0}.".format(expid), 7012)
     return is_owner, is_eadmin, current_owner_name
-
-def load_job_list(expid, as_conf, notransitive=False, monitor=False, new = True):
-    rerun = as_conf.get_rerun()
-    job_list = JobList(expid, BasicConfig, YAMLParserFactory(),
-                       get_job_list_persistence(expid, as_conf), as_conf)
-    run_only_members = as_conf.get_member_list(run_only=True)
-    date_list = as_conf.get_date_list()
-    date_format = ''
-    if as_conf.get_chunk_size_unit() == 'hour':
-        date_format = 'H'
-    for date in date_list:
-        if date.hour > 1:
-            date_format = 'H'
-        if date.minute > 1:
-            date_format = 'M'
-    wrapper_jobs = dict()
-    for wrapper_section, wrapper_data in as_conf.experiment_data.get("WRAPPERS", {}).items():
-        if isinstance(wrapper_data, collections.abc.Mapping):
-            wrapper_jobs[wrapper_section] = wrapper_data.get("JOBS_IN_WRAPPER", "")
-
-    job_list.generate(as_conf, date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
-                      as_conf.experiment_data, date_format, as_conf.get_retrials(),
-                      as_conf.get_default_job_type(), wrapper_jobs,
-                      new=new, run_only_members=run_only_members,monitor=monitor)
-
-    if str(rerun).lower() == "true":
-        rerun_jobs = as_conf.get_rerun_jobs()
-        job_list.rerun(rerun_jobs,as_conf, monitor=monitor)
-    else:
-        job_list.remove_rerun_only_jobs(notransitive)
-
-    return job_list
 
 def restore_platforms(platform_to_test, mail_notify=False, as_conf=None, expid=None):
     Log.info("Checking the connection to all platforms in use")
