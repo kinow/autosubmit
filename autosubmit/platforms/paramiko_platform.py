@@ -304,9 +304,9 @@ class ParamikoPlatform(Platform):
             self._ftpChannel = paramiko.SFTPClient.from_transport(self.transport,window_size=pow(4, 12) ,max_packet_size=pow(4, 12) )
             self._ftpChannel.get_channel().settimeout(120)
             self.connected = True
-            if not self.log_retrieval_process_active and as_conf and str(as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS', "false")).lower() != "false":
+            if not self.log_retrieval_process_active and (as_conf is None or str(as_conf.platforms_data.get(self.name, {}).get('DISABLE_RECOVERY_THREADS', "false")).lower() == "false"):
                 self.log_retrieval_process_active = True
-                if as_conf.misc_data["ASMISC"].get("COMMAND", "").lower() == "run":
+                if as_conf and as_conf.misc_data.get("AS_COMMAND", "").lower() == "run":
                     self.recover_job_logs()
         except SSHException:
             raise
@@ -934,10 +934,10 @@ class ParamikoPlatform(Platform):
                 pass
 
 
-    def exec_command(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3, x11=False):
+    def exec_command(self, command, bufsize=-1, timeout=30, get_pty=False,retries=3, x11=False):
         """
         Execute a command on the SSH server.  A new `.Channel` is opened and
-        the requested command is executed.  The command's input and output
+        the requested command is execed.  The command's input and output
         streams are returned as Python ``file``-like objects representing
         stdin, stdout, and stderr.
 
@@ -958,8 +958,7 @@ class ParamikoPlatform(Platform):
         """
         while retries > 0:
             try:
-                chan = self.transport.open_session()
-                if x11 == "true":
+                if x11:
                     display = os.getenv('DISPLAY')
                     if display is None or not display:
                         display = "localhost:0"
@@ -968,7 +967,7 @@ class ParamikoPlatform(Platform):
                     chan.request_x11(single_connection=False,handler=self.x11_handler)
                 else:
                     chan = self.transport.open_session()
-                if x11 == "true":
+                if x11:
                     if "timeout" in command:
                         timeout_command = command.split("timeout ")[1].split(" ")[0]
                         if timeout_command == 0:
@@ -997,7 +996,7 @@ class ParamikoPlatform(Platform):
                 retries = retries - 1
         if retries <= 0:
             return False , False, False
-    def exec_command_x11(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3, x11=False):
+    def exec_command_x11(self, command, bufsize=-1, timeout=0, get_pty=False,retries=3, x11=False):
         session = self.transport.open_session()
         session.request_x11(handler=self.x11_handler)
         session.exec_command(command + " ; sleep infinity")
@@ -1064,7 +1063,7 @@ class ParamikoPlatform(Platform):
                         stderr_readlines.append(
                             stderr.channel.recv_stderr(len(c.in_stderr_buffer)))
                         got_chunk = True
-                if x11 == "true":
+                if x11:
                     if len(stderr_readlines) > 0:
                         aux_stderr.extend(stderr_readlines)
                         for stderr_line in stderr_readlines:
@@ -1314,7 +1313,7 @@ class ParamikoPlatform(Platform):
             if hasattr(self.header, 'get_threads_per_task'):
                 header = header.replace(
                     '%THREADS_PER_TASK_DIRECTIVE%', self.header.get_threads_per_task(job))
-            if job.x11 == "true":
+            if job.x11:
                 header = header.replace(
                     '%X11%', "SBATCH --x11=batch")
             else:
@@ -1326,9 +1325,9 @@ class ParamikoPlatform(Platform):
             if hasattr(self.header, 'get_custom_directives'):
                 header = header.replace(
                     '%CUSTOM_DIRECTIVES%', self.header.get_custom_directives(job))
-            if hasattr(self.header, 'get_exclusivity'):
+            if hasattr(self.header, 'get_exclusive_directive'):
                 header = header.replace(
-                    '%EXCLUSIVITY_DIRECTIVE%', self.header.get_exclusivity(job))
+                    '%EXCLUSIVE_DIRECTIVE%', self.header.get_exclusive_directive(job))
             if hasattr(self.header, 'get_account_directive'):
                 header = header.replace(
                     '%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))

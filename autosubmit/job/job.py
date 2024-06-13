@@ -1871,7 +1871,7 @@ class Job(object):
         self.check_warnings = as_conf.jobs_data[self.section].get("CHECK_WARNINGS", False)
         self.shape = as_conf.jobs_data[self.section].get("SHAPE", "")
         self.script = as_conf.jobs_data[self.section].get("SCRIPT", "")
-        self.x11 = str(as_conf.jobs_data[self.section].get("X11", False)).lower()
+        self.x11 = False if str(as_conf.jobs_data[self.section].get("X11", False)).lower() == "false" else True
         if self.checkpoint: # To activate placeholder sustitution per <empty> in the template
             parameters["AS_CHECKPOINT"] = self.checkpoint
         parameters['JOBNAME'] = self.name
