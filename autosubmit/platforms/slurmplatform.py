@@ -99,7 +99,7 @@ class SlurmPlatform(ParamikoPlatform):
         """
         try:
 
-            valid_packages_to_submit = [ package for package in valid_packages_to_submit if package.x11 != True]
+            valid_packages_to_submit = [ package for package in valid_packages_to_submit if package.x11 is not True]
             if len(valid_packages_to_submit) > 0:
                 duplicated_jobs_already_checked = False
                 platform = valid_packages_to_submit[0].jobs[0].platform
@@ -120,7 +120,7 @@ class SlurmPlatform(ParamikoPlatform):
                             #cancel bad submitted job if jobid is encountered
                             for id_ in jobid:
                                 self.send_command(self.cancel_job(id_))
-                    except:
+                    except Exception:
                         pass
                     jobs_id = None
                     self.connected = False

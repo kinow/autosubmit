@@ -98,7 +98,7 @@ class Platform(object):
         if not self.two_factor_auth:
             self.pw = None
         elif auth_password is not None and self.two_factor_auth:
-            if type(auth_password) == list:
+            if type(auth_password) is list:
                 self.pw = auth_password[0]
             else:
                 self.pw = auth_password
@@ -859,7 +859,7 @@ class Platform(object):
                             job_names_processed.add(f'{job.name}_{job.fail_count}')
                         else:
                             job_names_processed.add(f'{job.name}')
-                    except:
+                    except Exception:
                         pass
             except queue.Empty:
                 pass
@@ -868,5 +868,5 @@ class Platform(object):
             except Exception as e:
                 try:
                     self.restore_connection(None)
-                except:
+                except Exception:
                     pass

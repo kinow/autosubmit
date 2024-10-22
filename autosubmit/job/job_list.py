@@ -224,7 +224,7 @@ class JobList(object):
                 self.graph = nx.DiGraph()
         except AutosubmitCritical:
             raise
-        except:
+        except Exception:
             self.graph = nx.DiGraph()
         self._dic_jobs = DicJobs(date_list, member_list, chunk_list, date_format, default_retrials, as_conf)
         self._dic_jobs.graph = self.graph
@@ -659,11 +659,11 @@ class JobList(object):
         """
         filters = []
         if level_to_check == "DATES_FROM":
-            if type(value_to_check) != str:
+            if type(value_to_check) is not str:
                 value_to_check = date2str(value_to_check, "%Y%m%d")  # need to convert in some cases
             try:
                 values_list = [date2str(date_, "%Y%m%d") for date_ in self._date_list]  # need to convert in some cases
-            except:
+            except Exception:
                 values_list = self._date_list
         elif level_to_check == "MEMBERS_FROM":
             values_list = self._member_list  # Str list
@@ -714,8 +714,8 @@ class JobList(object):
             # Will enter chunks_from, and obtain [{DATES_TO: "20020201", MEMBERS_TO: "fc2", CHUNKS_TO: "ALL", SPLITS_TO: "2"]
             if "CHUNKS_FROM" in filter:
                 filters_to_apply_c = self._check_chunks({"CHUNKS_FROM": (filter.pop("CHUNKS_FROM"))}, current_job)
-                if len(filters_to_apply_c) > 0 and (type(filters_to_apply_c) != list or (
-                        type(filters_to_apply_c) == list and len(filters_to_apply_c[0]) > 0)):
+                if len(filters_to_apply_c) > 0 and (type(filters_to_apply_c) is not list or (
+                        type(filters_to_apply_c) is list and len(filters_to_apply_c[0]) > 0)):
                     filters_to_apply[i].update(filters_to_apply_c)
             # IGNORED
             if "SPLITS_FROM" in filter:
@@ -1965,7 +1965,7 @@ class JobList(object):
             jobs_to_check = unparsed_jobs.split("&")
             select_jobs_by_name = jobs_to_check[0]
             unparsed_jobs = jobs_to_check[1]
-        if not ";" in unparsed_jobs:
+        if ";" not in unparsed_jobs:
             if '[' in unparsed_jobs:
                 select_all_jobs_by_section = unparsed_jobs
                 filter_jobs_by_section = ""
@@ -2512,7 +2512,7 @@ class JobList(object):
             try:
                 Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job_id, Status(
                 ).VALUE_TO_KEY[job.status], platform_name, queue)
-            except:
+            except Exception:
                 Log.debug("Couldn't print job status for job {0}".format(job.name))
         for job in failed_job_list:
             if len(job.queue) < 1:
@@ -3162,7 +3162,7 @@ class JobList(object):
                     results.append(self._recursion_print(root, 0, visited, nocolor=True))
                 else:
                     results.append("Cannot find root.")
-        except:
+        except Exception:
             return f'Job List object'
         return "\n".join(results)
 
