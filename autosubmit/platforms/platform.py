@@ -145,6 +145,12 @@ class Platform(object):
         # This is visible on all instances simultaneosly. Is to send the keep alive signal.
         cls.worker_events.append(event_worker)
 
+    @classmethod
+    def remove_workers(cls, event_worker: Event) -> None:
+        """Remove the given even worker from the list of workers in this class."""
+        if event_worker in cls.worker_events:
+            cls.worker_events.remove(event_worker)
+
     @property
     @autosubmit_parameter(name='current_arch')
     def name(self):
@@ -853,7 +859,7 @@ class Platform(object):
         if job.id and int(job.id) != 0:
             self.recovery_queue.put(job)
         else:
-            Log.warning(f"Job {job.name} and retrial number:{job.fail_count} has no job id. Autosubmit will no record this retrial.")
+            Log.warning(f"Job {job.name} and retry number:{job.fail_count} has no job id. Autosubmit will no record this retry.")
             job.updated_log = True
 
     def connect(self, as_conf, reconnect=False):
@@ -861,6 +867,26 @@ class Platform(object):
 
     def restore_connection(self, as_conf):
         raise NotImplementedError
+
+    def clean_log_recovery_process(self) -> None:
+        """
+        Cleans the log recovery process variables.
+
+        This method sets the cleanup event to signal the log recovery process to finish,
+        waits for the process to join with a timeout, and then resets all related variables.
+        """
+        self.cleanup_event.set()  # Indicates to old child ( if reachable ) to finish.
+        if self.log_recovery_process:
+            # Waits for old child ( if reachable ) to finish. Timeout in case of it being blocked.
+            self.log_recovery_process.join(timeout=60)
+        # Resets everything related to the log recovery process.
+        self.recovery_queue = UniqueQueue()
+        self.log_retrieval_process_active = False
+        self.remove_workers(self.work_event)
+        self.work_event = Event()
+        self.cleanup_event = Event()
+        self.log_recovery_process = None
+        self.processed_wrapper_logs = set()
 
     def spawn_log_retrieval_process(self, as_conf: Any) -> None:
         """
@@ -897,7 +923,7 @@ class Platform(object):
         if self.log_recovery_process and self.log_recovery_process.is_alive():
             self.work_event.clear()
             self.cleanup_event.set()
-            self.log_recovery_process.join()
+            self.log_recovery_process.join(timeout=60)
 
     def wait_for_work(self, sleep_time: int = 60) -> bool:
         """
@@ -954,7 +980,7 @@ class Platform(object):
                 except:
                     jobs_pending_to_process.add(job)
                     job._log_recovery_retries += 1
-                    Log.warning(f"{identifier} (Retrial) Failed to recover log for job '{job.name}' and retry:'{job.fail_count}'.")
+                    Log.warning(f"{identifier} (Retry) Failed to recover log for job '{job.name}' and retry:'{job.fail_count}'.")
             except queue.Empty:
                 pass
 
@@ -973,9 +999,9 @@ class Platform(object):
                 if job._log_recovery_retries < 5:
                     jobs_pending_to_process.add(job)
                 Log.warning(
-                    f"{identifier} (Retrial) Failed to recover log for job '{job.name}' and retry '{job.fail_count}'.")
+                    f"{identifier} (Retry) Failed to recover log for job '{job.name}' and retry '{job.fail_count}'.")
             Log.result(
-                f"{identifier} (Retrial) Successfully recovered log for job '{job.name}' and retry '{job.fail_count}'.")
+                f"{identifier} (Retry) Successfully recovered log for job '{job.name}' and retry '{job.fail_count}'.")
         if len(jobs_pending_to_process) > 0:
             self.restore_connection(None)  # Restore the connection if there was an issue with one or more jobs.
 
@@ -993,7 +1019,7 @@ class Platform(object):
         self.connected = False
         self.restore_connection(None)
         Log.get_logger("Autosubmit")  # Log needs to be initialised in the new process
-        Log.result(f"{identifier} Sucessfully connected.")
+        Log.result(f"{identifier} successfully connected.")
         log_recovery_timeout = self.config.get("LOG_RECOVERY_TIMEOUT", 60)
         # Keep alive signal timeout is 5 minutes, but the sleeptime is 60 seconds.
         self.keep_alive_timeout = max(log_recovery_timeout*5, 60*5)
