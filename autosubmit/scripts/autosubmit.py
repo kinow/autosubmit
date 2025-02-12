@@ -25,6 +25,12 @@ from contextlib import suppress
 
 # noinspection PyUnresolvedReferences
 from log.log import Log, AutosubmitCritical, AutosubmitError  # noqa: E402
+import sys
+import os
+
+# Add the directory containing the `autosubmit` module to sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+
 from autosubmit import delete_lock_file, exit_from_error  # noqa: E402
 from autosubmit.autosubmit import Autosubmit  # noqa: E402
 from autosubmitconfigparser.config.configcommon import AutosubmitConfig  # noqa: E402
