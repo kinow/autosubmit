@@ -26,7 +26,6 @@ from contextlib import suppress
 # noinspection PyUnresolvedReferences
 from log.log import Log, AutosubmitCritical, AutosubmitError  # noqa: E402
 import sys
-import os
 
 from autosubmit import delete_lock_file, exit_from_error  # noqa: E402
 from autosubmit.autosubmit import Autosubmit  # noqa: E402
