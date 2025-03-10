@@ -1,9 +1,10 @@
 import tempfile
 import os
+import pytest
 from unittest import TestCase
 from mock import Mock, patch
 from autosubmit.autosubmit import Autosubmit
-from autosubmit.experiment.experiment_common import new_experiment
+from autosubmit.experiment.experiment_common import new_experiment, copy_experiment
 from textwrap import dedent
 from pathlib import Path
 from autosubmitconfigparser.config.basicconfig import BasicConfig
@@ -71,6 +72,13 @@ class TestExpid(TestCase):
         experiment_id = new_experiment(self.description, self.version, False, False, True)
         self.assertEqual("e113", experiment_id)
 
+    @patch('autosubmit.experiment.experiment_common.db_common')
+    def test_copy_experiment_new(self, db_common_mock):
+        current_experiment_id = "empty"
+        self._build_db_mock(current_experiment_id, db_common_mock)
+        experiment_id = copy_experiment(current_experiment_id, self.description, self.version, False, False, True)
+        self.assertEqual("", experiment_id)
+    
     @staticmethod
     def _build_db_mock(current_experiment_id, mock_db_common):
         mock_db_common.last_name_used = Mock(return_value=current_experiment_id)
