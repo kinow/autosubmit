@@ -1,6 +1,5 @@
 import tempfile
 import os
-import pytest
 from unittest import TestCase
 from mock import Mock, patch
 from autosubmit.autosubmit import Autosubmit
