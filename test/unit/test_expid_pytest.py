@@ -116,12 +116,12 @@ EXPERIMENT:
     yield expid
 
 
-@pytest.mark.parametrize("generate_new_experiment", ['test', 'normal', 'operational'], indirect=True)
+@pytest.mark.parametrize("generate_new_experiment", ['test', 'normal', 'operational', 'evaluation'], indirect=True)
 def test_expid_generated_correctly(create_autosubmit_tmpdir, generate_new_experiment, setup_experiment_yamlfiles):
     expid = generate_new_experiment
     print(f"Running test for {expid}")
     Autosubmit.inspect(expid=f'{expid}', check_wrapper=True, force=True, lst=None, filter_chunks=None, filter_status=None, filter_section=None)
-    assert expid in ['t000', 'a000', 'o000']
+    assert expid in ['t000', 'a000', 'o000', 'e000']
     assert f"{expid}_DEBUG.cmd" in [Path(f).name for f in Path(f"{create_autosubmit_tmpdir.strpath}/{expid}/tmp").iterdir()]
     # Consult if the expid is in the database
     db_path = Path(f"{create_autosubmit_tmpdir.strpath}/tests.db")
@@ -132,7 +132,7 @@ def test_expid_generated_correctly(create_autosubmit_tmpdir, generate_new_experi
     cursor.close()
 
 
-@pytest.mark.parametrize("generate_new_experiment", ['test', 'normal', 'operational'], indirect=True)
+@pytest.mark.parametrize("generate_new_experiment", ['test', 'normal', 'operational', 'evaluation'], indirect=True)
 def test_delete_experiment(create_autosubmit_tmpdir, generate_new_experiment, setup_experiment_yamlfiles):
     expid = generate_new_experiment
     print(f"Running test for {expid}")
@@ -153,7 +153,7 @@ def test_delete_experiment(create_autosubmit_tmpdir, generate_new_experiment, se
         Autosubmit.delete(expid=f'{expid}', force=True)
 
 
-@pytest.mark.parametrize("generate_new_experiment", ['test', 'normal', 'operational'], indirect=True)
+@pytest.mark.parametrize("generate_new_experiment", ['test', 'normal', 'operational', 'evaluation'], indirect=True)
 def test_delete_experiment_not_owner(create_autosubmit_tmpdir, generate_new_experiment, setup_experiment_yamlfiles, mocker):
     expid = generate_new_experiment
     print(f"Running test for {expid}")

@@ -37,6 +37,13 @@ class TestExpid(TestCase):
         self.assertEqual("o000", experiment_id)
 
     @patch('autosubmit.experiment.experiment_common.db_common')
+    def test_create_new_evaluation_experiment(self, db_common_mock):
+        current_experiment_id = "empty"
+        self._build_db_mock(current_experiment_id, db_common_mock)
+        experiment_id = new_experiment(self.description, self.version, False, False, True)
+        self.assertEqual("e000", experiment_id)
+
+    @patch('autosubmit.experiment.experiment_common.db_common')
     def test_create_new_experiment_with_previous_one(self, db_common_mock):
         current_experiment_id = "a007"
         self._build_db_mock(current_experiment_id, db_common_mock)
@@ -56,6 +63,13 @@ class TestExpid(TestCase):
         self._build_db_mock(current_experiment_id, db_common_mock)
         experiment_id = new_experiment(self.description, self.version, False, True)
         self.assertEqual("o113", experiment_id)
+
+    @patch('autosubmit.experiment.experiment_common.db_common')
+    def test_create_new_evaluation_experiment_with_previous_one(self, db_common_mock):
+        current_experiment_id = "e113"
+        self._build_db_mock(current_experiment_id, db_common_mock)
+        experiment_id = new_experiment(self.description, self.version, False, False, True)
+        self.assertEqual("e113", experiment_id)
 
     @staticmethod
     def _build_db_mock(current_experiment_id, mock_db_common):
