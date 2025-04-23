@@ -221,13 +221,24 @@ class Autosubmit:
             # Expid
             subparser = subparsers.add_parser(
                 'expid', description="Creates a new experiment")
+            group_experiment_types = subparser.add_mutually_exclusive_group()
+            group_experiment_types.add_argument('-op', '--operational', action='store_true',
+                               help='creates a new experiment with operational experiment id')
+            group_experiment_types.add_argument('-ev', '--evaluation', action='store_true',
+                               help='creates a new experiment with evaluation experiment id')
+            group_experiment_types.add_argument('-t', '--testcase', action='store_true',
+                               help='creates a new experiment with testcase experiment id')
             group = subparser.add_mutually_exclusive_group()
-            group.add_argument(
-                '-y', '--copy', help='makes a copy of the specified experiment')
             group.add_argument('-dm', '--dummy', action='store_true',
                                help='creates a new experiment with default values, usually for testing')
             group.add_argument('-min', '--minimal_configuration', action='store_true',
                                help='creates a new experiment with minimal configuration, usually combined with -repo')
+            group.add_argument('-fs', '--filter_status', type=str,
+                               choices=('Any', 'READY', 'COMPLETED',
+                                        'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
+            subparser.add_argument(
+                '-y', '--copy', help='makes a copy of the specified experiment')
             subparser.add_argument('-repo', '--git_repo', type=str, default="", required=False,
                                    help='sets a git repository for the experiment')
             subparser.add_argument('-b', '--git_branch', type=str, default="", required=False,
@@ -235,16 +246,10 @@ class Autosubmit:
             subparser.add_argument('-conf', '--git_as_conf', type=str, default="", required=False,help='sets the git path to as_conf')
             subparser.add_argument('-local', '--use_local_minimal', required=False, action="store_true", help='uses local minimal file instead of git')
 
-            group.add_argument('-op', '--operational', action='store_true',
-                               help='creates a new experiment with operational experiment id')
-            group.add_argument('-ev', '--evaluation', action='store_true',
-                               help='creates a new experiment with evaluation experiment id')
             subparser.add_argument('-H', '--HPC', required=False, default="local",
                                    help='specifies the HPC to use for the experiment')
             subparser.add_argument('-d', '--description', type=str, required=True,
                                    help='sets a description for the experiment to store in the database.')
-            group.add_argument('-t', '--testcase', action='store_true',
-                               help='creates a new experiment with testcase experiment id')
 
             # Delete
             subparser = subparsers.add_parser(
@@ -273,10 +278,6 @@ class Autosubmit:
                                    default=False, help='Generate possible wrapper in the current workflow')
             group2 = subparser.add_mutually_exclusive_group(required=False)
 
-            group.add_argument('-fs', '--filter_status', type=str,
-                               choices=('Any', 'READY', 'COMPLETED',
-                                        'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
-                               help='Select the original status to filter the list of jobs')
             group = subparser.add_mutually_exclusive_group(required=False)
             group.add_argument('-fl', '--list', type=str,
                                help='Supply the list of job names to be filtered. Default = "Any". '
@@ -1381,8 +1382,14 @@ class Autosubmit:
             copy_id_folder = os.path.join(root_folder, copy_id)
             if not os.path.exists(copy_id_folder):
                 raise AutosubmitCritical(f"Experiment {copy_id} doesn't exists", 7011)
+            if minimal_configuration:
+                conf_dir = Path(copy_id_folder) / "conf"
+                if not Path(conf_dir / 'minimal.yml').is_file() and not Path(conf_dir / 'minimal.yaml').is_file():
+                    raise AutosubmitCritical(
+                            "Cannot copy an experiment that does not have a minimal.yml file", 7011)
             exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, testcase, operational,
                                      evaluation)
+
         else:
             # Create a new experiment from scratch
             exp_id = new_experiment(description, Autosubmit.autosubmit_version, testcase, operational, evaluation)
