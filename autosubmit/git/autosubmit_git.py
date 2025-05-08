@@ -20,6 +20,7 @@ from os import path
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import locale
 import os
+import psutil
 import re
 import shutil
 import subprocess
@@ -30,6 +31,7 @@ from time import time
 from typing import List, Union
 
 # from autosubmit import Autosubmit
+from autosubmit.helpers.processes import process_id
 from autosubmitconfigparser.config.basicconfig import BasicConfig
 from log.log import Log, AutosubmitCritical
 
@@ -300,4 +302,18 @@ class AutosubmitGit:
                     if any(status.startswith(code) for code in ["M", "A", "D", "?"] for status in output.splitlines()):
                         # M: Modified, A: Added, D: Deleted, ?: Untracked
                         raise AutosubmitCritical("Push local changes to remote repository before running", 7075)
+
+    @staticmethod
+    def check_directory_in_use(expid: str) -> bool:
+        """
+        Checks for open files and unfinished git-credential requests in a directory
+        """
+        if process_id(expid) is not None:
+            return True
+        for proc in psutil.process_iter(['name', 'cmdline']):
+            name = proc.info.get('name', '')
+            cmdline = proc.info.get('cmdline', [])
+            if '_run.log' in name or any('run' in arg for arg in cmdline): 
+                return True
+        return False 
 

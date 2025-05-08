@@ -81,6 +81,7 @@ import autosubmit.history.utils as HUtils
 import autosubmit.helpers.autosubmit_helper as AutosubmitHelper
 import autosubmit.statistics.utils as StatisticsUtils
 from autosubmit.helpers.utils import check_jobs_file_exists, get_rc_path
+from autosubmit.helpers.processes import process_id
 
 from contextlib import suppress
 
@@ -1490,8 +1491,12 @@ class Autosubmit:
 
         :raises AutosubmitCritical: If the experiment does not exist or if there are insufficient permissions.
         """
-        experiment_path = Path(f"{BasicConfig.LOCAL_ROOT_DIR}/{expid}")
+        # if not AutosubmitGit.check_directory_in_use(expid):
+        if process_id(expid) is None:
+            raise AutosubmitCritical("Ensure no processes are running in the experiment directory", 7076)
 
+        experiment_path = Path(f"{BasicConfig.LOCAL_ROOT_DIR}/{expid}")
+        
         if experiment_path.exists():
             if force or Autosubmit._user_yes_no_query(f"Do you want to delete {expid} ?"):
                 Log.debug('Enter Autosubmit._delete_expid {0}', expid)
