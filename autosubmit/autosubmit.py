@@ -15,22 +15,50 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
 import collections
+import copy
+import datetime
+import json
 import locale
+import os
 import platform
-
-from bscearth.utils.date import date2str
+import pwd
+import random
+import re
+import shutil
+import signal
+import subprocess
+import sys
+import tarfile
+import time
+from collections import defaultdict
 from configparser import ConfigParser
+from contextlib import suppress
+from importlib.metadata import version
+# import log.fd_show as fd_show
+from importlib.resources import files as read_files
 from pathlib import Path
-from ruamel.yaml import YAML
+from time import sleep
 from typing import Dict, Set, Tuple, Union, Any, List, Optional
 
-from autosubmit.database.db_common import update_experiment_descrip_version
-from autosubmit.experiment.detail_updater import ExperimentDetails
-from autosubmit.helpers.utils import strtobool
 from autosubmitconfigparser.config.basicconfig import BasicConfig
 from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from autosubmitconfigparser.config.yamlparser import YAMLParserFactory
+from bscearth.utils.date import date2str
+from portalocker import Lock
+from portalocker.exceptions import BaseLockException
+from pyparsing import nestedExpr
+from ruamel.yaml import YAML
+
+import autosubmit.helpers.autosubmit_helper as AutosubmitHelper
+import autosubmit.history.utils as HUtils
+import autosubmit.statistics.utils as StatisticsUtils
+from autosubmit.database.db_common import update_experiment_descrip_version
+from autosubmit.experiment.detail_updater import ExperimentDetails
+from autosubmit.helpers.processes import process_id
+from autosubmit.helpers.utils import check_jobs_file_exists, get_rc_path
+from autosubmit.helpers.utils import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical
 from .database.db_common import create_db
 from .database.db_common import delete_experiment, get_experiment_descrip
@@ -39,6 +67,8 @@ from .database.db_structure import get_structure
 from .experiment.experiment_common import copy_experiment
 from .experiment.experiment_common import new_experiment
 from .git.autosubmit_git import AutosubmitGit
+from .history.experiment_history import ExperimentHistory
+from .history.experiment_status import ExperimentStatus
 from .job.job_common import Status
 from .job.job_grouping import JobGrouping
 from .job.job_list import JobList
@@ -47,43 +77,11 @@ from .job.job_list_persistence import JobListPersistencePkl
 from .job.job_package_persistence import JobPackagePersistence
 from .job.job_packager import JobPackager
 from .job.job_utils import SubJob, SubJobManager
+from .migrate.migrate import Migrate
 from .notifications.mail_notifier import MailNotifier
 from .notifications.notifier import Notifier
 from .platforms.paramiko_submitter import ParamikoSubmitter
 from .platforms.platform import Platform
-from .migrate.migrate import Migrate
-
-from time import sleep
-import argparse
-import subprocess
-import json
-import tarfile
-import time
-import copy
-import os
-import pwd
-import sys
-import shutil
-import re
-import random
-import signal
-import datetime
-# import log.fd_show as fd_show
-from importlib.resources import files as read_files
-from importlib.metadata import version
-from collections import defaultdict
-from portalocker import Lock
-from portalocker.exceptions import BaseLockException
-from pyparsing import nestedExpr
-from .history.experiment_status import ExperimentStatus
-from .history.experiment_history import ExperimentHistory
-import autosubmit.history.utils as HUtils
-import autosubmit.helpers.autosubmit_helper as AutosubmitHelper
-import autosubmit.statistics.utils as StatisticsUtils
-from autosubmit.helpers.utils import check_jobs_file_exists, get_rc_path
-from autosubmit.helpers.processes import process_id
-
-from contextlib import suppress
 
 dialog = None
 
@@ -1300,7 +1298,8 @@ class Autosubmit:
         return content
 
     @staticmethod
-    def as_conf_default_values(exp_id, hpc, minimal_configuration=False, git_repo="", git_branch="main", git_as_conf=""):
+    def as_conf_default_values(exp_id, hpc, minimal_configuration=False, git_repo="", git_branch="main",
+                               git_as_conf=""):
         """
         Replace default values in as_conf files
         :param exp_id: experiment id
@@ -1322,7 +1321,8 @@ class Autosubmit:
                     content = f.read()
                     search = re.search('AUTOSUBMIT_VERSION: .*', content, re.MULTILINE)
                     if search is not None:
-                        content = content.replace(search.group(0), f"AUTOSUBMIT_VERSION: \"{Autosubmit.autosubmit_version}\"")
+                        content = content.replace(search.group(0), f"AUTOSUBMIT_VERSION: \""
+                                                                   f"{Autosubmit.autosubmit_version}\"")
                     search = re.search('NOTIFICATIONS: .*', content, re.MULTILINE)
                     if search is not None:
                         content = content.replace(search.group(0),"NOTIFICATIONS: False")
@@ -1361,28 +1361,46 @@ class Autosubmit:
                     f.truncate()
 
     @staticmethod
-    def expid(description, hpc="", copy_id='', dummy=False, minimal_configuration=False, git_repo="", git_branch="", git_as_conf="", operational=False,  testcase = False, evaluation = False, use_local_minimal=False):
+    def expid(description, hpc="", copy_id='', dummy=False, minimal_configuration=False,
+              git_repo="", git_branch="", git_as_conf="", operational=False, testcase=False,
+              evaluation=False, use_local_minimal=False) -> str:
         """
         Creates a new experiment for given HPC
-        description: description of the experiment
-        hpc: HPC where the experiment will be executed
-        copy_id: if specified, experiment id to copy
-        dummy: if true, creates a dummy experiment
-        minimal_configuration: if true, creates a minimal configuration
-        git_repo: git repository to clone
-        git_branch: git branch to clone
-        git_as_conf: path to as_conf file in git repository
-        operational: if true, creates an operational experiment
-        evaluation: if true, creates an evaluation experiment
-        local: Gets local minimal instead of git minimal
+
+        :param description: description of the experiment
+        :type description: str
+        :param hpc: HPC where the experiment will be executed
+        :type hpc: str
+        :param copy_id: if specified, experiment id to copy
+        :type copy_id: str
+        :param dummy: if true, creates a dummy experiment
+        :type dummy: bool
+        :param minimal_configuration: if true, creates a minimal configuration
+        :type minimal_configuration: bool
+        :param git_repo: git repository to clone
+        :type git_repo: str
+        :param git_branch: git branch to clone
+        :type git_branch: str
+        :param git_as_conf: path to as_conf file in git repository
+        :type git_as_conf: str
+        :param operational: if true, creates an operational experiment
+        :type operational: bool
+        :param testcase:
+        :type testcase: bool
+        :param evaluation: if true, creates an evaluation experiment
+        :type evaluation: bool
+        :param use_local_minimal: Gets local minimal instead of git minimal
+        :type use_local_minimal: bool
+        :returns: return the expid of the experiment.
+        :rtype: str
         """
         if use_local_minimal:
             git_branch = ""
-            if AutosubmitGit.is_git_repo(git_repo): 
+            if AutosubmitGit.is_git_repo(git_repo):
                 git_repo = ""
 
         exp_id = ""
-        root_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR)
+        root_folder = Path(BasicConfig.LOCAL_ROOT_DIR)
         if description is None:
             raise AutosubmitCritical(
                 "Check that the parameters are defined (-d) ", 7011)
@@ -1392,8 +1410,8 @@ class Autosubmit:
         # Register the experiment in the database
         # Copy another experiment from the database
         if copy_id != '' and copy_id is not None:
-            copy_id_folder = os.path.join(root_folder, copy_id)
-            if not os.path.exists(copy_id_folder):
+            copy_id_folder = root_folder / copy_id
+            if not copy_id_folder.exists():
                 raise AutosubmitCritical(f"Experiment {copy_id} doesn't exists", 7011)
             if minimal_configuration:
                 conf_dir = Path(copy_id_folder) / "conf"
@@ -1402,7 +1420,6 @@ class Autosubmit:
                             "Cannot copy an experiment that does not have a minimal.yml file", 7011)
             exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, testcase, operational,
                                      evaluation)
-
         else:
             # Create a new experiment from scratch
             exp_id = new_experiment(description, Autosubmit.autosubmit_version, testcase, operational, evaluation)
@@ -1413,25 +1430,14 @@ class Autosubmit:
         # Create the experiment structure
         Log.info("Generating folder structure...")
 
-        exp_folder = os.path.join(root_folder, exp_id)
+        exp_folder = root_folder / Path(exp_id)
         try:
-            os.mkdir(exp_folder)
-            os.mkdir(os.path.join(exp_folder, "conf"))
-            os.mkdir(os.path.join(exp_folder, "pkl"))
-            os.mkdir(os.path.join(exp_folder, "tmp"))
-            os.mkdir(os.path.join(exp_folder, "tmp", "ASLOGS"))
-            os.mkdir(os.path.join(exp_folder, "tmp", "LOG_"+exp_id))
-            os.mkdir(os.path.join(exp_folder, "plot"))
-            os.mkdir(os.path.join(exp_folder, "status"))
-            # Setting permissions
-            os.chmod(exp_folder, 0o755)
-            os.chmod(os.path.join(exp_folder, "conf"), 0o755)
-            os.chmod(os.path.join(exp_folder, "pkl"), 0o755)
-            os.chmod(os.path.join(exp_folder, "tmp"), 0o755)
-            os.chmod(os.path.join(exp_folder, "tmp", "ASLOGS"), 0o755)
-            os.chmod(os.path.join(exp_folder, "tmp", "LOG_"+exp_id), 0o755)
-            os.chmod(os.path.join(exp_folder, "plot"), 0o775)
-            os.chmod(os.path.join(exp_folder, "status"), 0o775)
+            # Setting folders and permissions
+            dir_mode = 0o755
+            exp_folder.mkdir(mode=dir_mode)
+            required_dirs = ["conf", "pkl", "tmp", "tmp/ASLOGS", f"tmp/LOG_{exp_id}", "plot", "status"]
+            for required_dir in required_dirs:
+                Path(exp_folder / required_dir).mkdir(mode=dir_mode)
             Log.info(f"Experiment folder: {exp_folder}")
         except OSError as e:
             try:
@@ -1448,7 +1454,7 @@ class Autosubmit:
                 Autosubmit.copy_as_config(exp_id, copy_id)
             else:
                 # Create a new configuration
-                Autosubmit.generate_as_config(exp_id,dummy, minimal_configuration,use_local_minimal)
+                Autosubmit.generate_as_config(exp_id, dummy, minimal_configuration,use_local_minimal)
         except Exception as e:
             try:
                 Autosubmit._delete_expid(exp_id, True)
@@ -1464,7 +1470,7 @@ class Autosubmit:
             except Exception:
                 pass
             raise AutosubmitCritical(f"Error while setting the default values: {str(e)}", 7011)
-        
+
         # Try to update the experiment details
         try:
             ExperimentDetails(exp_id).save_update_details()
@@ -1477,7 +1483,8 @@ class Autosubmit:
     @staticmethod
     def delete(expid: str, force: bool) -> bool:
         """
-        Deletes an experiment from the database, the experiment's folder database entry and all the related metadata files.
+        Deletes an experiment from the database,
+        the experiment's folder database entry and all the related metadata files.
 
         :param expid: Identifier of the experiment to delete.
         :type expid: str
