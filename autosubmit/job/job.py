@@ -30,7 +30,7 @@ from functools import reduce
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
 
 from autosubmit.helpers.parameters import autosubmit_parameter, autosubmit_parameters
 from autosubmit.history.experiment_history import ExperimentHistory
@@ -39,10 +39,15 @@ from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPy
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.job.job_common import Status, Type, increase_wallclock_by_chunk
 from autosubmit.job.job_utils import get_job_package_code, get_split_size_unit, get_split_size
+from autosubmit.job.metrics_processor import UserMetricProcessor
+from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 from autosubmitconfigparser.config.basicconfig import BasicConfig
 from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 from log.log import Log, AutosubmitCritical
+
+if TYPE_CHECKING:
+    from autosubmit.platforms.platform import Platform
 
 Log.get_logger("Autosubmit")
 
@@ -837,7 +842,7 @@ class Job(object):
         return not self.nodes and (not self.processors or str(self.processors) == '1')
 
     @property
-    def platform(self):
+    def platform(self) -> "Platform":
         """
         Returns the platform to be used by the job. Chooses between serial and parallel platforms
 
@@ -1441,7 +1446,7 @@ class Job(object):
             return True
         return False
 
-    def update_status(self, as_conf, failed_file=False):
+    def update_status(self, as_conf: AutosubmitConfig, failed_file: bool = False) -> Status:
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -1498,6 +1503,27 @@ class Job(object):
                 self.retrieve_logfiles(self.platform)
             else:
                 self.platform.add_job_to_log_recover(self)
+
+            # Read and store metrics here
+            try:
+                exp_history = ExperimentHistory(
+                    self.expid,
+                    jobdata_dir_path=BasicConfig.JOBDATA_DIR,
+                    historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR,
+                )
+                last_run_id = (
+                    exp_history.manager.get_experiment_run_dc_with_max_id().run_id
+                )
+                metric_procesor = UserMetricProcessor(as_conf, self, last_run_id)
+                metric_procesor.process_metrics()
+            except Exception as exc:
+                # Warn if metrics are not processed
+                Log.printlog(
+                    f"Error processing metrics for job {self.name}: {exc}.\n"
+                    + "Try reviewing your configuration file and template, then re-run the job.",
+                    code=6017,
+                )
+
         return self.status
 
     @staticmethod
@@ -1546,6 +1572,32 @@ class Job(object):
             else:
                 return default_status
 
+    def get_metric_folder(self, as_conf: AutosubmitConfig = None) -> str:
+        """
+        Returns the default metric folder for the job.
+
+        :return: The metric folder path.
+        :rtype: str
+        """
+        # Get the default path that should be the same as HPCROOTDIR
+        # Check if the job platform is a subclass of ParamikoPlatform
+        if isinstance(self.platform, ParamikoPlatform):
+            base_path = Path(self.platform.remote_log_dir)
+        else:
+            base_path = Path(self.platform.root_dir).joinpath(self.expid)
+
+        # Get the defined metric folder from the configuration if it exists
+        try:
+            config_section: dict = as_conf.experiment_data.get("CONFIG", {})
+            base_path = Path(config_section.get("METRIC_FOLDER", base_path))
+        except Exception as exc:
+            Log.printlog(f"Failed to get metric folder from config: {exc}", code=6019)
+
+        # Construct the metric folder path by adding the job name
+        metric_folder = base_path.joinpath(self.name)
+
+        return str(metric_folder)
+
     def update_current_parameters(self, as_conf: AutosubmitConfig, parameters: dict) -> dict:
         """
         Update the %CURRENT_*% parameters with the current platform and jobs.
@@ -1562,6 +1614,8 @@ class Job(object):
 
         for key, value in as_conf.jobs_data[self.section].items():
             parameters[f"CURRENT_{key.upper()}"] = value
+
+        parameters["CURRENT_METRIC_FOLDER"] = self.get_metric_folder(as_conf=as_conf)
 
         return parameters
 
@@ -2707,7 +2761,19 @@ class WrapperJob(Job):
     :type as_config: AutosubmitConfig object \n
     """
 
-    def __init__(self, name, job_id, status, priority, job_list, total_wallclock, num_processors, platform, as_config, hold):
+    def __init__(
+        self,
+        name: str,
+        job_id: int,
+        status: str,
+        priority: int,
+        job_list: List[Job],
+        total_wallclock: str,
+        num_processors: int,
+        platform: "Platform",
+        as_config: AutosubmitConfig,
+        hold: bool,
+    ):
         super(WrapperJob, self).__init__(name, job_id, status, priority)
         self.failed = False
         self.job_list = job_list
@@ -2802,7 +2868,7 @@ class WrapperJob(Job):
             if not still_running:
                 self.cancel_failed_wrapper_job()
 
-    def check_inner_jobs_completed(self, jobs: [Job]) -> None:
+    def check_inner_jobs_completed(self, jobs: List[Job]) -> None:
         """
         Will get all the jobs that the status are not completed and check if it was completed or not
         :param jobs: Jobs inside the wrapper
@@ -2908,7 +2974,7 @@ class WrapperJob(Job):
         FAILED if over wallclock and not vertical wrapper
         If after 5 retries no file is created the status of the job is set to FAIL
         """
-        not_finished_jobs_dict = OrderedDict()
+        not_finished_jobs_dict: OrderedDict[str, Job] = OrderedDict()
         self.inner_jobs_running = list()
         not_finished_jobs = [job for job in self.job_list if job.status not in [
             Status.COMPLETED, Status.FAILED]]
@@ -2992,7 +3058,7 @@ class WrapperJob(Job):
             if retries == 0 or over_wallclock:
                 self.status = Status.FAILED
 
-    def _check_finished_job(self, job :Job, failed_file :bool=False) -> None:
+    def _check_finished_job(self, job: Job, failed_file: bool = False) -> None:
         """
         Will set the jobs status to failed, unless they're completed, in which,
         the function will change it to complete.
