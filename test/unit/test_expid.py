@@ -23,6 +23,7 @@ from contextlib import contextmanager
 import pytest
 
 from autosubmit.autosubmit import Autosubmit
+from autosubmit.database import db_common
 from log.log import AutosubmitCritical
 
 
@@ -48,7 +49,7 @@ def build_db_mock(current_experiment_id, mock_db_common, mocker):
     ('', does_not_raise()),
     ('test', pytest.raises(AutosubmitCritical))
 ], ids=['success', 'fail'])
-def test_expid(mocker, copy_id, expected, tmp_path, autosubmit_config) -> None:
+def test_expid(mocker, copy_id, expected, tmp_path, autosubmit_config, monkeypatch) -> None:
     """
     Function to test if the autosubmit().expid generates the paths and expid properly
 
@@ -57,8 +58,12 @@ def test_expid(mocker, copy_id, expected, tmp_path, autosubmit_config) -> None:
     :return: None
     """
     current_experiment_id = "empty"
+
+    monkeypatch.setattr(db_common, 'TIMEOUT', 1)
+
     db_common_mock = mocker.patch('autosubmit.experiment.experiment_common.db_common')
     build_db_mock(current_experiment_id, db_common_mock, mocker)
+
     basic_config = autosubmit_config('a000').basic_config
     basic_config.STRUCTURES_DIR = basic_config.LOCAL_ROOT_DIR = str(tmp_path)
     basic_config.JOBDATA_DIR = str(tmp_path)
