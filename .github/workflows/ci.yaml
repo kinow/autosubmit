@@ -117,6 +117,7 @@ jobs:
           pytest \
             --cov=autosubmit --cov-config=.coveragerc \
             --cov-report=xml:test/coverage.xml --cov-append \
+            --ignore=test/integration/platforms/test_slurmplatform.py \
             test/integration \
             -m ''
 

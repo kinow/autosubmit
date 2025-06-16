@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       slurm:
-        image: autosubmit/slurm-openssh-container:23-02-7-1
+        image: autosubmit/slurm-openssh-container:25-05-0-1
         ports:
           - 2222:2222
         options: --rm -it --cgroupns=host --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw -h slurmctld --name slurm-container
@@ -33,7 +33,7 @@ jobs:
       - name: configure host
         run: |
           sudo bash -c 'mkdir /home/runner/.ssh/'
-          sudo bash -c 'echo -e $"Host gen1\n  HostName localhost\n  User root\nStrictHostKeyChecking no\n UserKnownHostsFile /dev/null\n  IdentityFile /tmp/container_root_pubkey\n  Port 2222\n   ForwardX11 yes" >> /home/runner/.ssh/config'
+          sudo bash -c 'echo -e $"Host localDocker\n  HostName localhost\n  User root\nStrictHostKeyChecking no\n UserKnownHostsFile /dev/null\n  IdentityFile /tmp/container_root_pubkey\n  Port 2222\n   ForwardX11 yes" >> /home/runner/.ssh/config'
 
       - name: ssh access
         run: |
@@ -42,7 +42,7 @@ jobs:
 
       - name: SSH to SLURM environment
         run: |
-          ssh -tt root@localhost -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 -i /tmp/container_root_pubkey sinfo
+          ssh localDocker -p 2222 -i /tmp/container_root_pubkey sinfo
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -57,6 +57,10 @@ jobs:
           python -m pip install --upgrade pip packaging setuptools twine
           pip install --upgrade -e .[all]
 
+      - name: Install test dependencies
+        run: |
+          pip install pytest pytest-cov pytest-xdist
+
       - name: Set up Git
         run: |
           # From: https://stackoverflow.com/questions/62960533/how-to-use-git-commands-during-a-github-action
@@ -70,6 +74,5 @@ jobs:
           pytest \
             --cov=autosubmit --cov-config=.coveragerc \
             --cov-report=xml:test/coverage.xml --cov-append \
-            test/unit/platforms/test_locplatform.py \
             test/integration/platforms/test_slurmplatform.py \
             -m ''
