@@ -17,8 +17,7 @@
 
 """Integration tests for the Slurm platform."""
 
-from getpass import getuser
-
+import pytest
 from autosubmitconfigparser.config.configcommon import AutosubmitConfig
 
 from autosubmit.platforms.slurmplatform import SlurmPlatform
@@ -61,6 +60,7 @@ def test_create_platform(autosubmit_exp):
     # TODO: add more assertion statements...
 
 
+@pytest.mark.slurm
 def test_run_simple_workflow(autosubmit_exp: AutosubmitExperimentFixture):
     """Runs a simple Bash script using Slurm."""
     exp = autosubmit_exp(_EXPID, experiment_data={
