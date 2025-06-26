@@ -2,6 +2,8 @@
 
 - autosubmit/autosubmit container now includes the `$USER` environment variable
   via its entrypoint #2359
+- Adding a Slurm Container to the CI/CD and creating tests to increase the
+  coverage of the Platforms #977
 
 ### 4.1.15: Unreleased
 
