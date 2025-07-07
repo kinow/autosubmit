@@ -424,7 +424,6 @@ class SubJobManager(object):
                                     filtered[i].queue = max(filtered[i].queue -
                                                             filtered[i - 1].total, 0)
                                     fixes_applied[filtered[i].name] = filtered[i - 1].total
-
                     for sub in filtered:
                         self.subjobindex[sub.name].queue = sub.queue
                         # print("{} : {}".format(sub.name, sub.queue))
