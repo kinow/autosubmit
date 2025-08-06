@@ -3,4 +3,5 @@ include VERSION
 include CHANGES
 include README
 include docs/autosubmit.pdf
-global-include *.conf *.sql
+include autosubmit/config/files/*
+global-include *.conf *.sql *.yml
