@@ -28,7 +28,7 @@ from multiprocessing.queues import Queue
 # noinspection PyProtectedMember
 from os import _exit  # type: ignore
 from pathlib import Path
-from typing import Any, List, Optional, Set, Union, TYPE_CHECKING
+from typing import Any, Optional, Union, TYPE_CHECKING
 
 import setproctitle
 
@@ -38,13 +38,15 @@ from autosubmit.log.log import AutosubmitCritical, AutosubmitError, Log
 
 if TYPE_CHECKING:
     from autosubmit.config.configcommon import AutosubmitConfig
+    from autosubmit.job.job_packages import JobPackageBase
 
 
 def _init_logs_log_process(as_conf, platform_name):
     Log.set_console_level(as_conf.experiment_data.get("LOG_RECOVERY_CONSOLE_LEVEL", "DEBUG"))
     if as_conf.experiment_data["ROOTDIR"]:
         aslogs_path = Path(as_conf.experiment_data["ROOTDIR"], "tmp/ASLOGS")
-        Log.set_file(aslogs_path.joinpath(f'{platform_name.lower()}_log_recovery.log'), "out", as_conf.experiment_data.get("LOG_RECOVERY_FILE_LEVEL", "EVERYTHING"))
+        Log.set_file(aslogs_path.joinpath(f'{platform_name.lower()}_log_recovery.log'), "out",
+                     as_conf.experiment_data.get("LOG_RECOVERY_FILE_LEVEL", "EVERYTHING"))
         Log.set_file(aslogs_path.joinpath(f'{platform_name.lower()}_log_recovery_err.log'), "err")
 
 
@@ -53,7 +55,7 @@ def recover_platform_job_logs_wrapper(
         recovery_queue: Queue,
         worker_event: Event,
         cleanup_event: Event,
-        as_conf: Any
+        as_conf: 'AutosubmitConfig'
 ) -> None:
     """
     Wrapper function to recover platform job logs.
@@ -67,7 +69,7 @@ def recover_platform_job_logs_wrapper(
     :param cleanup_event: An event to signal cleanup operations.
     :type cleanup_event: multiprocessing.Event
     :param as_conf: The Autosubmit configuration object containing experiment data.
-    :type as_conf: Any
+    :type as_conf: AutosubmitConfig
     :return: None
     :rtype: None
     """
@@ -86,9 +88,8 @@ def recover_platform_job_logs_wrapper(
     }
     _init_logs_log_process(as_conf, platform.name)
     platform.recover_platform_job_logs(as_conf)
-    _exit(0)  # Exit userspace after manually closing ssh sockets, recommended for child processes, the queue() and shared signals should be in charge of the main process.
-
-
+    _exit(
+        0)  # Exit userspace after manually closing ssh sockets, recommended for child processes, the queue() and shared signals should be in charge of the main process.
 
 
 class CopyQueue(Queue):
@@ -112,7 +113,6 @@ class CopyQueue(Queue):
         self.block = block
         self.timeout = timeout
         super().__init__(maxsize, ctx=ctx)
-
 
     def put(self, job: Any, block: bool = True, timeout: float = None) -> None:
         """
@@ -222,7 +222,8 @@ class Platform(object):
         if self.config:
             # We still support TOTALJOBS and TOTAL_JOBS for backwards compatibility... # TODO change in 4.2, I think
             default_queue_size = self.config.get("CONFIG", {}).get("LOG_RECOVERY_QUEUE_SIZE", 100)
-            platform_default_queue_size = self.config.get("PLATFORMS", {}).get(self.name.upper(), {}).get("LOG_RECOVERY_QUEUE_SIZE", default_queue_size)
+            platform_default_queue_size = self.config.get("PLATFORMS", {}).get(self.name.upper(), {}).get(
+                "LOG_RECOVERY_QUEUE_SIZE", default_queue_size)
             config_total_jobs = self.config.get("CONFIG", {}).get("TOTAL_JOBS", platform_default_queue_size)
             platform_total_jobs = self.config.get("PLATFORMS", {}).get('TOTAL_JOBS', config_total_jobs)
             log_queue_size = int(platform_total_jobs) * 2
@@ -363,7 +364,7 @@ class Platform(object):
     def process_batch_ready_jobs(self, valid_packages_to_submit, failed_packages, error_message="", hold=False):
         return True, valid_packages_to_submit
 
-    def submit_ready_jobs(self, as_conf, job_list, platforms_to_test, packages_persistence, packages_to_submit,
+    def submit_ready_jobs(self, as_conf, job_list, packages_persistence, packages_to_submit,
                           inspect=False, only_wrappers=False, hold=False):
 
         """
@@ -371,18 +372,16 @@ class Platform(object):
 
         :param hold:
         :param packages_to_submit:
-        :param as_conf: autosubmit config object \n
-        :type as_conf: AutosubmitConfig object  \n
-        :param job_list: job list to check  \n
-        :type job_list: JobList object  \n
-        :param platforms_to_test: platforms used  \n
-        :type platforms_to_test: set of Platform Objects, e.g. EcPlatform(), SlurmPlatform().  \n
-        :param packages_persistence: Handles database per experiment. \n
-        :type packages_persistence: JobPackagePersistence object \n
-        :param inspect: True if coming from generate_scripts_andor_wrappers(). \n
-        :type inspect: Boolean \n
-        :param only_wrappers: True if it comes from create -cw, False if it comes from inspect -cw. \n
-        :type only_wrappers: Boolean \n
+        :param as_conf: autosubmit config object
+        :type as_conf: AutosubmitConfig object
+        :param job_list: job list to check
+        :type job_list: JobList object
+        :param packages_persistence: Handles database per experiment.
+        :type packages_persistence: JobPackagePersistence object
+        :param inspect: True if coming from generate_scripts_andor_wrappers().
+        :type inspect: Boolean
+        :param only_wrappers: True if it comes from create -cw, False if it comes from inspect -cw.
+        :type only_wrappers: Boolean
         :return: True if at least one job was submitted, False otherwise \n
         :rtype: Boolean
         """
@@ -400,7 +399,7 @@ class Platform(object):
                 job_list.get_prepared(self)), self.name)
         if not inspect:
             self.generate_submit_script()
-        valid_packages_to_submit = []  # type: List[JobPackageBase]
+        valid_packages_to_submit: list['JobPackageBase'] = []
         for package in packages_to_submit:
             try:
                 # If called from inspect command or -cw
@@ -427,9 +426,10 @@ class Platform(object):
                             job_list.save()
                         if package.x11 != "true":
                             valid_packages_to_submit.append(package)
-                    except (IOError, OSError):
+                    except (IOError, OSError) as e:
                         if package.jobs[0].id != 0:
                             failed_packages.append(package.jobs[0].id)
+                        Log.warning(f'An unexpected error happened while submitting the package: {str(e)}')
                         continue
                     except AutosubmitError as e:
                         if package.jobs[0].id != 0:
@@ -453,15 +453,10 @@ class Platform(object):
                                     error_msg[:-1], self.name)
                     except AutosubmitCritical:
                         raise
-                    except Exception as e:
+                    except Exception:
                         self.connected = False
                         raise
-
-            except AutosubmitCritical as e:
-                raise
-            except AutosubmitError as e:
-                raise
-            except Exception as e:
+            except Exception:
                 raise
         if valid_packages_to_submit:
             any_job_submitted = True
@@ -565,7 +560,7 @@ class Platform(object):
             return True
         return self._allow_python_jobs == "true"
 
-    def add_parameters(self, as_conf):
+    def add_parameters(self, as_conf: 'AutosubmitConfig'):
         """
         Add parameters for the current platform to the given parameters list
 
@@ -646,7 +641,7 @@ class Platform(object):
         for filename in files:
             self.get_file(filename, must_exist, relative_path)
 
-    def delete_file(self, filename):
+    def delete_file(self, filename: str):
         """
         Deletes a file from this platform
 
@@ -878,8 +873,7 @@ class Platform(object):
         """ Opens Submit script file """
         raise NotImplementedError
 
-    def submit_Script(self, hold=False):
-        # type: (bool) -> Union[List[str], str]
+    def submit_script(self, hold: bool = False) -> Union[list[str], str]:
         """
         Sends a Submit file Script, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
         """
@@ -889,10 +883,11 @@ class Platform(object):
         if job.id and int(job.id) != 0:
             self.recovery_queue.put(job)
         else:
-            Log.warning(f"Job {job.name} and retry number:{job.fail_count} has no job id. Autosubmit will no record this retry.")
+            Log.warning(
+                f"Job {job.name} and retry number:{job.fail_count} has no job id. Autosubmit will no record this retry.")
             job.updated_log = True
 
-    def connect(self, as_conf: Any, reconnect: bool = False, log_recovery_process: bool = False) -> None:
+    def connect(self, as_conf: 'AutosubmitConfig', reconnect: bool = False, log_recovery_process: bool = False) -> None:
         """
         Establishes an SSH connection to the host.
 
@@ -903,12 +898,12 @@ class Platform(object):
         """
         raise NotImplementedError
 
-    def restore_connection(self, as_conf: Any, log_recovery_process: bool = False) -> None:
+    def restore_connection(self, as_conf: 'AutosubmitConfig', log_recovery_process: bool = False) -> None:
         """
         Restores the SSH connection to the platform.
 
         :param as_conf: The Autosubmit configuration object used to establish the connection.
-        :type as_conf: Any
+        :type as_conf: AutosubmitConfig
         :param log_recovery_process: Indicates that the call is made from the log retrieval process.
         :type log_recovery_process: bool
         """
@@ -1073,21 +1068,15 @@ class Platform(object):
                 break
         return process_log
 
-    def recover_job_log(self, identifier: str, jobs_pending_to_process: Set[Any], as_conf: 'AutosubmitConfig') -> Set[Any]:
+    def recover_job_log(self, identifier: str, jobs_pending_to_process: set[Any], as_conf: 'AutosubmitConfig') -> None:
         """
         Recovers log files for jobs from the recovery queue and retries failed jobs.
 
         :param identifier: Identifier for logging purposes.
-        :type identifier: str
         :param jobs_pending_to_process: Set of jobs that had issues during log retrieval.
-        :type jobs_pending_to_process: Set[Any]
         :param as_conf: The Autosubmit configuration object containing experiment data.
-        :type as_conf: AutosubmitConfig
         :return: Updated set of jobs pending to process.
-        :rtype: Set[Any]
         """
-        job = None
-
         while not self.recovery_queue.empty():
             try:
                 from autosubmit.job.job import Job
@@ -1100,11 +1089,12 @@ class Platform(object):
                 except Exception:
                     jobs_pending_to_process.add(job)
                     job._log_recovery_retries += 1
-                    Log.warning(f"{identifier} (Retry) Failed to recover log for job '{job.name}' and retry:'{job.fail_count}'.")
+                    Log.warning(
+                        f"{identifier} (Retry) Failed to recover log for job '{job.name}' and retry:'{job.fail_count}'.")
             except queue.Empty:
                 pass
 
-        if len(jobs_pending_to_process) > 0: # Restore the connection if there was an issue with one or more jobs.
+        if len(jobs_pending_to_process) > 0:  # Restore the connection if there was an issue with one or more jobs.
             self.restore_connection(as_conf, log_recovery_process=True)
 
         # This second while is to keep retring the failed jobs.
@@ -1123,11 +1113,12 @@ class Platform(object):
             Log.result(
                 f"{identifier} (Retry) Successfully recovered log for job '{job.name}' and retry '{job.fail_count}'.")
         if len(jobs_pending_to_process) > 0:
-            self.restore_connection(as_conf, log_recovery_process=True)  # Restore the connection if there was an issue with one or more jobs.
+            self.restore_connection(as_conf,
+                                    log_recovery_process=True)  # Restore the connection if there was an issue with one or more jobs.
 
         return jobs_pending_to_process
 
-    def recover_platform_job_logs(self, as_conf) -> None:
+    def recover_platform_job_logs(self, as_conf: 'AutosubmitConfig') -> None:
         """
         Recovers the logs of the jobs that have been submitted.
         When this is executed as a process, the exit is controlled by the work_event and cleanup_events of the main process.
@@ -1142,7 +1133,7 @@ class Platform(object):
             Log.result(f"{identifier} successfully connected.")
             log_recovery_timeout = self.config.get("LOG_RECOVERY_TIMEOUT", 60)
             # Keep alive signal timeout is 5 minutes, but the sleeptime is 60 seconds.
-            self.keep_alive_timeout = max(log_recovery_timeout*5, 60*5)
+            self.keep_alive_timeout = max(log_recovery_timeout * 5, 60 * 5)
             while self.wait_for_work(sleep_time=max(log_recovery_timeout, 60)):
                 jobs_pending_to_process = self.recover_job_log(identifier, jobs_pending_to_process, as_conf)
                 if self.cleanup_event.is_set():  # Check if the main process is waiting for this child to end.
@@ -1156,11 +1147,12 @@ class Platform(object):
             self.closeConnection()
 
         Log.info(f"{identifier} Exiting.")
-        _exit(0)  # Exit userspace after manually closing ssh sockets, recommended for child processes, the queue() and shared signals should be in charge of the main process.
+        _exit(
+            0)  # Exit userspace after manually closing ssh sockets, recommended for child processes, the queue() and shared signals should be in charge of the main process.
 
     def create_a_new_copy(self):
         raise NotImplementedError
-    
+
     def get_file_size(self, src: str) -> Union[int, None]:
         """
         Get file size in bytes
