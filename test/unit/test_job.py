@@ -1078,6 +1078,7 @@ def create_job_and_update_parameters(autosubmit_config, experiment_data, platfor
                     'FILE': "test.sh",
                     'PLATFORM': 'DUMMY_PLATFORM',
                     'TEST': "%other%",
+                    'WHATEVER3': 'from_job',
                 },
             },
             'PLATFORMS': {
@@ -1085,6 +1086,7 @@ def create_job_and_update_parameters(autosubmit_config, experiment_data, platfor
                     'type': 'ps',
                     'whatever': 'dummy_value',
                     'whatever2': 'dummy_value2',
+                    'WHATEVER3': 'from_platform',
                     'CUSTOM_DIRECTIVES': ['$SBATCH directive1', '$SBATCH directive2'],
                 },
             },
@@ -1092,6 +1094,13 @@ def create_job_and_update_parameters(autosubmit_config, experiment_data, platfor
             'ROOTDIR': 'dummy_rootdir',
             'LOCAL_TMP_DIR': 'dummy_tmpdir',
             'LOCAL_ROOT_DIR': 'dummy_rootdir',
+            'WRAPPERS': {
+                'WRAPPER_0': {
+                    'TYPE': 'vertical',
+                    'JOBS_IN_WRAPPER': 'RANDOM-SECTION',
+                    'WHATEVER3': 'dummy_value3',
+                },
+            },
         },
         {
             'CURRENT_FILE': "test.sh",
@@ -1099,7 +1108,8 @@ def create_job_and_update_parameters(autosubmit_config, experiment_data, platfor
             'CURRENT_WHATEVER': 'dummy_value',
             'CURRENT_WHATEVER2': 'dummy_value2',
             'CURRENT_TEST': 'dummy_value/dummy_value2',
-
+            'CURRENT_TYPE': 'ps',
+            'CURRENT_WHATEVER3': 'dummy_value3',
         }
 )])
 def test_update_parameters_current_variables(autosubmit_config, experiment_data, expected_data):
