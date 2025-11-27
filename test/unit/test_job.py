@@ -2187,6 +2187,14 @@ def test_job_parameters_resolves_all_placeholders(autosubmit_config, monkeypatch
                 "WRAPPER_HAS_PRIO": "%CURRENT_NOT_EXISTENT_PLACEHOLDER%",
             }
         },
+        "LIST_INT": [20200101],
+        "TESTDATES": {
+            "START_DATE": "%CHUNK_START_DATE%",
+            "START_DATE_WITH_SPECIAL": "%^CHUNK_START_DATE%",
+            "START_DATE_LIST": ["%CHUNK_START_DATE%"],
+            "START_DATE_WITH_SPECIAL_LIST": ["%^CHUNK_START_DATE%"],
+            "START_DATE_INT": "[%LIST_INT%]",
+        },
         "PLATFORMS": {
             "TEST_SLURM": {
                 "ADD_PROJECT_TO_HOST": False,
@@ -2266,6 +2274,16 @@ def test_job_parameters_resolves_all_placeholders(autosubmit_config, monkeypatch
     assert parameters["CURRENT_JOB_HAS_PRIO"] == "whatever"
     assert parameters["CURRENT_WRAPPER_HAS_PRIO"] == "whatever_from_wrapper"
     assert parameters["CURRENT_PLATFORM_HAS_PRIO"] == "whatever_from_platform"
+    assert parameters["SDATE"] == "20200101"
+    assert parameters["TESTDATES.START_DATE"] == "20200101"
+    assert parameters["TESTDATES.START_DATE_WITH_SPECIAL"] == "20200101"
+    assert parameters["EXPERIMENT.DATELIST"] == 20200101
+    # TODO: This should be a list, but it isn't. Also, adding more than one element to the list is not working either.
+    # TODO: This issue isn't caused by this PR, and it was added here to test another part of the code.
+    # TODO: Needs to be fixed in another PR (as_conf.substitute_dynamic_variables). There is already an issue for that.
+    assert parameters["TESTDATES.START_DATE_LIST"] == "20200101"
+    assert parameters["TESTDATES.START_DATE_WITH_SPECIAL_LIST"] == "20200101"
+    assert parameters["TESTDATES.START_DATE_INT"] == '[[20200101]]'
 
 
 def test_process_scheduler_parameters(local):
