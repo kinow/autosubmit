@@ -34,6 +34,7 @@ import autosubmit.database.db_structure as DbStructure
 from autosubmit.config.basicconfig import BasicConfig
 from autosubmit.config.configcommon import AutosubmitConfig
 from autosubmit.helpers.data_transfer import JobRow
+from autosubmit.history.experiment_history import ExperimentHistory
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status, bcolors
 from autosubmit.job.job_dict import DicJobs
@@ -42,6 +43,7 @@ from autosubmit.job.job_packages import JobPackageThread
 from autosubmit.job.job_utils import Dependency
 from autosubmit.job.job_utils import transitive_reduction
 from autosubmit.log.log import AutosubmitCritical, AutosubmitError, Log
+from autosubmit.platforms.platform import Platform
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 
 
@@ -2631,6 +2633,13 @@ class JobList(object):
                         return log_recovered  # TODO: Change to return the tuple of (.out,.err) files
         return None
 
+    def check_completed_jobs_after_recovery(self):
+        for job in (job for job in self.get_job_list() if job.status == Status.COMPLETED):
+            if any(parent.status == Status.WAITING for parent in job.parents):
+                job.status = Status.WAITING
+                job.id = None
+                Log.info(f"Job {job.name} was marked as COMPLETED but has WAITING parents. Resetting to WAITING.")
+
     def update_list(self, as_conf: AutosubmitConfig, store_change: bool = True,
                     fromSetStatus: bool = False, submitter: object = None,
                     first_time: bool = False) -> bool:
@@ -3391,3 +3400,68 @@ class JobList(object):
             return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
         else:
             return None
+
+    def recover_last_data(self, finished_jobs: Optional[list["Job"]] = None) -> None:
+        """Recover job IDs and log names for completed, failed, and skipped jobs from experiment history.
+        :param finished_jobs: Optional list of finished Job objects to recover data for.
+        :return: None
+        :rtype: None
+        """
+        jobs_ran_atleast_once = False
+        if not finished_jobs:
+            jobs_ran_atleast_once = True
+            finished_jobs: list["Job"] = self._get_jobs_by_name(status=[Status.COMPLETED, Status.FAILED, Status.SKIPPED], return_only_names=False)
+        # Recover job_id and log name if missing
+        if finished_jobs:
+            exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
+                                            historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR, force_sql_alchemy=True)
+            jobs_data = exp_history.manager.get_jobs_data_last_row([job.name for job in finished_jobs])
+            # Only if we have information already stored, otherwise the job will be downloaded later
+            for job in [job for job in finished_jobs if job.name in jobs_data]:
+                job.id = int(jobs_data[job.name]["job_id"])
+                job.local_logs = jobs_data[job.name]["out"]
+                job.remote_logs = jobs_data[job.name]["err"]
+                job.log_recovered = True
+                job.updated_log = True
+
+        for job in finished_jobs:
+            # TODO: Another fix will come in 4.2. Currently, if the job has no id, the log will not be recovered properly.
+            if not job.id:
+                job.id = 1
+            # Fixes: https://github.com/BSC-ES/autosubmit/pull/2700#issuecomment-3563572977
+            if not jobs_ran_atleast_once:
+                job.log_recovered = True
+                job.updated_log = True
+
+
+
+
+    def _get_jobs_by_name(self, status: Optional[list[int]] = None, platform: Platform = None, return_only_names=False) -> Union[List[str], List["Job"]]:
+        """Return jobs filtered by status and/or platform as names or Job objects.
+
+        :param status: Optional list of job statuses to filter by.
+        :param platform: Optional Platform to filter by.
+        :param return_only_names: If True return list of job names, otherwise Job objects.
+        :return: List of job names or List of Job objects.
+        """
+        if not status:
+            status = []
+        if return_only_names:
+            return [job.name for job in self.get_job_list() if (not status or job.status in status) and (not platform or job.platform_name == platform.name)]
+        else:
+            return [job for job in self.get_job_list() if (not status or job.status in status) and (not platform or job.platform_name == platform.name)]
+
+    def recover_all_completed_jobs_from_exp_history(self, platform: Platform = None) -> set[str]:
+        """Recover all completed jobs from experiment history
+        :param platform: Platform to filter by.
+        :return: Set of completed job names.
+        """
+
+        job_names: list[str] = self._get_jobs_by_name(platform=platform, return_only_names=True)
+        if job_names:
+            exp_history = ExperimentHistory(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
+                                            historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR, force_sql_alchemy=True)
+            jobs_data = exp_history.manager.get_jobs_data_last_row(job_names)  # This gets only the last row
+            return {name for name, data in jobs_data.items() if data["status"] == "COMPLETED"}
+
+        return set()

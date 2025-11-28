@@ -155,6 +155,7 @@ def test_platform_job_is_over_wallclock(setup_as_conf, new_platform_mock, platfo
     job_status = platform_instance.job_is_over_wallclock(job, Status.RUNNING)
     assert job_status == Status.RUNNING
     job.start_time = datetime.now() - timedelta(minutes=2)
+    platform_instance.get_completed_job_names = mocker.MagicMock(return_value=[])
     job_status = platform_instance.job_is_over_wallclock(job, Status.RUNNING)
     assert job_status == Status.FAILED
     # check platform_instance is called
@@ -179,6 +180,5 @@ def test_platform_job_is_over_wallclock_force_failure(setup_as_conf, new_platfor
     job = Job("dummy-1", 1, Status.RUNNING, 0)
     setup_jobs([job], platform_instance)
     job.start_time = datetime.now() - timedelta(minutes=2)
-    job.platform.get_completed_files = mocker.MagicMock(side_effect=Exception("Error"))
     job_status = platform_instance.job_is_over_wallclock(job, Status.RUNNING, True)
     assert job_status == Status.FAILED

@@ -77,6 +77,7 @@ from autosubmit.log.log import Log, AutosubmitError, AutosubmitCritical
 from autosubmit.migrate.migrate import Migrate
 from autosubmit.notifications.mail_notifier import MailNotifier
 from autosubmit.notifications.notifier import Notifier
+from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 from autosubmit.platforms.platform import Platform
 
@@ -366,6 +367,9 @@ class Autosubmit:
                 '-f', '--force', action='store_true', default=False, help='Cancel active jobs ')
             subparser.add_argument(
                 '-v', '--update_version', action='store_true', default=False, help='Update experiment version')
+            subparser.add_argument('-off', '--offline', action='store_true',
+                                   default=False, help='Offline recovery')
+
             # Migrate
             subparser = subparsers.add_parser(
                 'migrate', description="Migrate experiments from current user to another")
@@ -778,7 +782,7 @@ class Autosubmit:
             if args.no_recover_logs:
                 warnings.warn('no_recover_logs is deprecated and will be removed in a future major release!')
             return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide, args.group_by,
-                                       args.expand, args.expand_status, args.detail, args.force)
+                                       args.expand, args.expand_status, args.detail, args.force, args.offline)
         elif args.command == 'check':
             return Autosubmit.check(args.expid)
         elif args.command == 'inspect':
@@ -3031,6 +3035,38 @@ class Autosubmit:
         return True
 
     @staticmethod
+    def online_recovery(as_conf: AutosubmitConfig, platforms: list[ParamikoPlatform], job_list: JobList, offline: bool = False) -> list[str]:
+        """Return a list of completed job names recovered from the given platforms.
+
+        Test each platform connection and collect completed job names. If a platform
+        is not reachable and ``offline`` is True, recover completed jobs from the
+        experiment history for that platform. On unrecoverable connection errors
+        raise ``AutosubmitCritical``.
+
+        :param as_conf: Autosubmit configuration object.
+        :param platforms: Sequence of Platform objects to query.
+        :param job_list: JobList used to recover completed jobs when offline.
+        :param offline: If True, proceed with offline recovery when a platform is not reachable.
+        :return: List of completed job names (may be empty).
+        :raises AutosubmitCritical: If a platform is unreachable and offline is False,
+                                    or if fetching completed job names fails.
+        """
+        completed_jobnames = set()
+        for p in platforms:
+            message = p.test_connection(as_conf)
+            if not p.connected:
+                if offline:
+                    Log.warning(f"Platform {p.name} is not reachable, proceeding with offline recovery for this platform")
+                    completed_jobnames.update(job_list.recover_all_completed_jobs_from_exp_history(p))
+                else:
+                    raise AutosubmitCritical(f"Couldn't connect to platform {p.name} during recovery: {message}", 7050)
+            else:
+                # Fetch completed jobs from platform
+                completed_jobnames.update(p.get_completed_job_names())
+
+        return list(completed_jobnames)
+
+    @staticmethod
     def recovery(
             expid: str,
             noplot: bool,
@@ -3038,182 +3074,162 @@ class Autosubmit:
             all_jobs: bool,
             hide: bool,
             group_by: Optional[str] = None,
-            expand: Optional[list] = None,
-            expand_status: Optional[str] = None,
-            detail=False,
-            force=False
+            expand: Optional[list[str]] = None,
+            expand_status: Optional[list[str]] = None,
+            detail: bool = False,
+            force: bool = False,
+            offline: bool = False,
     ) -> bool:
-        """Method to check all active jobs.
+        """Recover job statuses for an experiment and update the job list.
 
-        If ``COMPLETED`` file is found, job status will be changed to ``COMPLETED``,
-        otherwise it will be set to ``WAITING``.
+        Return True when the recovery completed successfully.
 
-        It will also update the jobs list.
-
-        :param expid: identifier of the experiment to recover
-        :param noplot:
-        :param save: If true, recovery saves changes to the jobs list
-        :param all_jobs: if True, it tries to get completed files for all jobs, not only active.
-        :param hide: hides plot window
-        :param group_by: How to group jobs when plotting.
-        :param expand: Whether to expand jobs in grouping.
-        :param expand_status: A space-separated list of statuses used when expanding jobs.
-        :param detail:
-        :param force: Allows to restore the workflow even if there are running jobs
+        :param expid: Experiment identifier.
+        :param noplot: If True, do not generate a plot.
+        :param save: If True, persist changes to the job list.
+        :param all_jobs: If True, recover all jobs; otherwise only active jobs.
+        :param hide: If True, hide GUI/windows when generating plots.
+        :param group_by: Optional grouping key for display.
+        :param expand: Optional list of job names/sections to expand in the view.
+        :param expand_status: Optional list of statuses to expand in the view.
+        :param detail: If True, produce a more detailed (and more expensive) textual representation.
+        :param force: If True, cancel active jobs before recovery.
+        :param offline: If True, avoid connecting to remote platforms and use offline recovery.
+        :return: True if recovery ran successfully, False otherwise.
+        :raises AutosubmitCritical: On configuration/IO failures.
         """
-        if expand is None:
-            expand = []
-        try:
-            Autosubmit._check_ownership(expid, raise_error=True)
+        if not save:
+            Log.warning("Changes will be NOT saved to the jobList. Use -s option to save")
 
-            exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
-
-            as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
-            as_conf.check_conf_files(True)
-
-            Log.info(f'Recovering experiment {expid}')
-            pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-            job_list = Autosubmit.load_job_list(expid, as_conf, new=False, monitor=True)
-
-            current_active_jobs = job_list.get_in_queue()
-
-            as_conf.check_conf_files(False)
-
-            # Getting output type provided by the user in config, 'pdf' as default
-            output_type = as_conf.get_output_type()
-            hpcarch = as_conf.get_platform()
-
-            # Load the platforms. First we load the platforms from the experiment configuration.
-            # Then, note that we load it again, doing something very similar to what the submitter
-            # does, but instead of adding only the platforms in the current configuration, we
-            # iterate through the platforms in the job list. This ensures that we will consider
-            # all the platforms, even if the user removed any from the experiment configuration.
-            # TODO: Centralize how the platforms are created, possibly in a function that receives
-            #       the ``AutosubmitConfiguration``, and an optional list of jobs?
-            submitter = ParamikoSubmitter(as_conf=as_conf)
-            if submitter.platforms is None:
-                Log.warning('No platforms found in the experiment configuration!')
-                return False
-
-            platforms = submitter.platforms
-
-            platforms_to_test = set()
-            if current_active_jobs:
-                if force and save:
-                    for job in current_active_jobs:
-                        job.platform_name = as_conf.jobs_data.get(job.section, {}).get("PLATFORM", "").upper()
-                        if not job.platform_name:
-                            job.platform_name = hpcarch
-                        job.platform = submitter.platforms[job.platform_name]
-                        platforms_to_test.add(job.platform)
-                    for platform in platforms_to_test:
-                        platform.test_connection(as_conf)
-                    for job in current_active_jobs:
-                        job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
-
-                if not force:
-                    raise AutosubmitCritical(f"Experiment can't be recovered due being {len(current_active_jobs)} "
-                                             f"active jobs in your experiment, If you want to recover the experiment,"
-                                             f" please use the flag -f and all active jobs will be cancelled", 7000)
-            Log.debug(f"Job list restored from {pkl_dir} files")
-        except Exception:
-            raise
+        Autosubmit._check_ownership(expid, raise_error=True)
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, YAMLParserFactory())
+        as_conf.check_conf_files(True)
         Log.info(f'Recovering experiment {expid}')
-        try:
-            for job in job_list.get_job_list():
-                job.submitter = submitter
-                job.platform_name = as_conf.jobs_data.get(job.section, {}).get("PLATFORM", hpcarch).upper()
-                job.platform = platforms[job.platform_name]
-                platforms_to_test.add(platforms[job.platform_name])
-            # establish the connection to all platforms
-            Autosubmit.restore_platforms(platforms_to_test, as_conf=as_conf)
+        job_list = Autosubmit.load_job_list(expid, as_conf, new=False, monitor=True)
+        as_conf.check_conf_files(False)
 
-            if all_jobs:
-                jobs_to_recover = job_list.get_job_list()
-            else:
-                jobs_to_recover = job_list.get_active()
-        except Exception as e:
-            raise AutosubmitCritical("Couldn't restore the experiment platform, "
-                                     "check if the filesystem is having issues", 7040, str(e))
+        # Getting output type provided by the user in config, 'pdf' as default
+        hpcarch = as_conf.get_platform()
 
-        Log.info("Looking for COMPLETED files")
+        submitter = Autosubmit._get_submitter(as_conf)
+        submitter.load_platforms(as_conf)
+        platforms = submitter.platforms
+
+        platforms_to_test = set()
+        for job in job_list.get_job_list():
+            job.submitter = submitter
+            if not job.platform_name:
+                job.platform_name = hpcarch
+            job.platform = platforms[job.platform_name]
+            platforms_to_test.add(job.platform)
+
+        completed_jobnames = Autosubmit.online_recovery(as_conf, platforms_to_test, job_list, offline)
+        current_active_jobs = job_list.get_in_queue()
+        if current_active_jobs and not (force and save):
+            raise AutosubmitCritical(f"Experiment can't be recovered due being {len(current_active_jobs)} "
+                                     f"active jobs in your experiment, If you want to recover the experiment,"
+                                     f" please use the flag -f and all active jobs will be cancelled. "
+                                     f"Be warned that -f and --offline won't cancel jobs if the connection can't be established", 7053)
+        elif current_active_jobs and force and save and not offline:
+            all_connected = True
+            for p in platforms_to_test:
+                if not p.connected:
+                    all_connected = False
+                    Log.warning(f"Platform {p.name} is not reachable")
+            if not all_connected:
+                raise AutosubmitCritical("Some platforms are not reachable, cannot proceed with forced recovery. You can add --offline with -f to don't cancel jobs", 7050)
+        # TODO: https://github.com/BSC-ES/autosubmit/issues/1251 don't need force flag
+        if save:
+            offline_jobs = []
+            for job in current_active_jobs:
+                if offline or not job.platform.connected:
+                    offline_jobs.append(job.name)
+                else:
+                    job.platform_name = as_conf.jobs_data.get(job.section, {}).get("PLATFORM", hpcarch).upper()
+                    # noinspection PyTypeChecker
+                    job.platform = submitter.platforms[job.platform_name]
+                    try:
+                        job.platform.send_command(f"{job.platform.cancel_cmd} {job.id}", ignore_log=True)
+                    except AutosubmitError as e:
+                        # Not sure if this is the best way to check for invalid job id error for non-slurm
+                        if "invalid job id" in e.message.lower():
+                            Log.warning(f"Job {job.name} could not be cancelled because it was not found on the platform")
+                        else:
+                            Log.warning(f"Job {job.name} could not be cancelled: {e.message}")
+            if offline_jobs:
+                Log.warning(f"Jobs {''.join(offline_jobs)} could not be cancelled due to offline mode.")
+
+        output_type = as_conf.get_output_type()
+        Log.info(f'Recovering experiment {expid}')
+
+        if all_jobs:
+            jobs_to_recover = job_list.get_job_list()
+        else:
+            jobs_to_recover = job_list.get_active()
+
         try:
-            start = datetime.datetime.now()
             for job in jobs_to_recover:
-                if job.platform_name is None:
-                    job.platform_name = hpcarch
-                # noinspection PyTypeChecker
-                job.platform = platforms[job.platform_name]
-                if job.platform.get_completed_files(job.name, 0, recovery=True):
+                if job.name in completed_jobnames:
                     job.status = Status.COMPLETED
                     Log.info(f"CHANGED job '{job.name}' status to COMPLETED")
-                    job.recover_last_ready_date()
-                    job.recover_last_log_name()
+
                 elif job.status != Status.SUSPENDED:
                     job.status = Status.WAITING
                     job._fail_count = 0
                     Log.info(f"CHANGED job '{job.name}' status to WAITING")
-                # Update parameters with attributes is called in: build_packages, submit wrappers,
-                # and for every ready job. It shouldn't be necessary here.
-            end = datetime.datetime.now()
-            Log.info(f"Time spent: '{(end - start)}'")
+
+            job_list.check_completed_jobs_after_recovery()
+
             Log.info("Updating the jobs list")
             job_list.update_list(as_conf)
 
             if save:
+                job_list.recover_last_data()
                 job_list.save()
             else:
                 Log.warning('Changes NOT saved to the jobList. Use -s option to save')
 
             Log.result("Recovery finalized")
+
         except Exception as e:
             raise AutosubmitCritical("Couldn't restore the experiment workflow", 7040, str(e))
 
+        # The expand/group was not covered before, in this PR it was just moved from be mandatory to optional
+        # Added TRY EXCEPT for plotting and detail to avoid recovery failure (as the jobs were recovered)
         try:
-            packages = JobPackagePersistence(expid).load()
-
             if not noplot:
+                packages = JobPackagePersistence(expid).load()
                 from .monitor.monitor import Monitor
-
-                groups_dict = {}
+                status = list()
                 if group_by:
-                    status = []
                     if expand_status:
-                        for s in expand_status.split():
-                            status.append(Autosubmit._get_status(s.upper()))
-
-                    job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list,
-                                               expand_list=expand, expanded_status=status)
-                    groups_dict = job_grouping.group_jobs()
-
+                        if isinstance(expand_status, str):
+                            for s in expand_status.split():
+                                status.append(Autosubmit._get_status(s.upper()))
+                        elif isinstance(expand_status, list):
+                            for s in expand_status:
+                                status.append(Autosubmit._get_status(s.upper()))
+                        else:
+                            Log.warning("Grouping status has an invalid format, it should be a string or a list of strings")
+                job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list,
+                                           expand_list=expand,
+                                           expanded_status=status)
+                groups_dict = job_grouping.group_jobs()
                 Log.info("\nPlotting the jobs list...")
                 monitor_exp = Monitor()
                 monitor_exp.generate_output(
                     expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid),
                     output_format=output_type, packages=packages, show=not hide, groups=groups_dict,
                     job_list_object=job_list)
-
+        except Exception:
+            Log.warning("An error has occurred while plotting the jobs list after recovery. "
+                        "Check if you have X11 redirection and an img viewer correctly set. Trace: {str(e)}")
+        try:
             if detail:
                 Autosubmit.detail(job_list)
-            # Warnings about precedence completion
-            # time_0 = time.time()
-            incomplete_parents_completed_jobs = [
-                job
-                for job in job_list.get_job_list()
-                if (job.status == Status.COMPLETED
-                    and len([job_parent for job_parent in job.parents if job_parent.status != Status.COMPLETED]) > 0)
-            ]
-
-            if incomplete_parents_completed_jobs and len(incomplete_parents_completed_jobs) > 0:
-                Log.error(f"The following COMPLETED jobs depend on jobs that have not been COMPLETED (this can result "
-                          f"in unexpected behavior): {str([job.name for job in incomplete_parents_completed_jobs])}")
-            # print("Warning calc took {0} seconds".format(time.time() - time_0))
         except Exception as e:
-            raise AutosubmitCritical(
-                "An error has occurred while printing the workflow status."
-                "Check if you have X11 redirection and an img viewer correctly set",
-                7000, str(e)
-            )
+            Log.warning(f"An error has occurred while generating the detailed view of the jobs after recovery. Trace: {str(e)}")
 
         return True
 
@@ -4963,70 +4979,6 @@ class Autosubmit:
                 "Error in the supplied input for -ft.", 7011, job_validation_message)
 
     @staticmethod
-    def _validate_chunks(as_conf, filter_chunks):
-        fc_validation_message = "## -fc Validation Message ##"
-        fc_filter_is_correct = True
-        selected_sections = filter_chunks.split(",")[1:]
-        selected_formula = filter_chunks.split(",")[0]
-        current_sections = as_conf.jobs_data
-        fc_deserialized_json = object()
-        # Starting Validation
-        if len(str(selected_sections).strip()) == 0:
-            fc_filter_is_correct = False
-            fc_validation_message += "\n\tMust include a section (job type)."
-        else:
-            for section in selected_sections:
-                # section = section.strip()
-                # Validating empty sections
-                if len(str(section).strip()) == 0:
-                    fc_filter_is_correct = False
-                    fc_validation_message += "\n\tEmpty sections are not accepted."
-                    break
-                # Validating existing sections
-                # Retrieve experiment data
-
-                if section not in current_sections:
-                    fc_filter_is_correct = False
-                    fc_validation_message += "\n\tSection " + section + \
-                                             " does not exist in experiment. Remember not to include blank spaces."
-
-        # Validating chunk formula
-        if len(selected_formula) == 0:
-            fc_filter_is_correct = False
-            fc_validation_message += "\n\tA formula for chunk filtering has not been provided."
-
-        # If everything is fine until this point
-        if fc_filter_is_correct is True:
-            # Retrieve experiment data
-            current_dates = str(as_conf.experiment_data["EXPERIMENT"]["DATELIST"]).split()
-            current_members = as_conf.get_member_list()
-            # Parse json
-            try:
-                fc_deserialized_json = json.loads(
-                    Autosubmit._create_json(selected_formula))
-            except Exception:
-                fc_filter_is_correct = False
-                fc_validation_message += "\n\tProvided chunk formula does not have the right format. Were you trying to use another option?"
-            if fc_filter_is_correct is True:
-                for startingDate in fc_deserialized_json['sds']:
-                    if startingDate['sd'] not in current_dates:
-                        fc_filter_is_correct = False
-                        fc_validation_message += "\n\tStarting date " + \
-                                                 startingDate['sd'] + \
-                                                 " does not exist in experiment."
-                    for member in startingDate['ms']:
-                        if member['m'] not in current_members and member['m'].lower() != "any":
-                            fc_filter_is_correct = False
-                            fc_validation_message += "\n\tMember " + \
-                                                     member['m'] + \
-                                                     " does not exist in experiment."
-
-        # Ending validation
-        if fc_filter_is_correct is False:
-            raise AutosubmitCritical(
-                "Error in the supplied input for -fc.", 7011, fc_validation_message)
-
-    @staticmethod
     def _validate_status(job_list, filter_status):
         status_validation_error = False
         status_validation_message = "\n## Status Validation Message ##"
@@ -5054,184 +5006,327 @@ class Autosubmit:
             raise AutosubmitCritical("Error in the supplied input for -fs.", 7011, status_validation_message)
 
     @staticmethod
-    def _validate_type_chunk(as_conf, filter_type_chunk):
-        # Change status by section, member, and chunk; freely.
-        # Including inner validation. Trying to make it independent.
-        # 19601101 [ fc0 [1 2 3 4] Any [1] ] 19651101 [ fc0 [16-30] ] ],SIM,SIM2,SIM3
-        validation_message = "## -ftc Validation Message ##"
-        filter_is_correct = True
-        selected_sections = filter_type_chunk.split(",")[1:]
-        selected_formula = filter_type_chunk.split(",")[0]
-        # Starting Validation
-        if len(str(selected_sections).strip()) == 0:
-            filter_is_correct = False
-            validation_message += "\n\tMust include a section (job type). If you want to apply the changes to all sections, include 'Any'."
-        else:
-            for section in selected_sections:
-                # Validating empty sections
-                if len(str(section).strip()) == 0:
-                    filter_is_correct = False
-                    validation_message += "\n\tEmpty sections are not accepted."
-                    break
-                # Validating existing sections
-                # Retrieve experiment data
-                current_sections = as_conf.jobs_data
-                if section not in current_sections and section != "Any":
-                    filter_is_correct = False
-                    validation_message += "\n\tSection " + \
-                                          section + " does not exist in experiment."
+    def _validate_chunk_formula(chunk_formula: str, validation_message: str) -> str:
+        """Validate chunk formula syntax.
 
-        # Validating chunk formula
-        if len(selected_formula) == 0:
-            filter_is_correct = False
-            validation_message += "\n\tA formula for chunk filtering has not been provided. If you want to change all chunks, include 'Any'."
+        [ 19900101 [ fc0 [ Any ] fc1 [1 2] ] 19950101 [ fc0 [1-10] ] ]
 
-        if filter_is_correct is False:
-            raise AutosubmitCritical(
-                "Error in the supplied input for -ftc.", 7011, validation_message)
 
-    @staticmethod
-    def _validate_chunk_split(as_conf, filter_chunk_split):
-        # new filter
-        pass
-
-    @staticmethod
-    def _validate_set_status_filters(as_conf, job_list, filter_list, filter_chunks, filter_status, filter_section,
-                                     filter_type_chunk, filter_chunk_split):
-        if filter_section is not None:
-            Autosubmit._validate_section(as_conf, filter_section)
-        if filter_list is not None:
-            Autosubmit._validate_list(as_conf, job_list, filter_list)
-        if filter_chunks is not None:
-            Autosubmit._validate_chunks(as_conf, filter_chunks)
-        if filter_status is not None:
-            Autosubmit._validate_status(job_list, filter_status)
-        if filter_type_chunk is not None:
-            Autosubmit._validate_type_chunk(as_conf, filter_type_chunk)
-        if filter_chunk_split is not None:
-            Autosubmit._validate_chunk_split(as_conf, filter_chunk_split)
-
-    @staticmethod
-    def _apply_ftc(job_list: JobList, filter_type_chunk_split: str) -> list[Job]:
-        """Accepts a string with the formula: "[ 19601101 [ fc0 [1 [1] 2 [2 3] 3 4] Any [1] ] 19651101 [ fc0 [16 30] ] ],SIM [ Any ] ,SIM2 [ 1 2]"
-        Where SIM, SIM2 are section (job types) names that also accept the keyword "Any" so the changes apply to all sections.
-        Starting Date (19601101) does not accept the keyword "Any", so you must specify the starting dates to be changed.
-        You can also specify date ranges to apply the change to a range on dates.
-        Member names (fc0) accept the keyword "Any", so the chunks ([1 2 3 4]) given will be updated for all members.
-        Chunks must be in the format "[1 2 3 4]" where "1 2 3 4" represent the numbers of the chunks in the member,
-        Splits must be in the format "[ 1 2 3 4]" where "1 2 3 4" represent the numbers of the splits in the sections.
-        no range format is allowed.
-
-        :param filter_type_chunk_split: string with the formula
-        :return: final_list
+        :param chunk_formula: Chunk formula string.
+        :param validation_message: Message to append validation errors to.
         """
-        # Get selected sections and formula
-        final_list = []
-        selected_sections = filter_type_chunk_split.split(",")[1:]
-        selected_formula = filter_type_chunk_split.split(",")[0]
-        # Retrieve experiment data
-        # Parse json
-        deserialized_json = json.loads(Autosubmit._create_json(selected_formula))
-        # Get current list
-        working_list = job_list.get_job_list()
-        for section in selected_sections:
-            if str(section).upper() == "ANY":
-                # Any section
-                section_selection = working_list
-                # Go through start dates
-                for starting_date in deserialized_json['sds']:
-                    date = starting_date['sd']
-                    date_selection = [j for j in section_selection if date2str(
-                        j.date) == date]
-                    # Members for given start date
-                    for member_group in starting_date['ms']:
-                        member = member_group['m']
-                        if str(member).upper() == "ANY":
-                            # Any member
-                            member_selection = date_selection
-                            chunk_group = member_group['cs']
-                            for chunk in chunk_group:
-                                filtered_job = [j for j in member_selection if j.chunk == int(chunk)]
-                                for job in filtered_job:
-                                    final_list.append(job)
-                                # From date filter and sync is not None
-                                for job in [j for j in date_selection if
-                                            j.chunk == int(chunk) and j.synchronize is not None]:
-                                    final_list.append(job)
-                        else:
-                            # Selected members
-                            member_selection = [j for j in date_selection if j.member == member]
-                            chunk_group = member_group['cs']
-                            for chunk in chunk_group:
-                                filtered_job = [j for j in member_selection if j.chunk == int(chunk)]
-                                for job in filtered_job:
-                                    final_list.append(job)
-                                # From date filter and sync is not None
-                                for job in [j for j in date_selection if
-                                            j.chunk == int(chunk) and j.synchronize is not None]:
-                                    final_list.append(job)
+
+        if not chunk_formula:
+            validation_message += "\n\tMissing chunk formula before the first comma."
+            if "[" not in chunk_formula or "]" not in chunk_formula:
+                validation_message += "\n\tMissing chunk formula brackets."
+            return validation_message
+
+        brackets_left = chunk_formula.count('[')
+        brackets_right = chunk_formula.count(']')
+        if brackets_left != brackets_right:
+            validation_message += "\n\tUnbalanced brackets in chunk formula."
+
+        try:
+            json_data = json.loads(Autosubmit._create_json(chunk_formula))
+        except Exception as e:
+            validation_message += "\n\tMust follow chunk formula structure: [ DATE [ MEMBER [ CHUNKS ] ... ] ... ]"
+            validation_message += f"\n\tJSON Error: {str(e)}"
+            return validation_message
+
+        dates = 'sds'
+        members = 'ms'
+        chunks = 'cs'
+        date = 'sd'
+        member = 'm'
+
+        sections = []
+        json_validation_message = ""
+        for date_entry in json_data[dates]:
+            try:
+                date_str = date_entry[date]
+            except KeyError:
+                json_validation_message += "\n\tMissing DATE in chunk formula."
+                continue
+            for member_entry in date_entry[members]:
+                try:
+                    member_str = member_entry[member]
+                except KeyError:
+                    json_validation_message += "\n\tMissing MEMBER in chunk formula."
+                    continue
+                try:
+                    chunks_str = str(len(member_entry[chunks])) if "ANY" not in member_entry[chunks] else "ANY"
+                except KeyError:
+                    json_validation_message += "\n\tMissing CHUNKS in chunk formula."
+                    continue
+                section_str = f"{date_str} [ {member_str} [ {chunks_str} ] ]"
+                sections.append(section_str)
+
+        if json_validation_message:
+            validation_message += "\n\tMust follow chunk formula structure: [ DATE [ MEMBER [ CHUNKS ] ... ] ... ]"
+            validation_message += json_validation_message
+
+        return validation_message
+
+    @staticmethod
+    def _validate_section_split_formula(section_split_formula: str, validation_message: str) -> str:
+        """Validate section/split formula syntax.
+
+        Expects to receive the second part of the -ftcs filter. ex: SIM [ Any ], SIM2 [1 2], SIM3.
+
+        :param section_split_formula: section_split_formula string.
+        :param validation_message: Message to append validation errors to.
+        """
+
+        if not section_split_formula:
+            return validation_message
+
+        for section in [section.strip() for section in section_split_formula.split(",") if section.strip()]:
+            if '[' not in section and ']' not in section:
+                if len(section.split()) > 1:
+                    validation_message += f"\n\tMalformed section/split entry: {section}. "
+                    continue
             else:
-                # Only given section
-                section_splits = section.split("[")
-                section = section_splits[0].strip(" [")
-                if len(section_splits) > 1:
-                    if "," in section_splits[1]:
-                        splits = section_splits[1].strip(" ]").split(",")
-                    else:
-                        splits = section_splits[1].strip(" ]").split(" ")
+                brackets_left = section.count('[')
+                brackets_right = section.count(']')
+                if brackets_left != brackets_right:
+                    validation_message += "\n\tUnbalanced brackets in section/split formula."
+
+                if brackets_left > 1:
+                    validation_message += f"\n\tToo many opening brackets '[' in section/split entry: {section}."
+                if brackets_right > 1:
+                    validation_message += f"\n\tToo many closing brackets ']' in section/split entry: {section}."
+                if brackets_left == 1 and brackets_right == 1:
+                    splits = section.split('[')[-1].split(']')[0].strip().upper()
+                    if any(char in splits for char in (":", "-")):
+                        start_end = re.split(r'[:\-]', splits)
+                        if len(start_end) < 2:
+                            validation_message += f"\n\tIncomplete split range in section/split entry: {splits}."
+                        elif not (start_end[0].strip().isdigit() and start_end[-1].strip().isdigit()):
+                            validation_message += f"\n\tNon-integer split range in section/split entry: {splits}."
+                    elif not all(p.strip().isdigit() or p.strip().upper() == "ANY" for p in splits.split()):
+                        validation_message += f"\n\tNon-integer split in section/split entry: {splits}."
+
+        return validation_message
+
+    @staticmethod
+    def _validate_chunk_section_split(filter_string: str) -> None:
+        """Validate a chunk/section/split filter string for commands using -fc/-ftc/-ftcs.
+
+        Validate that the filter string contains a chunk formula and, optionally,
+        a comma-separated list of section names. Section names are checked
+        case-insensitively against the keys in ``as_conf.jobs_data``.
+
+        Splits are also optional and must be included in the Section part of the formula.
+
+        [ chunk_splits_formula, section1 [splits], section2 [splits], ... ]
+
+        Example:
+
+        [ 19900101 [ fc0 [ Any ] fc1 [1 2] ] 19950101 [ fc0 [1-10] ], SIM [ Any ], SIM2 [1 2] ]
+
+        :param filter_string: Filter string with form '<chunk_split_formula>[,<SECTION>[<splits>],...]'.
+        :raises AutosubmitCritical: If the input is malformed or references unknown sections.
+        """
+
+        validation_message = "## -fc // -ftc // -ftcs Validation Message ##"
+        filter_string = filter_string.upper().strip()
+
+        level = 0
+        for i, ch in enumerate(filter_string):
+            if ch == '[':
+                level += 1
+            elif ch == ']':
+                level -= 1
+                if level < 0:
+                    validation_message += f"\n\tUnexpected ']' at position {i}."
+        if level != 0:
+            validation_message += "\n\tUnbalanced brackets in filter string."
+
+        filter_string_parts = filter_string.split(',')
+        chunk_formula = filter_string_parts[0].strip()
+        section_split_formula = ",".join(filter_string_parts[1:]) if len(filter_string_parts) > 1 else ''
+
+        validation_message = Autosubmit._validate_chunk_formula(chunk_formula, validation_message)
+        validation_message = Autosubmit._validate_section_split_formula(section_split_formula, validation_message)
+
+        if validation_message != "## -fc // -ftc // -ftcs Validation Message ##":
+            raise AutosubmitCritical("Error in the supplied input for -fc // -ftc // -ftcs.", 7011, validation_message)
+
+    @staticmethod
+    def _validate_set_status_filters(as_conf: AutosubmitConfig, job_list: JobList,
+                                     filter_list: Optional[str],
+                                     filter_chunk_section_split: Optional[str],
+                                     filter_status: Optional[str],
+                                     filter_section: Optional[str]) -> None:
+        """Validate filters provided to the setstatus command.
+
+        Each non-empty filter is validated by its corresponding helper. Raises
+        AutosubmitCritical (code 7014) if all filters are empty or whitespace-only.
+
+        :param as_conf: Autosubmit configuration object.
+        :param job_list: JobList object containing jobs to validate against.
+        :param filter_list: Job name list filter (``-fl``).
+        :param filter_chunk_section_split: Chunk/section/split filter (``-fc``, ``-ftc``, ``-ftcs``).
+        :param filter_status: Status filter (``-fs``).
+        :param filter_section: Section filter (``-ft``).
+        :raises AutosubmitCritical: If no non-empty filter is provided or if any validator fails.
+        """
+        all_empty = True
+        if filter_section:
+            Autosubmit._validate_section(as_conf, filter_section)
+            all_empty = False
+
+        if filter_list:
+            Autosubmit._validate_list(as_conf, job_list, filter_list)
+            all_empty = False
+
+        if filter_status:
+            Autosubmit._validate_status(job_list, filter_status)
+            all_empty = False
+
+        if filter_chunk_section_split:
+            Autosubmit._validate_chunk_section_split(filter_chunk_section_split)
+            all_empty = False
+
+        if all_empty:
+            raise AutosubmitCritical("At least one filter must be provided and must be not empty when using -fs, -ft, -fc, -ftc or -ftcs.", 7014)
+
+
+    @staticmethod
+    def _split_match(j: Job, split_list: list[str]) -> bool:
+        """Check if job split matches"""
+        return "ANY" in split_list or not j.splits or int(j.splits) < 2 or not split_list or str(j.split) in split_list
+
+    @staticmethod
+    def _filter_sections_splits(filter_section_splits: str, jobs: list[Job]) -> list[Job]:
+        """Filter jobs by sections and splits.
+        :param filter_section_splits: filter sections and splits
+        :param jobs: list of jobs
+        :return: list of jobs matching the filter
+        """
+        section_matching_jobs: list[Job] = []
+        for section in filter_section_splits:
+            section_name = section.strip().split("[")[0].strip()
+            job_splits = []
+            if "[" in section and "]" in section:
+                job_splits_str = section.strip().split("[")[1].strip(" ]")
+                # splits: can be: [ 1:15 ] [ 1-15 ] [ 1 2 3 4 5 6 ] [ Any ]
+                if "ANY" in job_splits_str.upper() or not job_splits_str.strip():
+                    job_splits = ["ANY"]
                 else:
-                    splits = ["ANY"]
-                final_splits = []
-                for split in splits:
-                    start = None
-                    end = None
-                    if split.find("-") != -1:
-                        start = split.split("-")[0]
-                        end = split.split("-")[1]
-                    if split.find(":") != -1:
-                        start = split.split(":")[0]
-                        end = split.split(":")[1]
-                    if start and end:
-                        final_splits += [str(i) for i in range(int(start), int(end) + 1)]
-                    else:
-                        final_splits.append(str(split))
-                splits = final_splits
-                jobs_filtered = [j for j in working_list if j.section == section and (
-                        j.split is None or splits[0] == "ANY" or str(j.split) in splits)]
-                # Go through start dates
-                for starting_date in deserialized_json['sds']:
-                    date = starting_date['sd']
-                    date_selection = [j for j in jobs_filtered if date2str(
-                        j.date) == date]
-                    # Members for given start date
-                    for member_group in starting_date['ms']:
-                        member = member_group['m']
-                        if str(member).upper() == "ANY":
-                            # Any member
-                            member_selection = date_selection
-                            chunk_group = member_group['cs']
-                            for chunk in chunk_group:
-                                filtered_job = [j for j in member_selection if
-                                                j.chunk is None or j.chunk == int(chunk)]
-                                for job in filtered_job:
-                                    final_list.append(job)
-                                # From date filter and sync is not None
-                                for job in [j for j in date_selection if
-                                            j.chunk == int(chunk) and j.synchronize is not None]:
-                                    final_list.append(job)
+                    for job_split in job_splits_str.split():
+                        job_split = job_split.strip()
+                        start = None
+                        end = None
+                        if job_split.find("-") != -1:
+                            start = job_split.split("-")[0]
+                            end = job_split.split("-")[1]
+                        elif job_split.find(":") != -1:
+                            start = job_split.split(":")[0]
+                            end = job_split.split(":")[1]
+                        if start and end:
+                            job_splits += [str(i) for i in range(int(start), int(end) + 1)]
                         else:
-                            # Selected members
-                            member_selection = [j for j in date_selection if j.member == member]
-                            chunk_group = member_group['cs']
-                            for chunk in chunk_group:
-                                filtered_job = [j for j in member_selection if j.chunk == int(chunk)]
-                                for job in filtered_job:
-                                    final_list.append(job)
-                                # From date filter and sync is not None
-                                for job in [j for j in date_selection if
-                                            j.chunk == int(chunk) and j.synchronize is not None]:
-                                    final_list.append(job)
+                            job_splits.append(str(job_split))
+            if not job_splits:
+                job_splits = ["ANY"]
+
+            if section_name == "ANY":
+                section_matching_jobs.extend([j for j in jobs if Autosubmit._split_match(j, job_splits)])
+            else:
+                section_matching_jobs.extend([j for j in jobs if j.section == section_name and Autosubmit._split_match(j, job_splits)])
+
+            section_matching_jobs = list(set(section_matching_jobs))
+
+            # All jobs matched, no need to continue
+            if len(section_matching_jobs) == len(jobs):
+                break
+
+        return section_matching_jobs
+
+    @staticmethod
+    def _filter_chunks(filter_chunk_str: str, job_list: "JobList", matching_jobs: list[Job]) -> list[Job]:
+        """Filter jobs by chunks.
+
+        :param filter_chunk_str: filter chunks
+        :param job_list: JobList object
+        :param matching_jobs: list of jobs to filter
+
+        :return: list of jobs matching the filter
+        """
+        final_list = []
+        data = json.loads(Autosubmit._create_json(filter_chunk_str))
+        # Mapping so it is easier to understand
+        dates = 'sds'
+        members = 'ms'
+        chunks = 'cs'
+        date = 'sd'
+        member = 'm'
+
+        selected_dates: set = set()
+        selected_members: set = set()
+
+        # Prune first to reduce the amount of jobs that the chunk filter (last one) has to interate with
+        # Here we want a reduced list of jobs that matches any date or member selected and remove the rest.
+        for date_json in data[dates]:
+            if "ANY" == str(date_json[date]).upper():
+                selected_dates = set(date2str(d).upper() for d in job_list._date_list)
+            else:
+                selected_dates.add(date_json[date].upper())
+            for member_json in date_json[members]:
+                if "ANY" == str(member_json[member]).upper():
+                    selected_members = set(m.upper() for m in job_list._member_list)
+                else:
+                    selected_members.add(member_json[member].upper())
+
+        matching_jobs = [job for job in matching_jobs if
+                         (not job.date or date2str(job.date).upper() in selected_dates) and
+                         (not job.member or job.member.upper() in selected_members)]
+
+        # Now, build final list according to the structure in data
+        for date_json in data[dates]:
+            if "ANY" == str(date_json[date]).upper():
+                selected_dates = set(date2str(d).upper() for d in job_list._date_list)
+            else:
+                selected_dates = {date_json[date].upper()}
+            for member_json in date_json[members]:
+                if "ANY" == str(member_json[member]).upper():
+                    selected_members = set([m.upper() for m in job_list._member_list])
+                else:
+                    selected_members = {member_json[member].upper()}
+
+                selected_chunks = member_json[chunks] if "ANY" != str(member_json[chunks][-1]).upper() else [str(chunks) for chunks in job_list._chunk_list]
+                final_list.extend([job for job in matching_jobs if
+                                   (not job.date or date2str(job.date).upper() in selected_dates) and
+                                   (not job.member or job.member.upper() in selected_members) and
+                                   (not job.chunk or job.synchronize or str(job.chunk) in selected_chunks)])
         return final_list
+
+    @staticmethod
+    def filter_jobs_by_chunks_splits(job_list: "JobList", filter_chunks: str) -> list[Job]:
+        """Select jobs from *job_list* according to *filter_chunks* specification.
+
+        Expected format:
+            - "[ DATE|Any [ MEMBER|Any [ CHUNKS|Any ] ... ] ... ], SECTION1|Any [SPLITS|Any], ..."
+
+        :param job_list: JobList object
+        :param filter_chunks: filter chunks
+        :return: list of jobs matching the filter
+        """
+
+        filter_chunks = filter_chunks.upper()
+        if "," in filter_chunks:
+            splitted_filters = filter_chunks.split(",")
+            fc = splitted_filters[0]
+            matching_jobs = Autosubmit._filter_sections_splits(splitted_filters[1:], job_list.get_job_list())
+        else:
+            fc = filter_chunks
+            matching_jobs = job_list.get_job_list()
+
+        final_list = Autosubmit._filter_chunks(fc, job_list, matching_jobs)
+
+        return list(set(final_list))
 
     @staticmethod
     def set_status(expid: str, noplot: bool, save: bool, final: str, filter_list: str, filter_chunks: str,
@@ -5258,10 +5353,14 @@ class Autosubmit:
         :param detail: detail
         :return: ``True`` if executed successfully.
         """
-        if expand_status is None:
-            expand_status = ''
-        if expand is None:
-            expand = []
+        if filter_status:
+            filter_status = filter_status.upper()
+        # TODO: unify filters. There is already an issue for that
+        # TODO: Normalize some filters that are the same ( To avoid changing the usage ... FIX in another PR)
+        filter_chunk_section_split = None
+        # TODO: TMP fix until the previous TODO is resolved. Select the one that is filled
+        for f in [filter_chunks, filter_type_chunk, filter_type_chunk_split]:
+            filter_chunk_section_split = f if f else filter_chunk_section_split
 
         Autosubmit._check_ownership(expid, raise_error=True)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
@@ -5275,7 +5374,7 @@ class Autosubmit:
                 Log.debug(f'Save: {save}')
                 Log.debug(f'Final status: {final}')
                 Log.debug(f'List of jobs to change: {filter_list}')
-                Log.debug(f'Chunks to change: {filter_chunks}')
+                Log.debug(f'Chunks to change: {filter_chunk_section_split}')
                 Log.debug(f'Status of jobs to change: {filter_status}')
                 Log.debug(f'Sections to change: {filter_section}')
 
@@ -5318,11 +5417,11 @@ class Autosubmit:
                         pass
                 ##### End of the ""function""
                 # This will raise an autosubmit critical if any of the filters has issues in the format specified by the user
-                Autosubmit._validate_set_status_filters(as_conf, job_list, filter_list, filter_chunks, filter_status,
-                                                        filter_section, filter_type_chunk, filter_type_chunk_split)
+                Autosubmit._validate_set_status_filters(as_conf, job_list, filter_list, filter_chunk_section_split, filter_status,
+                                                        filter_section)
                 #### Starts the filtering process ####
+                Log.info("Filtering jobs...")
                 final_list = []
-                jobs_filtered = []
                 final_status = Autosubmit._get_status(final)
                 # I have the impression that whoever did this function thought about the possibility of having multiple filters at the same time
                 # But, as it was, it is not possible to have multiple filters at the same time due to the way the code is written
@@ -5336,50 +5435,14 @@ class Autosubmit:
                             for job in job_list.get_job_list():
                                 if job.section == section:
                                     final_list.append(job)
-                if filter_chunks:
-                    ft = filter_chunks.split(",")[1:]
-                    # Any located in section part
-                    if str(ft).upper() == "ANY":
-                        for job in job_list.get_job_list():
-                            final_list.append(job)
-                        for job in job_list.get_job_list():
-                            if job.section == section:
-                                if filter_chunks:
-                                    jobs_filtered.append(job)
-                    if len(jobs_filtered) == 0:
-                        jobs_filtered = job_list.get_job_list()
-                    fc = filter_chunks
-                    # Any located in chunks part
-                    if str(fc).upper() == "ANY":
-                        for job in jobs_filtered:
-                            final_list.append(job)
-                    else:
-                        data = json.loads(Autosubmit._create_json(fc))
-                        for date_json in data['sds']:
-                            date = date_json['sd']
-                            if len(str(date)) < 9:
-                                format_ = "D"
-                            elif len(str(date)) < 11:
-                                format_ = "H"
-                            elif len(str(date)) < 13:
-                                format_ = "M"
-                            elif len(str(date)) < 15:
-                                format_ = "S"
-                            else:
-                                format_ = "D"
-                            jobs_date = [j for j in jobs_filtered if date2str(
-                                j.date, format_) == date]
+                # TODO: unify filters in the args. There is already an issue for that
+                if filter_chunks or filter_type_chunk or filter_chunk_section_split:
+                    start = time.time()
+                    # The extend is because the code was thought to have multiple filters at the same time (but it is not possible for some combinations)
+                    final_list.extend(Autosubmit.filter_jobs_by_chunks_splits(job_list, filter_chunk_section_split))
+                    final_list = list(set(final_list))
+                    Log.info(f"Chunk filtering took {time.time() - start:.2f} seconds.")
 
-                            for member_json in date_json['ms']:
-                                member = member_json['m']
-                                jobs_member = [j for j in jobs_date if j.member == member]
-
-                                for chunk_json in member_json['cs']:
-                                    chunk = int(chunk_json)
-                                    for job in [j for j in jobs_date if j.chunk == chunk and j.synchronize is not None]:
-                                        final_list.append(job)
-                                    for job in [j for j in jobs_member if j.chunk == chunk]:
-                                        final_list.append(job)
                 if filter_status:
                     status_list = filter_status.split()
                     Log.debug(f"Filtering jobs with status {filter_status}")
@@ -5408,15 +5471,11 @@ class Autosubmit:
                         for job in job_list.get_job_list():
                             if job.name in jobs:
                                 final_list.append(job)
-                # All filters should be in a function but no have time to do it
-                # filter_Type_chunk_split == filter_type_chunk, but with the split essentially is the same but not sure about of changing the name to the filter itself
-                if filter_type_chunk_split is not None:
-                    final_list.extend(Autosubmit._apply_ftc(job_list, filter_type_chunk_split))
-                if filter_type_chunk:
-                    final_list.extend(Autosubmit._apply_ftc(job_list, filter_type_chunk))
+
                 # Time to change status
                 final_list = list(set(final_list))
                 performed_changes = {}
+                Log.info(f"The selected number of jobs to change is: {len(final_list)}")
                 for job in final_list:
                     if final_status in [Status.WAITING, Status.PREPARED, Status.DELAYED, Status.READY]:
                         job.fail_count = 0
@@ -5444,17 +5503,14 @@ class Autosubmit:
                                 status_change=performed_changes))
                 else:
                     Log.warning("No changes were performed.")
-
+                Log.info(f"Updating JobList for experiment {expid}...")
                 job_list.update_list(as_conf, False, True)
-
+                start = time.time()
                 if save and wrongExpid == 0:
-                    for job in final_list:
-                        job.update_parameters(as_conf, set_attributes=True, reset_logs=True)
-                        if job.status in [Status.COMPLETED, Status.FAILED]:
-                            job.recover_last_ready_date()
-                            job.recover_last_log_name()
-
+                    job_list.recover_last_data(final_list)
                     job_list.save()
+                    end = time.time()
+                    Log.info(f"JobList saved in {end - start:.2f} seconds.")
                     exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR,
                                                     historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                     exp_history.initialize_database()
