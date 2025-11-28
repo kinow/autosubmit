@@ -27,13 +27,16 @@ import os
 import pwd
 import sqlite3
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, TYPE_CHECKING
 
 import pytest
 from threading import Thread
 
-# TODO: This should come from a fixture to ensure that the expid is unique per test.
-_EXPID = 't100'
+
+if TYPE_CHECKING:
+    pass
+
+_EXPID = 't000'
 """The experiment ID used throughout the test."""
 
 
