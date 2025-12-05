@@ -157,7 +157,7 @@ def test_run_simple_workflow_slurm(
         slurm_server: 'DockerContainer'
 ):
     """Runs a simple Bash script using Slurm."""
-    exp = autosubmit_exp('t001', experiment_data=experiment_data)
+    exp = autosubmit_exp('t001', experiment_data=experiment_data, include_jobs=True)
     _create_slurm_platform(exp.expid, exp.as_conf)
 
     exp.autosubmit._check_ownership_and_set_last_command(exp.as_conf, exp.expid, 'run')
