@@ -30,7 +30,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Union, cast
+from typing import Any, cast
 
 from rocrate.model.contextentity import ContextEntity
 from rocrate.rocrate import File, ROCrate
@@ -302,7 +302,7 @@ def _create_parameter(crate, parameter_name, parameter_value, formal_parameter, 
 
 
 def _init_mimetypes() -> None:
-    """Initialize the MIME types library.
+    """Initialise the MIME types library.
 
     We add extra types for files commonly found in Autosubmit experiments.
     """

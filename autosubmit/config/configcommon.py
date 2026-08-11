@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
 import collections
 import copy
 import json
@@ -29,19 +30,22 @@ from collections.abc import Iterable
 from contextlib import suppress
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
-from bscearth.utils.date import parse_date
+from bscearth.utils.date import date2str, parse_date
 from pyparsing import nested_expr
 from ruamel.yaml import YAML
 
 from autosubmit.config.basicconfig import BasicConfig
 from autosubmit.config.yamlparser import YAMLParserFactory
-from autosubmit.database.db_common import get_experiment_description
 from autosubmit.helpers.enums import ChunkUnit
 from autosubmit.job.job_utils import calendar_chunk_section
 from autosubmit.log.log import AutosubmitCritical, AutosubmitError, Log
 from autosubmit.platforms.platform_type import PlatformType
+
+if TYPE_CHECKING:
+    from autosubmit.job.job_list import JobList
+    from autosubmit.platforms.platform import Platform
 
 
 class AutosubmitConfig:
@@ -1833,6 +1837,7 @@ class AutosubmitConfig:
             Log.result('YAML configuration loaded:')
             for f in self.current_loaded_files:
                 Log.result(f'  {f}')
+            Log.result('')
 
     def set_default_parameters(self) -> None:
         """Sets the default parameters for the experiment."""
@@ -2044,9 +2049,10 @@ class AutosubmitConfig:
         return parameters_dict
 
     def _load_database_parameters(self) -> dict:
+        from autosubmit.database.db_common import get_experiment_description
         """Load data from the database to be exported in the parameters for jobs."""
         # NOTE: at the moment this is the only bit of data loaded. If we need to load more,
-        #       it might be a good idea to think about a. better organizing the data layout,
+        #       it might be a good idea to think about a. better organising the data layout,
         #       b. using a single query instead of multiple, c. caching.
         experiment_description: str | list[list[str]] = get_experiment_description(self.expid)
         if experiment_description and experiment_description[0] and experiment_description[0][0]:
@@ -2808,3 +2814,24 @@ class AutosubmitConfig:
         if isinstance(thresholds, dict):
             return thresholds
         return {}
+
+
+def load_parameters(as_conf: AutosubmitConfig, job_list: "JobList", platforms: dict[str, "Platform"]) -> None:
+    """Add parameters from configuration files into platform objects, and into the job_list object.
+
+    :param as_conf: Basic configuration handler.
+    :param job_list: Handles the list as a unique entity.
+    :param platforms: Dictionary of platforms related to the experiment.
+    """
+
+    Log.debug("Loading HPC parameters...")
+    # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
+    if as_conf.get_platform() not in platforms.keys():
+        Log.warning("Main platform is not defined in platforms.yml")
+    else:
+        platform = platforms[as_conf.get_platform()]
+        platform.add_parameters(as_conf)
+    # Attach parameters to JobList
+    as_conf.experiment_data['STARTDATES'] = []
+    for date in job_list._date_list:
+        as_conf.experiment_data['STARTDATES'].append(date2str(date, job_list.get_date_format()))
