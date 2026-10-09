@@ -30,7 +30,7 @@ from collections.abc import Iterable
 from contextlib import suppress
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from bscearth.utils.date import date2str, parse_date
 from pyparsing import nested_expr
@@ -44,6 +44,7 @@ from autosubmit.log.log import AutosubmitCritical, AutosubmitError, Log
 from autosubmit.platforms.platform_type import PlatformType
 
 if TYPE_CHECKING:
+    from autosubmit.config.yamlparser import YAMLParser
     from autosubmit.job.job_list import JobList
     from autosubmit.platforms.platform import Platform
 
@@ -62,28 +63,28 @@ class AutosubmitConfig:
         if not Path(BasicConfig.LOCAL_ROOT_DIR, expid).exists():
             raise OSError(f"Experiment {expid} does not exist")
         self.parser_factory = YAMLParserFactory()
-        self.experiment_data = {}
-        self.last_experiment_data = {}
+        self.experiment_data: dict[str, Any] = {}
+        self.last_experiment_data: dict[str, Any] = {}
         self.data_loops = set()
 
-        self.current_loaded_files: dict = {}
+        self.current_loaded_files: dict[str, int | float] = {}
         self.conf_folder_yaml = Path(BasicConfig.LOCAL_ROOT_DIR, expid, "conf")
         if not Path(BasicConfig.LOCAL_ROOT_DIR, expid, "conf").exists():
             raise OSError(f"Experiment {expid}/conf does not exist")
         self.wrong_config = defaultdict(list)
         self.warn_config = defaultdict(list)
-        self.dynamic_variables: dict = {}
-        self.special_dynamic_variables: dict = {}  # variables that will be substituted after all files are loaded
-        self.starter_conf: dict = {}
-        self.misc_files = []
-        self.misc_data: dict = {}
+        self.dynamic_variables: dict[str, Any] = {}
+        self.special_dynamic_variables: dict[str, Any] = {}  # variables that will be substituted after all files are loaded
+        self.starter_conf: dict[str, Any] = {}
+        self.misc_files: list[str] = []
+        self.misc_data: dict[str, Any] = {}
         self.default_parameters = {}
         self.metadata_folder = Path(self.conf_folder_yaml) / "metadata"
         self._platforms_parser = None
-        self._platforms_parser_file = None
-        self._exp_parser_file = None
-        self._conf_parser_file = None
-        self.hpcarch = None
+        self._platforms_parser_file: str | None = None
+        self._exp_parser_file: str | None = None
+        self._conf_parser_file: str | None = None
+        self.hpcarch: str | None = None
 
     @property
     def jobs_data(self) -> dict[str, Any]:
@@ -151,7 +152,7 @@ class AutosubmitConfig:
                 depth = []
         return depth
 
-    def get_full_config_as_json(self):
+    def get_full_config_as_json(self) -> str:
         """Return config as json object"""
         try:
             return json.dumps(self.experiment_data)
@@ -167,7 +168,6 @@ class AutosubmitConfig:
         project directory, and the destination (i.e. absolute directory).
 
         :return: experiment's project directory
-        :rtype: str
         """
         dir_templates = Path(
             BasicConfig.LOCAL_ROOT_DIR,
@@ -182,20 +182,15 @@ class AutosubmitConfig:
             section: list[str],
             d_value: str | Any = "",
             must_exists=False
-    ) -> str | dict | numbers.Number:
+    ) -> Any:
         """Gets any section.
 
         If it does not exist in the dictionary it returns ``d_value``, or and error if it must exist.
 
         :param section: section to get
-        :type section: list
         :param d_value: default value to return if section does not exist
-        :type d_value: str
         :param must_exists: if true, error is raised if section does not exist
-        :type must_exists: bool
         :return: section value
-        :rtype: str
-
         """
         section = [s.upper() for s in section]
         # For text readability
@@ -220,13 +215,102 @@ class AutosubmitConfig:
             return d_value
         return current_level
 
+    def get_section_str(
+        self,
+        section: list[str],
+        d_value: str = "",
+        must_exists: bool = False,
+    ) -> str:
+        """Get a configuration section value as a string.
+
+        :param section: The path to the configuration value, expressed as a list
+                        of section names.
+        :param d_value: The default string value to return if the section does
+                        not exist or its value is empty.
+        :param must_exists: If True, raise an exception if the section does not
+                            exist.
+        :return: The configuration value as a string.
+        :raise TypeError: If the configuration value is not a string.
+        :raise AutosubmitCritical: If must_exists is True and the section does
+                                   not exist.
+        """
+        value = self.get_section(section, d_value, must_exists)
+
+        if not isinstance(value, str):
+            raise TypeError(
+                f"Expected str for {'.'.join(section)}, got {type(value).__name__}"
+            )
+
+        return value
+
+    def get_section_int(
+        self,
+        section: list[str],
+        d_value: int = 0,
+        must_exists: bool = False,
+    ) -> int:
+        """Get a configuration section value as an integer.
+
+        :param section: The path to the configuration value, expressed as a list
+                        of section names.
+        :param d_value: The default integer value to return if the section does
+                        not exist or its value is empty.
+        :param must_exists: If True, raise an exception if the section does not
+                            exist.
+        :return: The configuration value as an integer.
+        :raise TypeError: If the configuration value is not an integer or is a
+                          boolean.
+        :raise AutosubmitCritical: If must_exists is True and the section does
+                                   not exist.
+        """
+        value = self.get_section(section, d_value, must_exists)
+
+        if isinstance(value, str):
+            try:
+                return int(value)
+            except ValueError:
+                pass
+
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise TypeError(
+                f"Expected int for {'.'.join(section)}, got {type(value).__name__}"
+            )
+
+        return value
+
+    def get_section_bool(
+        self,
+        section: list[str],
+        d_value: bool = False,
+        must_exists: bool = False,
+    ) -> bool:
+        """Get a configuration section value as a boolean.
+
+        :param section: The path to the configuration value, expressed as a list
+                        of section names.
+        :param d_value: The default boolean value to return if the section does
+                        not exist or its value is empty.
+        :param must_exists: If True, raise an exception if the section does not
+                            exist.
+        :return: The configuration value as a boolean.
+        :raise TypeError: If the configuration value is not a boolean.
+        :raise AutosubmitCritical: If must_exists is True and the section does
+                                   not exist.
+        """
+        value = self.get_section(section, d_value, must_exists)
+
+        if not isinstance(value, bool):
+            raise TypeError(
+                f"Expected bool for {'.'.join(section)}, got {type(value).__name__}"
+            )
+
+        return value
+
     def get_wchunkinc(self, section: str) -> str:
         """Gets the chunk increase to wallclock.
 
         :param section: job type
-        :type section: str
         :return: wallclock increase per chunk
-        :rtype: str
         """
         return self.jobs_data.get(section, {}).get('WCHUNKINC', "")
 
@@ -235,7 +319,6 @@ class AutosubmitConfig:
         This function is used by the autosubmit API.
 
         :return: migrate user to
-        :rtype: str
         """
         return self.get_section([section, 'USER'], "")
 
@@ -244,7 +327,6 @@ class AutosubmitConfig:
         This function might be used for autosubmit API after complete migration of `AutosubmitConfigParser`.
 
         :return: migrate user to
-        :rtype: str
         """
         return self.get_section([section, 'HOST'], "")
 
@@ -253,19 +335,17 @@ class AutosubmitConfig:
         This function is used by the autosubmit API.
 
         :return: migrate user to
-        :rtype: str
         """
         return self.get_section([section, 'PROJECT'], "")
 
     def set_new_user(self, section: str, new_user: str) -> None:
         """Sets new user for given platform.
-        This function is used by the autosubmit API.
+
+        This function is used by the Autosubmit API.
 
         :param new_user:
         :param section: platform name
-        :type: str
         """
-
         with open(self._platforms_parser_file) as p_file:
             content_line = p_file.readline()
             content_to_mod = ""
@@ -285,11 +365,11 @@ class AutosubmitConfig:
                 'USER:.*', content_to_mod).group(0)[1:], "USER: " + new_user)
             content_to_mod = content_to_mod.replace(re.search(
                 'USER_TO:.*', content_to_mod).group(0)[1:], "USER_TO: " + old_user)
-        open(self._platforms_parser_file, 'w').write(content)
-        open(self._platforms_parser_file, 'a').write(content_to_mod)
+        with open(self._platforms_parser_file, "w") as f:
+            f.write(content)
+            f.write(content_to_mod)
 
     def show_messages(self) -> bool:
-
         if len(list(self.warn_config.keys())) == 0 and len(list(self.wrong_config.keys())) == 0:
             Log.result("Configuration files OK\n")
         elif len(list(self.warn_config.keys())) > 0 and len(list(self.wrong_config.keys())) == 0:
@@ -322,11 +402,9 @@ class AutosubmitConfig:
         Other types of values are added to the normalized dictionary as is.
 
         :param data: The dictionary to normalize.
-        :type data: dict[str, Any]
         :return: A new dictionary with all keys normalized to uppercase.
-        :rtype: dict[str, Any]
         """
-        normalized_data = {}
+        normalized_data: dict[str, Any] = {}
         with suppress(Exception):
             for key, val in data.items():
                 normalized_key = str(key).upper()
@@ -344,9 +422,16 @@ class AutosubmitConfig:
                     normalized_data[normalized_key] = val
         return normalized_data
 
-    def deep_update(self, unified_config: dict, new_dict: dict) -> dict:
+    def deep_update(
+        self, unified_config: collections.abc.Mapping, new_dict: collections.abc.Mapping
+    ) -> collections.abc.Mapping:
         """Update a nested dictionary or similar mapping.
+
         Modify ``source`` in place.
+
+        :param unified_config: The dictionary to update.
+        :param new_dict: The dictionary with new values to update.
+        :return: The updated dictionary.
         """
         if not isinstance(unified_config, collections.abc.Mapping):
             unified_config = {}
@@ -369,8 +454,7 @@ class AutosubmitConfig:
         return unified_config
 
     def normalize_variables(self, data: dict, must_exists: bool, raise_exception: bool = False) -> dict:
-        """
-        Apply some memory internal variables to normalize its format. (right now only dependencies)
+        """Apply some memory internal variables to normalize its format (right now only dependencies).
 
         :param data: The input data dictionary to normalize.
         :param must_exists: If false, add the sections that are not present in the data dictionary.
@@ -415,6 +499,7 @@ class AutosubmitConfig:
 
         Ensure the wrapper includes a non-empty list of valid job section names,
         optionally raising if the field is missing or invalid.
+
         :param wrapper: The name of the wrapper being normalized.
         :param wrapper_data: The data dictionary for the specific wrapper.
         :param job_sections: The valid job section names to check against.
@@ -476,6 +561,7 @@ class AutosubmitConfig:
     @staticmethod
     def _normalize_wrappers_section(data_fixed: dict, raise_exception: bool = False) -> None:
         """Normalize the WRAPPERS section to a consistent format so there is no issues during runtime.
+
         :param data_fixed: The input data dictionary to normalize.
         :param raise_exception: If true, raise exception on errors. It is only True after all data is loaded.
         :return: None
@@ -533,26 +619,29 @@ class AutosubmitConfig:
             self._normalize_notify_on(data_fixed, job)
 
     @staticmethod
-    def _normalize_wallclock(data_fixed: {}) -> None:
-        """
-        Normalize the wallclock time format in the job configuration.
+    def _normalize_wallclock(data_fixed: dict[str, str | dict]) -> None:
+        """Normalise the wallclock time format in the job configuration.
 
-        This method iterates through the jobs in the provided data dictionary and checks the format of the "WALLCLOCK" value.
+        This method iterates through the jobs in the provided data dictionary and checks
+        the format of the "WALLCLOCK" value.
+
         If the wallclock time is in "HH:MM:SS" format, it truncates it to "HH:MM" and logs a warning.
 
         :param data_fixed: The dictionary containing job configurations.
-        :type data_fixed: dict
         """
-        for job in data_fixed.get("JOBS", {}):
-            wallclock = data_fixed["JOBS"][job].get("WALLCLOCK", "")
-            if wallclock and re.match(r'^\d{1,2}:\d{2}:\d{2}$', wallclock):
+        jobs: dict[str, dict[str, Any]] = cast(dict, data_fixed.get("JOBS", {}))
+        for job_data in jobs.values():
+            wallclock = job_data.get("WALLCLOCK", "")
+            if wallclock and re.match(r"^\d{1,2}:\d{2}:\d{2}$", wallclock):
                 # Truncate SS to "HH:MM"
                 Log.warning(
-                    f"Wallclock {wallclock} is in HH:MM:SS format. Autosubmit does not support the seconds. Truncating to HH:MM")
-                data_fixed["JOBS"][job]["WALLCLOCK"] = ":".join(wallclock.split(":")[:2])
+                    f"Wallclock {wallclock} is in HH:MM:SS format. Autosubmit does not support the seconds. "
+                    f"Truncating to HH:MM"
+                )
+                job_data["WALLCLOCK"] = ":".join(wallclock.split(":")[:2])
 
     @staticmethod
-    def _normalize_dependencies(dependencies: str | dict) -> dict:
+    def _normalize_dependencies(dependencies: str | dict[str, str | Any]) -> dict[str, str | Any]:
         """Normalize the dependencies to a consistent format.
 
         This function takes a string or dictionary of dependencies and normalizes them to a dictionary format.
@@ -562,9 +651,7 @@ class AutosubmitConfig:
         Additionally, it checks for a ``?`` suffix in ``MIN_TRIGGER_STATUS``/``STATUS`` to set ``FAIL_OK``.
 
         :param dependencies: The dependencies to normalize, either as a string or a dictionary.
-        :type dependencies: Union[str, dict]
         :return: A dictionary with normalized dependencies.
-        :rtype: dict
         """
         aux_dependencies = {}
         if isinstance(dependencies, str):
@@ -647,9 +734,9 @@ class AutosubmitConfig:
         return self.unify_conf(current_folder_data, new_file.data)
 
     # noinspection PyMethodMayBeStatic
-    def get_yaml_filenames_to_load(self, yaml_folder, ignore_minimal=False):
-        """
-        Get all yaml files in a folder and return a list with the filenames
+    def get_yaml_filenames_to_load(self, yaml_folder: str | Path, ignore_minimal=False):
+        """Get all yaml files in a folder and return a list with the filenames.
+
         :param yaml_folder: folder to search for yaml files
         :param ignore_minimal: ignore minimal files
         :return: list of filenames
@@ -666,21 +753,19 @@ class AutosubmitConfig:
                 filenames_to_load.append(str(yaml_file))
         return filenames_to_load
 
-    def load_config_folder(self, current_data, yaml_folder, ignore_minimal=False):
-        """
-        Load a config folder and return pre and post config
+    def load_config_folder(self, current_data: dict[str, Any], yaml_folder: str | Path, ignore_minimal=False):
+        """Load a configuration folder and return the pre- and post-configuration.
+
         :param current_data: current data to be updated
         :param yaml_folder: folder to load config
         :param ignore_minimal: ignore minimal config files
-        :return: pre and post config
+        :return: The pre- and post-configuration.
         """
         filenames_to_load = self.get_yaml_filenames_to_load(yaml_folder, ignore_minimal)
         return self.load_custom_config(current_data, filenames_to_load)
 
     def parse_custom_conf_directive(self, custom_conf_directive: str | dict | None):
-        filenames_to_load = {}
-        filenames_to_load["PRE"] = []
-        filenames_to_load["POST"] = []
+        filenames_to_load = {"PRE": [], "POST": []}
         if custom_conf_directive is not None:
             # Check if directive is a dictionary
             if type(custom_conf_directive) is not dict:
@@ -714,24 +799,28 @@ class AutosubmitConfig:
 
     def unify_conf(self, current_data: dict, new_data: dict) -> dict:
         """Unifies all configuration files into a single dictionary.
+
         :param current_data: dict with current configuration
         :param new_data: dict with new configuration
         :return: dict with new configuration taking priority over current configuration
         """
-        # Basic data
         current_data = self.deep_update(current_data, new_data)
         current_data = self.deep_read_loops(current_data)
         current_data = self.substitute_dynamic_variables(current_data)
         current_data = self.parse_data_loops(current_data)
         return current_data
 
-    def parse_data_loops(self, experiment_data):
-        """
-        This function, looks for the FOR keyword, to generates N amount of subsections of the same section.
-        Looks for the "NAME" keyword, inside this FOR keyword to determine the name of the new sections
-        Experiment_data is the dictionary that contains all the sections, a subsection could be located at the root but also in a nested section
-        :param experiment_data: dictionary with all the sections
-        :return: Original experiment_data with the sections in the data_loops updated changing the FOR by multiple new sections
+    def parse_data_loops(self, experiment_data: dict) -> dict:
+        """Looks for the FOR keyword, to generates N amount of subsections of the same section.
+
+        Looks for the "NAME" keyword, inside this FOR keyword to determine the name of the new sections.
+
+        Experiment_data is the dictionary that contains all the sections,
+        a subsection could be located at the root but also in a nested section.
+
+        :param experiment_data: dictionary with all the sections.
+        :return: Original experiment_data with the sections in the data_loops
+            updated changing the FOR by multiple new sections.
         """
         while len(self.data_loops) > 0:
             loops = self.data_loops.pop().split(",")
@@ -776,9 +865,9 @@ class AutosubmitConfig:
         return experiment_data
 
     # noinspection PyMethodMayBeStatic
-    def check_dict_keys_type(self, parameters):
-        """
-        Check the type of keys in the parameters dictionary.
+    def check_dict_keys_type(self, parameters) -> str:
+        """Check the type of keys in the parameters dictionary.
+
         :param parameters: Dictionary containing the parameters of the experiment.
         :return: Type of keys in the parameters dictionary, either "long" or "short".
         """
@@ -843,8 +932,7 @@ class AutosubmitConfig:
             dict_keys_type: str = '',
             in_the_end: bool = False,
     ) -> dict[str, Any]:
-        """
-        Substitute dynamic variables in the experiment data.
+        """Substitute dynamic variables in the experiment data.
 
         This function replaces placeholders in the experiment data with their corresponding values.
         It supports both long (%DEFAULT.EXPID%) and short (DEFAULT[EXPID]) key formats.
@@ -853,9 +941,7 @@ class AutosubmitConfig:
         :param int max_deep: Maximum depth for recursive substitution. Default is 2+len(self.dynamic_variables).
         :param str dict_keys_type: Type of keys in the parameters dictionary, either "long" or "short".
         :param bool in_the_end: Flag to indicate if special dynamic variables should be used. Default is False.
-
         :returns: Current loaded experiment data  with substituted dynamic variables.
-        :rtype: dict
         """
         max_deep += len(self.dynamic_variables)
 
@@ -884,11 +970,9 @@ class AutosubmitConfig:
         return parameters
 
     def _initialize_variables(self) -> tuple[dict[str, str], str, int]:
-        """
-        Initialize dynamic variables.
+        """Initialize dynamic variables.
 
         :returns: A tuple containing the dynamic variables, the regex pattern, and the start index.
-        :rtype: tuple
         """
         return copy.deepcopy(self.dynamic_variables), r"%[a-zA-Z0-9_.-]*(\^\^|,,)?%", 1
 
@@ -901,27 +985,19 @@ class AutosubmitConfig:
             dict_keys_type: str,
             in_the_end: bool = False
     ) -> tuple[dict[str, Any], dict[str, Any]]:
-        """
-        Process and substitute dynamic variables in the given parameters.
+        """Process and substitute dynamic variables in the given parameters.
 
         This method iterates over the dynamic variables and substitutes their placeholders
         in the provided parameters dictionary. It supports both long and short key formats
         for dynamic variable substitution.
 
         :param dynamic_variables: Dictionary of dynamic variables to be processed.
-        :type dynamic_variables: dict[str, Any]
         :param parameters: Dictionary containing the parameters where substitutions will be applied.
-        :type parameters: dict[str, Any]
         :param pattern: Regex pattern to identify dynamic variable placeholders.
-        :type pattern: str
         :param start_long: Start index for long key format substitution.
-        :type start_long: int
         :param dict_keys_type: Type of keys in the parameters dictionary, either "long" or "short".
-        :type dict_keys_type: str
         :param in_the_end: Flag indicating whether to include special dynamic variables for substitution.
-        :type in_the_end: bool
         :return: A tuple containing the updated dynamic variables and the modified parameters.
-        :rtype: tuple[dict[str, Any], dict[str, Any]]
         """
         dynamic_variables_ = copy.copy(dynamic_variables)
         for dynamic_var in dynamic_variables.items():
@@ -944,15 +1020,10 @@ class AutosubmitConfig:
         Retrieve keys for dynamic variable substitution.
 
         :param dynamic_var: The dynamic variable tuple containing the placeholder and its value.
-        :type dynamic_var: tuple[str, Any]
         :param parameters: Dictionary containing the parameters to be substituted.
-        :type parameters: dict[str, Any]
         :param start_long: Start index for long key format.
-        :type start_long: int
         :param dict_keys_type: Type of keys in the parameters dictionary, either "long" or "short".
-        :type dict_keys_type: str
         :returns: List of keys for substitution.
-        :rtype: list[Any]
         """
         if dict_keys_type == "long":
             keys = parameters.get(str(dynamic_var[0][start_long:-1]), None)
@@ -974,27 +1045,17 @@ class AutosubmitConfig:
             processed_dynamic_variables: dict[str, Any],
             in_the_end: bool = False
     ) -> tuple[dict[str, Any], dict[str, Any]]:
-        """
-        Substitute dynamic variables in the given keys.
+        """Substitute dynamic variables in the given keys.
 
         :param keys: List of keys to be processed.
-        :type keys: list[str]
         :param dynamic_var: Tuple containing the dynamic variable and its value.
-        :type dynamic_var: tuple[str, Any]
         :param parameters: Dictionary containing the parameters to be substituted.
-        :type parameters: dict[str, Any]
         :param pattern: Regex pattern to identify dynamic variables.
-        :type pattern: str
         :param start_long: Start index for long key format.
-        :type start_long: int
         :param dict_keys_type: Type of keys in the parameters dictionary, either "long" or "short".
-        :type dict_keys_type: str
         :param processed_dynamic_variables: Dictionary of already processed dynamic variables.
-        :type processed_dynamic_variables: dict[str, Any]
         :param in_the_end: Flag indicating whether to include special dynamic variables for substitution.
-        :type in_the_end: bool
         :return: A tuple containing the updated processed dynamic variables and parameters.
-        :rtype: tuple[dict[str, Any], dict[str, Any]]
         """
         for i, key in enumerate(filter(None, keys)):
             matches = list(re.finditer(pattern, key, flags=re.IGNORECASE))[::-1]
@@ -1022,21 +1083,14 @@ class AutosubmitConfig:
             start_long: int,
             dict_keys_type: str
     ) -> str | None:
-        """
-        Get the substituted value for a dynamic variable in the key.
+        """Get the substituted value for a dynamic variable in the key.
 
         :param key: The key containing the dynamic variable.
-        :type key: str
         :param match: The regex match object for the dynamic variable.
-        :type match: Any
         :param parameters: Dictionary containing the parameters to be substituted.
-        :type parameters: dict[str, Any]
         :param start_long: Start index for long key format.
-        :type start_long: int
         :param dict_keys_type: Type of keys in the parameters dictionary, either "long" or "short".
-        :type dict_keys_type: str
         :return: The key with the substituted value.
-        :rtype: str
         """
         rest_of_key_start = key[:match.start()]
         rest_of_key_end = key[match.end():]
@@ -1078,17 +1132,11 @@ class AutosubmitConfig:
         Update the parameters dictionary with the substituted value.
 
         :param parameters: Dictionary containing the parameters to be updated.
-        :type parameters: dict[str, Any]
         :param dynamic_var: Tuple containing the dynamic variable and its value.
-        :type dynamic_var: tuple[str, Any]
         :param value: The substituted value to update in the parameters.
-        :type value: str
         :param index: Index of the dynamic variable in the list of keys.
-        :type index: int
         :param dict_keys_type: Type of keys in the parameters dictionary, either "long" or "short".
-        :type dict_keys_type: str
         :return: Updated parameters dictionary.
-        :rtype: dict[str, Any]
         """
         if dict_keys_type == "long":
             parameters[str(dynamic_var[0])] = value
@@ -1097,9 +1145,14 @@ class AutosubmitConfig:
             parameters = self.dict_replace_value(parameters, dynamic_var[1], value, index, section_names)
         return parameters
 
-    def deep_read_loops(self, data, for_keys=None, long_key=""):
+    def deep_read_loops(self, data: dict, for_keys: list | None=None, long_key="") -> dict[str, Any]:
         """Update a nested dictionary or similar mapping.
+
         Modify ``source`` in place.
+
+        :param data: The dictionary to be processed.
+        :param for_keys: List of keys to be processed. Default is None.
+        :param long_key: The long key to be processed. Default is an empty string.
         """
         if for_keys is None:
             for_keys = []
@@ -1139,18 +1192,17 @@ class AutosubmitConfig:
         self.check_jobs_conf(no_log)
         self.check_autosubmit_conf(no_log)
 
-    def check_conf_files(self, running_time=False, force_load=True, no_log=False):
-        """
-        Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
-        required options. Print results in log
+    def check_conf_files(self, running_time=False, force_load=True, no_log=False) -> bool:
+        """Checks configuration files (autosubmit, experiment jobs and platforms).
+
+        Looks for invalid values, missing required options.
+
+        Writes results to the log.
+
         :param running_time: True if the function is called during the execution of the program
-        :type running_time: bool
         :param force_load: True if the function is called during the first load of the program
-        :type force_load: bool
         :param no_log: True if the function is called during describe
-        :type no_log: bool
         :return: True if everything is correct, False if it finds any error
-        :rtype: bool
         """
         if not no_log:
             Log.info('\nChecking configuration files...')
@@ -1184,15 +1236,13 @@ class AutosubmitConfig:
             else:
                 if not no_log:
                     Log.warning(e.message)
-        except Exception:
-            raise
+
+        return False
 
     def validate_wallclock(self) -> str:
-        """
-        Validate the wallclock time for each job against the platform's maximum wallclock time.
+        """Validate the wallclock time for each job against the platform's maximum wallclock time.
 
         :return: Error message if any job exceeds the platform's wallclock time, otherwise an empty string.
-        :rtype: str
         """
 
         def _calculate_wallclock(wallclock: str) -> float:
@@ -1219,11 +1269,9 @@ class AutosubmitConfig:
         return err_msg
 
     def validate_jobs_conf(self) -> str:
-        """
-        Validate the job configurations.
+        """Validate the job configurations.
 
         :return: Error message if any validation fails, otherwise an empty string.
-        :rtype: str
         """
         err_msg = self.validate_wallclock()
         return err_msg
@@ -1236,11 +1284,9 @@ class AutosubmitConfig:
         return ""
 
     def validate_config(self, running_time: bool) -> bool:
-        """
-        Check if the configuration is valid.
+        """Check if the configuration is valid.
 
         :param running_time: Indicates if the validation is being performed during runtime.
-        :type running_time: bool
         :raises AutosubmitCritical: If any validation error occurs during runtime.
         """
         error_msg = [self._validate_experiment_conf(), self.validate_jobs_conf()]
@@ -1257,10 +1303,9 @@ class AutosubmitConfig:
 
     def check_autosubmit_conf(self, no_log=False) -> bool:
         """Checks experiment's autosubmit configuration file.
+
         :param no_log: True if the function is called during describe
-        :type no_log: bool
         :return: True if everything is correct, False if it founds any error
-        :rtype: bool
         """
         parser_data = self.experiment_data
         if parser_data.get("CONFIG", "") == "":
@@ -1301,7 +1346,7 @@ class AutosubmitConfig:
         if parser_data.get("STORAGE", None) is None:
             parser_data["STORAGE"] = {}
 
-        # Retrocompatibility
+        # For backward compatibility.
         if parser_data["STORAGE"].get('TYPE', "sqlite") in ['pkl', 'db']:
             parser_data["STORAGE"] = {}
             parser_data["STORAGE"]['TYPE'] = 'sqlite'
@@ -1333,7 +1378,7 @@ class AutosubmitConfig:
             return True
         return False
 
-    def check_platforms_conf(self, no_log=False):
+    def check_platforms_conf(self, no_log=False) -> bool:
         """Checks experiment's platforms configuration file."""
         parser_data = self.experiment_data.get("PLATFORMS", {})
         main_platform_found = False
@@ -1383,10 +1428,9 @@ class AutosubmitConfig:
 
     def check_jobs_conf(self, no_log=False) -> bool:
         """Checks experiment's jobs configuration file.
+
         :param no_log: if True, it doesn't print any log message
-        :type no_log: bool
         :return: True if everything is correct, False if it founds any error
-        :rtype: bool
         """
         parser = self.experiment_data
         for section in parser.get("JOBS", {}):
@@ -1449,12 +1493,11 @@ class AutosubmitConfig:
                 return True
         return False
 
-    def check_expdef_conf(self, no_log=False):
+    def check_expdef_conf(self, no_log=False) -> bool:
         """Checks experiment's experiment configuration file.
+
         :param no_log: if True, it doesn't print any log message
-        :type no_log: bool
         :return: True if everything is correct, False if it founds any error
-        :rtype: bool
         """
         parser = self.experiment_data
         self.hpcarch = ""
@@ -1527,28 +1570,30 @@ class AutosubmitConfig:
             return True
         return False
 
-    def check_wrapper_conf(self, wrappers=None, no_log=False):
+    def check_wrapper_conf(self, wrappers=None, no_log=False) -> None:
         """Checks wrapper config file
 
         :param wrappers:
         :param no_log:
-        :return:
         """
         if wrappers is None:
             wrappers = {}
+
         for wrapper_name, wrapper_values in wrappers.items():
-            # continue if it is a global option (non-dicT)
+            # continue if it is a global option (non-dict)
             if type(wrapper_values) is not dict:
                 continue
-            jobs_in_wrapper = wrapper_values.get('JOBS_IN_WRAPPER', [])
+            jobs_in_wrapper = wrapper_values.get("JOBS_IN_WRAPPER", [])
             for section in jobs_in_wrapper:
                 try:
-                    platform_name = self.jobs_data[section.upper()].get('PLATFORM', "").upper()
+                    platform_name = (
+                        self.jobs_data[section.upper()].get("PLATFORM", "").upper()
+                    )
                 except KeyError:
                     self.wrong_config["WRAPPERS"] += [
                         [
                             wrapper_name,
-                            "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"
+                            "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid",
                         ]
                     ]
                     continue
@@ -1556,33 +1601,52 @@ class AutosubmitConfig:
                     platform_name = self.get_platform().upper()
                 if platform_name.lower() == PlatformType.LOCAL:
                     raise AutosubmitCritical(
-                        'The LOCAL platform does not support wrappers. '
-                        f'Please use another platform for your jobs: {str(jobs_in_wrapper)}.')
+                        "The LOCAL platform does not support wrappers. "
+                        f"Please use another platform for your jobs: {str(jobs_in_wrapper)}."
+                    )
 
                 if not self.is_valid_jobs_in_wrapper(wrapper_values):
-                    self.wrong_config["WRAPPERS"] += [[wrapper_name,
-                                                       "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"]]
-                if 'horizontal' in self.get_wrapper_type(wrapper_values):
-                    if not self.experiment_data["PLATFORMS"][platform_name].get('PROCESSORS_PER_NODE', None):
-                        self.wrong_config["WRAPPERS"] += [
-                            [wrapper_name, "PROCESSORS_PER_NODE no exist in the horizontal-wrapper platform"]]
-                    if not self.experiment_data["PLATFORMS"][platform_name].get('MAX_PROCESSORS', ""):
-                        self.wrong_config["WRAPPERS"] += [[wrapper_name,
-                                                           "MAX_PROCESSORS no exist in the horizontal-wrapper platform"]]
-                if 'vertical' in self.get_wrapper_type(wrapper_values):
-                    if not self.experiment_data.get("PLATFORMS", {}).get(platform_name, {}).get('MAX_WALLCLOCK', ""):
-                        self.wrong_config["WRAPPERS"] += [[wrapper_name,
-                                                           "MAX_WALLCLOCK no exist in the vertical-wrapper platform"]]
-            if "WRAPPERS" not in self.wrong_config:
-                if not no_log:
-                    Log.result('wrappers OK')
-                return True
+                    self.wrong_config["WRAPPERS"] += [
+                        [
+                            wrapper_name,
+                            "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid",
+                        ]
+                    ]
+                wrapper_type = self.get_wrapper_type(wrapper_values)
+                if wrapper_type:
+                    if "horizontal" in wrapper_type:
+                        platform = self.experiment_data["PLATFORMS"][platform_name]
+                        if not platform.get("PROCESSORS_PER_NODE", None):
+                            self.wrong_config["WRAPPERS"] += [
+                                [
+                                    wrapper_name,
+                                    "PROCESSORS_PER_NODE no exist in the horizontal-wrapper platform",
+                                ]
+                            ]
+                        if not platform.get("MAX_PROCESSORS", ""):
+                            self.wrong_config["WRAPPERS"] += [
+                                [
+                                    wrapper_name,
+                                    "MAX_PROCESSORS no exist in the horizontal-wrapper platform",
+                                ]
+                            ]
+                    if "vertical" in wrapper_type:
+                        if (
+                            not self.experiment_data.get("PLATFORMS", {})
+                            .get(platform_name, {})
+                            .get("MAX_WALLCLOCK", "")
+                        ):
+                            self.wrong_config["WRAPPERS"] += [
+                                [
+                                    wrapper_name,
+                                    "MAX_WALLCLOCK no exist in the vertical-wrapper platform",
+                                ]
+                            ]
+            if "WRAPPERS" not in self.wrong_config and not no_log:
+                Log.result("wrappers OK")
 
     def load_common_parameters(self, parameters: dict) -> dict:
-        """Loads common parameters not specific to a job neither a platform
-        :param parameters:
-        :return:
-        """
+        """Loads common parameters not specific to a job neither a platform."""
         # parameters.update( dict((name, getattr(BasicConfig, name)) for name in dir(BasicConfig) if not name.startswith('_') and not name=="read"))
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         # get_project_dir expects self.experiment_data to be loaded
@@ -1594,10 +1658,10 @@ class AutosubmitConfig:
         return parameters
 
     @staticmethod
-    def _delete_autosubmit_calculated_variables(yaml_data: dict):
+    def _delete_autosubmit_calculated_variables(yaml_data: dict) -> None:
         """Deletes autosubmit calculated variables from a yaml data.
-        :param yaml_data: dict with yaml data
-        :return: None
+
+        :param yaml_data: dict with YAML data.
         """
         # Context: It could happen that a %PLACEHOLDER% that references any of these variables, points to a different folder than AS does leading to runtime errors.
         # TODO: Revise if there could be more AS internally calculated variables to delete
@@ -1606,11 +1670,10 @@ class AutosubmitConfig:
             yaml_data.pop(key, None)
 
     def _pin_immutable_variables(self, parameters: dict) -> dict:
-        """Keep default variables regardless of the experiment configuration files
+        """Keep default variables regardless of the experiment configuration files.
+
         :param parameters: dict with current parameters
-        :type parameters: dict
         :return: dict with updated parameters
-        :rtype: dict
         """
         # Variables that should be fixed regardless of the configuration file
         pinned_variables = ["EXPID"]
@@ -1629,16 +1692,18 @@ class AutosubmitConfig:
 
         return parameters
 
-    def load_custom_config(self, current_data, filenames_to_load):
-        """Loads custom config files
+    def load_custom_config(
+        self, current_data: dict[str, Any], filenames_to_load: list[str]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Loads custom config files.
+
         :param current_data: dict with current data
         :param filenames_to_load: list of filenames to load
         :return: current_data_pre,current_data_post with unified data
-
         """
-        current_data_pre = {}
+        current_data_pre: dict[str, Any] = {}
         current_data_aux = None
-        current_data_post = {}
+        current_data_post: dict[str, Any] = {}
         # at this point, filenames_to_load should be a list of filenames of a specific section PRE or POST.
         for filename in filenames_to_load:
             filename = filename.strip(", ")  # Remove commas and spaces if any
@@ -1701,7 +1766,7 @@ class AutosubmitConfig:
         return current_data_pre, current_data_post
 
     def load_custom_config_section(self, current_data, filenames_to_load) -> dict:
-        """Loads a section (PRE or POST ), simple str are also PRE data of the custom config files
+        """Loads a section (PRE or POST ), simple str are also PRE data of the custom config files.
 
         :param current_data: data until now
         :param filenames_to_load: files to load in this section
@@ -1715,10 +1780,7 @@ class AutosubmitConfig:
 
     @property
     def is_current_real_user_owner(self) -> bool:
-        """
-        Check if the real user(AS_ENV_CURRENT_USER) is the owner of the experiment folder
-        :return: bool
-        """
+        """Check if the real user(AS_ENV_CURRENT_USER) is the owner of the experiment folder."""
         return Path(self.experiment_data["ROOTDIR"]).owner() == self.experiment_data["AS_ENV_CURRENT_USER"]
 
     @property
@@ -1732,10 +1794,12 @@ class AutosubmitConfig:
 
     @staticmethod
     def load_as_env_variables(parameters: dict[str, Any]) -> dict[str, Any]:
-        """
-        Loads all environment variables that starts with AS_ENV into the parameters dictionary and obtains the current user running it.
+        """Loads all environment variables that starts with AS_ENV into the parameters dictionary.
+
+         Sets the current user running it as ``AS_ENV_CURRENT_USER``.
+
         :param parameters: current loaded parameters.
-        :return: dict
+        :return: Parameters dictionary.
         """
         for key, value in os.environ.items():
             if key.startswith("AS_ENV"):
@@ -1744,11 +1808,9 @@ class AutosubmitConfig:
         return parameters
 
     def needs_reload(self) -> bool:
-        """
-        Check if any configuration file has been modified and needs to be reloaded.
+        """Check if any configuration file has been modified and needs to be reloaded.
 
-        Returns:
-            bool: True if a reload is needed, False otherwise.
+        :return: True if a reload is needed, False otherwise.
         """
         if len(self.current_loaded_files) == 0:
             return True
@@ -1760,13 +1822,14 @@ class AutosubmitConfig:
                         return True
         return False
 
-    def load_starter_conf(self):
+    def load_starter_conf(self) -> None:
         """Loads the expid/conf folder"""
         for filename in self.get_yaml_filenames_to_load(self.conf_folder_yaml):
             self.experiment_data = self.unify_conf(self.experiment_data, self.load_config_file(self.experiment_data, Path(filename)))
 
-    def reload(self, force_load=False, only_experiment_data=False):
-        """Reloads the configuration files
+    def reload(self, force_load=False, only_experiment_data=False) -> None:
+        """Reloads the configuration files.
+
         :param force_load: If True, reloads all the files, if False, reloads only the modified files
         :param only_experiment_data: If true, loads only experiment data.
         """
@@ -1936,8 +1999,10 @@ class AutosubmitConfig:
                 self.data_changed = True
                 self.last_experiment_data = {}
 
-    def detailed_deep_diff(self, current_data, last_run_data, level=0):
-        """Returns a dictionary with for each key, the difference between the current configuration and the last_run_data
+    def detailed_deep_diff(self, current_data: dict, last_run_data: dict, level=0) -> dict:
+        """Returns a dictionary with for each key, the difference between the current
+        configuration and the last_run_data.
+
         :param current_data: dictionary with the current data
         :param last_run_data: dictionary with the last_run_data data
         :param level: current level (used for recursion)
@@ -1984,8 +2049,9 @@ class AutosubmitConfig:
             return None
         return differences
 
-    def quick_deep_diff(self, current_data, last_run_data, changed=False):
-        """Returns if there is any difference between the current configuration and the stored one
+    def quick_deep_diff(self, current_data: dict, last_run_data: dict, changed=False) -> bool:
+        """Returns if there is any difference between the current configuration and the stored one.
+
         :param current_data: dictionary with the current data
         :param last_run_data: dictionary with the stored data
         :param changed: if the configuration changed or not
@@ -1998,38 +2064,42 @@ class AutosubmitConfig:
         try:
             for key, val in current_data.items():
                 if isinstance(val, collections.abc.Mapping):
-                    if not last_run_data or key not in last_run_data.keys():
+                    if not last_run_data or key not in last_run_data:
                         changed = True
                         break
                     else:
                         changed = self.quick_deep_diff(last_run_data[key], val, changed)
                 else:
-                    if key not in last_run_data.keys() or str(last_run_data[key]).lower() != str(val).lower():
+                    if key not in last_run_data or str(last_run_data[key]).lower() != str(val).lower():
                         changed = True
                         break
         except Exception:
             changed = True
         return changed
 
-    def deep_add_missing_starter_conf(self, experiment_data, starter_conf):
-        """
-        Add the missing keys from starter_conf to experiment_data
+    def deep_add_missing_starter_conf(self, experiment_data: dict, starter_conf: dict) -> dict:
+        """Add the missing keys from starter_conf to experiment_data.
+
         :param experiment_data:
         :param starter_conf:
-        :return:
+        :return: The experiment data.
         """
         for key in starter_conf.keys():
-            if key not in experiment_data.keys():
+            if key not in experiment_data:
                 experiment_data[key] = starter_conf[key]
             elif isinstance(starter_conf[key], collections.abc.Mapping):
                 experiment_data[key] = self.deep_add_missing_starter_conf(experiment_data[key], starter_conf[key])
         return experiment_data
 
     @staticmethod
-    def deep_parameters_export(data):
+    def deep_parameters_export(data: dict) -> dict:
         """Export all variables of this experiment.
+
         The resultant format will be Section.{subsections1...subsectionN} = Value.
+
         In other words, it plain the dictionary into one level.
+
+        :return: The parameters dictionary.
         """
         parameters_dict = {}
         stack = [(data.copy(), '')]
@@ -2063,10 +2133,10 @@ class AutosubmitConfig:
             }
         }
 
-    def load_parameters(self):
-        """Load all experiment data
+    def load_parameters(self) -> dict:
+        """Load all experiment data.
+
         :return: a dictionary containing tuples [parameter_name, parameter_value]
-        :rtype: dict
         """
         db_parameters = self._load_database_parameters()
         self.deep_update(self.experiment_data, db_parameters)
@@ -2079,76 +2149,66 @@ class AutosubmitConfig:
         by a call to ``sleep`` (for testing platforms).
 
         :return: project type
-        :rtype: str
         """
         return self.get_section(["project", "project_type"], "none", must_exists=False).lower()
 
     def get_rerun_jobs(self) -> str:
-        """Returns rerun jobs
+        """Returns rerun jobs.
 
         :return: jobs_list
-        :rtype: str
         """
-        try:
-            return self.get_section(['RERUN', 'RERUN_JOBLIST'], "")
-        except KeyError:
-            return ""
+        return self.get_section_str(["RERUN", "RERUN_JOBLIST"])
 
     def get_file_project_conf(self) -> str:
         """Returns path to project config file from experiment config file
 
         :return: path to project config file
-        :rtype: str
         """
-        return self.get_section(['PROJECT_FILES', 'FILE_PROJECT_CONF'])
+        return self.get_section_str(['PROJECT_FILES', 'FILE_PROJECT_CONF'])
 
     def get_file_jobs_conf(self) -> str:
         """Returns path to project config file from experiment config file
 
         :return: path to project config file
-        :rtype: str
         """
-        return self.get_section(['PROJECT_FILES', 'FILE_JOBS_CONF'], "")
+        return self.get_section_str(['PROJECT_FILES', 'FILE_JOBS_CONF'], "")
 
     def get_git_project_origin(self) -> str:
         """Returns git origin from experiment config file
 
         :return: git origin
-        :rtype: str
         """
-        return self.get_section(['GIT', 'PROJECT_ORIGIN'], "")
+        return self.get_section_str(['GIT', 'PROJECT_ORIGIN'], "")
 
     def get_git_project_branch(self) -> str:
         """Returns git branch  from experiment's config file
 
         :return: git branch
-        :rtype: str
         """
-        return self.get_section(['GIT', 'PROJECT_BRANCH'], "")
+        return self.get_section_str(['GIT', 'PROJECT_BRANCH'], "")
 
     def get_git_project_commit(self) -> str:
         """Returns git commit from experiment's config file
 
         :return: git commit
-        :rtype: str
         """
-        return self.get_section(['GIT', 'PROJECT_COMMIT'], "")
+        return self.get_section_str(['GIT', 'PROJECT_COMMIT'], "")
 
     def get_git_remote_project_root(self) -> str:
         """Returns remote machine ROOT PATH
 
         :return: git commit
-        :rtype: str
         """
-        return self.get_section(['GIT', 'REMOTE_CLONE_ROOT'], "")
+        return self.get_section_str(['GIT', 'REMOTE_CLONE_ROOT'], "")
 
     def get_submodules_list(self) -> list[str] | bool:
-        """
-        Returns submodules list from experiment's config file.
+        """Returns submodules list from experiment's config file.
+
         Default is --recursive.
+
         Can be disabled by setting the configuration key to ``False``.
+
         :return: submodules to load
-        :rtype: Union[list[str], bool]
         """
         project_submodules: str | bool = self.get_section(['GIT', 'PROJECT_SUBMODULES'], "")
         if project_submodules is False:
@@ -2158,18 +2218,18 @@ class AutosubmitConfig:
         return project_submodules.split(" ")
 
     def get_fetch_single_branch(self) -> str:
-        """Returns fetch single branch from experiment's config file
-        Default is -single-branch
-        :return: fetch_single_branch(Y/N)
-        :rtype: str
-        """
-        return str(self.get_section(['GIT', 'FETCH_SINGLE_BRANCH'], "true")).lower()
+        """Returns fetch single branch from experiment's config file.
 
-    def get_project_destination(self):
+        Default is -single-branch.
+
+        :return: fetch_single_branch(Y/N)
+        """
+        return str(self.get_section_str(['GIT', 'FETCH_SINGLE_BRANCH'], "true")).lower()
+
+    def get_project_destination(self) -> str:
         """Returns git commit from experiment's config file
 
         :return: git commit
-        :rtype: str
         """
         try:
             value = self.experiment_data.get("PROJECT", {}).get("PROJECT_DESTINATION", "project_files")
@@ -2190,116 +2250,97 @@ class AutosubmitConfig:
             Log.debug(traceback.format_exc())
         return "project_files"
 
-    def get_svn_project_url(self):
+    def get_svn_project_url(self) -> str:
         """Gets subversion project url
 
         :return: subversion project url
-        :rtype: str
         """
-        return self.get_section(['SVN', 'PROJECT_URL'])
+        return self.get_section_str(['SVN', 'PROJECT_URL'])
 
-    def get_svn_project_revision(self):
+    def get_svn_project_revision(self) -> str:
         """Get revision for subversion project
 
         :return: revision for subversion project
-        :rtype: str
         """
-        return self.get_section(['SVN', 'PROJECT_REVISION'])
+        return self.get_section_str(['SVN', 'PROJECT_REVISION'])
 
     def get_local_project_path(self) -> Path:
         """Gets path to origin for local project, expanding a user-home prefix.
 
         :return: path to local project
-        :rtype: Path
         """
-        path = self.get_section(['LOCAL', 'PROJECT_PATH'])
+        path = self.get_section_str(['LOCAL', 'PROJECT_PATH'])
         if not path:
             raise AutosubmitCritical(
                 "Empty project path! Please change this parameter to a valid one.", 7014)
         return Path(path).expanduser()
 
-    def get_date_list(self):
+    def get_date_list(self) -> list[str]:
         """
         Returns startdates list from experiment's config file
 
         :return: experiment's startdates
-        :rtype: list
         """
         date_list = []
         date_value = str(self.get_section(['EXPERIMENT', 'DATELIST'], "20220401"))
         # Allows to use the old format for define a list.
-        if type(date_value) is not list:
-            if not date_value.startswith("["):
-                string = f'[{date_value}]'
-            else:
-                string = date_value
-            split_string = nested_expr('[', ']').parse_string(string).asList()
-            string_date = None
-            for split in split_string[0]:
-                if type(split) is list:
-                    for split_in in split:
-                        if split_in.find("-") != -1:
-                            split_numbers = split_in.split("-")
-                            for count in range(int(split_numbers[0]), int(split_numbers[1]) + 1):
-                                date_list.append(parse_date(string_date + str(count).zfill(len(split_numbers[0]))))
-                        else:
-                            date_list.append(parse_date(string_date + split_in))
-                    string_date = None
-                else:
-                    if string_date is not None and len(str(string_date)) > 0:
-                        date_list.append(parse_date(string_date))
-                    string_date = split
-            if string_date is not None and len(str(string_date)) > 0:
-                date_list.append(parse_date(string_date))
+        if not date_value.startswith("["):
+            string = f'[{date_value}]'
         else:
-            for str_date in date_value:
-                date_list.append(parse_date(str_date))
+            string = date_value
+        split_string = nested_expr('[', ']').parse_string(string).asList()
+        string_date = None
+        for split in split_string[0]:
+            if type(split) is list:
+                for split_in in split:
+                    if split_in.find("-") != -1:
+                        split_numbers = split_in.split("-")
+                        for count in range(int(split_numbers[0]), int(split_numbers[1]) + 1):
+                            date_list.append(parse_date(string_date + str(count).zfill(len(split_numbers[0]))))
+                    else:
+                        date_list.append(parse_date(string_date + split_in))
+                string_date = None
+            else:
+                if string_date is not None and len(str(string_date)) > 0:
+                    date_list.append(parse_date(string_date))
+                string_date = split
+        if string_date is not None and len(str(string_date)) > 0:
+            date_list.append(parse_date(string_date))
         return date_list
 
-    def get_num_chunks(self):
+    def get_num_chunks(self) -> int:
         """Returns number of chunks to run for each member
 
         :return: number of chunks
-        :rtype: int
         """
-        return int(self.get_section(['EXPERIMENT', 'NUMCHUNKS']))
+        return self.get_section_int(['EXPERIMENT', 'NUMCHUNKS'])
 
     def get_chunk_ini(self, default=1) -> int:
         """Returns the first chunk from where the experiment will start
 
         :param default:
         :return: initial chunk
-        :rtype: int
         """
-        chunk_ini = self.get_section(['experiment', 'CHUNKINI'], default)
-        if not chunk_ini:
-            return default
-        return int(chunk_ini)
+        return self.get_section_int(['experiment', 'chunkini'], default)
 
-    def get_chunk_size_unit(self):
+    def get_chunk_size_unit(self) -> str:
         """Unit for the chunk length
 
         :return: Unit for the chunk length  Options: {hour, day, month, year}
-        :rtype: str
         """
-        return self.get_section(['EXPERIMENT', 'CHUNKSIZEUNIT'])
+        return self.get_section_str(['EXPERIMENT', 'CHUNKSIZEUNIT'])
 
-    def get_chunk_size(self, default=1):
+    def get_chunk_size(self, default=1) -> int:
         """Chunk Size as defined in the expdef file.
 
         :return: Chunksize, 1 as default.
-        :rtype: int
         """
-        chunk_size = self.get_section(['experiment', 'CHUNKSIZE'], default)
-        if not chunk_size:
-            return default
-        return int(chunk_size)
+        return self.get_section_int(["experiment", "chunksize"], default)
 
-    def get_member_list(self, run_only=False):
+    def get_member_list(self, run_only=False) -> list:
         """Returns members list from experiment's config file
 
         :return: experiment's members
-        :rtype: list
         """
         member_list = []
         string = str(self.get_section(['EXPERIMENT', 'MEMBERS'], "") if run_only is False else self.get_section(
@@ -2329,35 +2370,24 @@ class AutosubmitConfig:
             member_list.append(string_member)
         return member_list
 
-    def get_rerun(self):
+    def get_rerun(self) -> bool:
         """Returns startdates list from experiment's config file
 
         :return: rerun value
-        :rtype: bool
         """
-
-        return str(self.get_section(['RERUN', 'RERUN'])).lower()
+        return self.get_section_bool(["rerun", "rerun"])
 
     def get_platform(self) -> str:
         """
         Returns main platforms from experiment's config file
 
         :return: main platforms
-        :rtype: str
         """
-        try:
-            return self.experiment_data["DEFAULT"]["HPCARCH"].upper()
-        except KeyError:
-            raise AutosubmitCritical(
-                "Defaul HPCARCH not defined in the configuration file", 7014
-            )
-        except Exception as exc:
-            raise AutosubmitCritical(
-                f"Error while reading HPCARCH from the configuration file: {exc}", 7014
-            )
+        return self.get_section_str(["default", "hpcarch"], must_exists=True)
 
-    def set_last_as_command(self, command):
-        """Set the last autosubmit command used in the experiment's config file
+    def set_last_as_command(self, command) -> None:
+        """Set the last autosubmit command used in the experiment's config file.
+
         :param command: current autosubmit command
         :return:
         """
@@ -2379,8 +2409,8 @@ class AutosubmitConfig:
         open(misc, 'w').write(content)
         os.chmod(misc, 0o755)
 
-    def set_version(self, autosubmit_version):
-        """Sets autosubmit's version in autosubmit's config file
+    def set_version(self, autosubmit_version) -> None:
+        """Sets autosubmit's version in autosubmit's config file.
 
         :param autosubmit_version: autosubmit's version
         :type autosubmit_version: str
@@ -2397,108 +2427,82 @@ class AutosubmitConfig:
         open(version_file, 'w').write(content)
         os.chmod(version_file, 0o755)
 
-    def get_version(self):
-        """Returns version number of the current experiment from autosubmit's config file
+    def get_version(self) -> str:
+        """Returns version number of the current experiment from autosubmit's config file.
 
         :return: version
-        :rtype: str
         """
-        return str(self.get_section(['CONFIG', 'AUTOSUBMIT_VERSION'], ""))
+        return self.get_section_str(['CONFIG', 'AUTOSUBMIT_VERSION'], "")
 
     def get_total_jobs(self) -> int | None:
         """Returns max number of running jobs from autosubmit's config file.
 
         :return: max number of running jobs, or None if not set
-        :rtype: int | None
         """
         return self.get_section(["CONFIG", "TOTALJOBS"], None)
 
-    def get_output_type(self):
+    def get_output_type(self) -> str:
         """Returns default output type, pdf if none
 
         :return: output type
-        :rtype: string
         """
-        return self.get_section(['CONFIG', 'OUTPUT'], 'pdf')
+        return self.get_section_str(['CONFIG', 'OUTPUT'], 'pdf')
 
-    def get_max_wallclock(self):
-        """Returns max wallclock
+    def get_max_wallclock(self) -> str:
+        """Returns max wallclock."""
+        return self.get_section_str(['CONFIG', 'MAX_WALLCLOCK'], "")
 
-        :rtype: str
-        """
-        return self.get_section(['CONFIG', 'MAX_WALLCLOCK'], "")
-
-    def get_max_processors(self):
-        """Returns max processors from autosubmit's config file
-
-        :rtype: str
-        """
-        return self.get_section(['CONFIG', 'MAX_PROCESSORS'], -1)
+    def get_max_processors(self) -> str:
+        """Returns max processors from autosubmit's config file."""
+        return self.get_section_str(['CONFIG', 'MAX_PROCESSORS'], "-1")
 
     def get_max_waiting_jobs(self) -> int | None:
         """Returns max number of waiting jobs from autosubmit's config file.
 
         :return: max number of waiting jobs, or None if not set
-        :rtype: int | None
         """
         return self.get_section(["CONFIG", "MAXWAITINGJOBS"], None)
 
-    def get_default_job_type(self):
+    def get_default_job_type(self) -> str:
         """Returns the default job type from experiment's config file.
 
         :return: default type such as bash, python, r...
-        :rtype: str
         """
-        return self.get_section(['PROJECT_FILES', 'JOB_SCRIPTS_TYPE'], 'bash')
+        return self.get_section_str(['PROJECT_FILES', 'JOB_SCRIPTS_TYPE'], 'bash')
 
-    def get_safetysleeptime(self):
+    def get_safetysleeptime(self) -> int:
         """Returns safety sleep time from autosubmit's config file.
 
         :return: safety sleep time
-        :rtype: int
         """
-        return int(self.get_section(['CONFIG', 'SAFETYSLEEPTIME'], 10))
+        return self.get_section_int(['CONFIG', 'SAFETYSLEEPTIME'], 10)
 
-    def set_safetysleeptime(self, sleep_time: int):
-        """Sets the safety sleep time in the config file.
-
-        :param sleep_time: value to set
-        :type sleep_time: int
-        """
-        content = open(self._conf_parser_file).read()
-        content = content.replace(re.search('SAFETYSLEEPTIME:.*', content).group(0), "SAFETYSLEEPTIME: %d" % sleep_time)
-        open(self._conf_parser_file, 'w').write(content)
-
-    def get_retrials(self):
+    def get_retrials(self) -> int:
         """Returns max number of retrials for job from autosubmit's config file.
 
         :return: safety sleep time
-        :rtype: int
         """
-        return self.get_section(['CONFIG', 'RETRIALS'], 0)
+        return self.get_section_int(['CONFIG', 'RETRIALS'], 0)
 
-    def get_delay_retry_time(self) -> str:
+    def get_delay_retry_time(self) -> int:
         """Returns delay time from autosubmit's config file.
 
         :return: safety sleep time
-        :rtype: int
         """
-        return self.get_section(['CONFIG', 'DELAY_RETRY_TIME'], "-1")
+        return self.get_section_int(['CONFIG', 'DELAY_RETRY_TIME'], -1)
 
     def get_notifications(self) -> str:
         """Returns if the user has enabled the notifications from autosubmit's config file.
 
         :return: if notifications
-        :rtype: string
         """
-        return str(self.get_section(['MAIL', 'NOTIFICATIONS'], "false")).lower()
+        return self.get_section_str(['MAIL', 'NOTIFICATIONS'], "false").lower()
 
     def get_wrapper_type(self, wrapper=None) -> str | None:
         """Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, MULTI NONE) the user
         has configured in the autosubmit's config.
 
         :return: wrapper type (or none)
-        :rtype: string
         """
         if wrapper is None:
             wrapper = {}
@@ -2506,29 +2510,26 @@ class AutosubmitConfig:
             return wrapper.get('TYPE', self.experiment_data.get("WRAPPERS", {}).get("TYPE", ""))
         return None
 
-    def get_wrapper_policy(self, wrapper=None):
+    def get_wrapper_policy(self, wrapper=None) -> str:
         """Returns what kind of policy (flexible, strict, mixed ) the user has configured in the autosubmit's config.
 
         :return: wrapper type (or none)
-        :rtype: string
         """
         if wrapper is None:
             wrapper = {}
         return wrapper.get('POLICY', self.experiment_data.get("WRAPPERS", {}).get("POLICY", 'flexible'))
 
-    def get_wrappers(self):
+    def get_wrappers(self) -> dict:
         """Returns the jobs that should be wrapped, configured in the autosubmit's config.
 
         :return: expression
-        :rtype: dict
         """
         return self.experiment_data.get("WRAPPERS", {})
 
-    def get_wrapper_jobs(self, wrapper=None):
+    def get_wrapper_jobs(self, wrapper: dict | None=None) -> str:
         """Returns the jobs that should be wrapped, configured in the autosubmit's config.
 
         :return: expression (or none)
-        :rtype: string
         """
         if wrapper is None:
             return ""
@@ -2536,39 +2537,35 @@ class AutosubmitConfig:
         return wrapper.get('JOBS_IN_WRAPPER', self.experiment_data.get("WRAPPERS", {}).get("JOBS_IN_WRAPPER", []))
 
     # noinspection PyMethodMayBeStatic
-    def get_extensible_wallclock(self, wrapper=None):
+    def get_extensible_wallclock(self, wrapper: dict | None=None) -> int:
         """Gets extend_wallclock for the given wrapper.
 
         :param wrapper: wrapper
-        :type wrapper: dict
         :return: extend_wallclock
-        :rtype: int
         """
         if wrapper is None:
             wrapper = {}
         return int(wrapper.get('EXTEND_WALLCLOCK', 0))
 
-    def get_wrapper_queue(self, wrapper=None):
+    def get_wrapper_queue(self, wrapper: dict | None=None) -> str:
         """Returns the wrapper queue if not defined, will be the one of the first job wrapped.
 
         :return: expression (or none)
-        :rtype: string
         """
         if wrapper is None:
             wrapper = {}
         return wrapper.get('QUEUE', self.experiment_data.get("WRAPPERS", {}).get("QUEUE", ""))
 
-    def get_wrapper_partition(self, wrapper=None):
+    def get_wrapper_partition(self, wrapper: dict | None=None) -> str:
         """Returns the wrapper queue if not defined, will be the one of the first job wrapped.
 
         :return: expression (or none)
-        :rtype: string
         """
         if wrapper is None:
             wrapper = {}
         return wrapper.get('PARTITION', self.experiment_data.get("WRAPPERS", {}).get("PARTITION", ""))
 
-    def get_wrapper_method(self, wrapper=None) -> str:
+    def get_wrapper_method(self, wrapper: dict | None=None) -> str:
         """Returns the method of make the wrapper.
 
          :return: method
@@ -2577,15 +2574,14 @@ class AutosubmitConfig:
             wrapper = {}
         return wrapper.get('METHOD', self.experiment_data.get("WRAPPERS", {}).get("METHOD", 'ASThread'))
 
-    def get_wrapper_check_time(self):
+    def get_wrapper_check_time(self) -> int:
         """Returns time to check the status of jobs in the wrapper.
 
          :return: wrapper check time
-         :rtype: int
          """
         return self.experiment_data.get("WRAPPERS", {}).get("CHECK_TIME_WRAPPER", 0)
 
-    def get_wrapper_machinefiles(self, wrapper=None) -> str:
+    def get_wrapper_machinefiles(self, wrapper: dict | None=None) -> str:
         """Returns the strategy for creating the machinefiles in wrapper jobs.
 
          :return: machinefiles function to use
@@ -2594,29 +2590,13 @@ class AutosubmitConfig:
             wrapper = {}
         return wrapper.get('MACHINEFILES', self.experiment_data.get("WRAPPERS", {}).get("MACHINEFILES", ""))
 
-    def get_copy_remote_logs(self) -> str:
-        """
-        Returns if the user has enabled the logs local copy from autosubmit's config file
-
-        :return: if logs local copy
-        """
-        return str(self.get_section(['STORAGE', 'COPY_REMOTE_LOGS'], "true")).lower()
-
     def get_mails_to(self) -> str:
         """
         Returns the address where notifications will be sent from autosubmit's config file
 
         :return: mail address
         """
-        return self.get_section(['MAIL', 'TO'], "")
-
-    def get_communications_library(self) -> str:
-        """
-        Returns the communications library from autosubmit's config file. Paramiko by default.
-
-        :return: communications library
-        """
-        return self.get_section(['COMMUNICATIONS', 'API'], 'paramiko')
+        return self.get_section_str(['MAIL', 'TO'], "")
 
     @staticmethod
     def is_valid_mail_address(mail_address: str) -> bool:
@@ -2635,7 +2615,7 @@ class AutosubmitConfig:
         storage_type = self.get_section(['STORAGE', 'TYPE'], 'sqlite')
         return storage_type in ['sqlite', 'postgres']
 
-    def is_valid_jobs_in_wrapper(self, wrapper=None) -> bool:
+    def is_valid_jobs_in_wrapper(self, wrapper: dict | None=None) -> bool:
         if wrapper is None:
             wrapper = {}
         expression = self.get_wrapper_jobs(wrapper)
@@ -2678,14 +2658,12 @@ class AutosubmitConfig:
                     os.chmod(f_name, 0o750)
 
     @staticmethod
-    def get_parser(parser_factory, file_path):
+    def get_parser(parser_factory: Any, file_path: Path) -> "YAMLParser":
         """Gets parser for the given file.
 
         :param parser_factory:
         :param file_path: path to file to be parsed
-        :type file_path: Path
         :return: parser
-        :rtype: YAMLParser
         """
         parser = parser_factory.create_parser()
         # For testing purposes
@@ -2719,9 +2697,11 @@ class AutosubmitConfig:
                     f"{str(exp)}\n This file and the correctness of its content are necessary.")
         return parser
 
-    def calculate_auto_splits(self):
+    def calculate_auto_splits(self) -> None:
         """Calculate automatic splits for chunked jobs.
-        Takes the "auto" value in the "SPLITS" key of chunked jobs and replaces it by a dict containing the number of splits by each month
+
+        Takes the "auto" value in the "SPLITS" key of chunked jobs and replaces it
+        by a dict containing the number of splits by each month.
         """
         datelist = self.experiment_data.get("EXPERIMENT", {}).get("DATELIST", "")
         chunks = int(self.experiment_data.get("EXPERIMENT", {}).get("NUMCHUNKS", 1))
@@ -2736,7 +2716,7 @@ class AutosubmitConfig:
                 continue
 
             if section_data.get("SPLITS", None) == "auto":
-                splits = {}
+                splits: dict[str, list[int]] = {}
                 for date_str in datelist:
                     splits[date_str] = []
                     date = datetime.strptime(date_str, '%Y%m%d')
@@ -2753,7 +2733,6 @@ class AutosubmitConfig:
         normalize it to a list of job names.
 
         :return: Normalized list of job names.
-        :rtype: list[str].
         """
         jobs_in_wrapper = self.experiment_data.get("WRAPPERS", {}).get("JOBS_IN_WRAPPER", [])
         if isinstance(jobs_in_wrapper, str):
@@ -2762,10 +2741,9 @@ class AutosubmitConfig:
         return [job.strip() for job in jobs_in_wrapper if job.strip()]
 
     def check_files_loaded(self) -> str:
-        """
-        Returns the contents of all loaded configuration files, with a header indicating the file name.
+        """Returns the contents of all loaded configuration files, with a header indicating the file name.
+
         :return: contents of all loaded configuration files
-        :rtype: str
         """
         self.reload(True)
         file_contents = ""
@@ -2781,9 +2759,7 @@ class AutosubmitConfig:
         """Returns the wrapper configuration for a given job section.
 
         :param section: job section
-        :type section: str
         :return: wrapper configuration
-        :rtype: dict
         """
         if isinstance(self.experiment_data.get("WRAPPERS", {}), dict):
             for wrapper in self.experiment_data.get("WRAPPERS", {}).values():
@@ -2795,9 +2771,7 @@ class AutosubmitConfig:
         """Returns the CPMIP thresholds for a given job section.
 
         :param job_section: job section
-        :type job_section: str
         :return: CPMIP thresholds
-        :rtype: dict
         """
         thresholds = self.jobs_data.get(job_section, {}).get("CPMIP_THRESHOLDS", {})
         if isinstance(thresholds, dict):

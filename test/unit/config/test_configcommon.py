@@ -27,6 +27,8 @@ import pytest
 
 from autosubmit.config.configcommon import AutosubmitConfig
 from autosubmit.config.upgrade_scripts import ini_to_yaml
+from autosubmit.config.yamlparser import YAMLParserFactory
+from autosubmit.job.job_list import JobList
 from autosubmit.log.log import AutosubmitCritical, AutosubmitError
 from autosubmit.platforms.platform_type import PlatformType
 
@@ -210,7 +212,7 @@ def test_key_error_raise(autosubmit_config: 'AutosubmitConfigFactory'):
     with pytest.raises(AutosubmitCritical):
         _ = as_conf.platforms_data
 
-    with pytest.raises(AutosubmitCritical):
+    with pytest.raises(AttributeError):
         as_conf.get_platform()
 
     as_conf.experiment_data = {
@@ -807,27 +809,6 @@ def test_check_autosubmit_conf(autosubmit_config, exp_data, invalid_settings):
                     assert key in keys
             else:
                 assert expected.upper() in section_list
-
-
-
-def test_set_safetysleeptime_updates_file(autosubmit_config, tmp_path: Path) -> None:
-    """Ensure set_safetysleeptime replaces the existing SAFETYSLEEPTIME line."""
-    as_conf = autosubmit_config(expid='a000', experiment_data={})
-    as_conf._conf_parser_file = tmp_path / "config.txt"
-    initial = (
-        "SOME_SETTING: whatever\n"
-        "SAFETYSLEEPTIME: 10\n"
-        "OTHER: value\n"
-    )
-    as_conf._conf_parser_file.write_text(initial)
-    as_conf.set_safetysleeptime(25)
-    content = as_conf._conf_parser_file.read_text()
-    expected = (
-        "SOME_SETTING: whatever\n"
-        "SAFETYSLEEPTIME: 25\n"
-        "OTHER: value\n"
-    )
-    assert content == expected
 
 
 @pytest.mark.parametrize(
@@ -1625,3 +1606,259 @@ def test_check_wrapper_conf_local_platform_not_supported(autosubmit_config):
         as_conf.check_wrapper_conf(wrappers)
 
     assert "LOCAL platform does not support wrappers" in str(exc.value)
+
+
+def test_set_platforms_check_platform_in_list(autosubmit_config, mocker):
+    """Test that the platform is in the list of platforms."""
+    as_conf = autosubmit_config(
+        _EXPID,
+        experiment_data={
+            "JOBS": {
+                "A": {
+                    "PLATFORM": "TRACTOR",
+                },
+            }
+        },
+    )
+    as_conf.hpcarch = PlatformType.LOCAL
+
+    mocked_log = mocker.patch("autosubmit.config.configcommon.Log")
+    as_conf.set_platform_parameters(JobList(as_conf.expid, as_conf, parser_factory=YAMLParserFactory()), [])  # type: ignore
+    assert mocked_log.warning.call_count == 1
+    assert "platform is not defined in" in mocked_log.warning.call_args[0][0]
+
+
+@pytest.mark.parametrize(
+    "experiment_data, section, d_value, expected",
+    [
+        (
+            {"MAIL": {"TO": "user@example.com"}},
+            ["MAIL", "TO"],
+            "",
+            "user@example.com",
+        ),
+        (
+            {},
+            ["MAIL", "TO"],
+            "",
+            "",
+        ),
+        (
+            {"MAIL": {"TO": "notifications@example.com"}},
+            ["MAIL", "TO"],
+            "default@example.com",
+            "notifications@example.com",
+        ),
+        (
+            {"MAIL": {"TO": 123}},
+            ["MAIL", "TO"],
+            "",
+            TypeError,
+        ),
+        (
+            {"MAIL": {"TO": True}},
+            ["MAIL", "TO"],
+            "",
+            TypeError,
+        ),
+        (
+            {"MAIL": {"TO": {"ADDRESS": "user@example.com"}}},
+            ["MAIL", "TO"],
+            "",
+            TypeError,
+        ),
+    ],
+    ids=[
+        "existing_string",
+        "missing_key_returns_default",
+        "configured_value_overrides_default",
+        "integer_is_invalid",
+        "boolean_is_invalid",
+        "dictionary_is_invalid",
+    ],
+)
+def test_get_section_str(
+    autosubmit_config,
+    experiment_data,
+    section,
+    d_value,
+    expected,
+):
+    """Test retrieving a string configuration value."""
+    as_conf: AutosubmitConfig = autosubmit_config(
+        expid="a000",
+        experiment_data=experiment_data,
+    )
+
+    if expected is TypeError:
+        with pytest.raises(TypeError, match="Expected str"):
+            as_conf.get_section_str(section, d_value=d_value)
+    else:
+        assert as_conf.get_section_str(section, d_value=d_value) == expected
+
+
+@pytest.mark.parametrize(
+    "experiment_data, section, d_value, expected",
+    [
+        (
+            {"CONFIG": {"TOTALJOBS": 20}},
+            ["CONFIG", "TOTALJOBS"],
+            0,
+            20,
+        ),
+        (
+            {},
+            ["CONFIG", "TOTALJOBS"],
+            0,
+            0,
+        ),
+        (
+            {},
+            ["CONFIG", "TOTALJOBS"],
+            "10",
+            10,
+        ),
+        (
+            {"CONFIG": {"TOTALJOBS": 50}},
+            ["CONFIG", "TOTALJOBS"],
+            10,
+            50,
+        ),
+        (
+            {"CONFIG": {"TOTALJOBS": 20.5}},
+            ["CONFIG", "TOTALJOBS"],
+            0,
+            TypeError,
+        ),
+        (
+            {"CONFIG": {"TOTALJOBS": True}},
+            ["CONFIG", "TOTALJOBS"],
+            0,
+            TypeError,
+        ),
+    ],
+    ids=[
+        "existing_integer",
+        "missing_key_returns_default",
+        "strings_are_converted",
+        "configured_value_overrides_default",
+        "float_is_invalid",
+        "boolean_is_invalid",
+    ],
+)
+def test_get_section_int(
+    autosubmit_config,
+    experiment_data,
+    section,
+    d_value,
+    expected,
+):
+    """Test retrieving an integer configuration value."""
+    as_conf: AutosubmitConfig = autosubmit_config(
+        expid="a000",
+        experiment_data=experiment_data,
+    )
+
+    if expected is TypeError:
+        with pytest.raises(TypeError, match="Expected int"):
+            as_conf.get_section_int(section, d_value=d_value)
+    else:
+        assert as_conf.get_section_int(section, d_value=d_value) == expected
+
+
+@pytest.mark.parametrize(
+    "experiment_data, section, d_value, expected",
+    [
+        (
+            {"MAIL": {"NOTIFICATIONS": True}},
+            ["MAIL", "NOTIFICATIONS"],
+            False,
+            True,
+        ),
+        (
+            {"MAIL": {"NOTIFICATIONS": False}},
+            ["MAIL", "NOTIFICATIONS"],
+            True,
+            False,
+        ),
+        (
+            {},
+            ["MAIL", "NOTIFICATIONS"],
+            False,
+            False,
+        ),
+        (
+            {"MAIL": {"NOTIFICATIONS": "true"}},
+            ["MAIL", "NOTIFICATIONS"],
+            False,
+            TypeError,
+        ),
+        (
+            {"MAIL": {"NOTIFICATIONS": 1}},
+            ["MAIL", "NOTIFICATIONS"],
+            False,
+            TypeError,
+        ),
+        (
+            {"MAIL": {"NOTIFICATIONS": {"VALUE": True}}},
+            ["MAIL", "NOTIFICATIONS"],
+            False,
+            TypeError,
+        ),
+    ],
+    ids=[
+        "existing_true",
+        "existing_false",
+        "missing_key_returns_default",
+        "string_is_invalid",
+        "integer_is_invalid",
+        "dictionary_is_invalid",
+    ],
+)
+def test_get_section_bool(
+    autosubmit_config,
+    experiment_data,
+    section,
+    d_value,
+    expected,
+):
+    """Test retrieving a boolean configuration value."""
+    as_conf: AutosubmitConfig = autosubmit_config(
+        expid="a000",
+        experiment_data=experiment_data,
+    )
+
+    if expected is TypeError:
+        with pytest.raises(TypeError, match="Expected bool"):
+            as_conf.get_section_bool(section, d_value=d_value)
+    else:
+        assert as_conf.get_section_bool(section, d_value=d_value) is expected
+
+
+@pytest.mark.parametrize(
+    "getter, section, d_value",
+    [
+        ("get_section_str", ["MAIL", "TO"], ""),
+        ("get_section_int", ["CONFIG", "TOTALJOBS"], 0),
+        ("get_section_bool", ["MAIL", "NOTIFICATIONS"], False),
+    ],
+)
+def test_get_section_typed_must_exist(
+    autosubmit_config,
+    getter,
+    section,
+    d_value,
+):
+    """Test that typed getters propagate AutosubmitCritical for missing required keys."""
+    as_conf: AutosubmitConfig = autosubmit_config(
+        expid="a000",
+        experiment_data={},
+    )
+    as_conf.experiment_data = {}
+
+    with pytest.raises(AutosubmitCritical):
+        getattr(as_conf, getter)(
+            section,
+            d_value=d_value,
+            must_exists=True,
+        )

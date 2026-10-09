@@ -4151,7 +4151,7 @@ class JobList:
         """Recover job IDs, log names and submit time for finished jobs from experiment history.
 
         Jobs whose id/updated_log/submit_time are still meaningful are left untouched so the
-        main loop can recover their logs. Otherwise the last known data is restored from the
+        main loop can recover their logs. Otherwise, the last known data is restored from the
         database (when available) and the job is marked as fully recovered so the main loop
         skips it.
 
@@ -4177,7 +4177,7 @@ class JobList:
                         int(data["submit"])).strftime("%Y%m%d%H%M%S")
             job.updated_log = job.fail_count + 1
 
-    def _get_jobs_by_name(self, status: list[int] | None = None, platform: Platform = None,
+    def _get_jobs_by_name(self, status: list[int] | None = None, platform: Platform | None = None,
                           return_only_names=False) -> list[str] | list["Job"]:
         """Return jobs filtered by status and/or platform as names or Job objects.
 
@@ -4195,7 +4195,7 @@ class JobList:
             return [job for job in self.get_job_list() if
                     (not status or job.status in status) and (not platform or job.platform_name == platform.name)]
 
-    def recover_all_completed_jobs_from_exp_history(self, platform: Platform = None) -> set[str]:
+    def recover_all_completed_jobs_from_exp_history(self, platform: Platform | None = None) -> set[str]:
         """Recover all completed jobs from experiment history
 
         :param platform: Platform to filter by.

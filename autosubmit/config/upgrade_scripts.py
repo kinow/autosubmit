@@ -268,8 +268,8 @@ def _fix_placeholders(
     :return: A tuple with a list of warnings and substituted values.
     """
     # Do a backup and tries to update
-    warnings = []
-    success = []
+    warnings: list[str] = []
+    success: list[str] = []
     Log.info(f"Checking for AS3 conf or templates in: {template_or_script_path}")
 
     if not template_or_script_path.exists():
